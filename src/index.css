@@ -1,0 +1,511 @@
+@import "tailwindcss";
+
+/* Clinical Design System Semantic Tokens */
+@import "./styles/themes/theme.css";
+@import "./styles/themes/clinical-default.css";
+@import "./styles/themes/ocean-blue.css";
+@import "./styles/themes/royal-indigo.css";
+@import "./styles/themes/emerald-care.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+
+  /* Harmonized Type Scale (strict >= 12px floor for text-xs/text-2xs) */
+  --text-2xs: max(0.75rem, 12px); /* >= 12px */
+  --text-xs: max(0.75rem, 12px);  /* >= 12px */
+  --text-sm: 0.875rem;     /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-lg: 1.125rem;     /* 18px */
+  --text-xl: 1.25rem;      /* 20px */
+  --text-2xl: 1.5rem;      /* 24px */
+  --text-3xl: 1.875rem;    /* 30px */
+
+  /* Strict Radius Tokens (8px / 12px) */
+  --radius-xs: 0.375rem;
+  --radius-sm: 0.5rem;     /* 8px */
+  --radius-md: 0.5rem;     /* 8px */
+  --radius-lg: 0.5rem;     /* 8px */
+  --radius-xl: 0.75rem;    /* 12px */
+  --radius-2xl: 0.75rem;   /* 12px */
+  --radius-3xl: 0.75rem;   /* 12px */
+}
+
+/* Batch 4 Item 1 & 2: Design Tokens (Spacing, 8 Neutral Grays, 4 Text Roles, 5 Single-Meaning Semantic Colors) */
+:root,
+:root[data-theme],
+[data-theme] {
+  /* Type scale tokens (px equivalents: 12 / 14 / 16 / 20 / 24 / 32) */
+  --font-size-12: max(0.75rem, 12px);
+  --font-size-14: 0.875rem;
+  --font-size-16: 1rem;
+  --font-size-20: 1.25rem;
+  --font-size-24: 1.5rem;
+  --font-size-32: 2rem;
+
+  /* Spacing scale tokens (4 / 8 / 12 / 16 / 24 / 32px) */
+  --space-4: 0.25rem;
+  --space-8: 0.5rem;
+  --space-12: 0.75rem;
+  --space-16: 1rem;
+  --space-24: 1.5rem;
+  --space-32: 2rem;
+
+  /* Radius tokens (8px / 12px) */
+  --radius-sm: var(--app-radius-sm, 0.5rem);
+  --radius-md: var(--app-radius-sm, 0.5rem);
+  --radius-lg: var(--app-radius-sm, 0.5rem);
+  --radius-xl: var(--app-radius-lg, 0.75rem);
+  --radius-2xl: var(--app-radius-lg, 0.75rem);
+  --radius-3xl: var(--app-radius-lg, 0.75rem);
+  --radius-8: var(--app-radius-sm, 0.5rem);
+  --radius-12: var(--app-radius-lg, 0.75rem);
+
+  /* <= 8 Neutral Grays */
+  --neutral-50: var(--color-clinical-default-gray-50);
+  --neutral-100: var(--color-clinical-default-gray-100);
+  --neutral-200: var(--color-clinical-default-gray-200);
+  --neutral-300: var(--color-clinical-default-gray-300);
+  --neutral-600: var(--color-clinical-default-gray-600);
+  --neutral-700: var(--color-clinical-default-gray-700);
+  --neutral-800: var(--color-clinical-default-gray-800);
+  --neutral-900: var(--color-clinical-default-gray-900);
+
+  /* 4 Text Roles (WCAG AA >= 4.5:1) */
+  --text-role-primary: var(--foreground);
+  --text-role-secondary: var(--muted-foreground-2);
+  --text-role-muted: var(--muted-foreground-1);
+  --text-role-inverse: var(--foreground-inverse);
+
+  /* 5 Semantic Colors with ONE Meaning Each */
+  --semantic-primary: var(--primary);          /* Brand primary: actions & active states */
+  --semantic-success: #059669;                 /* Green: completed / verified / paid in full */
+  --semantic-warning: #d97706;                 /* Amber: caution / pending / demo notice */
+  --semantic-danger: #dc2626;                  /* Red: ONLY errors, destructive actions, overdue debt, red flags */
+  --semantic-info: #0284c7;                    /* Blue: informational clinical badges */
+
+  /* High-contrast UI control border (>= 3:1 against light surfaces) */
+  --control-border: #64748b;
+
+  /* Bridge Tailwind teal-* to primary-* */
+  --color-teal-50: var(--primary-50);
+  --color-teal-100: var(--primary-100);
+  --color-teal-200: var(--primary-200);
+  --color-teal-300: var(--primary-300);
+  --color-teal-400: var(--primary-400);
+  --color-teal-500: var(--primary-500);
+  --color-teal-600: var(--primary-600);
+  --color-teal-700: var(--primary-700);
+  --color-teal-800: var(--primary-800);
+  --color-teal-900: var(--primary-900);
+  --color-teal-950: var(--primary-950);
+}
+
+/* Privacy Mode Text Masking & Blurring */
+[data-privacy-blurred="true"],
+.privacy-blur {
+  filter: blur(8px) !important;
+  -webkit-filter: blur(8px) !important;
+  user-select: none !important;
+  display: inline-block !important;
+}
+
+.dark,
+[data-theme].dark {
+  --control-border: #94a3b8;
+}
+
+@layer base {
+  html {
+    font-family: var(--app-font-sans, var(--font-sans));
+    font-size: max(14px, calc(15px * var(--app-scale-factor, 1)));
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  @media (min-width: 1280px) {
+    html {
+      font-size: max(14px, calc(15.5px * var(--app-scale-factor, 1)));
+    }
+  }
+
+  html:lang(ar),
+  html:lang(ckb) {
+    font-family: var(--app-font-sans, "IBM Plex Sans Arabic", "Inter", ui-sans-serif, system-ui, sans-serif);
+    font-size: max(14px, calc(15px * var(--app-scale-factor, 1) * var(--app-arabic-scale, 1)));
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    line-height: var(--app-line-height, 1.6);
+  }
+
+  @media (min-width: 1280px) {
+    html:lang(ar),
+    html:lang(ckb) {
+      font-size: max(14px, calc(15.5px * var(--app-scale-factor, 1) * var(--app-arabic-scale, 1)));
+    }
+  }
+
+  :lang(ar),
+  :lang(ckb) {
+    font-family: var(--app-font-sans, "IBM Plex Sans Arabic", "Inter", ui-sans-serif, system-ui, sans-serif);
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    line-height: var(--app-line-height, 1.6);
+  }
+
+  :lang(ar) *,
+  :lang(ckb) * {
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+  }
+
+  html[dir="ltr"] body,
+  html[dir="ltr"] .font-latin {
+    letter-spacing: var(--app-ltr-letter-spacing, 0em);
+  }
+
+  [dir="rtl"] .rtl-mirror {
+    transform: scaleX(-1);
+  }
+
+  body {
+    background-color: var(--background-1);
+    color: var(--foreground);
+    font-family: var(--app-font-sans, var(--font-sans));
+    font-size: var(--font-size-14); /* 14px base body */
+    font-weight: var(--app-font-weight-body, 400);
+    line-height: var(--app-line-height, 1.6);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Visible input borders (>= 3:1 UI component contrast) */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--control-border);
+  }
+
+  /* High-contrast accessible placeholders in both Light and Dark themes */
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--muted-foreground-2);
+    opacity: 0.82;
+  }
+
+  /* Visible :focus-visible ring for full keyboard navigation (WCAG 2.2 AA) */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  summary:focus-visible,
+  [role="button"]:focus-visible,
+  [tabindex]:not([tabindex="-1"]):focus-visible {
+    outline: 2px solid var(--primary) !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--background) 85%, transparent) !important;
+  }
+
+  /* Desktop and Mobile Responsive Interactive Targets (WCAG 2.2 AA) */
+  button,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  summary {
+    min-height: 32px;
+  }
+
+  @media (max-width: 767px), (pointer: coarse) {
+    button:not(.compact-btn),
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    summary,
+    [role="button"] {
+      min-height: 44px;
+    }
+
+    button:not(.compact-btn),
+    [role="button"] {
+      min-width: 44px;
+    }
+  }
+
+  /* Custom Scrollbar Aesthetics (Standard CSS Scrollbars + Legacy Fallback) */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #64748b transparent;
+  }
+  .dark * {
+    scrollbar-color: #94a3b8 transparent;
+  }
+  @supports not (scrollbar-color: auto) {
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #64748b;
+      border-radius: 9999px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #0d9488;
+    }
+  }
+}
+
+/* Batch 4 Item 1: Enforce 12px (0.75rem) strict minimum font-size floor across all legacy utility classes */
+.text-\[8px\],
+.text-\[9px\],
+.text-\[10px\],
+.text-\[11px\] {
+  font-size: max(0.75rem, 12px) !important;
+  line-height: 1.125rem !important;
+}
+
+/* Batch 4 Item 4: Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================================
+   Clinical Design System Primitives
+   ============================================================================ */
+
+.clinical-card {
+  background-color: var(--card);
+  border: 1px solid var(--card-line);
+  border-radius: var(--radius-12);
+  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.clinical-card-interactive {
+  background-color: var(--card);
+  border: 1px solid var(--card-line);
+  border-radius: var(--radius-12);
+  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.clinical-card-interactive:hover {
+  border-color: var(--primary-400);
+  box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.08);
+}
+
+.clinical-input {
+  width: 100%;
+  border-radius: var(--radius-8);
+  border: 1px solid var(--control-border);
+  background-color: var(--layer);
+  color: var(--foreground);
+  padding: 0.5rem 0.75rem;
+  font-size: var(--font-size-14);
+  line-height: 1.25rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.clinical-input:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary-500) 18%, transparent);
+}
+.clinical-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.clinical-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-8);
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 600;
+  font-size: var(--font-size-12);
+  padding: 0.5rem 0.875rem;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.08);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.clinical-btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+}
+.clinical-btn-primary:disabled {
+  background-color: var(--surface);
+  color: var(--muted-foreground-2);
+  border-color: var(--layer-line);
+  box-shadow: none;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.clinical-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-8);
+  background-color: var(--layer);
+  color: var(--layer-foreground);
+  font-weight: 600;
+  font-size: var(--font-size-12);
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--control-border);
+  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.clinical-btn-secondary:hover:not(:disabled) {
+  background-color: var(--layer-hover);
+}
+
+/* Phase 2.7: Accessible Comfort Controls (Font Scale & Reduce Motion) */
+html.font-scale-115 {
+  font-size: 17.25px;
+}
+html.font-scale-130 {
+  font-size: 19.5px;
+}
+
+@media (min-width: 1280px) {
+  html.font-scale-115 {
+    font-size: 17.8px;
+  }
+  html.font-scale-130 {
+    font-size: 20.15px;
+  }
+}
+
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Display & Accessibility Overrides */
+html.high-contrast {
+  --control-border: #334155;
+  --line-2: #64748b;
+  --card-line: #64748b;
+}
+html.high-contrast.dark {
+  --control-border: #cbd5e1;
+  --line-2: #94a3b8;
+  --card-line: #94a3b8;
+}
+
+html.large-hit-targets button:not(.compact-btn),
+html.large-hit-targets input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html.large-hit-targets select,
+html.large-hit-targets summary,
+html.large-hit-targets [role="button"] {
+  min-height: 44px;
+}
+
+html.reduce-transparency *,
+html.reduce-transparency *::before,
+html.reduce-transparency *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html.reduce-transparency .shadow-xs,
+html.reduce-transparency .shadow-sm,
+html.reduce-transparency .shadow-md,
+html.reduce-transparency .shadow-lg,
+html.reduce-transparency .shadow-xl,
+html.reduce-transparency .shadow-2xl {
+  box-shadow: none !important;
+}
+
+html.density-compact .clinical-card {
+  padding: 0.75rem;
+}
+html.density-comfortable .clinical-card {
+  padding: 1.5rem;
+}
+
+.app-content-shell {
+  width: 100%;
+  margin-inline: auto;
+  max-width: var(--app-max-width, 100%);
+}
+html.content-width-full .app-content-shell .max-w-7xl,
+html.content-width-full .app-content-shell .max-w-6xl {
+  max-width: 100% !important;
+}
+html.content-width-wide .app-content-shell .max-w-7xl {
+  max-width: 96rem !important;
+}
+html.content-width-narrow .app-content-shell .max-w-7xl {
+  max-width: 72rem !important;
+}
+
+/* Phase 4.6: Printable Clinical & Financial Documents (@media print) */
+@page {
+  size: A4 portrait;
+  margin: 12mm 14mm;
+}
+
+@media print {
+  body.printing-clinical-doc {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body.printing-clinical-doc #root {
+    display: none !important;
+  }
+
+  body.printing-clinical-doc #physiorecord-print-portal {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.printing-clinical-doc .print-modal-chrome {
+    display: none !important;
+  }
+
+  body.printing-clinical-doc .print-sheet-container {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  .print-break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "description": "PhysioRecord client bundle performance budget for low-end Windows laptops and mid-range Android tablets.",
+  "budgets": {
+    "maxEntryJsGzipBytes": 185000,
+    "maxInitialJsGzipBytes": 365000,
+    "maxEntryCssGzipBytes": 42000,
+    "maxSingleJsChunkRawBytes": 620000,
+    "minLazyJsChunkCount": 35
+  },
+  "requiredLazyChunkPrefixes": [
+    "SettingsModal-",
+    "PatientWorkspace-",
+    "IraqiFinancialLedgerView-",
+    "AppointmentScheduleView-",
+    "BackupRestoreModal-",
+    "RecoveryDrillModal-",
+    "BodyChartWidget-",
+    "FunctionalScalesWidget-"
+  ],
+  "runtimeTargetsMs": {
+    "unlockToRenderedCpu6xMs": 3500,
+    "directorySearchCpu6xMs": 800,
+    "openPatientWorkspaceCpu6xMs": 1800
+  }
+}

@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Build & typecheck artifacts
+build/
+dist/
+*.tsbuildinfo
+
+# Environment & secrets (keep template only)
+.env*
+!.env.example
+*.local
+
+# Cryptographic keys, certificates & signing stores
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.pem
+*.key
+*.crt
+
+# Local databases & encrypted/raw backups (never commit clinical data)
+*.ptbackup
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.db3
+*.bak
+
+# Logs, test, audit & temporary files
+*.log
+coverage/
+test-results/
+playwright-report/
+playwright/.cache/
+blob-report/
+ui-audit/
+.aistudio/
+.agents/
+.tmp/
+tmp/
+.cache/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini

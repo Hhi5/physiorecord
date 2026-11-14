@@ -1,0 +1,2148 @@
+// =======================================================================
+// PhysioRecord — Cryptographic Engine (Web Crypto API — Envelope Encryption v1.1)
+// 
+// Derived and adapted in part from Niema-Lab/PhysioMeter (src/crypto.js)
+// Licensed under the GNU General Public License v3.0 (GPL-3.0).
+// Original Copyright (c) 2024-2025 Niema-Lab.
+// =======================================================================
+
+/**
+ * CRYPTOGRAPHIC POLICY SPECIFICATION & ACCURACY NOTICE:
+ * 
+ * 1. Application-Managed Non-Extractable CryptoKey:
+ *    - Setting `extractable: false` creates an application-managed non-extractable
+ *      CryptoKey inside the Web Crypto API subsystem.
+ *    - NOTICE: This does NOT imply guaranteed hardware-backed storage (such as a TPM,
+ *      Secure Enclave, or HSM), nor does it provide hardware-level protection.
+ *    - Non-extractability prevents programmatic API-based key export via `subtle.exportKey('raw')`.
+ *    - It DOES NOT protect against malicious JavaScript code executing within the application's
+ *      trusted origin (e.g. XSS attacks or developer-tools memory inspection).
+ *    - Best-effort zeroing (`rawDek.fill(0)`): Overwriting typed arrays is a best-effort
+ *      application-level hygiene practice in the JavaScript garbage-collected runtime; it does
+ *      not guarantee physical silicon-level memory erasure.
+ * 
+ * 2. Complete HKDF Parameters & Domain Separation:
+ *    - Hash Function: SHA-256.
+ *    - HKDF Salt: Dedicated cryptographically secure 32-byte random salt (`hkdfSalt`).
+ *    - Derived Key Length: 256 bits (AES-256-GCM).
+ *    - Info Strings:
+ *      (a) DEK Wrapping: 'physiorecord-backup-dek-wrap-v1.1'
+ *      (b) Payload Encryption: 'physiorecord-backup-payload-enc-v1.1'
+ *    - Keys are NEVER reused across cryptographic purposes.
+ *    - Independent 96-bit IVs and distinct AAD domains are enforced.
+ * 
+ * 3. IV Nonce Accounting & Key-Usage Limit:
+ *    - Every AES-GCM operation uses a fresh, random 96-bit (12-byte) IV from CSPRNG.
+ *    - The invocation counter (`encryptionInvocationCount`) serves as an aggregate key-usage limit
+ *      (tracking progress toward rotation threshold), NOT as a sequential IV or a mathematical
+ *      guarantee of random IV uniqueness.
+ *    - Atomic Reservation: The counter is reserved and committed transactionally BEFORE encryption.
+ *      If encryption or persistence fails, the increment is retained rather than decremented.
+ *    - Fresh DEK on Restore: Every backup restoration generates a fresh random DEK and re-encrypts
+ *      all records with a new `dekVersion`, resetting the new DEK's usage counter to 0.
+ *    - Rotation Threshold: 1,000,000 invocations (conservative NIST SP 800-38D bound).
+ *    - Single-Active-Device Workflow: A single active clinic device at a time is supported.
+ * 
+ * 4. Maximum Backup Size Limit (Android Low-Memory Safety):
+ *    - Maximum tested backup payload limit: 25 MB (`MAX_BACKUP_SIZE_BYTES = 25 * 1024 * 1024`).
+ *    - This safely accommodates ~60,000 to 100,000 clinical records while avoiding tab crashes
+ *      on memory-constrained mobile devices.
+ */
+
+import {
+  VaultGenerationChangedError,
+  UnboundVaultKeyError,
+  type VaultMetaEntity,
+} from '../types/clinical';
+import type { PhysioRecordDatabase } from '../db/db';
+import { CLINICAL_STORES_REGISTRY, extractAndValidateParentIds } from '../db/registry';
+import { broadcastVaultEvent } from '../utils/vaultEvents';
+import { registerTestHooks } from '../utils/testHooks';
+
+const DEFAULT_PBKDF2_ITERATIONS = 600_000;
+const SALT_BYTES = 16;
+export const HKDF_SALT_BYTES = 32;
+const IV_BYTES = 12;
+const VERIFIER_PLAINTEXT = 'PHYSIORECORD_VAULT_OK';
+export const CURRENT_RECORD_CRYPTO_VERSION = 2;
+export const LEGACY_RECORD_CRYPTO_VERSION_V1 = 1;
+export const CURRENT_DEK_VERSION = 1;
+export const MAX_GCM_INVOCATIONS_PER_DEK = 1_000_000;
+export const CONSERVATIVE_ROTATION_THRESHOLD = MAX_GCM_INVOCATIONS_PER_DEK;
+export const AUTO_ROTATE_USAGE_RATIO = 0.7; // 70% threshold triggers automatic DEK rotation
+export const INVOCATION_RESERVATION_BLOCK_SIZE = 64;
+export const MAX_BACKUP_SIZE_BYTES = 25 * 1024 * 1024; // Soft legacy guardrail reference only; V3.0 chunks bypass 25MB limit
+
+export type CryptoBuffer = Uint8Array | ArrayBuffer;
+
+export interface SubtleCryptoCompat {
+  importKey(
+    format: 'raw',
+    keyData: CryptoBuffer,
+    algorithm: string | Record<string, unknown>,
+    extractable: boolean,
+    keyUsages: KeyUsage[]
+  ): Promise<CryptoKey>;
+  deriveKey(
+    algorithm: Record<string, unknown>,
+    baseKey: CryptoKey,
+    derivedKeyType: Record<string, unknown>,
+    extractable: boolean,
+    keyUsages: KeyUsage[]
+  ): Promise<CryptoKey>;
+  deriveBits(
+    algorithm: Record<string, unknown>,
+    baseKey: CryptoKey,
+    length: number
+  ): Promise<ArrayBuffer>;
+  encrypt(
+    algorithm: Record<string, unknown>,
+    key: CryptoKey,
+    data: CryptoBuffer
+  ): Promise<ArrayBuffer>;
+  decrypt(
+    algorithm: Record<string, unknown>,
+    key: CryptoKey,
+    data: CryptoBuffer
+  ): Promise<ArrayBuffer>;
+  sign(
+    algorithm: string | Record<string, unknown>,
+    key: CryptoKey,
+    data: CryptoBuffer
+  ): Promise<ArrayBuffer>;
+  digest(
+    algorithm: string,
+    data: CryptoBuffer
+  ): Promise<ArrayBuffer>;
+  exportKey(
+    format: 'raw',
+    key: CryptoKey
+  ): Promise<ArrayBuffer>;
+  generateKey(
+    algorithm: Record<string, unknown>,
+    extractable: boolean,
+    keyUsages: KeyUsage[]
+  ): Promise<CryptoKey>;
+}
+
+export const subtle: SubtleCryptoCompat = crypto.subtle as unknown as SubtleCryptoCompat;
+
+export interface VaultDatabaseHandle {
+  vaultMeta: {
+    get(id: string): Promise<VaultMetaEntity | undefined>;
+    update(id: string, changes: Partial<VaultMetaEntity>): Promise<number>;
+  };
+  transaction<T>(mode: 'rw', table: unknown, scope: () => Promise<T>): Promise<T>;
+}
+
+export class LockedVaultError extends Error {
+  constructor(message = 'قاعدة البيانات مقفلة. يرجى إدخال كلمة المرور أولاً.') {
+    super(message);
+    this.name = 'LockedVaultError';
+  }
+}
+
+export class DecryptionAuthError extends Error {
+  constructor(message = 'فشل التحقق من مصادقة السجل. قد تكون البيانات معطوبة أو تم التلاعب بها.') {
+    super(message);
+    this.name = 'DecryptionAuthError';
+  }
+}
+
+export class DekExhaustedError extends Error {
+  constructor(
+    message = 'تم الوصول إلى الحد الأقصى لاستخدام مفتاح التشفير (1,000,000 عملية). يلزم تدوير مفتاح DEK بشكل آمن قبل المتابعة.'
+  ) {
+    super(message);
+    this.name = 'DekExhaustedError';
+  }
+}
+
+export class BackupHeaderValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BackupHeaderValidationError';
+  }
+}
+
+/**
+ * Generate cryptographically secure random bytes
+ */
+export const randomBytes = (n: number): Uint8Array => {
+  const buf = new Uint8Array(n);
+  crypto.getRandomValues(buf);
+  return buf;
+};
+
+/**
+ * Derive Key Encryption Key (KEK) from password and salt
+ */
+export const deriveKEK = async (
+  password: string,
+  salt: Uint8Array,
+  iterations = DEFAULT_PBKDF2_ITERATIONS
+): Promise<CryptoKey> => {
+  const baseKey = await subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveKey']
+  );
+
+  return subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt,
+      iterations,
+      hash: 'SHA-256',
+    },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+};
+
+// -----------------------------------------------------------------------
+// Operational DEK (Non-Extractable)
+// -----------------------------------------------------------------------
+
+export interface InitializedVaultKeypair {
+  operationalDek: CryptoKey; // extractable: false
+  wrappedDek: Uint8Array;
+  wrappedDekIv: Uint8Array;
+  recoveryKeyFormatted?: string;
+  recoveryWrappedDek?: Uint8Array;
+  recoveryWrappedDekIv?: Uint8Array;
+  recoverySalt?: Uint8Array;
+  recoveryKdfIterations?: number;
+  recoveryKeyGroupSalt?: Uint8Array;
+  recoveryKeyGroupDigests?: string[];
+}
+
+// -----------------------------------------------------------------------
+// Domain-Separated HMAC Key Derivation for Session Sequence Tokens (Phase 2B.2)
+// -----------------------------------------------------------------------
+
+const sequenceHmacKeyRegistry = new WeakMap<CryptoKey, CryptoKey>();
+const recordHkdfKeyRegistry = new WeakMap<CryptoKey, CryptoKey>();
+
+export const registerSequenceHmacKey = (dek: CryptoKey, hmacKey: CryptoKey): void => {
+  sequenceHmacKeyRegistry.set(dek, hmacKey);
+};
+
+export const getSequenceHmacKey = (dek: CryptoKey): CryptoKey | undefined => {
+  return sequenceHmacKeyRegistry.get(dek);
+};
+
+export const registerRecordHkdfKey = (dek: CryptoKey, hkdfKey: CryptoKey): void => {
+  recordHkdfKeyRegistry.set(dek, hkdfKey);
+};
+
+export const getRecordHkdfKey = (dek: CryptoKey): CryptoKey | undefined => {
+  return recordHkdfKeyRegistry.get(dek);
+};
+
+/**
+ * Derive an independent non-extractable HKDF master base key from raw DEK bytes
+ * for per-record AES-256-GCM subkey derivation (recordCryptoVersion >= 2).
+ */
+export const deriveRecordHkdfBaseKey = async (rawDekBytes: Uint8Array): Promise<CryptoKey> => {
+  return await subtle.importKey(
+    'raw',
+    rawDekBytes,
+    'HKDF',
+    false,
+    ['deriveKey']
+  );
+};
+
+/**
+ * Derive an independent HMAC-SHA-256 subkey from master DEK bytes using HKDF-SHA-256.
+ * Uses dedicated domain-separated salt and info parameters to ensure cryptographic isolation.
+ */
+export const deriveSequenceHmacKey = async (rawDekBytes: Uint8Array): Promise<CryptoKey> => {
+  const hkdfKey = await subtle.importKey(
+    'raw',
+    rawDekBytes,
+    'HKDF',
+    false,
+    ['deriveKey']
+  );
+
+  return await subtle.deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: new TextEncoder().encode('physiorecord-sequence-hkdf-salt-v1.3'),
+      info: new TextEncoder().encode('physiorecord-session-sequence-token-v1.3'),
+    },
+    hkdfKey,
+    {
+      name: 'HMAC',
+      hash: 'SHA-256',
+      length: 256,
+    },
+    false, // strictly non-extractable!
+    ['sign', 'verify']
+  );
+};
+
+/**
+ * Compute an opaque, non-reversible HMAC-SHA-256 token for a session number within an episode.
+ * Protects session numbers from being stored as plaintext in IndexedDB sequence tables.
+ * Canonical input: `physiorecord:seq:${episodeId}:${Number(sessionNumber)}`
+ */
+export const computeSessionNumberHmacToken = async (
+  dek: CryptoKey,
+  episodeId: string,
+  sessionNumber: number
+): Promise<string> => {
+  const normalizedNum = Number(sessionNumber);
+  const canonicalInput = `physiorecord:seq:${episodeId}:${normalizedNum}`;
+  const dataBytes = new TextEncoder().encode(canonicalInput);
+
+  let hmacKey = getSequenceHmacKey(dek);
+
+  if (!hmacKey) {
+    // Fallback: If hmacKey is not registered, use SHA-256 digest of canonical input as a deterministic hash
+    const digestBuffer = await subtle.digest('SHA-256', dataBytes);
+    return Array.from(new Uint8Array(digestBuffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  const sigBuffer = await subtle.sign('HMAC', hmacKey, dataBytes);
+  return Array.from(new Uint8Array(sigBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+};
+
+// Map binding each in-memory operational CryptoKey (DEK) to its loaded vault generation epoch
+const dekGenerationMap = new WeakMap<CryptoKey, number>();
+
+/**
+ * Bind an operational CryptoKey (DEK) to its loaded vault generation epoch.
+ */
+export function bindDekToGeneration(dek: CryptoKey, generation: number): void {
+  if (dek && typeof generation === 'number') {
+    dekGenerationMap.set(dek, generation);
+  }
+}
+
+/**
+ * Retrieve the vault generation epoch bound to an operational DEK.
+ */
+export function getDekGeneration(dek: CryptoKey): number | undefined {
+  if (!dek) return undefined;
+  return dekGenerationMap.get(dek);
+}
+
+// -----------------------------------------------------------------------
+// Emergency Recovery Key (Master Backup Key) & Base32 Encoding (Phase 1B)
+// -----------------------------------------------------------------------
+
+const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+/**
+ * Encode arbitrary binary data as standard RFC 4648 Base32 string (without padding)
+ */
+export function encodeBase32(bytes: Uint8Array): string {
+  let bits = 0;
+  let value = 0;
+  let output = '';
+  for (let i = 0; i < bytes.length; i++) {
+    value = (value << 8) | bytes[i];
+    bits += 8;
+    while (bits >= 5) {
+      output += BASE32_ALPHABET[(value >>> (bits - 5)) & 31];
+      bits -= 5;
+    }
+  }
+  if (bits > 0) {
+    output += BASE32_ALPHABET[(value << (5 - bits)) & 31];
+  }
+  return output;
+}
+
+/**
+ * Decode standard Base32 string into binary bytes (case-insensitive, strips spaces and hyphens)
+ */
+export function decodeBase32(input: string): Uint8Array {
+  const cleaned = input.toUpperCase().replace(/[^A-Z2-7]/g, '');
+  let bits = 0;
+  let value = 0;
+  const bytes: number[] = [];
+  for (let i = 0; i < cleaned.length; i++) {
+    const idx = BASE32_ALPHABET.indexOf(cleaned[i]);
+    if (idx === -1) continue;
+    value = (value << 5) | idx;
+    bits += 5;
+    if (bits >= 8) {
+      bytes.push((value >>> (bits - 8)) & 255);
+      bits -= 8;
+    }
+  }
+  return new Uint8Array(bytes);
+}
+
+/**
+ * Format Base32 key into groups of 4 separated by hyphens for human readability
+ */
+export function formatRecoveryKey(keyStr: string): string {
+  const cleaned = keyStr.toUpperCase().replace(/[^A-Z2-7]/g, '');
+  const chunks: string[] = [];
+  for (let i = 0; i < cleaned.length; i += 4) {
+    chunks.push(cleaned.slice(i, i + 4));
+  }
+  return chunks.join('-');
+}
+
+export const RECOVERY_KDF_ITERATIONS = 100_000;
+
+/**
+ * Derive Key Encryption Key (KEK) from emergency recovery key bytes using PBKDF2-HMAC-SHA256
+ */
+export const deriveRecoveryKEK = async (
+  recoveryKeyBytes: Uint8Array,
+  salt: Uint8Array,
+  iterations = RECOVERY_KDF_ITERATIONS
+): Promise<CryptoKey> => {
+  const baseKey = await subtle.importKey(
+    'raw',
+    recoveryKeyBytes,
+    'PBKDF2',
+    false,
+    ['deriveKey']
+  );
+
+  return subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt,
+      iterations,
+      hash: 'SHA-256',
+    },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+};
+
+export interface WrappedRecoveryKeyResult {
+  recoveryKeyFormatted: string;
+  recoveryWrappedDek: Uint8Array;
+  recoveryWrappedDekIv: Uint8Array;
+  recoverySalt: Uint8Array;
+  recoveryKdfIterations: number;
+  recoveryKeyGroupSalt: Uint8Array;
+  recoveryKeyGroupDigests: string[];
+}
+
+export const QUARTERLY_RECOVERY_DRILL_MS = 90 * 24 * 60 * 60 * 1000;
+
+async function hashRecoveryGroupWithSalt(
+  salt: Uint8Array,
+  groupIndex: number,
+  normalizedGroup: string
+): Promise<string> {
+  const input = new TextEncoder().encode(
+    `physiorecord-recovery-grp:${groupIndex}:${normalizedGroup}`
+  );
+  const combined = new Uint8Array(salt.length + input.length);
+  combined.set(salt, 0);
+  combined.set(input, salt.length);
+  const digest = await subtle.digest('SHA-256', combined);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+export async function computeRecoveryGroupDigests(
+  recoveryKeyFormatted: string
+): Promise<{
+  recoveryKeyGroupSalt: Uint8Array;
+  recoveryKeyGroupDigests: string[];
+}> {
+  const clean = recoveryKeyFormatted
+    .toUpperCase()
+    .replace(/[^A-Z2-7]/g, '');
+  const recoveryKeyGroupSalt = randomBytes(SALT_BYTES);
+  const recoveryKeyGroupDigests: string[] = [];
+  for (let i = 0; i < 8; i++) {
+    const chunk = clean.slice(i * 4, i * 4 + 4);
+    recoveryKeyGroupDigests.push(
+      await hashRecoveryGroupWithSalt(recoveryKeyGroupSalt, i, chunk)
+    );
+  }
+  return { recoveryKeyGroupSalt, recoveryKeyGroupDigests };
+}
+
+export async function verifyRecoveryKeyGroup(
+  meta: VaultMetaEntity,
+  groupIndex: number,
+  candidateGroup: string
+): Promise<boolean> {
+  if (
+    !meta.recoveryKeyGroupSalt ||
+    !Array.isArray(meta.recoveryKeyGroupDigests) ||
+    groupIndex < 0 ||
+    groupIndex >= meta.recoveryKeyGroupDigests.length
+  ) {
+    return false;
+  }
+  const normalized = candidateGroup.toUpperCase().replace(/[^A-Z2-7]/g, '');
+  if (normalized.length !== 4) return false;
+  const expectedHex = meta.recoveryKeyGroupDigests[groupIndex];
+  const candidateHex = await hashRecoveryGroupWithSalt(
+    new Uint8Array(meta.recoveryKeyGroupSalt),
+    groupIndex,
+    normalized
+  );
+  const enc = new TextEncoder();
+  return constantTimeEqual(enc.encode(expectedHex), enc.encode(candidateHex));
+}
+
+export async function verifyAndBackfillRecoveryKeyForDrill(
+  database: PhysioRecordDatabase,
+  candidateFullKey: string
+): Promise<boolean> {
+  const meta = await database.vaultMeta.get('auth');
+  if (!meta?.recoveryWrappedDek || !meta.recoveryWrappedDekIv || !meta.recoverySalt) {
+    return false;
+  }
+  try {
+    const raw = await unwrapDEKWithRecoveryKey(
+      candidateFullKey,
+      meta.recoveryWrappedDek,
+      meta.recoveryWrappedDekIv,
+      meta.recoverySalt,
+      meta.recoveryKdfIterations || RECOVERY_KDF_ITERATIONS
+    );
+    raw.fill(0);
+    const { recoveryKeyGroupSalt, recoveryKeyGroupDigests } =
+      await computeRecoveryGroupDigests(candidateFullKey);
+    await database.vaultMeta.update('auth', {
+      recoveryKeyGroupSalt,
+      recoveryKeyGroupDigests,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function recordRecoveryDrillSuccess(
+  database: PhysioRecordDatabase,
+  verifiedAtIso: string = new Date().toISOString()
+): Promise<string> {
+  await database.vaultMeta.update('auth', {
+    lastRecoveryDrillAt: verifiedAtIso,
+  });
+  return verifiedAtIso;
+}
+
+export function isQuarterlyRecoveryDrillDue(
+  meta: VaultMetaEntity | undefined | null,
+  nowMs: number = Date.now()
+): boolean {
+  if (!meta) return false;
+  if (meta.lastRecoveryDrillAt === undefined) return true;
+  if (meta.lastRecoveryDrillAt === '') return true;
+  const parsed = Date.parse(meta.lastRecoveryDrillAt);
+  if (Number.isNaN(parsed)) return true;
+  return nowMs - parsed >= QUARTERLY_RECOVERY_DRILL_MS;
+}
+
+/**
+ * Generate a high-entropy 20-byte (160-bit) Emergency Recovery Key, derive its KEK,
+ * wrap the provided raw DEK bytes under AES-256-GCM, and return the formatted Base32 key
+ * alongside the encrypted recovery wrapped DEK payload.
+ */
+export const generateAndWrapRecoveryKey = async (
+  rawDekBytes: Uint8Array
+): Promise<WrappedRecoveryKeyResult> => {
+  const rawRecoveryKey = randomBytes(20); // 160 bits CSPRNG entropy
+  const recoverySalt = randomBytes(SALT_BYTES);
+  const recoveryKdfIterations = RECOVERY_KDF_ITERATIONS;
+
+  try {
+    const recoveryKek = await deriveRecoveryKEK(rawRecoveryKey, recoverySalt, recoveryKdfIterations);
+    const recoveryWrappedDekIv = randomBytes(IV_BYTES);
+    const aad = new TextEncoder().encode('vault-recovery-dek-wrap:v1.1');
+    const ciphertext = await subtle.encrypt(
+      { name: 'AES-GCM', iv: recoveryWrappedDekIv, additionalData: aad },
+      recoveryKek,
+      rawDekBytes
+    );
+
+    const base32 = encodeBase32(rawRecoveryKey);
+    const recoveryKeyFormatted = formatRecoveryKey(base32);
+    const { recoveryKeyGroupSalt, recoveryKeyGroupDigests } =
+      await computeRecoveryGroupDigests(recoveryKeyFormatted);
+
+    return {
+      recoveryKeyFormatted,
+      recoveryWrappedDek: new Uint8Array(ciphertext),
+      recoveryWrappedDekIv,
+      recoverySalt,
+      recoveryKdfIterations,
+      recoveryKeyGroupSalt,
+      recoveryKeyGroupDigests,
+    };
+  } finally {
+    rawRecoveryKey.fill(0);
+  }
+};
+
+/**
+ * Unwrap raw DEK using Emergency Recovery Key Base32 string
+ */
+export const unwrapDEKWithRecoveryKey = async (
+  recoveryKeyString: string,
+  recoveryWrappedDek: Uint8Array,
+  recoveryWrappedDekIv: Uint8Array,
+  recoverySalt: Uint8Array,
+  recoveryKdfIterations = RECOVERY_KDF_ITERATIONS
+): Promise<Uint8Array> => {
+  const rawRecoveryKey = decodeBase32(recoveryKeyString);
+  if (rawRecoveryKey.length < 16) {
+    throw new Error('مفتاح الاسترداد غير صالح أو غير مكتمل (الحد الأدنى 16 بايت).');
+  }
+
+  try {
+    const recoveryKek = await deriveRecoveryKEK(rawRecoveryKey, recoverySalt, recoveryKdfIterations);
+    const aad = new TextEncoder().encode('vault-recovery-dek-wrap:v1.1');
+    const rawDekBuffer = await subtle.decrypt(
+      { name: 'AES-GCM', iv: recoveryWrappedDekIv, additionalData: aad },
+      recoveryKek,
+      recoveryWrappedDek
+    );
+    return new Uint8Array(rawDekBuffer);
+  } catch {
+    throw new Error('مفتاح الاسترداد غير صحيح أو بيانات الاسترداد تالفة.');
+  } finally {
+    rawRecoveryKey.fill(0);
+  }
+};
+
+/**
+ * Generate a new random 256-bit DEK, wrap it under Vault KEK and Emergency Recovery Key,
+ * and import the operational key as NON-EXTRACTABLE.
+ */
+export const generateAndWrapOperationalDEK = async (
+  vaultKek: CryptoKey,
+  generation = 1
+): Promise<InitializedVaultKeypair> => {
+  const rawDek = randomBytes(32); // 256 bits
+
+  // 1. Wrap raw DEK under Vault KEK using AES-256-GCM with domain AAD
+  const wrappedDekIv = randomBytes(IV_BYTES);
+  const wrapAad = new TextEncoder().encode('vault-dek-wrap:v1.1');
+  const cipherBuffer = await subtle.encrypt(
+    { name: 'AES-GCM', iv: wrappedDekIv, additionalData: wrapAad },
+    vaultKek,
+    rawDek
+  );
+
+  // 2. Import operational DEK as strictly NON-EXTRACTABLE
+  const operationalDek = await subtle.importKey(
+    'raw',
+    rawDek,
+    { name: 'AES-GCM', length: 256 },
+    false, // extractable: false (prevent API export)
+    ['encrypt', 'decrypt']
+  );
+
+  // 3. Bind DEK to vault generation epoch
+  bindDekToGeneration(operationalDek, generation);
+
+  // 4. Derive domain-separated HKDF subkeys (HMAC for sequences + HKDF base for per-record v2 keys)
+  const hmacKey = await deriveSequenceHmacKey(rawDek);
+  registerSequenceHmacKey(operationalDek, hmacKey);
+  const recordHkdfKey = await deriveRecordHkdfBaseKey(rawDek);
+  registerRecordHkdfKey(operationalDek, recordHkdfKey);
+
+  // 5. Generate and wrap emergency recovery key
+  const recoveryInfo = await generateAndWrapRecoveryKey(rawDek);
+
+  // 6. Best-effort zeroing of transient raw bytes in JS runtime
+  rawDek.fill(0);
+
+  return {
+    operationalDek,
+    wrappedDek: new Uint8Array(cipherBuffer),
+    wrappedDekIv,
+    recoveryKeyFormatted: recoveryInfo.recoveryKeyFormatted,
+    recoveryWrappedDek: recoveryInfo.recoveryWrappedDek,
+    recoveryWrappedDekIv: recoveryInfo.recoveryWrappedDekIv,
+    recoverySalt: recoveryInfo.recoverySalt,
+    recoveryKdfIterations: recoveryInfo.recoveryKdfIterations,
+    recoveryKeyGroupSalt: recoveryInfo.recoveryKeyGroupSalt,
+    recoveryKeyGroupDigests: recoveryInfo.recoveryKeyGroupDigests,
+  };
+};
+
+/**
+ * Unwrap the stored DEK using Vault KEK and import as NON-EXTRACTABLE.
+ */
+export const unwrapOperationalDEK = async (
+  wrappedDek: Uint8Array,
+  wrappedDekIv: Uint8Array,
+  vaultKek: CryptoKey,
+  generation: number = 1
+): Promise<CryptoKey> => {
+  try {
+    const wrapAad = new TextEncoder().encode('vault-dek-wrap:v1.1');
+    const rawDekBuffer = await subtle.decrypt(
+      { name: 'AES-GCM', iv: wrappedDekIv, additionalData: wrapAad },
+      vaultKek,
+      wrappedDek
+    );
+
+    const rawDekBytes = new Uint8Array(rawDekBuffer);
+    const operationalDek = await subtle.importKey(
+      'raw',
+      rawDekBytes,
+      { name: 'AES-GCM', length: 256 },
+      false, // strictly NON-EXTRACTABLE!
+      ['encrypt', 'decrypt']
+    );
+
+    // Bind DEK to vault generation epoch
+    bindDekToGeneration(operationalDek, generation);
+
+    // Derive domain-separated HKDF subkeys
+    const hmacKey = await deriveSequenceHmacKey(rawDekBytes);
+    registerSequenceHmacKey(operationalDek, hmacKey);
+    const recordHkdfKey = await deriveRecordHkdfBaseKey(rawDekBytes);
+    registerRecordHkdfKey(operationalDek, recordHkdfKey);
+
+    // Best-effort cleanup of raw bytes
+    rawDekBytes.fill(0);
+
+    return operationalDek;
+  } catch {
+    throw new Error('فشل فك تغليف مفتاح البيانات DEK. كلمة المرور غير صحيحة أو تم تعديل المفتاح المغلف.');
+  }
+};
+
+/**
+ * Backward compatibility helper for wrapping raw DEK
+ */
+export const wrapDEK = async (
+  rawDekOrKey: Uint8Array | CryptoKey,
+  kek: CryptoKey
+): Promise<{ wrappedDek: Uint8Array; wrappedDekIv: Uint8Array }> => {
+  let rawBytes: Uint8Array;
+  if (rawDekOrKey instanceof Uint8Array) {
+    rawBytes = rawDekOrKey;
+  } else {
+    rawBytes = new Uint8Array(await subtle.exportKey('raw', rawDekOrKey));
+  }
+  const iv = randomBytes(IV_BYTES);
+  const wrapAad = new TextEncoder().encode('vault-dek-wrap:v1.1');
+  const ciphertext = await subtle.encrypt(
+    { name: 'AES-GCM', iv, additionalData: wrapAad },
+    kek,
+    rawBytes
+  );
+  return {
+    wrappedDek: new Uint8Array(ciphertext),
+    wrappedDekIv: iv,
+  };
+};
+
+/**
+ * Backward compatibility helper for unwrapping DEK
+ */
+export const unwrapDEK = async (
+  wrappedDek: Uint8Array,
+  wrappedDekIv: Uint8Array,
+  kek: CryptoKey
+): Promise<CryptoKey> => {
+  return unwrapOperationalDEK(wrappedDek, wrappedDekIv, kek);
+};
+
+/**
+ * Generate a standalone DEK (for testing purposes), registering HKDF subkeys cleanly.
+ */
+export const generateDEK = async (extractable = false, generation = 1): Promise<CryptoKey> => {
+  const raw = randomBytes(32);
+  try {
+    const key = await subtle.importKey(
+      'raw',
+      raw,
+      { name: 'AES-GCM', length: 256 },
+      extractable,
+      ['encrypt', 'decrypt']
+    );
+    bindDekToGeneration(key, generation);
+    registerSequenceHmacKey(key, await deriveSequenceHmacKey(raw));
+    registerRecordHkdfKey(key, await deriveRecordHkdfBaseKey(raw));
+    return key;
+  } finally {
+    raw.fill(0);
+  }
+};
+
+/**
+ * Temporarily recover raw DEK bytes using in-memory Vault KEK for backup export.
+ * Note: The operational DEK remains non-extractable and untouched.
+ */
+export const decryptRawDEKForBackup = async (
+  wrappedDek: Uint8Array,
+  wrappedDekIv: Uint8Array,
+  vaultKek: CryptoKey
+): Promise<Uint8Array> => {
+  try {
+    const wrapAad = new TextEncoder().encode('vault-dek-wrap:v1.1');
+    const rawDekBuffer = await subtle.decrypt(
+      { name: 'AES-GCM', iv: wrappedDekIv, additionalData: wrapAad },
+      vaultKek,
+      wrappedDek
+    );
+    return new Uint8Array(rawDekBuffer);
+  } catch {
+    throw new Error('فشل استخراج مفتاح البيانات لإجراء النسخ الاحتياطي.');
+  }
+};
+
+// -----------------------------------------------------------------------
+// Complete HKDF Key Separation
+// -----------------------------------------------------------------------
+
+export interface BackupKeys {
+  backupDekWrapKey: CryptoKey;
+  backupPayloadEncKey: CryptoKey;
+}
+
+/**
+ * Derive separate, domain-isolated keys for backup operations using HKDF-SHA256:
+ * 1. backupDekWrapKey: For wrapping the DEK
+ * 2. backupPayloadEncKey: For encrypting the database payload snapshot
+ */
+export const deriveBackupKeys = async (
+  password: string,
+  pbkdf2Salt: Uint8Array,
+  hkdfSalt: Uint8Array,
+  iterations = DEFAULT_PBKDF2_ITERATIONS,
+  infoDekWrap = 'physiorecord-backup-dek-wrap-v1.1',
+  infoPayloadEnc = 'physiorecord-backup-payload-enc-v1.1'
+): Promise<BackupKeys> => {
+  // Step 1: PBKDF2 stretching to derive 256-bit master key material
+  const baseKey = await subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+
+  const masterBits = await subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: pbkdf2Salt,
+      iterations,
+      hash: 'SHA-256',
+    },
+    baseKey,
+    256 // 32 bytes
+  );
+
+  // Step 2: Import master bits as HKDF base key
+  const hkdfKey = await subtle.importKey(
+    'raw',
+    masterBits,
+    'HKDF',
+    false,
+    ['deriveKey']
+  );
+
+  // Clear transient master bits
+  new Uint8Array(masterBits).fill(0);
+
+  // Step 3: Domain-separated Key 1 for wrapping DEK
+  const backupDekWrapKey = await subtle.deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: hkdfSalt, // Dedicated random HKDF salt
+      info: new TextEncoder().encode(infoDekWrap),
+    },
+    hkdfKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+
+  // Step 4: Domain-separated Key 2 for encrypting database payload
+  const backupPayloadEncKey = await subtle.deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: hkdfSalt, // Dedicated random HKDF salt
+      info: new TextEncoder().encode(infoPayloadEnc),
+    },
+    hkdfKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+
+  return { backupDekWrapKey, backupPayloadEncKey };
+};
+
+/**
+ * Wrap raw DEK for backup using the dedicated backupDekWrapKey
+ */
+export const wrapDEKForBackup = async (
+  rawDek: Uint8Array,
+  backupDekWrapKey: CryptoKey
+): Promise<{ backupWrappedDek: Uint8Array; backupDekIv: Uint8Array }> => {
+  const backupDekIv = randomBytes(IV_BYTES);
+  const aad = new TextEncoder().encode('backup-dek-wrap:v1.1');
+  const cipherBuffer = await subtle.encrypt(
+    { name: 'AES-GCM', iv: backupDekIv, additionalData: aad },
+    backupDekWrapKey,
+    rawDek
+  );
+  return {
+    backupWrappedDek: new Uint8Array(cipherBuffer),
+    backupDekIv,
+  };
+};
+
+/**
+ * Unwrap raw DEK from backup using the dedicated backupDekWrapKey
+ */
+export const unwrapDEKFromBackup = async (
+  backupWrappedDek: Uint8Array,
+  backupDekIv: Uint8Array,
+  backupDekWrapKey: CryptoKey
+): Promise<Uint8Array> => {
+  try {
+    const aad = new TextEncoder().encode('backup-dek-wrap:v1.1');
+    const rawBuffer = await subtle.decrypt(
+      { name: 'AES-GCM', iv: backupDekIv, additionalData: aad },
+      backupDekWrapKey,
+      backupWrappedDek
+    );
+    return new Uint8Array(rawBuffer);
+  } catch {
+    throw new DecryptionAuthError(
+      'فشل فك تغليف مفتاح البيانات DEK من النسخة الاحتياطية. إما كلمة مرور النسخة خاطئة أو تم التلاعب بالمفتاح المغلف.'
+    );
+  }
+};
+
+/**
+ * Restoring on a destination device: Wrap restored raw DEK under destination Vault KEK,
+ * and import fresh non-extractable operational DEK.
+ */
+export const createDestinationVaultMetaFromRestoredDEK = async (
+  rawDek: Uint8Array,
+  newVaultPassword: string,
+  restoredInvocationCount = 0,
+  restoredDekVersion = CURRENT_DEK_VERSION
+): Promise<{
+  destinationOperationalDek: CryptoKey;
+  newVaultSalt: Uint8Array;
+  newWrappedDek: Uint8Array;
+  newWrappedDekIv: Uint8Array;
+  newVerifierIv: Uint8Array;
+  newVerifierCiphertext: Uint8Array;
+  restoredInvocationCount: number;
+  restoredDekVersion: number;
+}> => {
+  const newVaultSalt = randomBytes(SALT_BYTES);
+  const destinationVaultKek = await deriveKEK(newVaultPassword, newVaultSalt);
+
+  // Wrap under destination KEK
+  const newWrappedDekIv = randomBytes(IV_BYTES);
+  const wrapAad = new TextEncoder().encode('vault-dek-wrap:v1.1');
+  const cipherBuffer = await subtle.encrypt(
+    { name: 'AES-GCM', iv: newWrappedDekIv, additionalData: wrapAad },
+    destinationVaultKek,
+    rawDek
+  );
+
+  // Import non-extractable operational DEK for destination
+  const destinationOperationalDek = await subtle.importKey(
+    'raw',
+    rawDek,
+    { name: 'AES-GCM', length: 256 },
+    false, // strictly NON-EXTRACTABLE
+    ['encrypt', 'decrypt']
+  );
+
+  // Derive domain-separated HKDF subkeys
+  const hmacKey = await deriveSequenceHmacKey(rawDek);
+  registerSequenceHmacKey(destinationOperationalDek, hmacKey);
+  const recordHkdfKey = await deriveRecordHkdfBaseKey(rawDek);
+  registerRecordHkdfKey(destinationOperationalDek, recordHkdfKey);
+
+  // Generate verifier token for new destination password
+  const verifier = await generateVerifier(destinationVaultKek);
+
+  return {
+    destinationOperationalDek,
+    newVaultSalt,
+    newWrappedDek: new Uint8Array(cipherBuffer),
+    newWrappedDekIv,
+    newVerifierIv: verifier.verifierIv,
+    newVerifierCiphertext: verifier.verifierCiphertext,
+    restoredInvocationCount,
+    restoredDekVersion,
+  };
+};
+
+/**
+ * Encrypt the exported database snapshot payload for .ptbackup
+ * Uses Backup Payload Encryption Key with AES-256-GCM.
+ * The canonical JSON string of the backup header is passed as Additional Authenticated Data (AAD).
+ */
+export const encryptBackupPayload = async (
+  backupPayloadEncKey: CryptoKey,
+  headerAad: Uint8Array,
+  databasePayload: string | Uint8Array
+): Promise<{ backupDataIv: Uint8Array; ciphertext: Uint8Array }> => {
+  const iv = randomBytes(IV_BYTES);
+  const dataBytes = typeof databasePayload === 'string'
+    ? new TextEncoder().encode(databasePayload)
+    : databasePayload;
+
+  const cipherBuffer = await subtle.encrypt(
+    { name: 'AES-GCM', iv, additionalData: headerAad },
+    backupPayloadEncKey,
+    dataBytes
+  );
+
+  return {
+    backupDataIv: iv,
+    ciphertext: new Uint8Array(cipherBuffer),
+  };
+};
+
+/**
+ * Decrypt the database snapshot payload from .ptbackup
+ * Uses Backup Payload Encryption Key with AES-256-GCM and verifies the header AAD.
+ */
+export const decryptBackupPayload = async (
+  backupPayloadEncKey: CryptoKey,
+  headerAad: Uint8Array,
+  backupDataIv: Uint8Array,
+  ciphertext: Uint8Array
+): Promise<string> => {
+  try {
+    const plainBuffer = await subtle.decrypt(
+      { name: 'AES-GCM', iv: backupDataIv, additionalData: headerAad },
+      backupPayloadEncKey,
+      ciphertext
+    );
+    return new TextDecoder().decode(plainBuffer);
+  } catch {
+    throw new DecryptionAuthError(
+      'فشل التحقق من صحة ومصادقة حزمة النسخة الاحتياطية. إما تم تعديل الترويسة أو تلف ملف النسخ أو كلمة المرور غير صحيحة.'
+    );
+  }
+};
+
+/**
+ * Validate raw backup string BEFORE JSON.parse to prevent memory exhaustion or malicious inputs.
+ */
+export const validateRawBackupString = (
+  rawStr: string,
+  maxSizeBytes = 256 * 1024 * 1024
+): void => {
+  if (typeof rawStr !== 'string' || !rawStr.trim()) {
+    throw new BackupHeaderValidationError('ملف النسخة الاحتياطية فارغ أو غير صالح.');
+  }
+  if (rawStr.length > maxSizeBytes) {
+    throw new BackupHeaderValidationError(
+      `حجم ملف النسخة الخام (${rawStr.length} حرف) يتجاوز الحد الأقصى المسموح به (${maxSizeBytes} بايت) قبل معالجة JSON.`
+    );
+  }
+  if (rawStr.length < 50) {
+    throw new BackupHeaderValidationError('حجم ملف النسخة صغير جداً ولا يمكن أن يكون ملف نسخة صالحاً.');
+  }
+};
+
+/**
+ * Pre-validation of untrusted backup header BEFORE key derivation.
+ * Supports V1.1, V2.0, and V3.0 (compressed + chunked without 25MB hard limit).
+ */
+export const validateBackupHeaderPreDerivation = (
+  untrustedHeader: unknown,
+  maxPayloadSizeBytes = MAX_BACKUP_SIZE_BYTES
+): void => {
+  if (!untrustedHeader || typeof untrustedHeader !== 'object' || Array.isArray(untrustedHeader)) {
+    throw new BackupHeaderValidationError('بنية ترويسة ملف النسخة غير صالحة.');
+  }
+  const header = untrustedHeader as Record<string, unknown>;
+  const validMagics = [
+    'PHYSIORECORD_BACKUP_V1.1',
+    'PHYSIORECORD_BACKUP_V2.0',
+    'PHYSIORECORD_BACKUP_V3.0',
+  ];
+  if (!validMagics.includes(String(header.magic))) {
+    throw new BackupHeaderValidationError(`المعرف السحري غير صالح: ${String(header.magic)}`);
+  }
+  const isV3 = String(header.magic) === 'PHYSIORECORD_BACKUP_V3.0';
+  if (typeof header.exportDateUtc !== 'string' || !header.exportDateUtc || isNaN(Date.parse(header.exportDateUtc))) {
+    throw new BackupHeaderValidationError('تاريخ التصدير exportDateUtc غير صالح أو مفقود.');
+  }
+  if (typeof header.clinicTimezone !== 'string' || !header.clinicTimezone.trim()) {
+    throw new BackupHeaderValidationError('المنطقة الزمنية clinicTimezone غير صالحة أو مفقودة.');
+  }
+  if (typeof header.schemaVersion !== 'number' || !Number.isInteger(header.schemaVersion) || header.schemaVersion < 1) {
+    throw new BackupHeaderValidationError(`إصدار المخطط schemaVersion غير صالح: ${String(header.schemaVersion)}`);
+  }
+  if (header.kdfAlgorithm !== 'PBKDF2-HMAC-SHA256') {
+    throw new BackupHeaderValidationError(`خوارزمية KDF غير مدعومة: ${String(header.kdfAlgorithm)}`);
+  }
+  if (
+    typeof header.kdfIterations !== 'number' ||
+    !Number.isInteger(header.kdfIterations) ||
+    header.kdfIterations < 600_000 ||
+    header.kdfIterations > 5_000_000
+  ) {
+    throw new BackupHeaderValidationError(
+      `عدد دورات KDF يجب أن يكون بين 600,000 و 5,000,000 لتنسيق النسخة الاحتياطية (المقدم: ${String(header.kdfIterations)}).`
+    );
+  }
+  if (header.keyExpansion !== 'HKDF-SHA256') {
+    throw new BackupHeaderValidationError(`خوارزمية اشتقاق المفاتيح غير مدعومة: ${String(header.keyExpansion)}`);
+  }
+  if (header.hkdfHash !== 'SHA-256') {
+    throw new BackupHeaderValidationError(`تجزئة HKDF غير مدعومة: ${String(header.hkdfHash)}`);
+  }
+  const validDekWrapLabels = [
+    'physiorecord-backup-dek-wrap-v1.1',
+    'physiorecord-backup-dek-wrap-v2.0',
+    'physiorecord-backup-dek-wrap-v3.0',
+  ];
+  if (!validDekWrapLabels.includes(String(header.hkdfInfoDekWrap))) {
+    throw new BackupHeaderValidationError(`معرف hkdfInfoDekWrap غير مطابق: ${String(header.hkdfInfoDekWrap)}`);
+  }
+  const validPayloadEncLabels = [
+    'physiorecord-backup-payload-enc-v1.1',
+    'physiorecord-backup-payload-enc-v2.0',
+    'physiorecord-backup-payload-enc-v3.0',
+  ];
+  if (!validPayloadEncLabels.includes(String(header.hkdfInfoPayloadEnc))) {
+    throw new BackupHeaderValidationError(`معرف hkdfInfoPayloadEnc غير مطابق: ${String(header.hkdfInfoPayloadEnc)}`);
+  }
+  if (header.derivedKeyLengthBits !== 256) {
+    throw new BackupHeaderValidationError(`طول المفتاح المشتق derivedKeyLengthBits يجب أن يكون 256.`);
+  }
+
+  // Strictly validate byte arrays: length and byte-range [0..255]
+  const validateByteArray = (arr: unknown, expectedLen: number, name: string) => {
+    if (!arr || typeof arr !== 'object') throw new BackupHeaderValidationError(`حقل ${name} مفقود في الترويسة.`);
+    const indexable = arr as ArrayLike<unknown>;
+    const len = Array.isArray(arr) || arr instanceof Uint8Array ? arr.length : Object.keys(arr).length;
+    if (len !== expectedLen) {
+      throw new BackupHeaderValidationError(`طول ${name} غير مطابق (المطلوب ${expectedLen} بايت، الفعلي ${len}).`);
+    }
+    for (let i = 0; i < expectedLen; i++) {
+      const val = indexable[i];
+      if (typeof val !== 'number' || val < 0 || val > 255 || !Number.isInteger(val)) {
+        throw new BackupHeaderValidationError(`قيمة البايت في ${name}[${i}] غير صالحة.`);
+      }
+    }
+  };
+
+  validateByteArray(header.backupSalt, 16, 'ملح النسخة (backupSalt)');
+  validateByteArray(header.hkdfSalt, 32, 'ملح HKDF (hkdfSalt)');
+  validateByteArray(header.backupDekIv, 12, 'IV مفتاح النسخة (backupDekIv)');
+  validateByteArray(header.backupDataIv, 12, 'IV حمولة النسخة (backupDataIv)');
+
+  if (!header.backupWrappedDek || typeof header.backupWrappedDek !== 'object') {
+    throw new BackupHeaderValidationError('حقل المفتاح المغلف backupWrappedDek مفقود.');
+  }
+  const wrappedLen = Array.isArray(header.backupWrappedDek) || header.backupWrappedDek instanceof Uint8Array
+    ? header.backupWrappedDek.length
+    : Object.keys(header.backupWrappedDek).length;
+  if (wrappedLen < 16) {
+    throw new BackupHeaderValidationError('طول المفتاح المغلف backupWrappedDek غير صالح.');
+  }
+
+  if (typeof header.dekVersion !== 'number' || !Number.isInteger(header.dekVersion) || header.dekVersion < 1) {
+    throw new BackupHeaderValidationError(`رقم إصدار المفتاح dekVersion غير صالح: ${String(header.dekVersion)}`);
+  }
+  if (
+    typeof header.encryptionInvocationCount !== 'number' ||
+    !Number.isInteger(header.encryptionInvocationCount) ||
+    header.encryptionInvocationCount < 0 ||
+    header.encryptionInvocationCount > MAX_GCM_INVOCATIONS_PER_DEK
+  ) {
+    throw new BackupHeaderValidationError(`عداد استدعاءات التشفير encryptionInvocationCount خارج النطاق المسموح.`);
+  }
+  const effectiveMaxPayload = isV3 ? 256 * 1024 * 1024 : maxPayloadSizeBytes;
+  if (
+    typeof header.payloadLength !== 'number' ||
+    header.payloadLength <= 0 ||
+    header.payloadLength > effectiveMaxPayload
+  ) {
+    throw new BackupHeaderValidationError(
+      `حجم حمولة النسخة (${String(header.payloadLength)} بايت) غير صالح أو يتجاوز الحد الأقصى (${effectiveMaxPayload} بايت).`
+    );
+  }
+  if (isV3) {
+    if (header.compression !== 'gzip') {
+      throw new BackupHeaderValidationError(`خوارزمية الضغط غير مدعومة في V3.0: ${String(header.compression)}`);
+    }
+    if (typeof header.totalChunks !== 'number' || !Number.isInteger(header.totalChunks) || header.totalChunks < 1) {
+      throw new BackupHeaderValidationError('عدد الأجزاء totalChunks غير صالح في النسخة V3.0.');
+    }
+    if (typeof header.chunkSizeBytes !== 'number' || !Number.isInteger(header.chunkSizeBytes) || header.chunkSizeBytes < 1024) {
+      throw new BackupHeaderValidationError('حجم الجزء chunkSizeBytes غير صالح في النسخة V3.0.');
+    }
+  }
+};
+
+// -----------------------------------------------------------------------
+// Record Payload Encryption (AES-GCM + Canonical AAD)
+// -----------------------------------------------------------------------
+
+/**
+ * Canonical deterministic serialization of Additional Authenticated Data (AAD)
+ * Form: TableName:RecordId:ParentId1,ParentId2:recordCryptoVersion:dekVersion
+ */
+const toHex = (bytes: Uint8Array): string =>
+  Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+
+const constantTimeEqual = (a: Uint8Array, b: Uint8Array): boolean => {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a[i] ^ b[i];
+  }
+  return diff === 0;
+};
+
+/**
+ * Derive a single-use per-record AES-256-GCM key via HKDF-SHA-256 (recordCryptoVersion >= 2).
+ */
+export const derivePerRecordSubkey = async (
+  dek: CryptoKey,
+  tableName: string,
+  recordId: string,
+  dekVersion: number,
+  recordSalt: Uint8Array
+): Promise<CryptoKey> => {
+  const hkdfBaseKey = getRecordHkdfKey(dek);
+  if (!hkdfBaseKey) {
+    throw new UnboundVaultKeyError(
+      'مفتاح التشفير التشغيلي (DEK) يفتقر إلى قاعدة اشتقاق المفاتيح الفرعية HKDF. يرجى إعادة فتح الخزينة.'
+    );
+  }
+  const info = new TextEncoder().encode(
+    `PhysioRecord_V2_Subkey:${tableName}:${recordId}:dek${dekVersion}`
+  );
+  return await subtle.deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: recordSalt,
+      info,
+    },
+    hkdfBaseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+};
+
+/**
+ * Import raw 256-bit DEK bytes into a strictly NON-EXTRACTABLE operational CryptoKey,
+ * binding it to vaultGeneration and registering all HKDF domain subkeys.
+ */
+export const importOperationalDekFromRawBytes = async (
+  rawDekBytes: Uint8Array,
+  generation: number
+): Promise<CryptoKey> => {
+  const operationalDek = await subtle.importKey(
+    'raw',
+    rawDekBytes,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+  bindDekToGeneration(operationalDek, generation);
+  registerSequenceHmacKey(operationalDek, await deriveSequenceHmacKey(rawDekBytes));
+  registerRecordHkdfKey(operationalDek, await deriveRecordHkdfBaseKey(rawDekBytes));
+  return operationalDek;
+};
+
+export const buildCanonicalAAD = (
+  tableName: string,
+  recordId: string,
+  parentIds: string[] = [],
+  recordCryptoVersion: number = CURRENT_RECORD_CRYPTO_VERSION,
+  dekVersion: number = CURRENT_DEK_VERSION,
+  recordSalt?: Uint8Array
+): Uint8Array => {
+  const baseStr = `${tableName}:${recordId}:${parentIds.join(',')}:${recordCryptoVersion}:${dekVersion}`;
+  const canonicalStr = recordSalt && recordSalt.length > 0 ? `${baseStr}:${toHex(recordSalt)}` : baseStr;
+  return new TextEncoder().encode(canonicalStr);
+};
+
+export const encryptRecordPayload = async <T>(
+  dek: CryptoKey,
+  tableName: string,
+  recordId: string,
+  parentIds: string[] = [],
+  data: T,
+  recordCryptoVersion: number = CURRENT_RECORD_CRYPTO_VERSION,
+  dekVersion: number = CURRENT_DEK_VERSION
+): Promise<{ iv: Uint8Array; ciphertext: Uint8Array; recordSalt?: Uint8Array }> => {
+  const iv = randomBytes(IV_BYTES);
+  const plaintext = new TextEncoder().encode(JSON.stringify(data));
+
+  if (recordCryptoVersion >= 2) {
+    const recordSalt = randomBytes(SALT_BYTES);
+    const subkey = await derivePerRecordSubkey(dek, tableName, recordId, dekVersion, recordSalt);
+    const aad = buildCanonicalAAD(
+      tableName,
+      recordId,
+      parentIds,
+      recordCryptoVersion,
+      dekVersion,
+      recordSalt
+    );
+    const cipherBuffer = await subtle.encrypt(
+      { name: 'AES-GCM', iv, additionalData: aad },
+      subkey,
+      plaintext
+    );
+    const rawCipher = new Uint8Array(cipherBuffer);
+    const framedCiphertext = new Uint8Array(recordSalt.length + rawCipher.length);
+    framedCiphertext.set(recordSalt, 0);
+    framedCiphertext.set(rawCipher, recordSalt.length);
+    return { iv, ciphertext: framedCiphertext, recordSalt };
+  }
+
+  const aad = buildCanonicalAAD(tableName, recordId, parentIds, recordCryptoVersion, dekVersion);
+  const cipherBuffer = await subtle.encrypt(
+    { name: 'AES-GCM', iv, additionalData: aad },
+    dek,
+    plaintext
+  );
+
+  return { iv, ciphertext: new Uint8Array(cipherBuffer) };
+};
+
+/**
+ * Centralized record encryption with MANDATORY transactional DEK counter reservation.
+ * Atomically reserves the invocation counter on database.vaultMeta BEFORE encrypting.
+ * Throws DekExhaustedError if limit (1,000,000) reached.
+ * 
+ * Cryptographic & Architectural Guarantees:
+ * 1. The counter increment is committed in its own IndexedDB transaction before encryption.
+ * 2. If encryption fails, the increment is retained (never decremented).
+ * 3. Web Crypto API operations run outside the IndexedDB transaction.
+ */
+export const encryptRecordWithMandatoryReservation = async <T>(
+  database: VaultDatabaseHandle,
+  dek: CryptoKey,
+  tableName: string,
+  recordId: string,
+  parentIds: string[] = [],
+  data: T,
+  recordCryptoVersion: number = CURRENT_RECORD_CRYPTO_VERSION,
+  dekVersion: number = CURRENT_DEK_VERSION,
+  explicitExpectedGeneration?: number
+): Promise<{ iv: Uint8Array; ciphertext: Uint8Array; recordSalt?: Uint8Array; reservedCount: number }> => {
+  // Step 1: Enforce fail-closed key-bound generation fence in the central crypto layer
+  const actualBoundGeneration = getDekGeneration(dek);
+  if (actualBoundGeneration === undefined) {
+    throw new UnboundVaultKeyError(
+      `تم رفض تشفير السجل في الجدول "${tableName}": مفتاح التشفير التشغيلي (DEK) غير مرتبط بأي جيل خزينة معتمد (Unbound Vault Key). لا يمكن استهلاك العداد أو تشفير السجل السريري بمفتاح مجهول الجيل.`
+    );
+  }
+
+  if (
+    explicitExpectedGeneration !== undefined &&
+    explicitExpectedGeneration !== actualBoundGeneration
+  ) {
+    throw new VaultGenerationChangedError(
+      `تم رفض تشفير السجل في الجدول "${tableName}": الجيل الممرر صراحة (${explicitExpectedGeneration}) لا يطابق جيل الخزينة الفعلي المرتبط بالمفتاح (${actualBoundGeneration}).`
+    );
+  }
+
+  const reservedCount = await atomicReserveInvocationCount(database, dek, 1);
+
+  // Step 2: Encrypt payload OUTSIDE the IndexedDB transaction
+  const { iv, ciphertext, recordSalt } = await encryptRecordPayload(
+    dek,
+    tableName,
+    recordId,
+    parentIds,
+    data,
+    recordCryptoVersion,
+    dekVersion
+  );
+
+  return { iv, ciphertext, recordSalt, reservedCount };
+};
+
+/**
+ * Decrypt record payload supporting both v1 (direct DEK) and v2 (HKDF per-record subkeys).
+ */
+export const decryptRecordPayload = async <T>(
+  dek: CryptoKey,
+  tableName: string,
+  recordId: string,
+  parentIds: string[] = [],
+  iv: Uint8Array,
+  ciphertext: Uint8Array,
+  recordCryptoVersion: number = CURRENT_RECORD_CRYPTO_VERSION,
+  dekVersion: number = CURRENT_DEK_VERSION,
+  explicitRecordSalt?: Uint8Array
+): Promise<T> => {
+  try {
+    if (recordCryptoVersion >= 2) {
+      if (!ciphertext || ciphertext.byteLength < SALT_BYTES + 16) {
+        throw new Error('v2 ciphertext truncated');
+      }
+      const embeddedSalt = ciphertext.slice(0, SALT_BYTES);
+      const actualCiphertext = ciphertext.slice(SALT_BYTES);
+      if (explicitRecordSalt && explicitRecordSalt.length > 0) {
+        if (!constantTimeEqual(explicitRecordSalt, embeddedSalt)) {
+          throw new Error('recordSalt mismatch');
+        }
+      }
+      const subkey = await derivePerRecordSubkey(
+        dek,
+        tableName,
+        recordId,
+        dekVersion,
+        embeddedSalt
+      );
+      const aad = buildCanonicalAAD(
+        tableName,
+        recordId,
+        parentIds,
+        recordCryptoVersion,
+        dekVersion,
+        embeddedSalt
+      );
+      const plainBuffer = await subtle.decrypt(
+        { name: 'AES-GCM', iv, additionalData: aad },
+        subkey,
+        actualCiphertext
+      );
+      const jsonStr = new TextDecoder().decode(plainBuffer);
+      return JSON.parse(jsonStr) as T;
+    }
+
+    const aad = buildCanonicalAAD(tableName, recordId, parentIds, recordCryptoVersion, dekVersion);
+    const plainBuffer = await subtle.decrypt(
+      { name: 'AES-GCM', iv, additionalData: aad },
+      dek,
+      ciphertext
+    );
+    const jsonStr = new TextDecoder().decode(plainBuffer);
+    return JSON.parse(jsonStr) as T;
+  } catch {
+    throw new DecryptionAuthError(
+      `فشل التحقق من مصادقة التشفير للسجل ${recordId} في جدول ${tableName}. إما تم التلاعب به أو تعديل معرّفاته أو رقم إصدار المفتاح (dekVersion).`
+    );
+  }
+};
+
+/**
+ * Generate password verifier token
+ */
+export const generateVerifier = async (
+  kek: CryptoKey
+): Promise<{ verifierIv: Uint8Array; verifierCiphertext: Uint8Array }> => {
+  const iv = randomBytes(IV_BYTES);
+  const plaintext = new TextEncoder().encode(VERIFIER_PLAINTEXT);
+  const cipherBuffer = await subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    kek,
+    plaintext
+  );
+  return {
+    verifierIv: iv,
+    verifierCiphertext: new Uint8Array(cipherBuffer),
+  };
+};
+
+/**
+ * Test whether candidate KEK correctly decrypts verifier token
+ */
+export const checkVerifier = async (
+  kek: CryptoKey,
+  verifierIv: Uint8Array,
+  verifierCiphertext: Uint8Array
+): Promise<boolean> => {
+  try {
+    const plainBuffer = await subtle.decrypt(
+      { name: 'AES-GCM', iv: verifierIv },
+      kek,
+      verifierCiphertext
+    );
+    const val = new TextDecoder().decode(plainBuffer);
+    return val === VERIFIER_PLAINTEXT;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Check whether cumulative invocations approach rotation threshold
+ */
+export const checkDekRotationThreshold = (
+  invocationCount: number,
+  threshold = CONSERVATIVE_ROTATION_THRESHOLD
+): { needsRotation: boolean; currentCount: number; remaining: number } => {
+  const needsRotation = invocationCount >= threshold;
+  const remaining = Math.max(0, threshold - invocationCount);
+  return { needsRotation, currentCount: invocationCount, remaining };
+};
+
+/**
+ * Reproducible PBKDF2 Benchmark Runner
+ */
+export const benchmarkKdf = async (
+  iterations = DEFAULT_PBKDF2_ITERATIONS,
+  sampleCount = 5
+): Promise<{ samples: number[]; medianMs: number; worstMs: number }> => {
+  const testPassword = 'Benchmarking_Secret_Password_123!';
+  const testSalt = randomBytes(SALT_BYTES);
+  const samples: number[] = [];
+
+  for (let i = 0; i < sampleCount; i++) {
+    const t0 = performance.now();
+    await deriveKEK(testPassword, testSalt, iterations);
+    const t1 = performance.now();
+    samples.push(Math.round(t1 - t0));
+  }
+
+  const sorted = [...samples].sort((a, b) => a - b);
+  const medianMs = sorted[Math.floor(sorted.length / 2)];
+  const worstMs = sorted[sorted.length - 1];
+
+  return { samples, medianMs, worstMs };
+};
+
+interface InvocationBlockState {
+  reservedUntil: number;
+  usedUpTo: number;
+  syncedGeneration: number;
+}
+
+const invocationBlockRegistry = new WeakMap<
+  CryptoKey,
+  WeakMap<VaultDatabaseHandle, InvocationBlockState>
+>();
+
+const getBlockState = (
+  dek: CryptoKey,
+  database: VaultDatabaseHandle
+): InvocationBlockState | undefined => {
+  return invocationBlockRegistry.get(dek)?.get(database);
+};
+
+const setBlockState = (
+  dek: CryptoKey,
+  database: VaultDatabaseHandle,
+  state: InvocationBlockState
+): void => {
+  let dbMap = invocationBlockRegistry.get(dek);
+  if (!dbMap) {
+    dbMap = new WeakMap();
+    invocationBlockRegistry.set(dek, dbMap);
+  }
+  dbMap.set(database, state);
+};
+
+export const clearInvocationBlockCache = (dek: CryptoKey, database: VaultDatabaseHandle): void => {
+  invocationBlockRegistry.get(dek)?.delete(database);
+};
+
+/**
+ * Reserve encryption invocation quota in blocks of INVOCATION_RESERVATION_BLOCK_SIZE (64)
+ * BEFORE AES-GCM encryption, avoiding 63/64 IndexedDB write transactions while remaining crash-safe.
+ */
+export const atomicReserveInvocationCount = async (
+  database: VaultDatabaseHandle,
+  dek: CryptoKey,
+  count = 1
+): Promise<number> => {
+  // Fail-Closed: Strictly require a valid CryptoKey object
+  if (!dek || typeof dek !== 'object') {
+    throw new UnboundVaultKeyError(
+      'تم رفض حجز عداد التشفير: لم يتم تمرير كائن مفتاح تشفير تشغيلي صالح (dek is not a valid CryptoKey). لا يمكن حجز عداد التشفير بدون مفتاح DEK موثوق.'
+    );
+  }
+
+  // 1. Extract generation strictly via getDekGeneration(dek) from WeakMap
+  const boundGeneration = getDekGeneration(dek);
+  if (boundGeneration === undefined) {
+    throw new UnboundVaultKeyError(
+      'تم رفض حجز عداد التشفير: مفتاح التشفير التشغيلي (DEK) غير مرتبط بأي جيل خزينة معتمد (Unbound Vault Key). لا يمكن حجز عداد التشفير بمفتاح مجهول الجيل.'
+    );
+  }
+
+  // 2. Fast path inside already-committed IndexedDB block (zero write amplification)
+  const cached = getBlockState(dek, database);
+  if (
+    cached &&
+    cached.syncedGeneration === boundGeneration &&
+    cached.usedUpTo + count <= cached.reservedUntil &&
+    cached.usedUpTo + count <= MAX_GCM_INVOCATIONS_PER_DEK
+  ) {
+    const liveMeta = await database.vaultMeta.get('auth');
+    if (!liveMeta) throw new LockedVaultError('الخزينة غير مهيأة.');
+    const liveGen = liveMeta.vaultGeneration ?? 1;
+    if (liveGen !== boundGeneration) {
+      throw new VaultGenerationChangedError(
+        `تم رفض العملية: جيل الخزينة في قاعدة البيانات (${liveGen}) لا يطابق جيل المفتاح التشغيلي المستخدم (${boundGeneration}) نتيجة استعادة كاملة في تبويب آخر. يرجى إعادة فتح الخزينة بالمفتاح الصحيح.`
+      );
+    }
+    const persistedCount = liveMeta.encryptionInvocationCount || 0;
+    // Detect external overrides above our reserved ceiling
+    if (persistedCount <= cached.reservedUntil) {
+      cached.usedUpTo += count;
+      return cached.usedUpTo;
+    }
+  }
+
+  // 3. Block exhausted or uncached -> reserve next block atomically in rw tx
+  return await database.transaction('rw', database.vaultMeta, async () => {
+    const meta = await database.vaultMeta.get('auth');
+    if (!meta) throw new LockedVaultError('الخزينة غير مهيأة.');
+
+    const currentGen = meta.vaultGeneration ?? 1;
+    if (currentGen !== boundGeneration) {
+      throw new VaultGenerationChangedError(
+        `تم رفض العملية: جيل الخزينة في قاعدة البيانات (${currentGen}) لا يطابق جيل المفتاح التشغيلي المستخدم (${boundGeneration}) نتيجة استعادة كاملة في تبويب آخر. يرجى إعادة فتح الخزينة بالمفتاح الصحيح.`
+      );
+    }
+
+    const current = meta.encryptionInvocationCount || 0;
+    if (current + count > MAX_GCM_INVOCATIONS_PER_DEK) {
+      throw new DekExhaustedError(
+        `تم الوصول إلى الحد الأقصى لاستخدام مفتاح التشفير (${MAX_GCM_INVOCATIONS_PER_DEK} عملية). يرجى إجراء تدوير آمن لمفتاح DEK قبل المتابعة.`
+      );
+    }
+    const remainingHeadroom = MAX_GCM_INVOCATIONS_PER_DEK - current;
+    const blockGrant = Math.min(remainingHeadroom, Math.max(count, INVOCATION_RESERVATION_BLOCK_SIZE));
+    const newReservedUntil = current + blockGrant;
+
+    await database.vaultMeta.update('auth', {
+      encryptionInvocationCount: newReservedUntil,
+    });
+
+    const newUsedUpTo = current + count;
+    setBlockState(dek, database, {
+      reservedUntil: newReservedUntil,
+      usedUpTo: newUsedUpTo,
+      syncedGeneration: currentGen,
+    });
+
+    return newUsedUpTo;
+  });
+};
+
+export const getEncryptionKeyUsageStatus = async (
+  database: VaultDatabaseHandle,
+  dek?: CryptoKey | null
+): Promise<{
+  persistedCount: number;
+  effectiveCount: number;
+  maxLimit: number;
+  usageRatio: number;
+  usagePercent: number;
+  shouldAutoRotate: boolean;
+}> => {
+  const meta = await database.vaultMeta.get('auth');
+  const persistedCount = meta?.encryptionInvocationCount || 0;
+  const cached = dek ? getBlockState(dek, database) : undefined;
+  const effectiveCount = cached ? Math.max(cached.usedUpTo, persistedCount) : persistedCount;
+  const usageRatio = Math.min(1, effectiveCount / MAX_GCM_INVOCATIONS_PER_DEK);
+  const usagePercent = Math.round(usageRatio * 1000) / 10;
+  return {
+    persistedCount,
+    effectiveCount,
+    maxLimit: MAX_GCM_INVOCATIONS_PER_DEK,
+    usageRatio,
+    usagePercent,
+    shouldAutoRotate: usageRatio >= AUTO_ROTATE_USAGE_RATIO,
+  };
+};
+
+export interface KeyRotationSummary {
+  rotatedStoreCounts: Record<string, number>;
+  totalRecordsRotated: number;
+  newDekVersion: number;
+  newVaultGeneration: number;
+  newOperationalDek: CryptoKey;
+  newRecoveryKeyFormatted?: string;
+}
+
+/**
+ * Rotates the operational Data Encryption Key (DEK) across ALL registered clinical stores
+ * (patients, episodes, sessions, soapNotes, clinicalAddenda, appointments, waitingList,
+ * invoices, payments, expenses, auditLogs, staffState, episodeClinical, customWidgets, migrationReports).
+ *
+ * Atomically decrypts with old DEK, re-encrypts under fresh DEK with new dekVersion,
+ * verifies every record via decrypt, commits in a single Dexie transaction, and advances vaultGeneration.
+ */
+export const rotateAllKeys = async (
+  database: PhysioRecordDatabase,
+  currentOperationalDek: CryptoKey,
+  currentVaultKek: CryptoKey
+): Promise<KeyRotationSummary> => {
+  const meta = await database.vaultMeta.get('auth');
+  if (!meta) {
+    throw new LockedVaultError('الخزينة غير مهيأة لإجراء تدوير المفاتيح.');
+  }
+
+  const currentGen = meta.vaultGeneration ?? 1;
+  const nextGen = currentGen + 1;
+  const newDekVersion = (meta.dekVersion || CURRENT_DEK_VERSION) + 1;
+
+  // 1. Generate fresh random 256-bit DEK
+  const freshRawDek = randomBytes(32);
+
+  try {
+    // 2. Wrap new DEK under active Vault KEK
+    const newWrappedDekIv = randomBytes(IV_BYTES);
+    const wrapAad = new TextEncoder().encode('vault-dek-wrap:v1.1');
+    const cipherBuffer = await subtle.encrypt(
+      { name: 'AES-GCM', iv: newWrappedDekIv, additionalData: wrapAad },
+      currentVaultKek,
+      freshRawDek
+    );
+
+    // 3. Import new DEK as non-extractable operational CryptoKey
+    const newOperationalDek = await subtle.importKey(
+      'raw',
+      freshRawDek,
+      { name: 'AES-GCM', length: 256 },
+      false, // non-extractable
+      ['encrypt', 'decrypt']
+    );
+
+    // Bind to next vaultGeneration epoch and derive HKDF subkeys (HMAC + per-record HKDF base)
+    bindDekToGeneration(newOperationalDek, nextGen);
+    const newHmacKey = await deriveSequenceHmacKey(freshRawDek);
+    registerSequenceHmacKey(newOperationalDek, newHmacKey);
+    const newRecordHkdfKey = await deriveRecordHkdfBaseKey(freshRawDek);
+    registerRecordHkdfKey(newOperationalDek, newRecordHkdfKey);
+
+    // Re-wrap fresh DEK under newly generated emergency recovery key (Phase 1B)
+    const newRecovery = await generateAndWrapRecoveryKey(freshRawDek);
+
+    // 4. Decrypt every record across ALL stores in CLINICAL_STORES_REGISTRY with old key,
+    // and re-encrypt under newOperationalDek with newDekVersion & CURRENT_RECORD_CRYPTO_VERSION
+    const stagedStores: Record<string, any[]> = {};
+    const rotatedStoreCounts: Record<string, number> = {};
+    let totalRecordsRotated = 0;
+
+    for (const storeDef of Object.values(CLINICAL_STORES_REGISTRY)) {
+      const storeName = storeDef.name;
+      const table = database.table(storeName);
+      stagedStores[storeName] = [];
+      rotatedStoreCounts[storeName] = 0;
+
+      if (!table) continue;
+
+      const records = await table.toArray();
+      for (const r of records) {
+        const parentIds = extractAndValidateParentIds(storeName, r);
+        const sourceDekVersion = r.dekVersion || meta.dekVersion || CURRENT_DEK_VERSION;
+        const sourceCryptoVersion = r.recordCryptoVersion || LEGACY_RECORD_CRYPTO_VERSION_V1;
+
+        const plaintext = await decryptRecordPayload<Record<string, unknown>>(
+          currentOperationalDek,
+          storeName,
+          r.id,
+          parentIds,
+          new Uint8Array(r.iv),
+          new Uint8Array(r.ciphertext),
+          sourceCryptoVersion,
+          sourceDekVersion,
+          r.recordSalt ? new Uint8Array(r.recordSalt) : undefined
+        );
+
+        const targetCryptoVersion = CURRENT_RECORD_CRYPTO_VERSION;
+        const encryptedNew = await encryptRecordPayload(
+          newOperationalDek,
+          storeName,
+          r.id,
+          parentIds,
+          plaintext,
+          targetCryptoVersion,
+          newDekVersion
+        );
+
+        const stagedRecord = {
+          ...r,
+          recordCryptoVersion: targetCryptoVersion,
+          dekVersion: newDekVersion,
+          iv: encryptedNew.iv,
+          ciphertext: encryptedNew.ciphertext,
+          ...(encryptedNew.recordSalt ? { recordSalt: encryptedNew.recordSalt } : {}),
+        };
+
+        stagedStores[storeName].push(stagedRecord);
+        totalRecordsRotated++;
+        rotatedStoreCounts[storeName]++;
+      }
+    }
+
+    // Also stage any active encrypted drafts in Dexie v10 `drafts` (excluded from portable backup)
+    const stagedDrafts: any[] = [];
+    const draftsTable = database.verno >= 10 ? database.table('drafts') : undefined;
+    if (draftsTable) {
+      const existingDrafts = await draftsTable.toArray();
+      for (const d of existingDrafts) {
+        const draftParents =
+          typeof d.patientId === 'string' && d.patientId.trim() ? [d.patientId] : [];
+        const sourceDekVersion = d.dekVersion || meta.dekVersion || CURRENT_DEK_VERSION;
+        const sourceCryptoVersion = d.recordCryptoVersion || LEGACY_RECORD_CRYPTO_VERSION_V1;
+        const plainDraft = await decryptRecordPayload<Record<string, unknown>>(
+          currentOperationalDek,
+          'drafts',
+          d.id,
+          draftParents,
+          new Uint8Array(d.iv),
+          new Uint8Array(d.ciphertext),
+          sourceCryptoVersion,
+          sourceDekVersion,
+          d.recordSalt ? new Uint8Array(d.recordSalt) : undefined
+        );
+        const encryptedDraft = await encryptRecordPayload(
+          newOperationalDek,
+          'drafts',
+          d.id,
+          draftParents,
+          plainDraft,
+          CURRENT_RECORD_CRYPTO_VERSION,
+          newDekVersion
+        );
+        stagedDrafts.push({
+          ...d,
+          recordCryptoVersion: CURRENT_RECORD_CRYPTO_VERSION,
+          dekVersion: newDekVersion,
+          iv: encryptedDraft.iv,
+          ciphertext: encryptedDraft.ciphertext,
+          ...(encryptedDraft.recordSalt ? { recordSalt: encryptedDraft.recordSalt } : {}),
+        });
+        totalRecordsRotated++;
+        rotatedStoreCounts['drafts'] = (rotatedStoreCounts['drafts'] || 0) + 1;
+      }
+    }
+
+    // 5. Verify every staged record can be cleanly decrypted with newOperationalDek
+    for (const sr of stagedDrafts) {
+      const draftParents =
+        typeof sr.patientId === 'string' && sr.patientId.trim() ? [sr.patientId] : [];
+      await decryptRecordPayload(
+        newOperationalDek,
+        'drafts',
+        sr.id,
+        draftParents,
+        sr.iv,
+        sr.ciphertext,
+        sr.recordCryptoVersion,
+        sr.dekVersion,
+        sr.recordSalt
+      );
+    }
+    for (const storeDef of Object.values(CLINICAL_STORES_REGISTRY)) {
+      const storeName = storeDef.name;
+      const stagedList = stagedStores[storeName] || [];
+      for (const sr of stagedList) {
+        const parentIds = storeDef.parentKeys
+          .map((k) => sr[k])
+          .filter((v): v is string => typeof v === 'string' && Boolean(v));
+        await decryptRecordPayload(
+          newOperationalDek,
+          storeName,
+          sr.id,
+          parentIds,
+          sr.iv,
+          sr.ciphertext,
+          sr.recordCryptoVersion,
+          sr.dekVersion,
+          sr.recordSalt
+        );
+      }
+    }
+
+    // 6. Commit atomic replacement in Dexie transaction
+    const tablesToLock = [
+      ...Object.keys(CLINICAL_STORES_REGISTRY)
+        .map((name) => database.table(name))
+        .filter(Boolean),
+      ...(draftsTable ? [draftsTable] : []),
+      database.vaultMeta,
+    ];
+
+    await database.transaction('rw', tablesToLock, async () => {
+      for (const storeDef of Object.values(CLINICAL_STORES_REGISTRY)) {
+        const table = database.table(storeDef.name);
+        const stagedList = stagedStores[storeDef.name];
+        if (table && stagedList && stagedList.length > 0) {
+          await table.clear();
+          await table.bulkPut(stagedList);
+        }
+      }
+      if (draftsTable && stagedDrafts.length > 0) {
+        await draftsTable.clear();
+        await draftsTable.bulkPut(stagedDrafts);
+      }
+
+      await database.vaultMeta.put({
+        ...meta,
+        wrappedDek: new Uint8Array(cipherBuffer),
+        wrappedDekIv: newWrappedDekIv,
+        dekVersion: newDekVersion,
+        encryptionInvocationCount: totalRecordsRotated,
+        vaultGeneration: nextGen,
+        recoveryWrappedDek: newRecovery.recoveryWrappedDek,
+        recoveryWrappedDekIv: newRecovery.recoveryWrappedDekIv,
+        recoverySalt: newRecovery.recoverySalt,
+        recoveryKdfIterations: newRecovery.recoveryKdfIterations,
+        recoveryKeyGroupSalt: newRecovery.recoveryKeyGroupSalt,
+        recoveryKeyGroupDigests: newRecovery.recoveryKeyGroupDigests,
+      });
+    });
+
+    bindDekToGeneration(newOperationalDek, nextGen);
+
+    broadcastVaultEvent({
+      type: 'VAULT_GENERATION_CHANGED',
+      generation: nextGen,
+    });
+
+    return {
+      rotatedStoreCounts,
+      totalRecordsRotated,
+      newDekVersion,
+      newVaultGeneration: nextGen,
+      newOperationalDek,
+      newRecoveryKeyFormatted: newRecovery.recoveryKeyFormatted,
+    };
+  } finally {
+    freshRawDek.fill(0);
+  }
+};
+
+/**
+ * Check whether vaultMeta needs an automatic KDF upgrade (PBKDF2 >= 600,000 iterations and 16-byte salt).
+ */
+export function checkNeedsKdfUpgrade(meta: VaultMetaEntity): boolean {
+  return (
+    (meta.kdfIterations || 0) < DEFAULT_PBKDF2_ITERATIONS ||
+    !meta.salt ||
+    meta.salt.length < SALT_BYTES
+  );
+}
+
+/**
+ * Automatically upgrade Vault KDF upon unlock:
+ * Re-derives the Vault KEK using 600,000 iterations and a fresh 16-byte salt,
+ * then re-wraps the EXISTING operational DEK.
+ * Does NOT rotate the DEK itself or touch clinical records.
+ */
+export async function autoUpgradeVaultKdf(
+  database: { vaultMeta: { update: (id: string, changes: Partial<VaultMetaEntity>) => Promise<number> } },
+  currentMeta: VaultMetaEntity,
+  candidateKek: CryptoKey,
+  password: string
+): Promise<{ newVaultKek: CryptoKey; upgraded: boolean }> {
+  if (!checkNeedsKdfUpgrade(currentMeta)) {
+    return { newVaultKek: candidateKek, upgraded: false };
+  }
+
+  // 1. Recover existing raw DEK bytes using candidate KEK
+  const rawDekBytes = await decryptRawDEKForBackup(
+    currentMeta.wrappedDek,
+    currentMeta.wrappedDekIv,
+    candidateKek
+  );
+
+  try {
+    // 2. Generate fresh 16-byte salt and derive upgraded Vault KEK with 600,000 iterations
+    const newSalt = randomBytes(SALT_BYTES);
+    const newVaultKek = await deriveKEK(password, newSalt, DEFAULT_PBKDF2_ITERATIONS);
+
+    // 3. Re-wrap the EXISTING raw DEK under new Vault KEK
+    const { wrappedDek, wrappedDekIv } = await wrapDEK(rawDekBytes, newVaultKek);
+
+    // 4. Generate fresh verifier token under new KEK
+    const { verifierIv, verifierCiphertext } = await generateVerifier(newVaultKek);
+
+    // 5. Update vaultMeta in database without touching DEK or clinical records
+    await database.vaultMeta.update('auth', {
+      salt: newSalt,
+      wrappedDek,
+      wrappedDekIv,
+      verifierIv,
+      verifierCiphertext,
+      kdfIterations: DEFAULT_PBKDF2_ITERATIONS,
+    });
+
+    return { newVaultKek, upgraded: true };
+  } finally {
+    rawDekBytes.fill(0);
+  }
+}
+
+export interface ResetPasswordWithRecoveryKeyResult {
+  operationalDek: CryptoKey;
+  newVaultKek: CryptoKey;
+  newRecoveryKeyFormatted: string;
+}
+
+/**
+ * Emergency Password Reset using Recovery Key:
+ * Unwraps the operational DEK using the Emergency Recovery Key,
+ * allows setting a new vault password (wrapping the existing DEK under the new password),
+ * and CRUCIALLY rotates/regenerates the Emergency Recovery Key so the old one cannot be reused.
+ */
+export async function resetVaultPasswordWithRecoveryKey(
+  database: PhysioRecordDatabase,
+  recoveryKeyInput: string,
+  newPassword: string
+): Promise<ResetPasswordWithRecoveryKeyResult> {
+  if (newPassword.length < 10) {
+    throw new Error('يجب ألا تقل كلمة المرور الجديدة عن 10 خانات.');
+  }
+
+  const meta = await database.vaultMeta.get('auth');
+  if (!meta) {
+    throw new LockedVaultError('الخزينة غير مهيأة.');
+  }
+
+  if (!meta.recoveryWrappedDek || !meta.recoveryWrappedDekIv || !meta.recoverySalt) {
+    throw new Error('لا يوجد مفتاح استرداد طارئ مسجل لهذه الخزينة.');
+  }
+
+  // 1. Unwrap existing operational DEK using provided recovery key
+  const rawDekBytes = await unwrapDEKWithRecoveryKey(
+    recoveryKeyInput,
+    meta.recoveryWrappedDek,
+    meta.recoveryWrappedDekIv,
+    meta.recoverySalt,
+    meta.recoveryKdfIterations || RECOVERY_KDF_ITERATIONS
+  );
+
+  try {
+    // 2. Derive new Vault KEK with fresh 16-byte salt and 600,000 iterations
+    const newVaultSalt = randomBytes(SALT_BYTES);
+    const newVaultKek = await deriveKEK(newPassword, newVaultSalt, DEFAULT_PBKDF2_ITERATIONS);
+
+    // 3. Wrap existing raw DEK under new Vault KEK
+    const { wrappedDek, wrappedDekIv } = await wrapDEK(rawDekBytes, newVaultKek);
+
+    // 4. Generate new verifier token with new Vault KEK
+    const { verifierIv, verifierCiphertext } = await generateVerifier(newVaultKek);
+
+    // 5. CRUCIAL: Rotate/regenerate Recovery Key after it is used
+    const newRecovery = await generateAndWrapRecoveryKey(rawDekBytes);
+
+    const currentGen = meta.vaultGeneration ?? 1;
+
+    // 6. Import operational DEK as non-extractable CryptoKey bound to current generation
+    const operationalDek = await subtle.importKey(
+      'raw',
+      rawDekBytes,
+      { name: 'AES-GCM', length: 256 },
+      false, // non-extractable
+      ['encrypt', 'decrypt']
+    );
+    bindDekToGeneration(operationalDek, currentGen);
+
+    const hmacKey = await deriveSequenceHmacKey(rawDekBytes);
+    registerSequenceHmacKey(operationalDek, hmacKey);
+    const recordHkdfKey = await deriveRecordHkdfBaseKey(rawDekBytes);
+    registerRecordHkdfKey(operationalDek, recordHkdfKey);
+
+    // 7. Update vaultMeta atomically
+    await database.vaultMeta.update('auth', {
+      salt: newVaultSalt,
+      wrappedDek,
+      wrappedDekIv,
+      verifierIv,
+      verifierCiphertext,
+      kdfIterations: DEFAULT_PBKDF2_ITERATIONS,
+      recoveryWrappedDek: newRecovery.recoveryWrappedDek,
+      recoveryWrappedDekIv: newRecovery.recoveryWrappedDekIv,
+      recoverySalt: newRecovery.recoverySalt,
+      recoveryKdfIterations: newRecovery.recoveryKdfIterations,
+      recoveryKeyGroupSalt: newRecovery.recoveryKeyGroupSalt,
+      recoveryKeyGroupDigests: newRecovery.recoveryKeyGroupDigests,
+    });
+
+    // 8. Broadcast password change across open tabs
+    broadcastVaultEvent({
+      type: 'VAULT_PASSWORD_CHANGED',
+      generation: currentGen,
+    });
+
+    return {
+      operationalDek,
+      newVaultKek,
+      newRecoveryKeyFormatted: newRecovery.recoveryKeyFormatted,
+    };
+  } finally {
+    rawDekBytes.fill(0);
+  }
+}
+
+export const CONSTANTS = {
+  SALT_BYTES,
+  HKDF_SALT_BYTES,
+  IV_BYTES,
+  DEFAULT_PBKDF2_ITERATIONS,
+  CURRENT_RECORD_CRYPTO_VERSION,
+  LEGACY_RECORD_CRYPTO_VERSION_V1,
+  CURRENT_DEK_VERSION,
+  MAX_GCM_INVOCATIONS_PER_DEK,
+  CONSERVATIVE_ROTATION_THRESHOLD,
+  AUTO_ROTATE_USAGE_RATIO,
+  INVOCATION_RESERVATION_BLOCK_SIZE,
+  MAX_BACKUP_SIZE_BYTES,
+  RECOVERY_KDF_ITERATIONS,
+};
+
+// Safely register test hooks for test environments only (isolated/no-op in production)
+registerTestHooks({
+  generateAndWrapOperationalDEK,
+  deriveKEK,
+  encryptRecordPayload,
+  decryptRecordPayload,
+  encryptRecordWithMandatoryReservation,
+  atomicReserveInvocationCount,
+  getEncryptionKeyUsageStatus,
+  clearInvocationBlockCache,
+  derivePerRecordSubkey,
+  importOperationalDekFromRawBytes,
+  randomBytes,
+  bindDekToGeneration,
+  getDekGeneration,
+  UnboundVaultKeyError,
+  rotateAllKeys,
+  encodeBase32,
+  decodeBase32,
+  formatRecoveryKey,
+  generateAndWrapRecoveryKey,
+  unwrapDEKWithRecoveryKey,
+  checkNeedsKdfUpgrade,
+  autoUpgradeVaultKdf,
+  resetVaultPasswordWithRecoveryKey,
+});

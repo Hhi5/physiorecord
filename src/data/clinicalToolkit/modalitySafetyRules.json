@@ -1,0 +1,140 @@
+{
+  "schemaVersion": "1.0.0",
+  "license": "CC0-1.0",
+  "reviewedBySeniorPt": false,
+  "reviewStatusNote": "Clinical modality contraindication and precaution reference table written in original words. Must be reviewed and enabled by a senior physiotherapist before clinical enforcement.",
+  "rules": [
+    {
+      "id": "rule_tens_pacemaker",
+      "modalities": ["TENS", "IFC", "NMES", "SWD_Diathermy"],
+      "precautionId": "pacemaker_icd",
+      "severity": "absolute_contraindication",
+      "titleAr": "جهاز تنظيم ضربات القلب أو مزيل الرجفان (Pacemaker / ICD)",
+      "titleEn": "Demand Pacemaker / Implanted Cardioverter-Defibrillator (ICD)",
+      "rationaleAr": "التيارات الكهربائية (TENS / IFC / NMES) قد تتداخل مع استشعار وتشغيل منظم ضربات القلب أو الأجهزة الإلكترونية المزروعة.",
+      "rationaleEn": "Electrical stimulation currents can interfere with demand cardiac pacemakers and implanted electronic devices.",
+      "citation": "APTA / CSP Guidance for Safe Use of Electrophysical Agents; Cameron Physical Agents in Rehabilitation."
+    },
+    {
+      "id": "rule_estim_pregnancy",
+      "modalities": ["TENS", "IFC", "NMES", "SWD_Diathermy", "Ultrasound"],
+      "precautionId": "pregnancy",
+      "severity": "absolute_contraindication",
+      "titleAr": "الحمل (فوق منطقة البطن أو أسفل الظهر والحوض)",
+      "titleEn": "Pregnancy (over abdominal, pelvic, or lumbar region)",
+      "rationaleAr": "يُمنع تطبيق الإنفاذ الحراري العميق والموجات الصوتية والتيارات الكهربائية على الرحم أو البطن وأسفل الظهر أثناء الحمل.",
+      "rationaleEn": "Deep heating agents (SWD/Ultrasound) and pelvic/lumbar electrical currents are contraindicated over the gravid uterus.",
+      "citation": "CSP / APA Electrophysical Agents Clinical Standards."
+    },
+    {
+      "id": "rule_estim_dvt",
+      "modalities": ["TENS", "NMES", "Ultrasound", "SWD_Diathermy", "SuperficialHeat", "ManualTherapy"],
+      "precautionId": "suspected_dvt",
+      "severity": "absolute_contraindication",
+      "titleAr": "اشتباه خثار وريدي عميق (Suspected DVT)",
+      "titleEn": "Suspected Deep Vein Thrombosis (DVT) / Active Thrombophlebitis",
+      "rationaleAr": "التحفيز العضلي أو الحرارة أو التدليك والتحريك العميق على طرف مشتبه بإصابته بخثرة قد يسبب انفصال الصمة الخثرية.",
+      "rationaleEn": "Muscle contraction, local heating, or manual compression/mobilization over suspected DVT risks thrombus dislodgement.",
+      "citation": "Wells DVT Screening; APTA Acute Care & Electrophysical Precautions."
+    },
+    {
+      "id": "rule_malignancy_agents",
+      "modalities": ["Ultrasound", "SWD_Diathermy", "TENS", "NMES", "SuperficialHeat", "DryNeedling"],
+      "precautionId": "active_malignancy",
+      "severity": "absolute_contraindication",
+      "titleAr": "ورم خبيث نشط في منطقة العلاج",
+      "titleEn": "Active Malignancy Over Target Region",
+      "rationaleAr": "تجنب تطبيق الطاقة الحرارية أو الكهربائية أو الوخز مباشرة فوق الأورام النشطة إلا ضمن خطة طبية ملطفة موثقة.",
+      "rationaleEn": "Avoid thermal, acoustic, electrical, or needling energy over active tumor sites unless explicitly cleared for palliative care.",
+      "citation": "Cameron Physical Agents in Rehabilitation; Chartered Society of Physiotherapy EPA Guidelines."
+    },
+    {
+      "id": "rule_metal_swd_us",
+      "modalities": ["SWD_Diathermy"],
+      "precautionId": "metal_implants",
+      "severity": "absolute_contraindication",
+      "titleAr": "صفائح أو مسامير معدنية مزروعة (مع الإنفاذ الحراري القصير SWD)",
+      "titleEn": "Implanted Metal Hardware (with Shortwave Diathermy)",
+      "rationaleAr": "الحقول الكهرومغناطيسية تركز الحرارة داخل المعادن المزروعة وقد تسبب حروقاً نسيجية عميقة.",
+      "rationaleEn": "Electromagnetic fields concentrate heating around internal metal hardware, risking deep tissue thermal burns.",
+      "citation": "Shields et al. Shortwave Diathermy Safety Review."
+    },
+    {
+      "id": "rule_metal_precaution_us",
+      "modalities": ["Ultrasound", "TENS", "NMES", "DryNeedling"],
+      "precautionId": "metal_implants",
+      "severity": "precaution",
+      "titleAr": "وجود مثبتات معدنية داخلية (احتياط خاص بالشدة والموضع)",
+      "titleEn": "Internal Metal Implants (Intensity / Placement Precaution)",
+      "rationaleAr": "لا توضع أقطاب التحفيز أو الوخز أو الموجات الصوتية المستمرة عالية الشدة فوق مفصل صناعي أسمنتي أو بلاستيكي بشكل مباشر دون تقييم.",
+      "rationaleEn": "Exercise caution near cemented prostheses or superficial metal with thermal Ultrasound or electrode pathways.",
+      "citation": "CSP Safe Use of Electrophysical Agents."
+    },
+    {
+      "id": "rule_impaired_sensation",
+      "modalities": ["SuperficialHeat", "HotPack", "Cryotherapy", "SWD_Diathermy", "Ultrasound", "TENS"],
+      "precautionId": "impaired_sensation",
+      "severity": "precaution",
+      "titleAr": "ضعف أو فقدان الإحساس الحراري/الألمي",
+      "titleEn": "Impaired Thermal / Pain Sensation",
+      "rationaleAr": "غياب الإحساس يمنع المريض من التنبيه لارتفاع الحرارة أو التبريد الزائد، مما يرفع خطر الحروق أو عضة الصقيع.",
+      "rationaleEn": "Impaired sensory feedback prevents warning of excessive heat/cold or current intensity, increasing burn/frostbite risk.",
+      "citation": "Cameron Physical Agents in Rehabilitation."
+    },
+    {
+      "id": "rule_skin_lesion_infection",
+      "modalities": ["TENS", "IFC", "NMES", "Ultrasound", "DryNeedling", "ManualTherapy", "SuperficialHeat", "HotPack"],
+      "precautionId": "skin_lesion_infection",
+      "severity": "precaution",
+      "titleAr": "جرح مفتوح أو عدوى جلدية موضعية",
+      "titleEn": "Open Wound, Dermatitis, or Local Skin Infection",
+      "rationaleAr": "يُمنع وضع الأقطاب أو الإبر أو الجل غير المعقم أو الضغط اليدوي مباشرة فوق الجلد المصاب بالعدوى أو التقرح.",
+      "rationaleEn": "Do not place electrodes, non-sterile gel, dry needles, or manual contact directly across infected or broken skin.",
+      "citation": "CSP Infection Control & Dry Needling Hygiene Standards."
+    },
+    {
+      "id": "rule_epilepsy_estim",
+      "modalities": ["TENS", "IFC", "NMES"],
+      "precautionId": "epilepsy",
+      "severity": "precaution",
+      "titleAr": "الصرع (تجنب الرأس والرقبة والمجالات المتكررة)",
+      "titleEn": "Epilepsy / Seizure Disorder",
+      "rationaleAr": "يُحظر وضع أقطاب التحفيز على الرأس أو الرقبة أو الجيوب السباتية لدى مرضى الصرع مع التدرج الحذر في الشدة.",
+      "rationaleEn": "Avoid head/neck electrode placement in patients with seizure disorders and monitor response cautiously.",
+      "citation": "APTA Clinical Electrophysiology Guidelines."
+    },
+    {
+      "id": "rule_bleeding_needling",
+      "modalities": ["DryNeedling", "ManualTherapy", "SuperficialHeat", "HotPack"],
+      "precautionId": "bleeding_anticoagulation",
+      "severity": "precaution",
+      "titleAr": "اضطراب النزف أو تناول مميعات الدم (Anticoagulants)",
+      "titleEn": "Bleeding Disorder or Anticoagulant Therapy",
+      "rationaleAr": "الوخز بالإبر الجافة أو الضغط اليدوي القوي أو الحرارة العميقة قد يسبب أوراماً دموية واسعة عند تناول المميعات.",
+      "rationaleEn": "Dry needling, deep myofascial pressure, or vasodilation increases hematoma/bleeding risk under anticoagulation.",
+      "citation": "Dunning et al., Dry Needling Adverse Events & Safety; IFOMPT Risk Assessment."
+    },
+    {
+      "id": "rule_vascular_cryo_heat",
+      "modalities": ["Cryotherapy", "SuperficialHeat", "HotPack", "DryNeedling"],
+      "precautionId": "vascular_insufficiency",
+      "severity": "precaution",
+      "titleAr": "قصور الأوعية الدموية المحيطية أو مرض رينود",
+      "titleEn": "Peripheral Vascular Insufficiency / Raynaud's",
+      "rationaleAr": "نقص التروية المحيطية يزيد حساسية الأنسجة للتبريد الموضعي والتسخين المفاجئ.",
+      "rationaleEn": "Compromised arterial circulation elevates tissue ischemia risk with cold packs or intense thermal stress.",
+      "citation": "Cameron Physical Agents in Rehabilitation."
+    },
+    {
+      "id": "rule_acute_trauma_traction",
+      "modalities": ["Traction", "ManualTherapy", "SWD_Diathermy"],
+      "precautionId": "acute_inflammation_trauma",
+      "severity": "precaution",
+      "titleAr": "التهاب حاد أو رض حديث / اشتباه عدم استقرار مفصلي",
+      "titleEn": "Acute Inflammation, Recent Trauma, or Suspected Hypermobility/Fracture",
+      "rationaleAr": "الشد الميكانيكي أو المناورات اليدوية عالية الدرجة أو التسخين العميق قد يفاقم الالتهاب الحاد أو عدم الثبات.",
+      "rationaleEn": "Mechanical traction, vigorous joint mobilization, or deep heating may aggravate acute inflammation or instability.",
+      "citation": "IFOMPT Cervical/Spinal Screening & Maitland Selection Principles."
+    }
+  ]
+}

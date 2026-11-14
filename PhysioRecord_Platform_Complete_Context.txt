@@ -1,0 +1,407 @@
+================================================================================
+PHYSIORECORD (فيزيو ريكورد) — COMPLETE PLATFORM TECHNICAL & DOMAIN BRIEF
+================================================================================
+Generated from workspace: d:\Downloads\physiorecord---clinical-physical-therapy-ehr
+Purpose: Complete architectural, cryptographic, clinical, operational, UI/UX,
+and customization reference so any AI assistant (such as Claude) immediately
+understands the entire PhysioRecord codebase, workflows, invariants, and rules.
+================================================================================
+
+
+--------------------------------------------------------------------------------
+1. IDENTITY, MISSION & CORE PHILOSOPHY
+--------------------------------------------------------------------------------
+- Application Name: PhysioRecord (فيزيو ريكورد) — Clinical Physical Therapy EHR
+- Target Users: Physical therapy & rehabilitation outpatient clinics in Iraq
+  (built for desktops, laptops, tablets, and mobile browsers).
+- Primary Language & Locale:
+  - Arabic (default, full RTL `dir="rtl"`), using Gregorian calendar with Latin
+    digits (`ar-IQ-u-ca-gregory-nu-latn`), Iraqi Arabic month names
+    (كانون الثاني، شباط، آذار، ... تشرين الثاني، كانون الأول), and dd/mm/yyyy
+    display dates everywhere.
+  - Full bilingual English toggle (`en-GB` / `en-US`, LTR `dir="ltr"`).
+- Architecture: 100% Local-First, Zero-Cloud, Encrypted Client-Side EHR.
+  - All patient PHI and clinical documentation stays strictly inside the clinic's
+    local browser storage (IndexedDB via Dexie.js, envelope-encrypted via Web
+    Crypto API AES-256-GCM).
+  - No remote backend, no telemetry, no cloud sync. Data portability relies on
+    encrypted `.ptbackup` (v1.1) files exported/restored by clinic staff.
+- Clinical Domain Hierarchy:
+  Patient -> Episode of Care -> Clinical Session -> 1:1 SOAP Note (+ Append-Only Clinical Addenda)
+
+
+--------------------------------------------------------------------------------
+2. TECH STACK, COMMANDS & DEVELOPMENT ENVIRONMENT
+--------------------------------------------------------------------------------
+From package.json & vite.config.ts:
+- UI Framework: React 19 + TypeScript (strict mode) + Vite
+- Styling & Components: Tailwind CSS v4 (@tailwindcss/vite) + Preline UI v4
+- Local Persistence: Dexie.js v4.4.7 wrapping Browser IndexedDB
+- Cryptography: Browser Web Crypto API (window.crypto.subtle)
+- Icons & Motion: lucide-react, motion
+- Testing: Vitest
+- NPM Scripts:
+  - npm install        -> Install dependencies
+  - npm run dev        -> Start Vite dev server on port 3000 (--host=0.0.0.0)
+  - npm run lint       -> Type-check entire codebase via `tsc --noEmit`
+  - npm test           -> Run unit/security/migration tests via `vitest run`
+  - npm run build      -> Production bundle (`vite build`)
+  - npm run preview    -> Preview production build
+- Vite Config Notes:
+  - Alias `@` resolves to project root.
+  - Supports `DISABLE_HMR=true` env variable to disable HMR & file watching during
+    automated edits.
+- Shell Note (Windows): PowerShell is used; `rg` may not be installed on PATH.
+
+
+--------------------------------------------------------------------------------
+3. COMPLETE REPOSITORY DIRECTORY & FILE STRUCTURE
+--------------------------------------------------------------------------------
+Root Files:
+- package.json, tsconfig.json, vite.config.ts, index.html, metadata.json, README.md
+- backend_core.txt (legacy raw code dump archive; source of truth is `src/`)
+
+`src/` Breakdown:
+- Entry & Root:
+  - src/main.tsx
+  - src/App.tsx              -> Mounts Provider Stack + Lock Gate + AppLayout
+  - src/index.css            -> Tailwind/Preline CSS, font stack, contrast & responsive targets
+
+- Contexts (`src/context/`):
+  - ThemeContext.tsx         -> Light/Dark mode + 4 Preline clinical palettes
+  - LanguageContext.tsx      -> Arabic (RTL default) & English (LTR) + `t()` / `bi()`
+  - CurrencyContext.tsx      -> Primary clinic currency (defaults to IQD; 31 ISO 4217 options)
+  - VaultContext.tsx         -> Vault init, unlock, lock, recovery reset, password change,
+                                inactivity auto-lock (including manual minutes & 0 = Never), wipe
+  - PatientContext.tsx       -> Decrypt/refresh patients, save, archive/unarchive, safeguarded delete
+  - EpisodeContext.tsx       -> Per-patient Episode of Care CRUD, close/discharge, memory scrub on lock
+  - SessionContext.tsx       -> Per-episode Sessions, 1:1 SOAP notes, finalize, cancel, addenda
+
+- Database & Registry (`src/db/`):
+  - db.ts                    -> `PhysioRecordDatabase` (IndexedDB `'PhysioRecordDB'`, Dexie v1..v6)
+  - registry.ts              -> `CLINICAL_STORES_REGISTRY`, `EXCLUDED_DEVICE_STORES`,
+                                `validateSnapshotReferentialIntegrity()`
+
+- Cryptography & Recovery (`src/crypto/`):
+  - vault.ts                 -> KDF (PBKDF2), AES-256-GCM record encryption/decryption, AAD binding,
+                                DEK generation binding, atomic GCM invocation counter reservation
+  - backup.ts                -> `.ptbackup` v1.1 export, preview inspection, atomic restore
+  - recovery.ts              -> `PhysioRecordEmergencyRecoveryDB` internal safety net + external OS file save
+  - __tests__/               -> Characterization, KDF, recovery, auto-lock tests & fixtures
+
+- Services (`src/services/`):
+  - episodeService.ts        -> Episode encryption/decryption & referential validation
+  - sessionService.ts        -> Atomic cross-tab session numbering (HMAC tokens), canonical SHA-256 seals,
+                                finality enforcement, half-finalized repair, stale-tab concurrency guards
+  - soapService.ts           -> Strict 1:1 session-to-SOAP management, finality guard, append-only addenda
+  - clinicOperationsService.ts -> Staff roster & RBAC, Admin PIN, reception privacy blur, Exercise Library
+                                visibility toggle, appointments, weekly recurring schedules, waiting list,
+                                IQD/multi-currency invoices/payments/expenses, longitudinal snapshots,
+                                audit logs, PT_EXERCISE_CATALOG, hardcoded mock cleanup
+  - localStorageMigrationService.ts -> Cross-tab mutex (`navigator.locks`) migration from legacy
+                                plaintext localStorage keys into encrypted Dexie v5/v6 stores
+  - __tests__/               -> SOAP finalization & destructive/non-destructive migration tests
+
+- Layout & Global Modals (`src/components/layout/` & `src/components/`):
+  - layout/AppLayout.tsx     -> Global top bar, Ctrl/Cmd+K quick search, staff quick switcher + Admin PIN,
+                                mobile bottom navigation bar + More drawer, 7-day backup warning banner,
+                                modal orchestrator
+  - layout/Sidebar.tsx       -> Primary navigation rail (auto-collapses on patient pages & width < 1100px)
+  - LockScreen.tsx           -> First-time vault setup + 32-char Recovery Key verification, unlock gate,
+                                password reset via Recovery Key, destructive vault wipe
+  - PatientDirectory.tsx     -> Active/Archived directory with Grid & Table modes, gender & Red Flags filters
+  - PatientModal.tsx         -> Create/edit patient modal (Arabic/English names, DOB/age, gender, Iraqi PhoneInput,
+                                medical history, precautions, red flags, psychosocial notes)
+  - PatientProfile.tsx       -> Detailed patient demographics & clinical background view
+  - EpisodeModal.tsx, EpisodeSessionsView.tsx, EpisodeDischargeModal.tsx
+  - SessionModal.tsx, SoapModal.tsx, AddendumModal.tsx
+  - BackupRestoreModal.tsx   -> Export encrypted `.ptbackup` & multi-step verified Restore workflow
+  - SettingsModal.tsx        -> 5-tab Clinic & Developer Settings (Currency, Staff, Security, Modules, Developer)
+  - SyntheticDataModal.tsx   -> Opt-in synthetic Iraqi PT demo patients/records seeding & complete removal
+  - Navbar.tsx
+
+- Clinic Views (`src/components/clinic/`):
+  - ReceptionCommandCenterView.tsx -> Live Today's Queue (auto-materializing active weekly recurring schedules),
+                                Waiting List quick view, Pending Balances summary, Reception Privacy Blur toggle
+  - AppointmentScheduleView.tsx    -> Full calendar scheduler: Single-day & Weekly Recurring Schedules,
+                                custom DatePickerInput & TimePickerInput, preset/manual duration, room/therapist,
+                                Waiting List management, 8s Undo toast
+  - IraqiFinancialLedgerView.tsx   -> Invoices (`single_session` / `rehab_package` / `evaluation`), cash/ZainCash/
+                                QiCard/Other payment methods, partial payments, debt ledger, clinic expenses
+  - ExerciseLibraryHepView.tsx     -> Searchable PT exercise catalog & printable bilingual HEP builder
+                                (currently hidden from main navigation by default; toggleable in Settings)
+  - ActivityLogView.tsx            -> Active role attribution switcher, Admin PIN modal, Audit Trail table
+
+- Patient Clinical Workspace (`src/components/workspace/`):
+  - PatientWorkspace.tsx     -> Top-level wrapper loading episodes & sessions for selected patient
+  - MasterPatientChart.tsx   -> Patient hub tabs (`evaluation`, `sessions`, `comparison`, `hep`, `profile`),
+                                episode switcher, inline quick session scheduler (with weekly recurring support),
+                                saves episode clinical assessment data
+  - PatientBanner.tsx        -> Clinical sticky banner (Name, MRN, Age/Gender, Phone, Red Flags alert pill, Print/Edit)
+  - PatientSummarySidebar.tsx
+  - ActiveExamCanvas.tsx     -> Renders active assessment widgets (`key={effectiveEpisodeId}` on switch)
+  - ExamWidgetShelf.tsx      -> Searchable/filterable widget picker bar (compact & expanded modes)
+  - TreatmentSessionView.tsx -> Dedicated session workflow (vitals, interventions, flowsheet, SOAP, finalize/attest)
+  - LongitudinalComparisonView.tsx -> Compares Initial Evaluation, Re-evaluations, Follow-ups, and Discharge snapshots
+  - CustomWidgetStudioModal.tsx    -> AI prompt generator + JSON importer + live preview for custom exam widgets
+
+- Clinical Assessment Widgets (`src/components/widgets/`):
+  - AnatomicalBodySvgs.tsx, BodyChartWidget.tsx  -> Anterior & Posterior SVG body map with symptom pins & NRS 0-10
+  - RomWidget.tsx            -> Goniometry (AROM/PROM/AAROM) across all 8 joints (flex-wrap multi-row tabs)
+  - MmtWidget.tsx            -> Flexible Manual Muscle Testing (free-text muscle/movement rows + bilateral MRC 0-5 + add button)
+  - NeuroWidget.tsx          -> Dermatomes (`OrganDermatomeMap`), Myotomes (C5-S1), DTR Reflexes (`0` to `4+`)
+  - SpecialTestsWidget.tsx   -> Orthopedic provocative tests (Shoulder, Knee, Cervical, Lumbar, Hip, Elbow/Wrist)
+  - GaitPostureWidget.tsx    -> TUG test timer, posture deviation checklist, gait pattern & assistive devices
+  - FunctionalScalesWidget.tsx -> ODI, NDI, SPADI, LEFS, QuickDASH, PSFS with automatic percentage & history
+  - DynamicCustomWidget.tsx  -> Runtime renderer for AI Custom JSON widgets (`slider`, `number`, `radio`, `select`, `text`)
+
+- OrganUI & Toolkit Reference Components (`src/components/organui/` & `src/components/toolkit/`):
+  - organui/: OrganClinicalCharts.tsx, OrganDermatomeMap.tsx, OrganMedicationSchedule.tsx
+  - toolkit/: ClinicalToolkitModal.tsx, DermatomesMapTab.tsx, DtrReferenceTab.tsx, MyotomesTab.tsx,
+              NeuroScreeningPanel.tsx, PatientBodyChart.tsx, RomMmtAssessmentPanel.tsx
+    (Note: `ClinicalToolkitModal` quick shortcut was removed from Navbar/Menu clutter per user preference,
+    while the interactive neurology/dermatome maps remain integrated inside `NeuroWidget`.)
+
+- UI Primitives & Styles (`src/components/ui/`, `src/styles/themes/`):
+  - ui/Primitives.tsx        -> `Num`, `Fraction`, `Money`, `MoneyInput`, `PhoneInput`, `DatePickerInput`,
+                                `TimePickerInput`, `ClinicalAbbr`, `AutoResizeTextarea`, `DemoBadge`, `useAnchoredPopover`
+  - ui/badge.tsx, button.tsx, card.tsx
+  - styles/themes/: theme.css, clinical-teal.css, ocean-blue.css, royal-indigo.css, emerald-care.css
+
+- Data, Types & Utilities (`src/data/`, `src/types/`, `src/utils/`):
+  - data/syntheticPatients.ts, data/terminology.ts, data/clinicalToolkit/*
+  - types/clinical.ts, types/clinicalWidgets.ts, types/clinicManagement.ts
+  - utils/currencies.ts, utils/date.ts, utils/mrn.ts, utils/testHooks.ts, utils/vaultEvents.ts
+
+
+--------------------------------------------------------------------------------
+4. CRYPTOGRAPHY, VAULT LIFECYCLE, INDEXEDDB & BACKUP ENGINE
+--------------------------------------------------------------------------------
+A. Provider Mount Order (`src/App.tsx`):
+   ThemeProvider -> LanguageProvider -> CurrencyProvider -> VaultProvider ->
+   PatientProvider -> EpisodeProvider -> SessionProvider -> AppContent
+
+B. Envelope Encryption Specification (`src/crypto/vault.ts`):
+   1. Key Derivation Function (KDF):
+      - Algorithm: PBKDF2-HMAC-SHA256
+      - Iterations: 600,000 (`DEFAULT_PBKDF2_ITERATIONS = 600_000`)
+      - Salt: 16 bytes CSPRNG (`SALT_BYTES = 16`)
+      - Output: 256-bit AES-GCM Key Encryption Key (`vaultKek`)
+   2. Master Data Encryption Key (DEK):
+      - Random 256-bit AES-GCM key (`extractable: false` CryptoKey in WebCrypto memory).
+      - Wrapped by `vaultKek` inside `db.vaultMeta`.
+      - Bound to `vaultGeneration` via `bindDekToGeneration()` to prevent cross-lock/generation leakage.
+      - Plaintext password is NEVER stored in IndexedDB, localStorage, or sessionStorage.
+      - Verifier token plaintext `'PHYSIORECORD_VAULT_OK'` validates password on unlock.
+   3. Record-Level Encryption:
+      - Cipher: AES-256-GCM with fresh random 96-bit (12-byte) CSPRNG IV per write.
+      - Additional Authenticated Data (AAD): cryptographically binds ciphertext to
+        table/store name, record `id`, parent foreign keys (`patientId`, `episodeId`, `sessionId`),
+        `recordCryptoVersion` (1), and `dekVersion` (1). Any tampering throws `DecryptionAuthError`.
+      - Atomic GCM Nonce/Usage Counter: Every encryption reserves from `encryptionInvocationCount`
+        in `db.vaultMeta` transactionally BEFORE encryption (`MAX_GCM_INVOCATIONS_PER_DEK = 1,000,000`;
+        exceeding throws `DekExhaustedError`, requiring DEK rotation / restore).
+   4. Memory Scrubbing & Auto-Lock (`src/context/VaultContext.tsx`):
+      - On `lock()`, `dek` is dropped and PatientContext / EpisodeContext / SessionContext immediately
+        scrub all decrypted React state arrays (`patients = []`, `episodes = []`, `sessions = []`).
+      - Inactivity Auto-Lock checks activity + visibilitychange hidden-tab timestamps.
+      - Configurable in Settings -> Security:
+        - Presets: 1 min, 5 min, 10 min (default), 15 min, 30 min
+        - Custom manual duration: 1 to 1440 minutes
+        - Disable option: `0` ms ("Never / أبداً") skips inactivity auto-locking cleanly.
+
+C. IndexedDB Schema (`src/db/db.ts`, `PhysioRecordDB` — current version 6):
+   18 total tables. Plaintext clinical fields are NEVER left unencrypted on entity wrappers (legacy v1
+   plaintext metadata stripped in v2/v3 `.upgrade()`).
+   - 15 Portable Clinical Stores (registered in `CLINICAL_STORES_REGISTRY` in `src/db/registry.ts`):
+     1. `patients`           (&id, createdAt, updatedAt, isArchived)
+     2. `episodes`           (&id, patientId, createdAt, updatedAt)
+     3. `sessions`           (&id, episodeId, patientId, createdAt, updatedAt)
+     4. `soapNotes`          (&id, &sessionId [unique 1:1], episodeId, patientId, createdAt, updatedAt)
+     5. `clinicalAddenda`    (&id, sessionId, patientId, targetId, createdAt)
+     6. `appointments`       (&id, patientId, createdAt, updatedAt)
+     7. `waitingList`        (&id, patientId, createdAt, updatedAt)
+     8. `invoices`           (&id, patientId, episodeId, createdAt, updatedAt)
+     9. `payments`           (&id, invoiceId, patientId, createdAt, updatedAt)
+    10. `expenses`           (&id, createdAt, updatedAt)
+    11. `auditLogs`          (&id, patientId, episodeId, createdAt)
+    12. `staffState`         (&id, updatedAt)
+    13. `episodeClinical`    (&id, &episodeId, patientId, createdAt, updatedAt)
+    14. `customWidgets`      (&id, createdAt, updatedAt)
+    15. `migrationReports`   (&id, createdAt)
+   - 3 Excluded Device/Technical Stores (`EXCLUDED_DEVICE_STORES`):
+    16. `vaultMeta`          (&id)
+    17. `episodeSequences`   (&episodeId) -> holds keyed HKDF-SHA256 HMAC tokens (`allocatedTokens`) +
+                             monotonic `lastSequenceNumber` for atomic cross-tab session numbering
+    18. `migrationState`     (&id) -> resumable state for localStorage -> Dexie migration
+
+D. Encrypted Backup & Restore (`.ptbackup` v1.1 in `src/crypto/backup.ts` & `src/crypto/recovery.ts`):
+   - Format: `'1.1'`, Magic: `'PHYSIORECORD_BACKUP_V1.1'`
+   - Key Hierarchy:
+     - Separate backup password -> PBKDF2-HMAC-SHA256 (600,000 iter, 16-byte `backupSalt`)
+     - HKDF-SHA256 with 32-byte `hkdfSalt` + strict domain separation info strings:
+       * `'physiorecord-backup-dek-wrap-v1.1'` (wraps source DEK)
+       * `'physiorecord-backup-payload-enc-v1.1'` (AES-256-GCM encrypts payload)
+   - Canonical Header AAD: 20 header metadata fields serialized strictly to prevent downgrade/tampering.
+   - Mobile Memory Protection: `MAX_BACKUP_SIZE_BYTES = 25 MB` (warning banner above `20 MB`).
+   - Restore Workflow:
+     1. Preview inspection (`inspectBackupPreview`) verifies password + referential integrity (`patients -> episodes -> sessions -> ...`).
+     2. Mandatory pre-restore safety snapshot saved into logically isolated `PhysioRecordEmergencyRecoveryDB` (`recoverySnapshots` table) and downloadable/saveable externally to OS disk (`saveExternalRecoveryBackupFile`) before overwriting `PhysioRecordDB`.
+     3. Generates a brand-new random DEK on restore, resets `encryptionInvocationCount` to 0, re-encrypts all records atomically.
+
+
+--------------------------------------------------------------------------------
+5. CRITICAL INVARIANTS & CLINICAL SAFETY RULES (DO NOT VIOLATE)
+--------------------------------------------------------------------------------
+1. NEVER hardcode real or fake patient/appointment/invoice rows in default runtime views:
+   - Empty databases start completely empty (`[]`).
+   - `ClinicOperationsService.ensureHardcodedMocksPurgedOnce()` actively strips legacy mock IDs (`appt_default_*`, `wait_1/2`, `inv_iqd_1001/1002`, `exp_1/2`).
+   - Synthetic demo records (`SYNTHETIC_PATIENTS`, `syn-patient-*`, `isDemo: true`) are strictly opt-in via `SyntheticDataModal` or `SettingsModal -> Developer` and visibly badged `<DemoBadge />`.
+2. Finalized Records Are Immutable:
+   - Once a session (`status === 'finalized'`) or SOAP note is finalized, updates/deletes are strictly blocked (`CannotDeleteFinalizedRecordError`).
+   - Canonical SHA-256 integrity seals (`CURRENT_SEAL_VERSION = 1`, `canonicalizeForSeal`) verify finalized session/SOAP integrity.
+   - Any post-finalization amendment MUST be written as an append-only record in `db.clinicalAddenda` with a required `AddendumReason`.
+3. Single Writer Rule (`Amendment D`):
+   - `ENABLE_LEGACY_SOAP_MODAL_ROM_MMT_BODYCHART_WRITES = false`.
+   - Active ROM/MMT/BodyChart/Neuro/SpecialTests/Gait/Scales data is edited via `MasterPatientChart -> ActiveExamCanvas -> episodeClinical`, NOT via legacy `SoapModal`.
+4. Patient Hard Deletion Safeguard:
+   - Archiving (`archivePatient`) is the default safe operation. Hard deletion checks all dependent records (`auditPatientDependentRecords`) and throws `PatientHardDeletionBlockedError` unless requirements/verified backup proof are satisfied.
+5. Schema & Migration Discipline:
+   - NEVER mutate existing historical Dexie `.version(N)` blocks (keep v1..v6 intact). Always add a new `.version(N+1)` migration when changing IndexedDB stores/indexes.
+6. LocalStorageKeys Reference:
+   - Vault/App Config & Operations keys (`ClinicOperationsService`, Contexts, MRN):
+     * `physiorecord_theme_mode`               ('light' | 'dark')
+     * `physiorecord_preline_theme`            ('theme-clinical-teal' | ...)
+     * `physiorecord_language`                 ('ar' | 'en')
+     * `physiorecord_primary_currency_code`    (ISO 4217 code, default 'IQD')
+     * `physiorecord_active_staff_v2`
+     * `physiorecord_staff_roster_v2`
+     * `physiorecord_admin_pin_v1`             (default '1234')
+     * `physiorecord_reception_privacy_blur_v1`
+     * `physiorecord_show_exercise_library_v1` ('true' | 'false', default hidden `false`)
+     * `physiorecord_purged_hardcoded_mocks_v1`
+     * `physiorecord_appointments_v2`
+     * `physiorecord_recurring_schedules_v1`
+     * `physiorecord_recurring_skipped_v1`
+     * `physiorecord_waiting_list_v2`
+     * `physiorecord_invoices_iqd_v2`
+     * `physiorecord_expenses_iqd_v2`
+     * `physiorecord_audit_logs_v2`
+     * `physiorecord_custom_widgets`
+     * `physiorecord_mrn_seq_v1`, `physiorecord_mrn_map_v1`
+     * Prefixes: `physiorecord_episode_clinical_v2_`, `physiorecord_session_flowsheet_v2_`
+   - `localStorageMigrationService.ts` migrates clinical localStorage payloads into encrypted Dexie v5/v6 stores with decrypt+deep-equal verification before clearing legacy plaintext keys.
+
+
+--------------------------------------------------------------------------------
+6. CLINICAL MODULES, USER WORKFLOWS & SCREEN SPECIFICATIONS
+--------------------------------------------------------------------------------
+1. Navigation (`Sidebar.tsx` & `AppLayout.tsx`):
+   - Tabs: `reception` (الاستقبال والانتظار), `directory` (سجل المرضى), `schedule` (جدول المواعيد), `exercises` (مكتبة التمارين - HIDDEN by default), `finance` (الحسابات), `activity_log` (سجل النشاط والكادر).
+   - Auto-collapses sidebar into an icon rail when a patient chart is open or screen width < 1100px.
+   - Global top bar: Page breadcrumb/title, Quick Search (`Ctrl/Cmd + K` searching patients by name/MRN/phone in-memory), `+ مريض جديد` button, Quick Staff/Language/Theme/Backup/Settings/Lock menu.
+   - Backup Reminder Banner: Warns if local data hasn't been exported to `.ptbackup` within 7 days.
+   - Mobile Bottom Navigation: 5-slot responsive bottom bar + "More" popover.
+
+2. Lock & Vault Gate (`LockScreen.tsx`):
+   - First launch: Requires clinical password >= 10 characters with live strength meter, then generates 32-character grouped Recovery Key and forces user to verify a challenge group + confirm saving it offline.
+   - Subsequent visits: Unlock password gate, Forgot Password -> Reset via Recovery Key modal, and Destructive Wipe modal.
+
+3. Reception Command Center (`ReceptionCommandCenterView.tsx`):
+   - Live Queue of today's patients, status transitions (`scheduled -> arrived -> in_session -> completed`), Check-in actions, Waiting List management, Unpaid Patient Balances summary.
+   - Auto-materializes active `RecurringPatientSchedule` entries for today via `ensureRecurringAppointmentsForDate(todayDate)` and refreshes on `physiorecord-schedule-updated` events; recurring rows show a `Weekly / أسبوعي` badge.
+   - Reception Privacy Blur toggle masks sensitive patient details at the front desk.
+
+4. Appointment Scheduler & Weekly Recurring System (`AppointmentScheduleView.tsx`):
+   - Supports two scheduling modes:
+     (a) Single Day Appointment (`موعد ليوم واحد`)
+     (b) Weekly Recurring Schedule (`تكرار أسبوعي (أيام الأسبوع)`): select Iraqi weekdays (`0=Sun .. 6=Sat`) + quick presets (`الأحد / الثلاثاء / الخميس`, `السبت / الاثنين / الأربعاء`, `يومياً ما عدا الجمعة`). Includes optional Start/End dates and Recurring Schedules Management section (Pause/Resume, Skip date, Delete).
+   - Custom Modern `<TimePickerInput />` popover matching `<DatePickerInput />`: 12h clock grid, `ص/م` (AM/PM) toggle, 0-59 minute numeric input/stepper/range slider, 5-min quick presets.
+   - Session Duration options: presets `30`, `45`, `60` minutes + Custom Manual Duration (`تحديد يدوي`, 5-480 min).
+   - 8-second Undo Toast on deletions.
+
+5. Patient Directory & Intake (`PatientDirectory.tsx` & `PatientModal.tsx`):
+   - Sequential MRNs (`PT-000001` format).
+   - Grid view (cards with centered gender & age pill badge) and Table view.
+   - Filters: Active vs Archived tab, Gender (`all`, `male`, `female`), Red Flags only toggle, instant search.
+   - Intake form captures Arabic/English full names, DOB (`dd/mm/yyyy` with auto age computation), gender, Iraqi phone (`+964` prefix + `07XX XXX XXXX` live masking), occupation, hand dominance, medical history, surgeries, meds, allergies, comorbidities, precautions, red flags, psychosocial factors.
+
+6. Master Patient Hub & Exam Widgets (`MasterPatientChart.tsx`, `ActiveExamCanvas.tsx`, `ExamWidgetShelf.tsx`):
+   - 5 Hub Tabs:
+     * `evaluation` (الفحص والتقييم): Subjective & Objective intake, Pain NRS scores, Clinical Impression, planned weeks/frequency, and modular Interactive Exam Canvas (`key={effectiveEpisodeId}`).
+     * `sessions` (الجلسات العلاجية): Session list, create session modal, inline Weekly Recurring Scheduler (also supports `يدوي` custom duration), open `TreatmentSessionView`.
+     * `comparison` (المقارنة والتقدم): `LongitudinalComparisonView` + `OrganClinicalCharts` comparing Initial Eval, Re-eval, Follow-up, and Discharge snapshots.
+     * `hep` (الخطة والأهداف when Exercise Library hidden; الخطة والبرنامج المنزلي HEP when visible).
+     * `profile` (الملف الشخصي والمالي): Medical history, red flags, patient financial summary.
+   - 7 Built-in Interactive Exam Widgets:
+     1. `body_chart`: Anterior/Posterior medical SVGs, click-to-drop pins (Sharp Pain, Ache, Numbness, Tingling, Weakness, etc.), NRS 0-10 severity.
+     2. `rom`: AROM / PROM / AAROM toggle + multi-row wrapping (`flex-wrap`) selection across all 8 joints (Cervical, Lumbar, Shoulder, Elbow/Forearm, Wrist, Hip, Knee, Ankle) so every joint including Ankle is always reachable.
+     3. `mmt`: Flexible manual MRC 0-5 muscle strength testing — starts with 1 blank card where the therapist types the custom muscle or movement name (`e.g. Deltoid / ثني الركبة`) + side-by-side Right (R) & Left (L) `0–5` grade buttons + `+ إضافة فحص عضلي جديد` button below (plus optional midline toggle & delete card).
+     4. `neuro`: Interactive `OrganDermatomeMap` (C2-S5 sensory grid), C5-S1 Myotomes (0-5), Deep Tendon Reflexes (Biceps, Brachioradialis, Triceps, Patellar, Achilles scored `0` to `4+`).
+     5. `special_tests`: One-click provocative orthopedic tests (`Neer`, `Hawkins-Kennedy`, `Empty Can`, `Speed's`, `Lachman`, `Anterior Drawer`, `McMurray's`, `Patellar Apprehension`, `SLR`, `Slump`, `Spurling's`, `FABER`, `Thomas`, `Cozen's`, `Phalen's`, `Finkelstein's`).
+     6. `gait_posture`: TUG test timer (seconds + fall risk interpretation), postural deviations checklist, gait pattern & assistive device selector.
+     7. `functional_scales`: Standardized outcome measures (`ODI`, `NDI`, `SPADI`, `LEFS`, `QuickDASH`, `PSFS`) with auto-percentage disability/function score and longitudinal history log.
+   - AI Custom Widget Studio (`CustomWidgetStudioModal` + `DynamicCustomWidget`): Lets clinician copy a strict JSON schema prompt, paste AI-generated JSON, preview live, and save custom interactive exam widgets into `physiorecord_custom_widgets`.
+
+7. Financial Ledger (`IraqiFinancialLedgerView.tsx` & `currencies.ts`):
+   - Primary Currency: Defaults to Iraqi Dinar (`IQD` / `د.ع`, 0 decimals), switchable across 31 world ISO 4217 currencies (`WORLD_CURRENCIES`) inside Settings -> Currency (`CurrencyContext`).
+   - Symbol Display Convention: Number ALWAYS comes first inside `<bdi dir="ltr">`, followed by the currency symbol (`25,000 د.ع`, never `د.ع 25,000`). `<Money />` colors negative amounts red, zero neutral gray.
+   - Invoice Types: Cleanly labeled `جلسة مفردة` (`single_session`), `كورس` (`rehab_package`), and `فحص` (`evaluation`) with NO prefilled default prices, discounts, or package session counts (inputs start at `0` / empty).
+   - Payment Methods (`IraqiPaymentMethod`):
+     * `cash`       -> نقداً (no forced IQD restriction in label)
+     * `zain_cash`  -> محفظة زين كاش
+     * `qi_card`    -> كي كارد / ماستركارد
+     * `other`      -> أخرى (reveals free-text input to specify custom payment channel manually)
+     (First Iraqi Bank transfer option was intentionally removed per clinic preference.)
+   - Supports partial installment collection (`RCPT-*` receipts), course session consumption tracking (`packageUsedSessions / packageTotalSessions`), Patient Debt ledger, and Clinic Operating Expenses (`rent`, `medical_consumables`, `equipment_maintenance`, `staff_salaries`, `electricity_generator`, `marketing_other`).
+
+8. Staff Roles, RBAC & Settings (`SettingsModal.tsx` & `ActivityLogView.tsx`):
+   - 4 Roles (`ROLE_PERMISSIONS`): `admin`, `senior_pt`, `assistant_pt`, `receptionist` governing clinical chart edits, note finalization, scheduling, payment collection, financial deletion, and audit log viewing.
+   - Switching UP to `admin` prompts for the Admin PIN (default `'1234'`, configurable in Settings -> Security).
+   - Settings Modal has 5 tabs:
+     1. `currency`   -> Select default clinic currency from 31 world currencies
+     2. `staff`      -> Edit names (AR/EN), specialties (AR/EN), roles, add/delete staff members
+     3. `security`   -> Inactivity Auto-Lock (presets + custom 1-1440 min + `0` Never) + Admin PIN editor
+     4. `modules`    -> Toggle Exercise Library (`مكتبة التمارين HEP`) visibility across the platform without deleting any exercise catalog or patient HEP data
+     5. `developer`  -> Seed or completely purge synthetic `DEMO` patients and operational demo records
+
+
+--------------------------------------------------------------------------------
+7. UI/UX DESIGN SYSTEM & CODING CONVENTIONS FOR CLAUDE
+--------------------------------------------------------------------------------
+When modifying or extending PhysioRecord UI or code, ALWAYS adhere to these rules:
+1. Typography & Fonts (`src/index.css`):
+   - Sans stack: `Inter`, `IBM Plex Sans Arabic`, `Noto Sans Arabic`, system-ui.
+   - `PhysioMono` is strictly Unicode-range restricted to ASCII/Latin/digits so Arabic text NEVER falls back to monospace; `:lang(ar)` enforces `letter-spacing: 0 !important`, `text-transform: none !important`, `line-height: 1.6`.
+   - Minimum font size floor: 12px (`0.75rem`) everywhere (`.text-[8px]..[11px]` clamped to 12px).
+2. Themes & Modes:
+   - Support BOTH Light and Dark mode (`dark:` classes paired with Preline CSS variables like `bg-layer`, `bg-card`, `text-foreground`, `text-muted-foreground-1`, `border-layer-line`, `bg-primary`, etc.).
+   - Support all 4 Preline themes (`theme-clinical-teal`, `theme-ocean-blue`, `theme-royal-indigo`, `theme-emerald-care`).
+3. RTL / Bidirectional Numeric Safety:
+   - NEVER render raw numbers, fractions (`3/10`), dates (`12/11/2026`), phone numbers, times (`10:00 ص`), or currencies directly inside RTL Arabic flow without isolation.
+   - Always use UI Primitives from `src/components/ui/Primitives.tsx`:
+     `<Num />`, `<Fraction />`, `<Money />`, `<MoneyInput />`, `<PhoneInput />`, `<DatePickerInput />`, `<TimePickerInput />`.
+   - Do NOT use native `<input type="date">` or `<input type="time">` (use `<DatePickerInput />` and `<TimePickerInput />`).
+4. Control Contrast & Touch Targets:
+   - Inputs/selects/textareas keep visible borders (`var(--control-border)` >= 3:1 contrast) and clear focus rings.
+   - Interactive controls have min-height 32px desktop, 40px mobile (`button:not(.compact-btn)`). Use `.compact-btn` only for intentionally small chip/badge controls like segment buttons or close pills.
+5. Bilingual Consistency:
+   - Check `language === 'ar'` / `isRtl` everywhere. Never hardcode English-only errors or untranslated UI labels, and avoid cramming two languages onto every single button unless clarification is clinically necessary.
+
+
+--------------------------------------------------------------------------------
+8. SUMMARY OF RECENT USER CUSTOMIZATIONS (MUST BE PRESERVED)
+--------------------------------------------------------------------------------
+The clinic owner has specifically requested and verified the following customizations
+in the current codebase — NEVER revert them:
+1. Currency formatting places currency symbol AFTER the number (`25,000 د.ع`, never before).
+2. New invoice creation has NO prefilled defaults for amount (`0`), course session count (blank), or discount (`0`), and invoice type labels are cleanly `جلسة مفردة` / `كورس` / `فحص`.
+3. Removed "المراجع السريرية" shortcut clutter from header/menu; removed "First Iraqi Bank transfer" option; renamed cash method to `نقداً` (without forcing IQD); added `أخرى` (`other`) with manual free-text channel input.
+4. Added 31 open-source ISO 4217 world currencies (`WORLD_CURRENCIES`) with IQD as default and app-wide currency selector + clinic staff roster CRUD editor inside Settings.
+5. Centered Gender + Age badge (`ذكر/أنثى` + age) visually in `PatientDirectory` cards.
+6. Added Weekly Recurring Session Scheduling by Iraqi weekdays (`RecurringPatientSchedule` + auto-population into Reception & Schedule + manager controls) and replaced hardcoded time chips with modern `<TimePickerInput />` popover.
+7. Added manual session duration (`تحديد يدوي`), manual auto-lock duration + `أبداً` (`0` = Never) option, and hid Exercise Library (`مكتبة التمارين`) from active UI with a reversible toggle in Settings -> Modules (data untouched).
+8. Fixed `RomWidget` joint tabs wrapping (`flex-wrap`) so all 8 joints including Ankle (`مفصل الكاحل`) are always visible without clipping, and redesigned `MmtWidget` to free-text manual muscle/movement input cards defaulting to 1 card with `+ إضافة فحص عضلي جديد` button below (`ActiveExamCanvas` keyed by `effectiveEpisodeId`).
+================================================================================
+END OF PHYSIORECORD COMPLETE PLATFORM BRIEF
+================================================================================
