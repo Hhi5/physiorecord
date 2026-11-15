@@ -959,6 +959,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       aria-labelledby="settings-modal-title"
       className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex justify-end"
       dir={isRtl ? 'rtl' : 'ltr'}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onClose();
+      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -967,17 +970,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         className="bg-card border-s border-card-line max-w-2xl w-full h-full shadow-2xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-card-divider flex items-center justify-between bg-muted/40 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="size-9 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center">
-              <Settings className="size-4" />
+        {/* Header (Single-row compact bar on both mobile & desktop) */}
+        <div className="px-3.5 sm:px-5 py-2 border-b border-card-divider flex items-center justify-between gap-2 bg-muted/40 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="size-7 sm:size-8 rounded-lg bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
+              <Settings className="size-4 shrink-0" />
             </div>
-            <div>
-              <h2 id="settings-modal-title" className="text-sm font-bold text-foreground">
-                {bi('إعدادات العيادة والمطور', 'Clinic & Developer Settings', 'ڕێکخستنەکانی کلینیک و گەشەپێدەر')}
+            <div className="min-w-0">
+              <h2 id="settings-modal-title" className="text-xs sm:text-sm font-bold text-foreground truncate">
+                <span className="sm:hidden">{bi('الإعدادات', 'Settings', 'ڕێکخستنەکان')}</span>
+                <span className="hidden sm:inline">
+                  {bi('إعدادات العيادة والمطور', 'Clinic & Developer Settings', 'ڕێکخستنەکانی کلینیک و گەشەپێدەر')}
+                </span>
               </h2>
-              <p className="text-xs text-muted-foreground-1">
+              <p className="hidden sm:block text-xs text-muted-foreground-1 truncate">
                 {bi(
                   'العملة، أعضاء الكادر، الأمان، الأقسام، والبيانات التجريبية',
                   'Currency, staff roster, security, modules, and demo data',
@@ -986,54 +992,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={bi('إغلاق الإعدادات', 'Close settings', 'داخستنی ڕێکخستنەکان')}
-            className="size-8 rounded-lg flex items-center justify-center text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover cursor-pointer"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
 
-        {/* Search + Simple/Advanced Switch + What's New */}
-        <div className="px-4 py-3 border-b border-card-divider bg-surface/70 shrink-0">
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Search Input */}
-            <div className="relative flex-1 min-w-[180px]">
-              <Search className="size-3.5 text-muted-foreground-1 absolute start-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                data-testid="settings-search-input"
-                value={settingsSearchQuery}
-                onChange={(e) => setSettingsSearchQuery(e.target.value)}
-                placeholder={bi(
-                  'ابحث في الإعدادات (نسخ احتياطي، أمان، لغة، خط، أقسام...)',
-                  'Search settings (backup, security, language, font, modules...)',
-                  'گەڕان لە ڕێکخستنەکان (کۆپی یەدەگ، ئاسایش، زمان، فۆنت، بەشەکان...)'
-                )}
-                className="w-full ps-8 pe-7 py-1.5 rounded-xl bg-layer border border-layer-line text-xs text-foreground placeholder:text-muted-foreground-1 focus:outline-none focus:border-primary"
-              />
-              {settingsSearchQuery.trim().length > 0 && (
-                <button
-                  type="button"
-                  data-testid="settings-search-clear-btn"
-                  onClick={() => setSettingsSearchQuery('')}
-                  aria-label={bi('مسح البحث', 'Clear search', 'سڕینەوەی گەڕان')}
-                  className="absolute end-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted-foreground-1 hover:text-foreground cursor-pointer"
-                >
-                  <X className="size-3.5" />
-                </button>
-              )}
-            </div>
-
+          <div className="flex items-center gap-1.5 shrink-0">
             {/* Simple / Advanced Segmented Switch */}
-            <div className="inline-flex items-center rounded-xl bg-layer border border-layer-line p-0.5">
+            <div className="inline-flex items-center rounded-lg bg-layer border border-layer-line p-0.5 shrink-0">
               <button
                 type="button"
                 data-testid="settings-mode-simple-btn"
+                aria-pressed={settingsViewMode === 'simple'}
                 onClick={() => handleSwitchSettingsMode('simple')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
+                style={{ minHeight: 'unset', minWidth: 'unset' }}
+                className={`compact-btn px-2 sm:px-2.5 py-1 rounded-md text-xs font-bold cursor-pointer transition-colors ${
                   settingsViewMode === 'simple'
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground-1 hover:text-foreground'
@@ -1044,8 +1013,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <button
                 type="button"
                 data-testid="settings-mode-advanced-btn"
+                aria-pressed={settingsViewMode === 'advanced'}
                 onClick={() => handleSwitchSettingsMode('advanced')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
+                style={{ minHeight: 'unset', minWidth: 'unset' }}
+                className={`compact-btn px-2 sm:px-2.5 py-1 rounded-md text-xs font-bold cursor-pointer transition-colors ${
                   settingsViewMode === 'advanced'
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground-1 hover:text-foreground'
@@ -1060,120 +1031,226 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               type="button"
               data-testid="open-whats-new-btn"
               onClick={() => setIsWhatsNewOpen(true)}
-              className="px-2.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0"
+              style={{ minHeight: 'unset', minWidth: 'unset' }}
+              className="compact-btn px-2 sm:px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0"
+              title={bi(
+                `ما الجديد v${APP_SEMVER_VERSION}`,
+                `What's New v${APP_SEMVER_VERSION}`,
+                `نوێترین گۆڕانکارییەکان v${APP_SEMVER_VERSION}`
+              )}
             >
-              <Sparkles className="size-3.5" />
-              <span>
-                {bi(
-                  `ما الجديد v${APP_SEMVER_VERSION}`,
-                  `What's New v${APP_SEMVER_VERSION}`,
-                  `نوێترین گۆڕانکارییەکان v${APP_SEMVER_VERSION}`
-                )}
+              <Sparkles className="size-3.5 shrink-0" />
+              <span className="hidden sm:inline">
+                {bi('ما الجديد', "What's New", 'نوێترین')}
               </span>
+              <span className="font-mono"><bdi dir="ltr">v{APP_SEMVER_VERSION}</bdi></span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={bi('إغلاق الإعدادات', 'Close settings', 'داخستنی ڕێکخستنەکان')}
+              style={{ minHeight: 'unset', minWidth: 'unset' }}
+              className="compact-btn size-8 rounded-lg flex items-center justify-center text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover cursor-pointer shrink-0"
+            >
+              <X className="size-4 shrink-0" />
             </button>
           </div>
         </div>
 
-        {/* Tabs Bar */}
-        <div className="px-3 border-b border-card-divider flex flex-nowrap items-center gap-1 bg-card shrink-0 overflow-x-auto scrollbar-none">
+        {/* Compact Full-Width Search Input */}
+        <div className="px-3.5 sm:px-4 py-1.5 border-b border-card-divider bg-surface/70 shrink-0">
+          <div className="relative flex items-center">
+            <Search className="size-3.5 text-muted-foreground-1 absolute start-3 inset-y-0 my-auto pointer-events-none z-10 shrink-0" />
+            <input
+              type="text"
+              data-testid="settings-search-input"
+              aria-label={bi('بحث في الإعدادات', 'Search settings', 'گەڕان لە ڕێکخستنەکان')}
+              value={settingsSearchQuery}
+              onChange={(e) => setSettingsSearchQuery(e.target.value)}
+              placeholder={bi(
+                'ابحث في الإعدادات (نسخ احتياطي، أمان، لغة، خط، أقسام...)',
+                'Search settings (backup, security, language, font, modules...)',
+                'گەڕان لە ڕێکخستنەکان (کۆپی یەدەگ، ئاسایش، زمان، فۆنت، بەشەکان...)'
+              )}
+              style={{ minHeight: '34px' }}
+              className="w-full h-8.5 ps-9 pe-8 py-1 rounded-xl bg-layer border border-layer-line text-xs leading-normal text-foreground placeholder:text-muted-foreground-1 focus:outline-none focus:border-primary"
+            />
+            {settingsSearchQuery.trim().length > 0 && (
+              <button
+                type="button"
+                data-testid="settings-search-clear-btn"
+                onClick={() => setSettingsSearchQuery('')}
+                aria-label={bi('مسح البحث', 'Clear search', 'سڕینەوەی گەڕان')}
+                style={{ minHeight: 'unset', minWidth: 'unset' }}
+                className="compact-btn absolute end-1.5 inset-y-0 my-auto size-7 flex items-center justify-center rounded text-muted-foreground-1 hover:text-foreground cursor-pointer z-10"
+              >
+                <X className="size-3.5 shrink-0" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Tabs Bar (Single-line horizontally scrollable in both directions; collapses on mobile during active search) */}
+        <div
+          role="tablist"
+          aria-label={bi('أقسام الإعدادات', 'Settings categories', 'بەشەکانی ڕێکخستن')}
+          onWheel={(e) => {
+            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+              e.currentTarget.scrollLeft += e.deltaY;
+            }
+          }}
+          className={`border-b border-card-divider ${
+            settingsSearchQuery.trim().length > 0 ? 'hidden sm:flex' : 'flex'
+          } flex-nowrap items-center gap-1 bg-card shrink-0 overflow-x-auto scroll-smooth touch-pan-x`}
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            paddingLeft: '2.375px',
+            paddingRight: '9.375px',
+            paddingTop: '1px',
+            paddingBottom: '0px',
+          }}
+        >
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'currency'}
             data-testid="settings-tab-currency"
-            onClick={() => setActiveTab('currency')}
-            className={`px-3 py-2.5 text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-colors ${
+            onClick={(e) => {
+              setActiveTab('currency');
+              e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }}
+            style={{ minHeight: 'unset', minWidth: 'unset' }}
+            className={`compact-btn mb-1.5 px-2.5 sm:px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
               activeTab === 'currency'
-                ? 'border-primary text-primary'
+                ? 'border-primary text-primary bg-primary/5'
                 : 'border-transparent text-muted-foreground-1 hover:text-foreground'
             }`}
           >
-            <Coins className="size-3.5" />
+            <Coins className="size-3.5 shrink-0" />
             <span>{bi('العملة', 'Currency', 'دراو')}</span>
           </button>
 
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'clinic'}
             data-testid="settings-tab-clinic"
-            onClick={() => setActiveTab('clinic')}
-            className={`px-3 py-2.5 text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-colors ${
+            onClick={(e) => {
+              setActiveTab('clinic');
+              e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }}
+            style={{ minHeight: 'unset', minWidth: 'unset' }}
+            className={`compact-btn mb-1.5 px-2.5 sm:px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
               activeTab === 'clinic'
-                ? 'border-primary text-primary'
+                ? 'border-primary text-primary bg-primary/5'
                 : 'border-transparent text-muted-foreground-1 hover:text-foreground'
             }`}
           >
-            <Building2 className="size-3.5" />
-            <span>{bi('بيانات العيادة', 'Clinic', 'زانیارییەکانی کلینیک')}</span>
+            <Building2 className="size-3.5 shrink-0" />
+            <span>{bi('العيادة', 'Clinic', 'کلینیک')}</span>
           </button>
 
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'display'}
             data-testid="settings-tab-display"
-            onClick={() => setActiveTab('display')}
-            className={`px-3 py-2.5 text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-colors ${
+            onClick={(e) => {
+              setActiveTab('display');
+              e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }}
+            style={{ minHeight: 'unset', minWidth: 'unset' }}
+            className={`compact-btn mb-1.5 px-2.5 sm:px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
               activeTab === 'display'
-                ? 'border-primary text-primary'
+                ? 'border-primary text-primary bg-primary/5'
                 : 'border-transparent text-muted-foreground-1 hover:text-foreground'
             }`}
           >
-            <Type className="size-3.5" />
-            <span>{bi('اللغة والمظهر والخطوط', 'Language, Display & Fonts', 'زمان، شێواز و فۆنت')}</span>
+            <Type className="size-3.5 shrink-0" />
+            <span>{bi('اللغة والمظهر', 'Display', 'زمان و شێواز')}</span>
           </button>
 
           {!isSoloMode && settingsViewMode === 'advanced' && (
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'staff'}
               data-testid="settings-tab-staff"
-              onClick={() => setActiveTab('staff')}
-              className={`px-3 py-2.5 text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-colors ${
+              onClick={(e) => {
+                setActiveTab('staff');
+                e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+              }}
+              style={{ minHeight: 'unset', minWidth: 'unset' }}
+              className={`compact-btn mb-1.5 px-2.5 sm:px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
                 activeTab === 'staff'
-                  ? 'border-primary text-primary'
+                  ? 'border-primary text-primary bg-primary/5'
                   : 'border-transparent text-muted-foreground-1 hover:text-foreground'
               }`}
             >
-              <Users className="size-3.5" />
-              <span>{bi('أعضاء الكادر', 'Staff', 'ئەندامانی ستاف')}</span>
+              <Users className="size-3.5 shrink-0" />
+              <span>{bi('الكادر', 'Staff', 'ستاف')}</span>
             </button>
           )}
 
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'security'}
             data-testid="settings-tab-security"
-            onClick={() => setActiveTab('security')}
-            className={`px-3 py-2.5 text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-colors ${
+            onClick={(e) => {
+              setActiveTab('security');
+              e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }}
+            style={{ minHeight: 'unset', minWidth: 'unset' }}
+            className={`compact-btn mb-1.5 px-2.5 sm:px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
               activeTab === 'security'
-                ? 'border-primary text-primary'
+                ? 'border-primary text-primary bg-primary/5'
                 : 'border-transparent text-muted-foreground-1 hover:text-foreground'
             }`}
           >
-            <Shield className="size-3.5" />
+            <Shield className="size-3.5 shrink-0" />
             <span>{bi('الأمان', 'Security', 'ئاسایش')}</span>
           </button>
 
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'modules'}
             data-testid="settings-tab-modules"
-            onClick={() => setActiveTab('modules')}
-            className={`px-3 py-2.5 text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-colors ${
+            onClick={(e) => {
+              setActiveTab('modules');
+              e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }}
+            style={{ minHeight: 'unset', minWidth: 'unset' }}
+            className={`compact-btn mb-1.5 px-2.5 sm:px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
               activeTab === 'modules'
-                ? 'border-primary text-primary'
+                ? 'border-primary text-primary bg-primary/5'
                 : 'border-transparent text-muted-foreground-1 hover:text-foreground'
             }`}
           >
-            <Dumbbell className="size-3.5" />
+            <Dumbbell className="size-3.5 shrink-0" />
             <span>{bi('الأقسام', 'Modules', 'بەشەکان')}</span>
           </button>
 
           {settingsViewMode === 'advanced' && (
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'developer'}
               data-testid="settings-tab-developer"
-              onClick={() => setActiveTab('developer')}
-              className={`px-3 py-2.5 text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-colors ${
+              onClick={(e) => {
+                setActiveTab('developer');
+                e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+              }}
+              style={{ minHeight: 'unset', minWidth: 'unset' }}
+              className={`compact-btn mb-1.5 px-2.5 sm:px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
                 activeTab === 'developer'
-                  ? 'border-primary text-primary'
+                  ? 'border-primary text-primary bg-primary/5'
                   : 'border-transparent text-muted-foreground-1 hover:text-foreground'
               }`}
             >
-              <Database className="size-3.5" />
+              <Database className="size-3.5 shrink-0" />
               <span>{bi('المطور', 'Developer', 'گەشەپێدەر')}</span>
               {hasDemoRecords && <DemoBadge />}
             </button>
@@ -1408,7 +1485,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </p>
 
                 {/* Currency Search Input */}
-                <div className="relative">
+                <div className="relative flex items-center">
+                  <Search className="size-3.5 absolute start-3 inset-y-0 my-auto text-muted-foreground-2 pointer-events-none z-10 shrink-0" />
                   <input
                     type="text"
                     value={currencySearch}
@@ -1418,9 +1496,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       'Search by currency name or code (e.g. USD, EUR, SAR)...',
                       'بە ناو یان کۆدی دراو بگەڕێ (نموونە: USD، دینار، یۆرۆ)...'
                     )}
-                    className="w-full ps-8 pe-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:border-primary"
+                    style={{ minHeight: '36px' }}
+                    className="w-full h-9 ps-9 pe-3 py-1.5 text-xs leading-normal rounded-xl bg-layer border border-layer-line text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:border-primary"
                   />
-                  <Search className="size-3.5 absolute start-2.5 top-2.5 text-muted-foreground-2 pointer-events-none" />
                 </div>
 
                 {/* Currency List */}

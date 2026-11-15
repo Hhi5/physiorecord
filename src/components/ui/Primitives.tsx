@@ -496,7 +496,7 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
           disabled={disabled}
           onClick={() => setOpen((o) => !o)}
           aria-label={bi('فتح التقويم', 'Open calendar', 'کردنەوەی ڕۆژژمێر')}
-          className="absolute end-2.5 text-muted-foreground-1 hover:text-primary cursor-pointer p-0.5"
+          className="absolute end-1.5 size-7 flex items-center justify-center rounded-lg text-muted-foreground-1 hover:text-primary cursor-pointer"
         >
           <Calendar className="size-4" />
         </button>
@@ -818,9 +818,9 @@ export const TimePickerInput: React.FC<TimePickerInputProps> = ({
                     onClick={() => emitTime(hours24, minutes - 1)}
                     aria-label={bi('إنقاص دقيقة', 'Decrease minute', 'کەمکردنەوەی خولەک')}
                     style={{ minHeight: 'unset' }}
-                    className="compact-btn size-6 rounded-md bg-layer border border-layer-line hover:bg-layer-hover text-foreground flex items-center justify-center cursor-pointer"
+                    className="compact-btn size-7 rounded-md bg-layer border border-layer-line hover:bg-layer-hover text-foreground flex items-center justify-center cursor-pointer"
                   >
-                    <Minus className="size-3" />
+                    <Minus className="size-3.5" />
                   </button>
                   <input
                     type="number"
@@ -834,16 +834,16 @@ export const TimePickerInput: React.FC<TimePickerInputProps> = ({
                       }
                     }}
                     style={{ minHeight: 'unset' }}
-                    className="w-11 h-6 text-center text-xs font-mono font-bold rounded-md bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
+                    className="w-11 h-7 text-center text-xs font-mono font-bold rounded-md bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
                   />
                   <button
                     type="button"
                     onClick={() => emitTime(hours24, minutes + 1)}
                     aria-label={bi('زيادة دقيقة', 'Increase minute', 'زیادکردنی خولەک')}
                     style={{ minHeight: 'unset' }}
-                    className="compact-btn size-6 rounded-md bg-layer border border-layer-line hover:bg-layer-hover text-foreground flex items-center justify-center cursor-pointer"
+                    className="compact-btn size-7 rounded-md bg-layer border border-layer-line hover:bg-layer-hover text-foreground flex items-center justify-center cursor-pointer"
                   >
-                    <Plus className="size-3" />
+                    <Plus className="size-3.5" />
                   </button>
                 </div>
               </div>
@@ -1389,13 +1389,13 @@ export function getNprsSeverityStyles(score: number | undefined | null): {
   }
   if (score <= 6) {
     return {
-      activeBtn: 'bg-amber-500 text-white border-amber-600',
+      activeBtn: 'bg-amber-500 text-slate-950 border-amber-600',
       badgeText: 'text-amber-700 dark:text-amber-300',
       sliderAccent: 'accent-amber-500',
     };
   }
   return {
-    activeBtn: 'bg-rose-600 text-white border-rose-700',
+    activeBtn: 'bg-rose-700 text-white border-rose-800',
     badgeText: 'text-rose-700 dark:text-rose-300',
     sliderAccent: 'accent-rose-600',
   };
@@ -1457,7 +1457,7 @@ export const NprsControl: React.FC<NprsControlProps> = ({
                   aria-pressed={isSelected}
                   disabled={disabled}
                   onClick={() => handleSelect(num)}
-                  className={`size-7 rounded-lg text-xs font-mono font-bold border transition-colors cursor-pointer ${
+                  className={`size-8 rounded-lg text-xs font-mono font-bold border transition-colors cursor-pointer ${
                     isSelected
                       ? numStyle.activeBtn
                       : 'bg-transparent text-foreground border-transparent hover:bg-muted'

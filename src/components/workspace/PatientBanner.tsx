@@ -69,7 +69,7 @@ export const PatientBanner: React.FC<PatientBannerProps> = ({
             type="button"
             onClick={onBackToDirectory}
             aria-label={bi('العودة لدليل المرضى', 'Back to patient directory', 'گەڕانەوە بۆ تۆماری نەخۆشەکان')}
-            className="size-7 sm:size-8 rounded-lg bg-layer border border-layer-line text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            className="size-8 rounded-lg bg-layer border border-layer-line text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover flex items-center justify-center transition-colors cursor-pointer shrink-0"
             title={bi('العودة لدليل المرضى', 'Back to directory', 'گەڕانەوە بۆ تۆمار')}
           >
             {isRtl ? <ArrowRight className="size-4" /> : <ArrowLeft className="size-4" />}

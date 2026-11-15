@@ -64,23 +64,24 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
   return (
     <div className="space-y-4">
       {/* Top Bar: Movement Type Toggle & Tested Count */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/80">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-surface rounded-xl border border-line-2">
         <div className="flex items-center gap-1.5">
-          <Gauge className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-          <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+          <Gauge className="w-4 h-4 text-primary" />
+          <span className="text-xs font-bold text-foreground">
             {bi('نوع قياس المدى الحركي:', 'Measurement Type:', 'جۆری پێوانی مەودای جووڵە:')}
           </span>
-          <div className="flex flex-wrap items-center bg-white dark:bg-slate-900 rounded-lg p-1 border border-slate-200 dark:border-slate-700 text-xs">
+          <div className="flex flex-wrap items-center bg-layer rounded-lg p-1 border border-line-2 text-xs">
             {(Object.keys(ROM_MOVEMENT_TYPES) as RomMovementType[]).map((type) => (
               <button
                 key={type}
                 type="button"
+                aria-pressed={movementType === type}
                 onClick={() => setMovementType(type)}
                 style={{ minHeight: 'unset' }}
                 className={`compact-btn px-3 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
                   movementType === type
-                    ? 'bg-teal-600 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-teal-700 text-white shadow-xs'
+                    : 'text-muted-foreground-1 hover:text-foreground'
                 }`}
               >
                 {type}
@@ -90,7 +91,7 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+          <span className="text-xs text-muted-foreground-1 font-medium">
             {bi(
               `الحركات الموثقة: ${entries.length}`,
               `Recorded Movements: ${entries.length}`,
@@ -101,7 +102,7 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
       </div>
 
       {/* Joint Tabs (Multi-line wrap so every joint including Ankle is always visible) */}
-      <div className="flex flex-wrap items-center gap-1.5 pb-1">
+      <div className="flex flex-wrap items-center gap-1.5 pb-1" role="tablist">
         {ROM_JOINTS_CATALOG.map((joint) => {
           const isSelected = selectedJointId === joint.jointId;
           const jointEntriesCount = entries.filter((e) => e.jointId === joint.jointId).length;
@@ -110,12 +111,14 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
             <button
               key={joint.jointId}
               type="button"
+              role="tab"
+              aria-selected={isSelected}
               onClick={() => setSelectedJointId(joint.jointId)}
               style={{ minHeight: 'unset' }}
               className={`compact-btn px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 border cursor-pointer ${
                 isSelected
-                  ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
-                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-700'
+                  ? 'bg-teal-700 text-white border-teal-800 shadow-sm'
+                  : 'bg-layer text-foreground border-line-2 hover:bg-surface'
               }`}
             >
               <span>{bi(joint.nameAr.split('(')[0], joint.nameEn)}</span>
@@ -150,10 +153,10 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
           return (
             <div
               key={mov.movementId}
-              className="p-3 sm:p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-600 transition-colors space-y-2.5"
+              className="p-3 sm:p-3.5 rounded-xl border border-line-2 bg-card hover:border-line-3 transition-colors space-y-2.5"
             >
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                <h4 className="text-xs font-bold text-foreground">
                   {bi(mov.nameAr, mov.nameEn)}
                 </h4>
                 {bilateralDiff !== null && (
@@ -172,8 +175,8 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
 
               {/* Bilateral or Midline Stepper Inputs */}
               {isMidline ? (
-                <div className="flex items-center justify-between gap-3 pt-1.5 border-t border-slate-100 dark:border-slate-800">
-                  <span className="text-xs text-slate-500 font-medium">
+                <div className="flex items-center justify-between gap-3 pt-1.5 border-t border-line-1">
+                  <span className="text-xs text-muted-foreground-1 font-medium">
                     {bi('الزاوية المقاسة:', 'Angle:', 'گۆشەی پێوراو:')}
                   </span>
                   <div className="flex items-center gap-1.5" dir="ltr">
@@ -193,16 +196,16 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                           e.target.value === '' ? null : Number(e.target.value)
                         )
                       }
-                      className="w-20 min-h-[34px] px-2 py-1 text-center font-bold font-mono text-xs tabular-nums rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500"
+                      className="w-20 min-h-[34px] px-2 py-1 text-center font-bold font-mono text-xs tabular-nums rounded-lg border border-line-2 bg-layer text-foreground focus:ring-2 focus:ring-primary"
                     />
-                    <span className="text-xs font-bold text-slate-400">°</span>
+                    <span className="text-xs font-bold text-muted-foreground-1">°</span>
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-1.5 border-t border-slate-100 dark:border-slate-800">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-1.5 border-t border-line-1">
                   {/* Right Side */}
-                  <div className="flex items-center justify-between gap-1.5 p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                  <div className="flex items-center justify-between gap-1.5 p-2 rounded-lg bg-surface border border-line-2">
+                    <span className="text-xs font-bold text-foreground">
                       {bi('يمين (R):', 'Right (R):', 'ڕاست (R):')}
                     </span>
                     <div className="flex items-center gap-1" dir="ltr">
@@ -222,15 +225,15 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                             e.target.value === '' ? null : Number(e.target.value)
                           )
                         }
-                        className="w-16 sm:w-20 min-h-[34px] px-2 py-1 text-center font-bold font-mono text-xs tabular-nums rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500"
+                        className="w-16 sm:w-20 min-h-[34px] px-2 py-1 text-center font-bold font-mono text-xs tabular-nums rounded-md border border-line-2 bg-layer text-foreground focus:ring-2 focus:ring-primary"
                       />
-                      <span className="text-xs font-bold text-slate-400">°</span>
+                      <span className="text-xs font-bold text-muted-foreground-1">°</span>
                     </div>
                   </div>
 
                   {/* Left Side */}
-                  <div className="flex items-center justify-between gap-1.5 p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                  <div className="flex items-center justify-between gap-1.5 p-2 rounded-lg bg-surface border border-line-2">
+                    <span className="text-xs font-bold text-foreground">
                       {bi('يسار (L):', 'Left (L):', 'چەپ (L):')}
                     </span>
                     <div className="flex items-center gap-1" dir="ltr">
@@ -250,9 +253,9 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                             e.target.value === '' ? null : Number(e.target.value)
                           )
                         }
-                        className="w-16 sm:w-20 min-h-[34px] px-2 py-1 text-center font-bold font-mono text-xs tabular-nums rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500"
+                        className="w-16 sm:w-20 min-h-[34px] px-2 py-1 text-center font-bold font-mono text-xs tabular-nums rounded-md border border-line-2 bg-layer text-foreground focus:ring-2 focus:ring-primary"
                       />
-                      <span className="text-xs font-bold text-slate-400">°</span>
+                      <span className="text-xs font-bold text-muted-foreground-1">°</span>
                     </div>
                   </div>
                 </div>

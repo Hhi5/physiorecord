@@ -365,9 +365,18 @@ export const ExamWidgetShelf: React.FC<ExamWidgetShelfProps> = ({
             return (
               <div
                 key={widget.id}
+                role="button"
+                tabIndex={0}
+                aria-pressed={isAdded}
                 draggable
                 onDragStart={(e) => handleDragStart(e, widget.id)}
                 onClick={() => onAddWidget(widget.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onAddWidget(widget.id);
+                  }
+                }}
                 className={`group relative p-3.5 rounded-xl border transition-all cursor-pointer select-none flex flex-col justify-between gap-2.5 ${
                   isAdded
                     ? 'bg-primary/10 border-primary/80 ring-1 ring-primary/20 shadow-2xs'

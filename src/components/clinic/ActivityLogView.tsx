@@ -521,14 +521,25 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
       </div>
 
       {pendingAdminStaffId && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="activity-log-admin-pin-title"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              e.stopPropagation();
+              setPendingAdminStaffId(null);
+            }
+          }}
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
+        >
           <form
             onSubmit={handleConfirmAdminPin}
             className="bg-card border border-card-line rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl"
           >
             <div className="flex items-center gap-2.5 text-sm font-bold text-foreground">
               <KeyRound className="size-4 text-primary shrink-0" />
-              <h3>
+              <h3 id="activity-log-admin-pin-title">
                 {bi('تأكيد رمز المدير السري', 'Enter Staff Admin PIN', 'دڵنیاکردنەوەی کۆدی PIN ـی بەڕێوەبەر')}
               </h3>
             </div>
@@ -543,6 +554,7 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
               type="password"
               autoComplete="current-password"
               inputMode="numeric"
+              aria-label={bi('رمز المدير السري PIN', 'Staff Admin PIN', 'کۆدی PIN ـی بەڕێوەبەر')}
               autoFocus
               required
               value={pinAttempt}

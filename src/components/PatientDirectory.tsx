@@ -287,9 +287,11 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
       <div className="bg-card border border-card-line rounded-2xl shadow-2xs overflow-hidden">
         {/* Top Row: Segmented Tabs & View Switcher */}
         <div className="px-4 sm:px-5 py-3.5 border-b border-card-divider flex flex-wrap items-center justify-between gap-3 bg-muted/30">
-          <div className="inline-flex bg-surface border border-line-2 rounded-xl p-1 gap-1">
+          <div role="tablist" aria-label={bi('حالة سجلات المرضى', 'Patient Record Status')} className="inline-flex bg-surface border border-line-2 rounded-xl p-1 gap-1">
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'active'}
               onClick={() => setActiveTab('active')}
               className={`py-1.5 px-3 inline-flex items-center gap-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 activeTab === 'active'
@@ -305,6 +307,8 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
 
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'archived'}
               onClick={() => setActiveTab('archived')}
               className={`py-1.5 px-3 inline-flex items-center gap-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 activeTab === 'archived'
@@ -365,22 +369,16 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                 'بحث فوري باسم المريض، رقم الهاتف، التشخيص، أو التاريخ الطبي...',
                 'Instant search by name, phone, diagnosis, or clinical history...'
               )}
-              className={`py-2.5 ${
-                isRtl ? 'pl-9 pr-10' : 'pr-9 pl-10'
-              } block w-full bg-layer border border-layer-line rounded-xl text-xs sm:text-sm text-foreground placeholder:text-muted-foreground-1 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all`}
+              className="py-2.5 ps-10 pe-9 block w-full bg-layer border border-layer-line rounded-xl text-xs sm:text-sm text-foreground placeholder:text-muted-foreground-1 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
             />
             <Search
-              className={`size-4 text-muted-foreground-1 absolute ${
-                isRtl ? 'right-3.5' : 'left-3.5'
-              } top-1/2 -translate-y-1/2 pointer-events-none`}
+              className="size-4 text-muted-foreground-1 absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className={`absolute ${
-                  isRtl ? 'left-3' : 'right-3'
-                } top-1/2 -translate-y-1/2 text-xs text-muted-foreground-1 hover:text-foreground bg-surface px-2 py-0.5 rounded-md cursor-pointer inline-flex items-center gap-1`}
+                className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground-1 hover:text-foreground bg-surface px-2 py-0.5 rounded-md cursor-pointer inline-flex items-center gap-1"
               >
                 <X className="size-3" />
                 <span>{bi('مسح', 'Clear')}</span>
@@ -523,15 +521,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                       <tr
                         key={patient.id}
                         onClick={() => setQuickViewEntry({ patient, index: idx })}
-                        tabIndex={0}
-                        role="button"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            setQuickViewEntry({ patient, index: idx });
-                          }
-                        }}
-                        className="hover:bg-muted/40 transition-colors cursor-pointer group focus:outline-none focus:bg-muted/60"
+                        className="hover:bg-muted/40 transition-colors cursor-pointer group"
                       >
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
@@ -617,10 +607,17 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                                 }`}
                               />
                             </button>
-                            <span className="inline-flex items-center gap-1 py-1.5 px-3 rounded-lg bg-primary/10 text-primary font-semibold group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setQuickViewEntry({ patient, index: idx });
+                              }}
+                              className="inline-flex items-center gap-1 py-1.5 px-3 rounded-lg bg-primary/10 text-primary font-semibold group-hover:bg-primary group-hover:text-primary-foreground transition-colors cursor-pointer"
+                            >
                               <span>{bi('عرض التقرير', 'View Report')}</span>
                               <ChevronIcon className="size-3.5" />
-                            </span>
+                            </button>
                           </div>
                         </td>
                       </tr>

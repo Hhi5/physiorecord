@@ -662,6 +662,7 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
                 <button
                   key={n}
                   type="button"
+                  aria-pressed={selected}
                   disabled={readOnly}
                   onClick={() => {
                     setRawInput(String(n));
@@ -670,10 +671,10 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
                   className={`py-2 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
                     selected
                       ? n >= 7
-                        ? 'bg-rose-600 text-white shadow-xs'
+                        ? 'bg-rose-700 text-white shadow-xs'
                         : n >= 4
-                          ? 'bg-amber-500 text-white shadow-xs'
-                          : 'bg-emerald-600 text-white shadow-xs'
+                          ? 'bg-amber-500 text-slate-950 shadow-xs'
+                          : 'bg-emerald-700 text-white shadow-xs'
                       : 'bg-layer border border-line-2 text-foreground hover:bg-layer-hover'
                   }`}
                 >
@@ -683,10 +684,11 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
             })}
           </div>
           <div className="max-w-xs">
-            <label className="text-xs font-bold text-foreground block mb-1">
+            <label htmlFor="nprs-baseline-input" className="text-xs font-bold text-foreground block mb-1">
               {bi('درجة الألم السابقة للمقارنة (اختياري):', 'Baseline NPRS for Δ (optional):', 'نمرەی ئازاری پێشوو بۆ بەراورد (ئیختیاری):')}
             </label>
             <input
+              id="nprs-baseline-input"
               type="number"
               min={0}
               max={10}

@@ -302,14 +302,14 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
         {/* Header */}
         <div className="px-6 py-5 bg-primary text-primary-foreground flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
-              <Layers className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-primary-foreground/15 flex items-center justify-center">
+              <Layers className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
               <h2 className="text-lg font-bold">
                 {isEditing ? bi('تعديل حلقة الرعاية السريرية', 'Edit Episode of Care') : bi('بدء حلقة رعاية جديدة', 'Start New Episode of Care')}
               </h2>
-              <p className="text-xs text-white/85 mt-0.5">
+              <p className="text-xs text-primary-foreground/85 mt-0.5">
                 {bi('المريض:', 'Patient:')} <span className="font-semibold">{getPatientDisplayName(p, language)}</span> ({p.gender === 'male' ? bi('ذكر', 'Male') : bi('أنثى', 'Female')}، <bdi dir="ltr">{displayAge ?? '—'}</bdi> {bi('سنة', 'yrs')})
               </p>
             </div>
@@ -318,9 +318,9 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label={bi('إغلاق', 'Close')}
-            className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/25 flex items-center justify-center transition-colors cursor-pointer"
           >
-            <X className="w-4 h-4 text-white" />
+            <X className="w-4 h-4 text-primary-foreground" />
           </button>
         </div>
 
@@ -492,10 +492,11 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
 
           {/* Episode Title */}
           <div>
-            <label className="block text-xs font-bold text-foreground mb-1">
+            <label htmlFor="episode-title-input" className="block text-xs font-bold text-foreground mb-1">
               {bi('عنوان حلقة الرعاية', 'Episode Title')} <span className="text-rose-500">*</span>
             </label>
             <input
+              id="episode-title-input"
               type="text"
               required
               value={title}
@@ -513,10 +514,11 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
             
             {/* Primary Specialty */}
             <div>
-              <label className="block text-xs font-bold text-foreground mb-1">
+              <label htmlFor="episode-specialty-select" className="block text-xs font-bold text-foreground mb-1">
                 {bi('التخصص السريري الرئيسي', 'Primary Clinical Specialty')} <span className="text-rose-500">*</span>
               </label>
               <select
+                id="episode-specialty-select"
                 value={primarySpecialty}
                 onChange={(e) => setPrimarySpecialty(e.target.value as ClinicalSpecialty)}
                 className="w-full px-3.5 py-2.5 rounded-lg bg-surface border border-layer-line text-foreground text-xs sm:text-sm font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -539,10 +541,11 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
 
             {/* Affected Body Region */}
             <div>
-              <label className="block text-xs font-bold text-foreground mb-1">
+              <label htmlFor="episode-body-region-select" className="block text-xs font-bold text-foreground mb-1">
                 {bi('المنطقة التشريحية المصابة', 'Affected Body Region')} <span className="text-rose-500">*</span>
               </label>
               <select
+                id="episode-body-region-select"
                 value={affectedBodyRegion}
                 onChange={(e) => setAffectedBodyRegion(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-lg bg-surface border border-layer-line text-foreground text-xs sm:text-sm font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -558,6 +561,7 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
                 <input
                   type="text"
                   required
+                  aria-label={bi('تحديد المنطقة التشريحية يدوياً', 'Custom anatomical region')}
                   value={customBodyRegion}
                   onChange={(e) => setCustomBodyRegion(e.target.value)}
                   placeholder={bi('حدد المنطقة التشريحية...', 'Specify anatomical region...', 'ناوچەی ئەناتۆمی دیاری بکە...')}
@@ -582,10 +586,11 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-foreground mb-1">
+              <label htmlFor="episode-onset-mechanism-select" className="block text-xs font-bold text-foreground mb-1">
                 {bi('آلية الإصابة / البداية', 'Onset Mechanism')}
               </label>
               <select
+                id="episode-onset-mechanism-select"
                 value={onsetMechanism}
                 onChange={(e) => setOnsetMechanism(e.target.value as OnsetMechanism)}
                 className="w-full px-3.5 py-2.5 rounded-lg bg-surface border border-layer-line text-foreground text-xs sm:text-sm font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -603,7 +608,7 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
           <div className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-bold text-foreground">
+                <label htmlFor="episode-medical-diagnosis-textarea" className="text-xs font-bold text-foreground">
                   {bi('التشخيص الطبي الأولي', 'Medical Diagnosis')} <span className="text-rose-500">*</span>
                 </label>
                 {!isEditing && p.medicalHistory && (
@@ -613,6 +618,7 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
                 )}
               </div>
               <AutoResizeTextarea
+                id="episode-medical-diagnosis-textarea"
                 required
                 minRows={2}
                 value={medicalDiagnosis}
@@ -626,10 +632,11 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-foreground mb-1">
+              <label htmlFor="episode-clinical-impression-textarea" className="block text-xs font-bold text-foreground mb-1">
                 {bi('الانطباع والتقييم السريري للعلاج الطبيعي', 'PT Clinical Impression & Assessment')} <span className="text-rose-500">*</span>
               </label>
               <AutoResizeTextarea
+                id="episode-clinical-impression-textarea"
                 required
                 minRows={2}
                 value={clinicalImpression}
@@ -652,14 +659,15 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
 
             {/* Short-Term Goals */}
             <div>
-              <span className="text-xs font-semibold text-foreground block mb-1">
+              <label htmlFor="episode-short-goal-input" className="text-xs font-semibold text-foreground block mb-1">
                 {bi(
                   'الأهداف قصيرة المدى (2 إلى 4 أسابيع):',
                   'Short-Term Goals (2 to 4 weeks):'
                 )}
-              </span>
+              </label>
               <div className="flex gap-2 mb-2">
                 <input
+                  id="episode-short-goal-input"
                   type="text"
                   value={newShortGoal}
                   onChange={(e) => setNewShortGoal(e.target.value)}
@@ -703,14 +711,15 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
 
             {/* Long-Term Goals */}
             <div>
-              <span className="text-xs font-semibold text-foreground block mb-1">
+              <label htmlFor="episode-long-goal-input" className="text-xs font-semibold text-foreground block mb-1">
                 {bi(
                   'الأهداف طويلة المدى وتطلعات التخريج (6 إلى 12 أسبوعاً):',
                   'Long-Term & Discharge Goals (6 to 12 weeks):'
                 )}
-              </span>
+              </label>
               <div className="flex gap-2 mb-2">
                 <input
+                  id="episode-long-goal-input"
                   type="text"
                   value={newLongGoal}
                   onChange={(e) => setNewLongGoal(e.target.value)}
@@ -765,10 +774,11 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
           {/* Referral & Discharge Criteria */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-foreground mb-1">
+              <label htmlFor="episode-referral-source-input" className="block text-xs font-bold text-foreground mb-1">
                 {bi('الجهة أو الطبيب المحيل', 'Referral Source')}
               </label>
               <input
+                id="episode-referral-source-input"
                 type="text"
                 value={referralSource}
                 onChange={(e) => setReferralSource(e.target.value)}
@@ -778,10 +788,11 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-foreground mb-1">
+              <label htmlFor="episode-discharge-criteria-input" className="block text-xs font-bold text-foreground mb-1">
                 {bi('معايير التخريج المبدئية', 'Discharge Criteria')}
               </label>
               <input
+                id="episode-discharge-criteria-input"
                 type="text"
                 value={dischargeCriteria}
                 onChange={(e) => setDischargeCriteria(e.target.value)}

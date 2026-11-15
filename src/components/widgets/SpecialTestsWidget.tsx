@@ -887,10 +887,11 @@ const SpecialTestRowCard: React.FC<SpecialTestRowCardProps> = ({
         <button
           type="button"
           disabled={readOnly}
+          aria-pressed={currentOutcome === 'positive'}
           onClick={() => onSelectOutcome('positive')}
           className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
             currentOutcome === 'positive'
-              ? 'bg-rose-600 text-white shadow-2xs'
+              ? 'bg-rose-700 text-white shadow-2xs'
               : 'bg-layer hover:bg-rose-500/10 text-muted-foreground-1 border border-line-2'
           }`}
         >
@@ -901,10 +902,11 @@ const SpecialTestRowCard: React.FC<SpecialTestRowCardProps> = ({
         <button
           type="button"
           disabled={readOnly}
+          aria-pressed={currentOutcome === 'pain_reproduced'}
           onClick={() => onSelectOutcome('pain_reproduced')}
           className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
             currentOutcome === 'pain_reproduced'
-              ? 'bg-amber-600 text-white shadow-2xs'
+              ? 'bg-amber-700 text-white shadow-2xs'
               : 'bg-layer hover:bg-amber-500/10 text-muted-foreground-1 border border-line-2'
           }`}
         >
@@ -915,10 +917,11 @@ const SpecialTestRowCard: React.FC<SpecialTestRowCardProps> = ({
         <button
           type="button"
           disabled={readOnly}
+          aria-pressed={currentOutcome === 'negative'}
           onClick={() => onSelectOutcome('negative')}
           className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
             currentOutcome === 'negative'
-              ? 'bg-emerald-600 text-white shadow-2xs'
+              ? 'bg-emerald-700 text-white shadow-2xs'
               : 'bg-layer hover:bg-emerald-500/10 text-muted-foreground-1 border border-line-2'
           }`}
         >

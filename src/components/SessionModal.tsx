@@ -157,26 +157,41 @@ export const SessionModal: React.FC<SessionModalProps> = ({
     : (nextSessionNumber ?? existingSessionCount + 1);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto" dir={isRtl ? 'rtl' : 'ltr'}>
-      <div className="bg-card rounded-2xl max-w-2xl w-full shadow-2xl border border-card-line overflow-hidden my-6">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="session-modal-title"
+      className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+      dir={isRtl ? 'rtl' : 'ltr'}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onClose();
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="bg-card rounded-2xl max-w-2xl w-full shadow-2xl border border-card-line overflow-hidden my-6"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Modal Header */}
         <div className="px-6 py-5 bg-primary text-primary-foreground flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-white">
+            <div className="w-10 h-10 rounded-xl bg-primary-foreground/15 flex items-center justify-center text-primary-foreground">
               <Activity className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base sm:text-lg font-bold">
+                <h3 id="session-modal-title" className="text-base sm:text-lg font-bold">
                   {sessionToEdit ? bi('تعديل بيانات الجلسة السريرية', 'Edit Session Details') : bi('تسجيل جلسة علاجية جديدة', 'New Clinical Session')}
                 </h3>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-white/15 text-white border border-white/25">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-primary-foreground/15 text-primary-foreground border border-primary-foreground/25">
                   {bi(`الجلسة #${calculatedSessionNumber}`, `Session #${calculatedSessionNumber}`)}
                 </span>
               </div>
-              <p className="text-xs text-white/85 mt-0.5">
-                {bi('ضمن حلقة:', 'Episode:')} <strong className="text-white">{episode.data.title}</strong>
+              <p className="text-xs text-primary-foreground/85 mt-0.5">
+                {bi('ضمن حلقة:', 'Episode:')} <strong className="text-primary-foreground">{episode.data.title}</strong>
               </p>
             </div>
           </div>
@@ -185,7 +200,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label={bi('إغلاق', 'Close')}
-            className="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -215,6 +230,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                   <button
                     key={typeKey}
                     type="button"
+                    aria-pressed={isSelected}
                     onClick={() => setSessionType(typeKey)}
                     className={`p-3 rounded-xl border text-right transition-all flex flex-col justify-between cursor-pointer ${
                       isSelected
@@ -223,13 +239,13 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold text-foreground">{info.ar}</span>
+                      <span className="text-xs font-bold text-foreground">{bi(info.ar, info.en)}</span>
                       <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${isSelected ? 'border-primary bg-primary' : 'border-layer-line'}`}>
-                        {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
                       </span>
                     </div>
                     <span className="text-xs font-mono text-muted-foreground-1" dir="ltr">{info.en}</span>
-                    <span className="text-xs text-muted-foreground-2 mt-1 leading-tight">{info.descriptionAr}</span>
+                    <span className="text-xs text-muted-foreground-2 mt-1 leading-tight">{bi(info.descriptionAr || info.ar, info.en)}</span>
                   </button>
                 );
               })}
@@ -239,16 +255,17 @@ export const SessionModal: React.FC<SessionModalProps> = ({
           {/* Session Number, Date, Time & Duration Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5 pt-2">
             <div>
-              <label className="block text-xs font-bold text-foreground mb-1.5">
+              <label htmlFor="session-number-input" className="block text-xs font-bold text-foreground mb-1.5">
                 <span className="flex items-center gap-1.5">
                   <Hash className="w-3.5 h-3.5 text-muted-foreground-1" />
-                  <span>رقم الجلسة</span>
+                  <span>{bi('رقم الجلسة', 'Session #')}</span>
                 </span>
               </label>
               <input
+                id="session-number-input"
                 type="number"
                 min="1"
-                placeholder={`تلقائي (${calculatedSessionNumber})`}
+                placeholder={bi(`تلقائي (${calculatedSessionNumber})`, `Auto (${calculatedSessionNumber})`)}
                 value={customSessionNumber}
                 onChange={(e) => setCustomSessionNumber(e.target.value)}
                 className="w-full px-3 py-2 text-xs bg-surface border border-layer-line text-foreground rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-hidden"
@@ -271,13 +288,14 @@ export const SessionModal: React.FC<SessionModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-foreground mb-1.5">
+              <label htmlFor="session-time-input" className="block text-xs font-bold text-foreground mb-1.5">
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-muted-foreground-1" />
-                  <span>وقت الانعقاد</span>
+                  <span>{bi('وقت الانعقاد', 'Session Time')}</span>
                 </span>
               </label>
               <input
+                id="session-time-input"
                 type="time"
                 value={sessionTime}
                 onChange={(e) => setSessionTime(e.target.value)}
@@ -286,13 +304,14 @@ export const SessionModal: React.FC<SessionModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-foreground mb-1.5">
+              <label htmlFor="session-duration-input" className="block text-xs font-bold text-foreground mb-1.5">
                 <span className="flex items-center gap-1.5">
                   <Activity className="w-3.5 h-3.5 text-muted-foreground-1" />
-                  <span>المدة (بالدقائق)</span>
+                  <span>{bi('المدة (بالدقائق)', 'Duration (min)')}</span>
                 </span>
               </label>
               <input
+                id="session-duration-input"
                 type="number"
                 min="10"
                 max="180"
@@ -307,7 +326,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
           {/* Attendance Status */}
           <div>
             <label className="block text-xs font-bold text-foreground mb-2">
-              حالة الحضور والتنفيذ (Attendance Status)
+              {bi('حالة الحضور والتنفيذ (Attendance Status)', 'Attendance Status')}
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {(Object.keys(ATTENDANCE_STATUSES) as AttendanceStatus[]).map((statusKey) => {
@@ -318,6 +337,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                   <button
                     key={statusKey}
                     type="button"
+                    aria-pressed={isSelected}
                     onClick={() => setAttendanceStatus(statusKey)}
                     className={`py-2 px-2.5 rounded-lg text-xs font-bold border transition-all text-center cursor-pointer ${
                       isSelected
@@ -325,7 +345,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                         : 'border-layer-line hover:bg-layer-hover bg-layer text-foreground'
                     }`}
                   >
-                    <span>{info.ar}</span>
+                    <span>{bi(info.ar, info.en)}</span>
                   </button>
                 );
               })}
@@ -335,13 +355,14 @@ export const SessionModal: React.FC<SessionModalProps> = ({
           {/* Cancellation Reason (if not attended) */}
           {attendanceStatus !== 'attended' && (
             <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900">
-              <label className="block text-xs font-bold text-amber-900 dark:text-amber-300 mb-1">
-                سبب الإلغاء أو التخلف عن الحضور <span className="text-rose-500">*</span>
+              <label htmlFor="session-cancel-reason-input" className="block text-xs font-bold text-amber-900 dark:text-amber-300 mb-1">
+                {bi('سبب الإلغاء أو التخلف عن الحضور', 'Cancellation / No-Show Reason')} <span className="text-rose-500">*</span>
               </label>
               <AutoResizeTextarea
+                id="session-cancel-reason-input"
                 value={cancellationReason}
                 onChange={(e) => setCancellationReason(e.target.value)}
-                placeholder="وضح سبب الإلغاء أو عدم الحضور لأرشفته في سجل المريض..."
+                placeholder={bi('وضح سبب الإلغاء أو عدم الحضور لأرشفته في سجل المريض...', 'State reason for cancellation or no-show...')}
                 minRows={2}
                 className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-800 rounded-lg focus:ring-2 focus:ring-amber-500 bg-surface text-foreground"
                 required
@@ -351,33 +372,35 @@ export const SessionModal: React.FC<SessionModalProps> = ({
 
           {/* Therapist Name */}
           <div>
-            <label className="block text-xs font-bold text-foreground mb-1.5">
+            <label htmlFor="session-therapist-input" className="block text-xs font-bold text-foreground mb-1.5">
               <span className="flex items-center gap-1.5">
                 <UserCheck className="w-3.5 h-3.5 text-muted-foreground-1" />
-                <span>المعالج الطبيعي المسؤول</span>
+                <span>{bi('المعالج الطبيعي المسؤول', 'Treating Physical Therapist')}</span>
               </span>
             </label>
             <input
+              id="session-therapist-input"
               type="text"
               value={therapistName}
               onChange={(e) => setTherapistName(e.target.value)}
-              placeholder="اسم المعالج الموثق للجلسة..."
+              placeholder={bi('اسم المعالج الموثق للجلسة...', 'Treating therapist name...')}
               className="w-full px-3 py-2 text-xs bg-surface border border-layer-line text-foreground rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-hidden"
             />
           </div>
 
           {/* Administrative Notes */}
           <div>
-            <label className="block text-xs font-bold text-foreground mb-1.5">
+            <label htmlFor="session-admin-notes-input" className="block text-xs font-bold text-foreground mb-1.5">
               <span className="flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-muted-foreground-1" />
-                <span>ملاحظات إدارية وتنظيمية (اختياري — غير سريرية)</span>
+                <span>{bi('ملاحظات إدارية وتنظيمية (اختياري — غير سريرية)', 'Administrative Notes (Optional — Non-clinical)')}</span>
               </span>
             </label>
             <AutoResizeTextarea
+              id="session-admin-notes-input"
               value={administrativeNotes}
               onChange={(e) => setAdministrativeNotes(e.target.value)}
-              placeholder="أي ملاحظات تخص المواعيد، التأخير، أو الترتيبات الإدارية..."
+              placeholder={bi('أي ملاحظات تخص المواعيد، التأخير، أو الترتيبات الإدارية...', 'Notes regarding scheduling, late arrival, or administrative logistics...')}
               minRows={2}
               className="w-full px-3 py-2 text-xs bg-surface border border-layer-line text-foreground rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-hidden"
             />
@@ -391,7 +414,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
               disabled={submitting}
               className="px-4 py-2.5 rounded-lg text-xs font-semibold text-muted-foreground-1 bg-layer border border-layer-line hover:bg-layer-hover transition-colors cursor-pointer"
             >
-              إلغاء
+              {bi('إلغاء', 'Cancel')}
             </button>
             <button
               type="submit"
@@ -399,7 +422,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
               className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-lg text-xs font-bold text-primary-foreground bg-primary hover:bg-primary-hover shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
             >
               <Save className="w-4 h-4" />
-              <span>{submitting ? 'جاري الحفظ المشفر...' : 'حفظ الجلسة كمسودة'}</span>
+              <span>{submitting ? bi('جاري الحفظ المشفر...', 'Saving encrypted...') : bi('حفظ الجلسة كمسودة', 'Save Session Draft')}</span>
             </button>
           </div>
 

@@ -241,22 +241,22 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
   };
 
   const getGradeBadgeStyle = (grade: MmtGradeValue | null) => {
-    if (!grade) return 'bg-slate-100 dark:bg-slate-800 text-slate-400';
+    if (!grade) return 'bg-surface text-muted-foreground-1';
     switch (grade) {
       case '5':
-        return 'bg-emerald-600 text-white font-bold shadow-xs';
+        return 'bg-emerald-700 text-white font-bold shadow-xs';
       case '4':
-        return 'bg-teal-600 text-white font-bold shadow-xs';
+        return 'bg-teal-700 text-white font-bold shadow-xs';
       case '3':
-        return 'bg-amber-500 text-white font-bold shadow-xs';
+        return 'bg-amber-500 text-slate-950 font-bold shadow-xs';
       case '2':
-        return 'bg-orange-500 text-white font-bold shadow-xs';
+        return 'bg-orange-500 text-slate-950 font-bold shadow-xs';
       case '1':
-        return 'bg-rose-500 text-white font-bold shadow-xs';
+        return 'bg-rose-700 text-white font-bold shadow-xs';
       case '0':
         return 'bg-red-700 text-white font-bold shadow-xs';
       default:
-        return 'bg-slate-200 text-slate-800';
+        return 'bg-surface text-foreground';
     }
   };
 
@@ -273,10 +273,10 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
       </datalist>
 
       {/* Compact Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/80">
+      <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-surface rounded-xl border border-line-2">
         <div className="flex items-center gap-2">
-          <Dumbbell className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-          <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+          <Dumbbell className="w-4 h-4 text-primary shrink-0" />
+          <span className="text-xs font-bold text-foreground">
             {bi(
               'فحص القوة العضلية المرن (اكتب اسم العضلة أو الحركة وحدد الدرجة)',
               'Flexible Muscle Strength Testing (MRC Scale 0–5)',
@@ -285,7 +285,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
           </span>
         </div>
 
-        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium tabular-nums">
+        <span className="text-xs text-muted-foreground-1 font-medium tabular-nums">
           {bi(
             `العضلات المختبرة: ${entries.length}`,
             `Tested Muscles: ${entries.length}`,
@@ -305,11 +305,11 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
           return (
             <div
               key={row.key}
-              className="p-3 sm:p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-600 transition-colors space-y-3"
+              className="p-3 sm:p-3.5 rounded-xl border border-line-2 bg-card hover:border-line-3 transition-colors space-y-3"
             >
               {/* Manual Muscle / Movement Name Input + Bilateral/Midline Toggle + Remove Button */}
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <span className="size-6 rounded-lg bg-teal-500/10 text-teal-700 dark:text-teal-300 text-xs font-mono font-bold flex items-center justify-center shrink-0">
+                <span className="size-6 rounded-lg bg-primary/10 text-primary text-xs font-mono font-bold flex items-center justify-center shrink-0">
                   {idx + 1}
                 </span>
                 <input
@@ -323,14 +323,14 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                     'Enter muscle or movement (or pick from bilingual suggestions)...',
                     'ناوی ماسولکە یان جووڵە بنووسە یان لە پێشنیارەکان هەڵبژێرە...'
                   )}
-                  className="flex-1 min-w-0 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-teal-500"
+                  className="flex-1 min-w-0 px-3 py-2 text-xs font-semibold rounded-xl bg-layer border border-line-2 text-foreground placeholder:text-muted-foreground-1 focus:outline-none focus:border-primary"
                 />
                 {!readOnly && (
                   <button
                     type="button"
                     onClick={() => handleToggleMidline(row.key)}
                     style={{ minHeight: 'unset' }}
-                    className="compact-btn px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                    className="compact-btn px-2.5 py-1.5 rounded-lg border border-line-2 bg-layer text-xs font-bold text-foreground hover:bg-surface transition-colors cursor-pointer shrink-0"
                     title={bi(
                       'التبديل بين فحص يمين/يسار (R/L) أو فحص محوري للجذع/الرقبة',
                       'Toggle between Bilateral (R/L) and Midline/Trunk',
@@ -345,7 +345,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                     type="button"
                     onClick={() => handleRemoveRow(row.key)}
                     style={{ minHeight: 'unset' }}
-                    className="compact-btn p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
+                    className="compact-btn size-7 flex items-center justify-center rounded-lg text-muted-foreground-1 hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer shrink-0"
                     title={bi('حذف هذا الفحص', 'Remove test', 'سڕینەوەی ئەم تاقیکردنەوەیە')}
                     aria-label={bi('حذف هذا الفحص', 'Remove test', 'سڕینەوەی ئەم تاقیکردنەوەیە')}
                   >
@@ -355,12 +355,12 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
               </div>
 
               {row.isMidline ? (
-                <div className="space-y-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
+                <div className="space-y-1.5 pt-1 border-t border-line-1">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-600 dark:text-slate-300">
+                    <span className="font-semibold text-foreground">
                       {bi('درجة القوة (محوري):', 'Midline Strength Grade:', 'پلەی هێز (تەوەرەیی):')}
                     </span>
-                    <span className="font-bold text-xs text-teal-600 dark:text-teal-400">
+                    <span className="font-bold text-xs text-primary">
                       {midlineGrade
                         ? `MRC Grade ${midlineGrade}`
                         : bi('غير مختبر', 'Untested', 'تاقی نەکراوەتەوە')}
@@ -371,6 +371,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                       <button
                         key={g}
                         type="button"
+                        aria-pressed={midlineGrade === g}
                         disabled={readOnly}
                         onClick={() =>
                           handleSetGrade(row, 'midline', midlineGrade === g ? null : g)
@@ -379,7 +380,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                         className={`compact-btn flex-1 min-h-[34px] py-1.5 rounded-md text-xs font-bold font-mono transition-all border cursor-pointer ${
                           midlineGrade === g
                             ? getGradeBadgeStyle(g) + ' border-transparent'
-                            : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100'
+                            : 'bg-layer border-line-2 text-foreground hover:bg-surface'
                         }`}
                       >
                         {g}
@@ -388,14 +389,14 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-line-1">
                   {/* Right Side */}
-                  <div className="space-y-1.5 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
+                  <div className="space-y-1.5 p-2 rounded-lg bg-surface border border-line-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-700 dark:text-slate-300">
+                      <span className="font-bold text-foreground">
                         {bi('الأيمن (R):', 'Right (R):', 'لای ڕاست (R):')}
                       </span>
-                      <span className="font-mono font-bold text-teal-600 dark:text-teal-400">
+                      <span className="font-mono font-bold text-primary">
                         {rightGrade ? `G${rightGrade}` : '-'}
                       </span>
                     </div>
@@ -404,6 +405,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                         <button
                           key={g}
                           type="button"
+                          aria-pressed={rightGrade === g}
                           disabled={readOnly}
                           onClick={() =>
                             handleSetGrade(row, 'right', rightGrade === g ? null : g)
@@ -412,7 +414,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                           className={`compact-btn flex-1 min-h-[34px] py-1.5 text-xs font-bold font-mono rounded transition-all cursor-pointer ${
                             rightGrade === g
                               ? getGradeBadgeStyle(g)
-                              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                              : 'bg-layer text-foreground hover:bg-layer-hover'
                           }`}
                         >
                           {g}
@@ -422,12 +424,12 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                   </div>
 
                   {/* Left Side */}
-                  <div className="space-y-1.5 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
+                  <div className="space-y-1.5 p-2 rounded-lg bg-surface border border-line-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-700 dark:text-slate-300">
+                      <span className="font-bold text-foreground">
                         {bi('الأيسر (L):', 'Left (L):', 'لای چەپ (L):')}
                       </span>
-                      <span className="font-mono font-bold text-teal-600 dark:text-teal-400">
+                      <span className="font-mono font-bold text-primary">
                         {leftGrade ? `G${leftGrade}` : '-'}
                       </span>
                     </div>
@@ -436,6 +438,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                         <button
                           key={g}
                           type="button"
+                          aria-pressed={leftGrade === g}
                           disabled={readOnly}
                           onClick={() =>
                             handleSetGrade(row, 'left', leftGrade === g ? null : g)
@@ -444,7 +447,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                           className={`compact-btn flex-1 min-h-[34px] py-1.5 text-xs font-bold font-mono rounded transition-all cursor-pointer ${
                             leftGrade === g
                               ? getGradeBadgeStyle(g)
-                              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                              : 'bg-layer text-foreground hover:bg-layer-hover'
                           }`}
                         >
                           {g}

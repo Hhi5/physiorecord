@@ -1030,6 +1030,7 @@ export const AppLayout: React.FC = () => {
                   `${userMenuRoleLabel} — لیستی بەکارهێنەر و ڕێکخستنەکان`
                 )}
                 aria-expanded={isUserMenuOpen}
+                aria-haspopup="menu"
                 className="h-9 px-2.5 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <UserCheck className="w-4 h-4 text-primary shrink-0" />
@@ -1046,6 +1047,14 @@ export const AppLayout: React.FC = () => {
                     onClick={() => setIsUserMenuOpen(false)}
                   />
                   <div
+                    role="menu"
+                    aria-label={bi('قائمة المستخدم والإعدادات', 'User & clinic menu')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        e.stopPropagation();
+                        setIsUserMenuOpen(false);
+                      }
+                    }}
                     dir={isRtl ? 'rtl' : 'ltr'}
                     className="absolute end-0 mt-2 w-72 rounded-2xl bg-card border border-card-line shadow-xl p-3 z-40 space-y-3 text-xs"
                   >
@@ -1767,8 +1776,20 @@ export const AppLayout: React.FC = () => {
 
       {/* Mobile "More" Popover Sheet (HEP, Analytics, Audit, Settings) */}
       {isMobileMoreOpen && (
-        <div className="md:hidden fixed inset-0 z-40" onClick={() => setIsMobileMoreOpen(false)}>
+        <div
+          className="md:hidden fixed inset-0 z-40"
+          onClick={() => setIsMobileMoreOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              e.stopPropagation();
+              setIsMobileMoreOpen(false);
+            }
+          }}
+        >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={bi('المزيد من الأقسام', 'More sections')}
             onClick={(e) => e.stopPropagation()}
             dir={isRtl ? 'rtl' : 'ltr'}
             className="fixed bottom-16 inset-x-3 bg-card border border-card-line rounded-2xl shadow-2xl p-2 space-y-1"

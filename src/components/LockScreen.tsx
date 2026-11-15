@@ -404,7 +404,7 @@ export const LockScreen: React.FC = () => {
 
             {/* Re-type Random Group Verification */}
             <div className="p-3.5 rounded-xl bg-surface border border-line-2 space-y-2">
-              <label className="block text-xs font-bold text-foreground">
+              <label htmlFor="challenge-group-input" className="block text-xs font-bold text-foreground">
                 {bi(
                   `لتأكيد حفظك للمفتاح، أعد كتابة المجموعة رقم #${challengeGroupIndex + 1}:`,
                   `To verify backup, re-type Group #${challengeGroupIndex + 1}:`,
@@ -412,6 +412,7 @@ export const LockScreen: React.FC = () => {
                 )}
               </label>
               <input
+                id="challenge-group-input"
                 type="text"
                 dir="ltr"
                 value={challengeGroupInput}
@@ -593,11 +594,7 @@ export const LockScreen: React.FC = () => {
                     : bi('كلمة المرور', 'Password', 'وشەی نهێنی')}
                 </label>
                 <div className="relative">
-                  <div
-                    className={`absolute inset-y-0 ${
-                      isRtl ? 'right-0 pr-3.5' : 'left-0 pl-3.5'
-                    } flex items-center pointer-events-none text-muted-foreground-1`}
-                  >
+                  <div className="absolute inset-y-0 start-0 ps-3.5 flex items-center pointer-events-none text-muted-foreground-1">
                     <KeyRound className="h-4 w-4" />
                   </div>
                   <input
@@ -617,9 +614,7 @@ export const LockScreen: React.FC = () => {
                           )
                         : '••••••••••'
                     }
-                    className={`block w-full ${
-                      isRtl ? 'pr-10 pl-10' : 'pl-10 pr-10'
-                    } py-2.5 border border-layer-line rounded-xl text-foreground bg-layer placeholder:text-muted-foreground-1 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary text-sm transition-all`}
+                    className="block w-full ps-10 pe-10 py-2.5 border border-layer-line rounded-xl text-foreground bg-layer placeholder:text-muted-foreground-1 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary text-sm transition-all"
                   />
                   <button
                     type="button"
@@ -629,10 +624,8 @@ export const LockScreen: React.FC = () => {
                         ? bi('إخفاء كلمة المرور', 'Hide password', 'شاردنەوەی وشەی نهێنی')
                         : bi('إظهار كلمة المرور', 'Show password', 'پیشاندانی وشەی نهێنی')
                     }
-                    className={`absolute inset-y-0 ${
-                      isRtl ? 'left-0 pl-3' : 'right-0 pr-3'
-                    } flex items-center text-muted-foreground-1 hover:text-foreground cursor-pointer`}
-                    tabIndex={-1}
+                    aria-pressed={showPassword}
+                    className="absolute inset-y-0 end-0 pe-3 flex items-center text-muted-foreground-1 hover:text-foreground cursor-pointer"
                   >
                     {showPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -753,11 +746,7 @@ export const LockScreen: React.FC = () => {
                     )}
                   </div>
                   <div className="relative">
-                    <div
-                      className={`absolute inset-y-0 ${
-                        isRtl ? 'right-0 pr-3.5' : 'left-0 pl-3.5'
-                      } flex items-center pointer-events-none text-muted-foreground-1`}
-                    >
+                    <div className="absolute inset-y-0 start-0 ps-3.5 flex items-center pointer-events-none text-muted-foreground-1">
                       <CheckCircle2 className="h-4 w-4" />
                     </div>
                     <input
@@ -773,10 +762,25 @@ export const LockScreen: React.FC = () => {
                         'Re-enter password...',
                         'وشەی نهێنی دووبارە بنووسەرەوە...'
                       )}
-                      className={`block w-full ${
-                        isRtl ? 'pr-10 pl-3.5' : 'pl-10 pr-3.5'
-                      } py-2.5 border border-layer-line rounded-xl text-foreground bg-layer placeholder:text-muted-foreground-1 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary text-sm transition-all`}
+                      className="block w-full ps-10 pe-10 py-2.5 border border-layer-line rounded-xl text-foreground bg-layer placeholder:text-muted-foreground-1 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary text-sm transition-all"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={
+                        showPassword
+                          ? bi('إخفاء كلمة المرور', 'Hide password', 'شاردنەوەی وشەی نهێنی')
+                          : bi('إظهار كلمة المرور', 'Show password', 'پیشاندانی وشەی نهێنی')
+                      }
+                      aria-pressed={showPassword}
+                      className="absolute inset-y-0 end-0 pe-3 flex items-center text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
                   </div>
                 </div>
               )}
@@ -941,7 +945,7 @@ export const LockScreen: React.FC = () => {
 
             <form onSubmit={handleRecoverySubmit} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-foreground mb-1">
+                <label htmlFor="recovery-key-input" className="block text-xs font-bold text-foreground mb-1">
                   {bi(
                     'مفتاح الاسترداد الطارئ (Recovery Key):',
                     'Recovery Key:',
@@ -949,6 +953,7 @@ export const LockScreen: React.FC = () => {
                   )}
                 </label>
                 <input
+                  id="recovery-key-input"
                   type="text"
                   dir="ltr"
                   required
@@ -960,7 +965,7 @@ export const LockScreen: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-foreground mb-1">
+                <label htmlFor="recovery-new-password-input" className="block text-xs font-bold text-foreground mb-1">
                   {bi(
                     'كلمة المرور الرئيسية الجديدة (10 خانات على الأقل):',
                     'New Master Password (min 10 chars):',
@@ -968,6 +973,7 @@ export const LockScreen: React.FC = () => {
                   )}
                 </label>
                 <input
+                  id="recovery-new-password-input"
                   type="password"
                   autoComplete="new-password"
                   dir="ltr"
@@ -979,7 +985,7 @@ export const LockScreen: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-foreground mb-1">
+                <label htmlFor="recovery-confirm-password-input" className="block text-xs font-bold text-foreground mb-1">
                   {bi(
                     'تأكيد كلمة المرور الجديدة:',
                     'Confirm New Password:',
@@ -987,6 +993,7 @@ export const LockScreen: React.FC = () => {
                   )}
                 </label>
                 <input
+                  id="recovery-confirm-password-input"
                   type="password"
                   autoComplete="new-password"
                   dir="ltr"
@@ -1094,7 +1101,7 @@ export const LockScreen: React.FC = () => {
 
             <form onSubmit={handleFactoryWipe} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-foreground mb-1">
+                <label htmlFor="wipe-confirm-input" className="block text-xs font-bold text-foreground mb-1">
                   {bi(
                     'اكتب عبارة "حذف نهائي" أو "WIPE" للتأكيد:',
                     'Type "WIPE" to confirm:',
@@ -1102,6 +1109,7 @@ export const LockScreen: React.FC = () => {
                   )}
                 </label>
                 <input
+                  id="wipe-confirm-input"
                   type="text"
                   required
                   value={wipeConfirmInput}

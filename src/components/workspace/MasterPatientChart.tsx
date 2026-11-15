@@ -809,7 +809,12 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden transition-colors">
       {/* Scrollable Single-Line Tabs Navigation (Never wraps into multiple rows on mobile) */}
       <div className="relative border-b border-card-line bg-card shrink-0">
-        <div className="px-3 sm:px-5 flex flex-nowrap items-center gap-1 overflow-x-auto scrollbar-none">
+        <div
+          role="tablist"
+          aria-label={bi('أقسام الملف السريري للمريض', 'Patient Chart Sections')}
+          className="px-3 sm:px-5 flex flex-nowrap items-center gap-1 overflow-x-auto scroll-smooth touch-pan-x"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           {(
             [
               {
@@ -852,10 +857,16 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
+                role="tab"
+                aria-selected={isSelected}
+                onClick={(e) => {
+                  setActiveTab(tab.id);
+                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }}
                 title={tab.label}
                 aria-label={tab.label}
-                className={`px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-semibold border-b-2 inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                style={{ minHeight: 'unset', minWidth: 'unset' }}
+                className={`compact-btn px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-semibold border-b-2 inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   isSelected
                     ? 'text-primary border-primary bg-primary/5'
                     : 'text-muted-foreground-1 border-transparent hover:text-foreground'

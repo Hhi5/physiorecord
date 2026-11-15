@@ -45,7 +45,7 @@
   --foreground: var(--color-clinical-default-gray-800);
   --foreground-inverse: var(--color-white);
   
-  --inverse: var(--color-primary-950);
+  --inverse: var(--primary-950);
   
   /* ============================================ */
   /* BORDERS (Full Scale)                         */
@@ -79,13 +79,13 @@
   --primary-950: var(--color-clinical-default-950);
   
   /* PRIMARY STATES */
-  --primary: var(--color-primary-600);
+  --primary: var(--primary-600);
   --primary-line: transparent;
   --primary-foreground: var(--color-white);
-  --primary-hover: var(--color-primary-700);
-  --primary-focus: var(--color-primary-700);
-  --primary-active: var(--color-primary-700);
-  --primary-checked: var(--color-primary-600);
+  --primary-hover: var(--primary-700);
+  --primary-focus: var(--primary-700);
+  --primary-active: var(--primary-700);
+  --primary-checked: var(--primary-600);
   
   /* ============================================ */
   /* SECONDARY                                    */
@@ -141,10 +141,10 @@
   /* DESTRUCTIVE                                  */
   /* ============================================ */
   
-  --destructive: var(--color-red-500);
+  --destructive: var(--color-red-600);
   --destructive-foreground: var(--color-white);
-  --destructive-hover: var(--color-red-600);
-  --destructive-focus: var(--color-red-600);
+  --destructive-hover: var(--color-red-700);
+  --destructive-focus: var(--color-red-700);
   
   /* ============================================ */
   /* NAVBAR                                       */
@@ -431,13 +431,13 @@
   --border-line-8: var(--color-clinical-default-gray-100);
   
   /* PRIMARY STATES */
-  --primary: var(--color-primary-200);
+  --primary: var(--primary-200);
   --primary-line: transparent;
   --primary-foreground: var(--color-clinical-default-gray-950);
-  --primary-hover: var(--color-primary-300);
-  --primary-focus: var(--color-primary-300);
-  --primary-active: var(--color-primary-300);
-  --primary-checked: var(--color-primary-200);
+  --primary-hover: var(--primary-300);
+  --primary-focus: var(--primary-300);
+  --primary-active: var(--primary-300);
+  --primary-checked: var(--primary-200);
   
   /* SECONDARY */
   --secondary: var(--color-white);
@@ -478,10 +478,10 @@
   --muted-active: var(--color-clinical-default-gray-700);
   
   /* DESTRUCTIVE */
-  --destructive: var(--color-red-500);
+  --destructive: var(--color-red-600);
   --destructive-foreground: var(--color-white);
-  --destructive-hover: var(--color-red-600);
-  --destructive-focus: var(--color-red-600);
+  --destructive-hover: var(--color-red-700);
+  --destructive-focus: var(--color-red-700);
   
   /* NAVBAR */
   --navbar: var(--background);

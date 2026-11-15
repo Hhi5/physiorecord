@@ -229,12 +229,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           {isCollapsed ? (
             isRtl ? (
-              <PanelLeftClose className="w-4 h-4" />
+              <PanelLeftOpen className="w-4 h-4 -scale-x-100" />
             ) : (
               <PanelLeftOpen className="w-4 h-4" />
             )
           ) : isRtl ? (
-            <PanelLeftOpen className="w-4 h-4" />
+            <PanelLeftClose className="w-4 h-4 -scale-x-100" />
           ) : (
             <PanelLeftClose className="w-4 h-4" />
           )}

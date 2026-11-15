@@ -596,9 +596,11 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
         </div>
 
         {/* Tabs Bar */}
-        <div className="flex border-b border-card-divider bg-card px-6 pt-3">
+        <div role="tablist" aria-label={bi('أقسام النسخ الاحتياطي والاستعادة', 'Backup & Restore Tabs')} className="flex border-b border-card-divider bg-card px-6 pt-3">
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'export'}
             onClick={() => { setActiveTab('export'); setExportSuccess(false); setExportError(null); }}
             className={`pb-3 px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
               activeTab === 'export'
@@ -612,6 +614,8 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
 
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'restore'}
             onClick={() => { setActiveTab('restore'); setRestoreSuccess(false); setRestoreError(null); }}
             className={`pb-3 px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
               activeTab === 'restore'
@@ -789,7 +793,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
 
               <form onSubmit={handleExport} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="export-password-input" className="block text-xs font-bold text-foreground mb-1">
                     {bi(
                       'كلمة مرور حماية النسخة الاحتياطية',
                       'Backup Protection Password',
@@ -797,6 +801,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                     )}
                   </label>
                   <input
+                    id="export-password-input"
                     type="password"
                     autoComplete="new-password"
                     required
@@ -813,10 +818,11 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="confirm-export-password-input" className="block text-xs font-bold text-foreground mb-1">
                     {bi('تأكيد كلمة المرور', 'Confirm Password', 'دڵنیابوونەوەی وشەی نهێنی')}
                   </label>
                   <input
+                    id="confirm-export-password-input"
                     type="password"
                     autoComplete="new-password"
                     required
@@ -1087,7 +1093,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-foreground mb-1.5">
+                    <label htmlFor="restore-file-input" className="block text-xs font-bold text-foreground mb-1.5">
                       {bi(
                         'اختر ملف النسخة الاحتياطية (.ptbackup)',
                         'Select Backup File (.ptbackup)',
@@ -1095,6 +1101,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                       )}
                     </label>
                     <input
+                      id="restore-file-input"
                       type="file"
                       accept=".ptbackup,.json,application/json,application/octet-stream,*/*"
                       onChange={handleFileChange}
@@ -1111,7 +1118,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-foreground mb-1">
+                    <label htmlFor="restore-password-input" className="block text-xs font-bold text-foreground mb-1">
                       {bi(
                         'كلمة مرور حماية النسخة الاحتياطية',
                         'Backup Protection Password',
@@ -1119,6 +1126,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                       )}
                     </label>
                     <input
+                      id="restore-password-input"
                       type="password"
                       autoComplete="current-password"
                       required
@@ -1389,10 +1397,11 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-muted-foreground-1 mb-1">
+                        <label htmlFor="new-vault-password-input" className="block text-xs font-medium text-muted-foreground-1 mb-1">
                           {bi('كلمة مرور الخزينة الجديدة', 'New Vault Password', 'وشەی نهێنی خەزێنەی نوێ')}
                         </label>
                         <input
+                          id="new-vault-password-input"
                           type="password"
                           autoComplete="new-password"
                           required
@@ -1405,10 +1414,11 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-muted-foreground-1 mb-1">
+                        <label htmlFor="confirm-new-vault-password-input" className="block text-xs font-medium text-muted-foreground-1 mb-1">
                           {bi('تأكيد كلمة المرور', 'Confirm Password', 'دڵنیابوونەوەی وشەی نهێنی')}
                         </label>
                         <input
+                          id="confirm-new-vault-password-input"
                           type="password"
                           autoComplete="new-password"
                           required
@@ -1462,7 +1472,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-muted-foreground-1 mb-1">
+                        <label htmlFor="emergency-recovery-password-input" className="block text-xs font-medium text-muted-foreground-1 mb-1">
                           {bi(
                             'كلمة مرور نسخة التعافي الطارئة',
                             'Emergency Recovery Password',
@@ -1470,6 +1480,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                           )}
                         </label>
                         <input
+                          id="emergency-recovery-password-input"
                           type="password"
                           autoComplete="new-password"
                           required
@@ -1482,10 +1493,11 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-muted-foreground-1 mb-1">
+                        <label htmlFor="confirm-emergency-recovery-password-input" className="block text-xs font-medium text-muted-foreground-1 mb-1">
                           {bi('تأكيد كلمة المرور', 'Confirm Password', 'دڵنیابوونەوەی وشەی نهێنی')}
                         </label>
                         <input
+                          id="confirm-emergency-recovery-password-input"
                           type="password"
                           autoComplete="new-password"
                           required

@@ -299,6 +299,7 @@ export const ActiveExamCanvas: React.FC<ActiveExamCanvasProps> = ({
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     type="button"
+                    aria-expanded={!isCollapsed}
                     onClick={() => toggleCollapse(widgetId)}
                     className="py-1 px-2.5 text-muted-foreground-1 hover:text-foreground rounded-lg hover:bg-surface transition-colors cursor-pointer inline-flex items-center gap-1"
                     title={
