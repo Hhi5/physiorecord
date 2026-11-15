@@ -313,7 +313,7 @@ export const LockScreen: React.FC = () => {
   // Step 2 of Setup: Display One-Time Emergency Recovery Key
   if (generatedRecoveryKey) {
     return (
-      <div
+      <main
         className="min-h-screen bg-background-1 flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8"
         dir={isRtl ? 'rtl' : 'ltr'}
       >
@@ -327,13 +327,13 @@ export const LockScreen: React.FC = () => {
                 <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                   {bi('خطوة الأمان 2 من 2', 'Security Step 2 of 2', 'هەنگاوی سەلامەتی ٢ لە ٢')}
                 </span>
-                <h2 className="text-base font-extrabold text-foreground mt-0.5">
+                <h1 className="text-base font-extrabold text-foreground mt-0.5">
                   {bi(
                     'مفتاح الاسترداد الطارئ للخزينة',
                     'Emergency Vault Recovery Key',
                     'کلیلی فریاگوزاری گەڕاندنەوەی خەزێنە'
                   )}
-                </h2>
+                </h1>
               </div>
             </div>
 
@@ -455,7 +455,7 @@ export const LockScreen: React.FC = () => {
             </button>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -512,7 +512,7 @@ export const LockScreen: React.FC = () => {
       </header>
 
       {/* Minimal Centered Card */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-6">
+      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-6">
         <div className="w-full max-w-md">
           <div className="bg-card py-7 px-6 sm:px-8 shadow-lg rounded-2xl border border-card-line">
             <div className="flex items-center gap-3 pb-5 mb-5 border-b border-card-divider">
@@ -889,7 +889,7 @@ export const LockScreen: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Footer */}
       <footer className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-4 text-center text-xs text-muted-foreground-1">

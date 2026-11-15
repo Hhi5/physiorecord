@@ -202,10 +202,11 @@ export const RedFlagChecklistPanel: React.FC<RedFlagChecklistPanelProps> = ({
       {/* Optional Free-Text Red Flags Field */}
       {onRedFlagsTextChange && (
         <div>
-          <label className="block text-xs font-semibold text-foreground mb-1">
+          <label htmlFor="redflag-custom-notes" className="block text-xs font-semibold text-foreground mb-1">
             {bi('ملاحظات العلامات الحمراء الإضافية (نص حر):', 'Additional Custom Red-Flag Notes (Free Text):')}
           </label>
           <textarea
+            id="redflag-custom-notes"
             rows={2}
             disabled={readOnly}
             value={redFlagsText}

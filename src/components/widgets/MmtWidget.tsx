@@ -316,6 +316,11 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                   type="text"
                   list={datalistId}
                   disabled={readOnly}
+                  aria-label={bi(
+                    `اسم العضلة أو الحركة ${idx + 1}`,
+                    `Muscle or movement name ${idx + 1}`,
+                    `ناوی ماسولکە یان جووڵە ${idx + 1}`
+                  )}
                   value={row.name}
                   onChange={(e) => handleUpdateRowName(row.key, e.target.value)}
                   placeholder={bi(
@@ -329,8 +334,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                   <button
                     type="button"
                     onClick={() => handleToggleMidline(row.key)}
-                    style={{ minHeight: 'unset' }}
-                    className="compact-btn px-2.5 py-1.5 rounded-lg border border-line-2 bg-layer text-xs font-bold text-foreground hover:bg-surface transition-colors cursor-pointer shrink-0"
+                    className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-line-2 bg-layer text-xs font-bold text-foreground hover:bg-surface transition-colors cursor-pointer shrink-0"
                     title={bi(
                       'التبديل بين فحص يمين/يسار (R/L) أو فحص محوري للجذع/الرقبة',
                       'Toggle between Bilateral (R/L) and Midline/Trunk',
@@ -344,8 +348,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                   <button
                     type="button"
                     onClick={() => handleRemoveRow(row.key)}
-                    style={{ minHeight: 'unset' }}
-                    className="compact-btn size-7 flex items-center justify-center rounded-lg text-muted-foreground-1 hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer shrink-0"
+                    className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-muted-foreground-1 hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer shrink-0"
                     title={bi('حذف هذا الفحص', 'Remove test', 'سڕینەوەی ئەم تاقیکردنەوەیە')}
                     aria-label={bi('حذف هذا الفحص', 'Remove test', 'سڕینەوەی ئەم تاقیکردنەوەیە')}
                   >

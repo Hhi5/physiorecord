@@ -69,16 +69,16 @@ export const PatientBanner: React.FC<PatientBannerProps> = ({
             type="button"
             onClick={onBackToDirectory}
             aria-label={bi('العودة لدليل المرضى', 'Back to patient directory', 'گەڕانەوە بۆ تۆماری نەخۆشەکان')}
-            className="size-8 rounded-lg bg-layer border border-layer-line text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            className="size-9 rounded-lg bg-layer border border-layer-line text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover flex items-center justify-center transition-colors cursor-pointer shrink-0"
             title={bi('العودة لدليل المرضى', 'Back to directory', 'گەڕانەوە بۆ تۆمار')}
           >
             {isRtl ? <ArrowRight className="size-4" /> : <ArrowLeft className="size-4" />}
           </button>
 
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
-            <h2 className="text-sm sm:text-base font-bold text-foreground truncate max-w-[180px] sm:max-w-none">
+            <h1 className="text-sm sm:text-base font-bold text-foreground leading-snug">
               {getPatientDisplayName(d, language)}
-            </h2>
+            </h1>
             {getPatientSecondaryName(d, language) && (
               <span className="hidden lg:inline text-xs text-muted-foreground-1 truncate max-w-[220px]">
                 <bdi>{getPatientSecondaryName(d, language)}</bdi>
@@ -125,14 +125,14 @@ export const PatientBanner: React.FC<PatientBannerProps> = ({
             onClick={() => setIsPinned(ClinicOperationsService.togglePinnedPatient(patient.id))}
             aria-pressed={isPinned}
             title={bi('تثبيت المريض في الوصول السريع', 'Pin patient for quick access', 'جێگیرکردنی نەخۆش بۆ دەستگەیشتنی خێرا')}
-            className={`min-h-[30px] px-2 py-0.5 rounded-lg border text-xs font-bold inline-flex items-center gap-1 transition-colors cursor-pointer ${
+            className={`min-h-[36px] min-w-[36px] px-2.5 py-1 rounded-lg border text-xs font-bold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer ${
               isPinned
-                ? 'bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300'
+                ? 'bg-amber-500/15 border-amber-500/40 text-amber-800 dark:text-amber-300'
                 : 'bg-surface border-line-2 text-muted-foreground-1 hover:text-foreground'
             }`}
           >
-            <Star className={`size-3.5 ${isPinned ? 'fill-current' : ''}`} />
-            <span className="hidden sm:inline">
+            <Star className={`size-3.5 shrink-0 ${isPinned ? 'fill-current' : ''}`} />
+            <span className="sr-only sm:not-sr-only">
               {isPinned ? bi('مثبّت', 'Pinned', 'جێگیرکراو') : bi('تثبيت', 'Pin', 'جێگیرکردن')}
             </span>
           </button>
@@ -141,7 +141,7 @@ export const PatientBanner: React.FC<PatientBannerProps> = ({
               type="button"
               onClick={() => setIsFlagsExpanded((prev) => !prev)}
               aria-expanded={isFlagsExpanded}
-              className="min-h-[30px] py-0.5 px-2.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="min-h-[36px] py-1 px-2.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <ShieldAlert className="size-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
               <span>
@@ -154,7 +154,7 @@ export const PatientBanner: React.FC<PatientBannerProps> = ({
               )}
             </button>
           ) : (
-            <span className="min-h-[30px] py-0.5 px-2.5 rounded-lg bg-surface text-muted-foreground-1 border border-line-2 text-xs font-medium inline-flex items-center gap-1.5">
+            <span className="min-h-[36px] py-1 px-2.5 rounded-lg bg-surface text-muted-foreground-1 border border-line-2 text-xs font-medium inline-flex items-center gap-1.5">
               <ShieldCheck className="size-3.5 text-muted-foreground-1 shrink-0" />
               <span>{bi('لا توجد علامات حمراء', 'No red flags', 'هیچ ئاڵایەکی سوور نییە')}</span>
             </span>

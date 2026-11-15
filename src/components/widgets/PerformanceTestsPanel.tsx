@@ -167,10 +167,11 @@ export const PerformanceTestsPanel: React.FC<PerformanceTestsPanelProps> = ({
           {selectedTestId === 'lsi' && (
             <>
               <div>
-                <label className="font-semibold block mb-1">
+                <label htmlFor="perf-input-involved" className="font-semibold block mb-1">
                   {bi('الطرف المصاب (Involved)', 'Involved Limb')}
                 </label>
                 <input
+                  id="perf-input-involved"
                   type="number"
                   step="any"
                   dir="ltr"
@@ -181,10 +182,11 @@ export const PerformanceTestsPanel: React.FC<PerformanceTestsPanelProps> = ({
                 />
               </div>
               <div>
-                <label className="font-semibold block mb-1">
+                <label htmlFor="perf-input-uninvolved" className="font-semibold block mb-1">
                   {bi('الطرف السليم (Uninvolved)', 'Uninvolved Limb')}
                 </label>
                 <input
+                  id="perf-input-uninvolved"
                   type="number"
                   step="any"
                   dir="ltr"
@@ -200,10 +202,11 @@ export const PerformanceTestsPanel: React.FC<PerformanceTestsPanelProps> = ({
           {selectedTestId === 'walk_10m' && (
             <>
               <div>
-                <label className="font-semibold block mb-1">
+                <label htmlFor="perf-input-10m-distance" className="font-semibold block mb-1">
                   {bi('المسافة الموقّتة (م)', 'Timed Distance (m)')}
                 </label>
                 <input
+                  id="perf-input-10m-distance"
                   type="number"
                   step="any"
                   dir="ltr"
@@ -213,10 +216,11 @@ export const PerformanceTestsPanel: React.FC<PerformanceTestsPanelProps> = ({
                 />
               </div>
               <div>
-                <label className="font-semibold block mb-1">
+                <label htmlFor="perf-input-timeSeconds" className="font-semibold block mb-1">
                   {bi('الزمن (ثانية)', 'Time (s)')}
                 </label>
                 <input
+                  id="perf-input-timeSeconds"
                   type="number"
                   step="any"
                   dir="ltr"
@@ -231,10 +235,11 @@ export const PerformanceTestsPanel: React.FC<PerformanceTestsPanelProps> = ({
 
           {selectedTestId === 'walk_6m' && (
             <div>
-              <label className="font-semibold block mb-1">
+              <label htmlFor="perf-input-6m-distance" className="font-semibold block mb-1">
                 {bi('المسافة خلال 6 دقائق (م)', '6-Min Distance (m)')}
               </label>
               <input
+                id="perf-input-6m-distance"
                 type="number"
                 step="any"
                 dir="ltr"
@@ -247,10 +252,11 @@ export const PerformanceTestsPanel: React.FC<PerformanceTestsPanelProps> = ({
 
           {(selectedTestId === 'single_leg_stance' || selectedTestId === 'five_x_sts') && (
             <div>
-              <label className="font-semibold block mb-1">
+              <label htmlFor="perf-input-seconds" className="font-semibold block mb-1">
                 {bi('الزمن (ثانية)', 'Elapsed Seconds')}
               </label>
               <input
+                id="perf-input-seconds"
                 type="number"
                 step="any"
                 dir="ltr"
@@ -263,10 +269,11 @@ export const PerformanceTestsPanel: React.FC<PerformanceTestsPanelProps> = ({
 
           {selectedTestId === 'chair_stand_30s' && (
             <div>
-              <label className="font-semibold block mb-1">
+              <label htmlFor="perf-input-reps" className="font-semibold block mb-1">
                 {bi('عدد التكرارات في 30 ث', 'Repetitions in 30s')}
               </label>
               <input
+                id="perf-input-reps"
                 type="number"
                 dir="ltr"
                 value={inputs.reps}
@@ -279,10 +286,11 @@ export const PerformanceTestsPanel: React.FC<PerformanceTestsPanelProps> = ({
           {selectedTestId === 'grip_strength' && (
             <>
               <div>
-                <label className="font-semibold block mb-1">
+                <label htmlFor="perf-input-right-kg" className="font-semibold block mb-1">
                   {bi('اليد اليمنى (كغم)', 'Right Grip (kg)')}
                 </label>
                 <input
+                  id="perf-input-right-kg"
                   type="number"
                   step="any"
                   dir="ltr"
@@ -292,10 +300,11 @@ export const PerformanceTestsPanel: React.FC<PerformanceTestsPanelProps> = ({
                 />
               </div>
               <div>
-                <label className="font-semibold block mb-1">
+                <label htmlFor="perf-input-left-kg" className="font-semibold block mb-1">
                   {bi('اليد اليسرى (كغم)', 'Left Grip (kg)')}
                 </label>
                 <input
+                  id="perf-input-left-kg"
                   type="number"
                   step="any"
                   dir="ltr"
@@ -308,10 +317,11 @@ export const PerformanceTestsPanel: React.FC<PerformanceTestsPanelProps> = ({
           )}
 
           <div>
-            <label className="font-semibold block mb-1">
+            <label htmlFor="perf-input-notes" className="font-semibold block mb-1">
               {bi('ملاحظة سريرية (اختياري)', 'Clinical Note (optional)')}
             </label>
             <input
+              id="perf-input-notes"
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -452,7 +462,7 @@ export const PerformanceTestsPanel: React.FC<PerformanceTestsPanelProps> = ({
                     type="button"
                     aria-label={bi('حذف القراءة', 'Delete measurement')}
                     onClick={() => handleDelete(entry.id)}
-                    className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 cursor-pointer shrink-0"
+                    className="min-w-[36px] min-h-[36px] p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 inline-flex items-center justify-center cursor-pointer shrink-0"
                   >
                     <Trash2 className="size-3.5" />
                   </button>

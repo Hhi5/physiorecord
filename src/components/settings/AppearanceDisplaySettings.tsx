@@ -261,9 +261,9 @@ export const AppearanceDisplaySettings: React.FC = () => {
                       type="button"
                       onClick={() => void removeCustomFont(f.id)}
                       aria-label={bi('حذف الخط المخصص', 'Delete custom font', 'سڕینەوەی فۆنتی تایبەت')}
-                      className="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 cursor-pointer"
+                      className="size-9 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 inline-flex items-center justify-center cursor-pointer shrink-0"
                     >
-                      <Trash2 className="size-3.5" />
+                      <Trash2 className="size-4" />
                     </button>
                   </div>
                 );
@@ -302,7 +302,7 @@ export const AppearanceDisplaySettings: React.FC = () => {
                   key={df.family}
                   type="button"
                   onClick={() => updateDisplayPrefs({ fontPreset: id })}
-                  className={`px-2.5 py-1 rounded-lg border text-xs font-semibold cursor-pointer ${
+                  className={`min-h-[36px] px-2.5 py-1 rounded-lg border text-xs font-semibold cursor-pointer ${
                     active
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'bg-card border-card-line text-foreground hover:bg-surface'
@@ -341,6 +341,7 @@ export const AppearanceDisplaySettings: React.FC = () => {
           <div className="flex items-center gap-2">
             <input
               type="text"
+              aria-label={bi('اسم خط مثبت على الجهاز', 'Installed font family name', 'ناوی فۆنتی دامەزراو')}
               value={manualSystemFontInput}
               onChange={(e) => setManualSystemFontInput(e.target.value)}
               placeholder={bi(
@@ -348,13 +349,13 @@ export const AppearanceDisplaySettings: React.FC = () => {
                 'Or type installed font name (e.g., Inter, Arial, Georgia)...',
                 'یان ناوی فۆنتێکی دامەزراو بنووسە (وەک: Noto Naskh Arabic یان Inter)...'
               )}
-              className="flex-1 py-1.5 px-2.5 rounded-lg bg-card border border-control-border text-xs text-foreground"
+              className="flex-1 min-h-[36px] py-1.5 px-2.5 rounded-lg bg-card border border-control-border text-xs text-foreground"
             />
             <button
               type="button"
               onClick={handleApplyManualSystemFont}
               disabled={!manualSystemFontInput.trim()}
-              className="px-3 py-1.5 rounded-lg bg-surface hover:bg-layer-hover border border-layer-line text-xs font-bold text-foreground cursor-pointer disabled:opacity-50"
+              className="min-h-[36px] px-3 py-1.5 rounded-lg bg-surface hover:bg-layer-hover border border-layer-line text-xs font-bold text-foreground cursor-pointer disabled:opacity-50"
             >
               {bi('تطبيق', 'Apply', 'جێبەجێکردن')}
             </button>
@@ -400,7 +401,7 @@ export const AppearanceDisplaySettings: React.FC = () => {
                 key={preset}
                 type="button"
                 onClick={() => updateDisplayPrefs({ fontScalePercent: preset })}
-                className={`px-2.5 py-1 rounded-lg border text-xs font-bold cursor-pointer ${
+                className={`min-h-[36px] px-2.5 py-1 rounded-lg border text-xs font-bold cursor-pointer ${
                   displayPrefs.fontScalePercent === preset
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
@@ -415,10 +416,10 @@ export const AppearanceDisplaySettings: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           {/* Arabic/Kurdish Relative Scale Boost */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground-1 block">
+            <span id="appearance-arabic-scale-label" className="text-xs font-bold text-muted-foreground-1 block">
               {bi('تكبير إضافي للنص العربي والكردي', 'Arabic / Kurdish Readability Boost', 'گەورەکردنی زیادەی دەقی کوردی و عەرەبی')}
-            </label>
-            <div className="flex gap-1.5">
+            </span>
+            <div className="flex gap-1.5" role="group" aria-labelledby="appearance-arabic-scale-label">
               {([
                 { val: 1, label: '1.0x' },
                 { val: 1.06, label: '1.06x' },
@@ -430,7 +431,7 @@ export const AppearanceDisplaySettings: React.FC = () => {
                   onClick={() =>
                     updateDisplayPrefs({ arabicScale: opt.val as ArabicScaleMode })
                   }
-                  className={`flex-1 py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                  className={`flex-1 min-h-[36px] py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
                     displayPrefs.arabicScale === opt.val
                       ? 'bg-primary/10 border-primary text-primary'
                       : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
@@ -444,10 +445,10 @@ export const AppearanceDisplaySettings: React.FC = () => {
 
           {/* Font Weight */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground-1 block">
+            <span id="appearance-font-weight-label" className="text-xs font-bold text-muted-foreground-1 block">
               {bi('سُمك الخط', 'Font Weight', 'ئەستووری فۆنت')}
-            </label>
-            <div className="flex gap-1.5">
+            </span>
+            <div className="flex gap-1.5" role="group" aria-labelledby="appearance-font-weight-label">
               {([
                 { val: 'normal', ar: 'عادي', en: 'Normal', ckb: 'ئاسایی' },
                 { val: 'medium', ar: 'متوسط', en: 'Medium', ckb: 'مامناوەند' },
@@ -459,7 +460,7 @@ export const AppearanceDisplaySettings: React.FC = () => {
                   onClick={() =>
                     updateDisplayPrefs({ fontWeight: opt.val as FontWeightMode })
                   }
-                  className={`flex-1 py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                  className={`flex-1 min-h-[36px] py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
                     displayPrefs.fontWeight === opt.val
                       ? 'bg-primary/10 border-primary text-primary'
                       : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
@@ -473,10 +474,10 @@ export const AppearanceDisplaySettings: React.FC = () => {
 
           {/* Line Height */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground-1 block">
+            <span id="appearance-line-height-label" className="text-xs font-bold text-muted-foreground-1 block">
               {bi('تباعد الأسطر', 'Line Height', 'دووری نێوان دێڕەکان')}
-            </label>
-            <div className="flex gap-1.5">
+            </span>
+            <div className="flex gap-1.5" role="group" aria-labelledby="appearance-line-height-label">
               {([
                 { val: 'compact', ar: 'مضغوط', en: 'Compact', ckb: 'چڕکراو' },
                 { val: 'normal', ar: 'قياسي', en: 'Normal', ckb: 'ئاسایی' },
@@ -488,7 +489,7 @@ export const AppearanceDisplaySettings: React.FC = () => {
                   onClick={() =>
                     updateDisplayPrefs({ lineHeight: opt.val as LineHeightMode })
                   }
-                  className={`flex-1 py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                  className={`flex-1 min-h-[36px] py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
                     displayPrefs.lineHeight === opt.val
                       ? 'bg-primary/10 border-primary text-primary'
                       : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
@@ -502,14 +503,14 @@ export const AppearanceDisplaySettings: React.FC = () => {
 
           {/* LTR-only Letter Spacing */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground-1 block">
+            <span id="appearance-letter-spacing-label" className="text-xs font-bold text-muted-foreground-1 block">
               {bi(
                 'تباعد الأحرف اللاتينية (EN فقط)',
                 'Latin Letter Spacing (LTR only)',
                 'مەودای پیتە لاتینییەکان (تەنها EN)'
               )}
-            </label>
-            <div className="flex gap-1.5">
+            </span>
+            <div className="flex gap-1.5" role="group" aria-labelledby="appearance-letter-spacing-label">
               {([
                 { val: 'normal', ar: 'عادي', en: 'Normal', ckb: 'ئاسایی' },
                 { val: 'wide', ar: 'واسع', en: 'Wide', ckb: 'فراوان' },
@@ -523,7 +524,7 @@ export const AppearanceDisplaySettings: React.FC = () => {
                       ltrLetterSpacing: opt.val as LtrLetterSpacingMode,
                     })
                   }
-                  className={`flex-1 py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                  className={`flex-1 min-h-[36px] py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
                     displayPrefs.ltrLetterSpacing === opt.val
                       ? 'bg-primary/10 border-primary text-primary'
                       : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
@@ -552,10 +553,10 @@ export const AppearanceDisplaySettings: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground-1 block">
+            <span id="appearance-density-label" className="text-xs font-bold text-muted-foreground-1 block">
               {bi('كثافة العرض', 'Display Density', 'چڕی نیشاندان')}
-            </label>
-            <div className="flex gap-1">
+            </span>
+            <div className="flex gap-1" role="group" aria-labelledby="appearance-density-label">
               {([
                 { val: 'comfortable', ar: 'مريح', en: 'Comf.', ckb: 'ئارام' },
                 { val: 'standard', ar: 'قياسي', en: 'Std', ckb: 'ئاسایی' },
@@ -567,7 +568,7 @@ export const AppearanceDisplaySettings: React.FC = () => {
                   onClick={() =>
                     updateDisplayPrefs({ density: opt.val as DisplayDensityMode })
                   }
-                  className={`flex-1 py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                  className={`flex-1 min-h-[36px] py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
                     displayPrefs.density === opt.val
                       ? 'bg-primary/10 border-primary text-primary'
                       : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
@@ -580,10 +581,10 @@ export const AppearanceDisplaySettings: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground-1 block">
+            <span id="appearance-width-label" className="text-xs font-bold text-muted-foreground-1 block">
               {bi('عرض المحتوى', 'Content Width', 'پانی ناوەڕۆک')}
-            </label>
-            <div className="flex gap-1">
+            </span>
+            <div className="flex gap-1" role="group" aria-labelledby="appearance-width-label">
               {([
                 { val: 'narrow', ar: 'ضيق', en: 'Narrow', ckb: 'تەسک' },
                 { val: 'standard', ar: 'قياسي', en: 'Std', ckb: 'ئاسایی' },
@@ -598,7 +599,7 @@ export const AppearanceDisplaySettings: React.FC = () => {
                       contentMaxWidth: opt.val as ContentWidthMode,
                     })
                   }
-                  className={`flex-1 py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                  className={`flex-1 min-h-[36px] py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
                     displayPrefs.contentMaxWidth === opt.val
                       ? 'bg-primary/10 border-primary text-primary'
                       : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
@@ -611,10 +612,10 @@ export const AppearanceDisplaySettings: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground-1 block">
+            <span id="appearance-radius-label" className="text-xs font-bold text-muted-foreground-1 block">
               {bi('استدارة الحواف', 'Corner Radius', 'خڕی لێوارەکان')}
-            </label>
-            <div className="flex gap-1">
+            </span>
+            <div className="flex gap-1" role="group" aria-labelledby="appearance-radius-label">
               {([
                 { val: 'sharp', ar: 'حادة', en: 'Sharp', ckb: 'تیژ' },
                 { val: 'standard', ar: 'قياسية', en: 'Std', ckb: 'ئاسایی' },
@@ -626,7 +627,7 @@ export const AppearanceDisplaySettings: React.FC = () => {
                   onClick={() =>
                     updateDisplayPrefs({ cornerRadius: opt.val as CornerRadiusMode })
                   }
-                  className={`flex-1 py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                  className={`flex-1 min-h-[36px] py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
                     displayPrefs.cornerRadius === opt.val
                       ? 'bg-primary/10 border-primary text-primary'
                       : 'bg-card border-card-line text-foreground hover:bg-layer-hover'

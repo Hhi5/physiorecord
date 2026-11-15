@@ -3,32 +3,31 @@
 /* ------------------------------ */
 
 @theme theme-ocean-blue inline {
-  /* Brand palette (vibrant) */
-  --color-ocean-blue-50: oklch(92.8% 0.08 200);
-  --color-ocean-blue-100: oklch(88.6% 0.1 200);
-  --color-ocean-blue-200: oklch(80.4% 0.12 200);
-  --color-ocean-blue-300: oklch(72.4% 0.14 200);
-  --color-ocean-blue-400: oklch(64.6% 0.16 200);
-  --color-ocean-blue-500: oklch(57% 0.14 200);
-  --color-ocean-blue-600: oklch(49.6% 0.12 200);
-  --color-ocean-blue-700: oklch(42.4% 0.1 200);
-  --color-ocean-blue-800: oklch(35.4% 0.08 200);
-  --color-ocean-blue-900: oklch(28.6% 0.06 200);
-  --color-ocean-blue-950: oklch(25.3% 0.05 200);
+  /* Brand palette (true ocean cobalt / sapphire blue, hue 245) */
+  --color-ocean-blue-50: oklch(94% 0.045 245);
+  --color-ocean-blue-100: oklch(89% 0.08 245);
+  --color-ocean-blue-200: oklch(80% 0.12 242);
+  --color-ocean-blue-300: oklch(71% 0.145 244);
+  --color-ocean-blue-400: oklch(62% 0.165 245);
+  --color-ocean-blue-500: oklch(53% 0.16 245);
+  --color-ocean-blue-600: oklch(45% 0.15 245);
+  --color-ocean-blue-700: oklch(39% 0.13 245);
+  --color-ocean-blue-800: oklch(33% 0.105 245);
+  --color-ocean-blue-900: oklch(27% 0.08 245);
+  --color-ocean-blue-950: oklch(22% 0.065 245);
 
-  /* Gray palette */
-  --color-ocean-blue-gray-50: oklch(98% 0.002 200);
-  --color-ocean-blue-gray-100: oklch(95.5% 0.004 200);
-  --color-ocean-blue-gray-200: oklch(89.7% 0.008 200);
-  --color-ocean-blue-gray-300: oklch(82.7% 0.012 200);
-  --color-ocean-blue-gray-400: oklch(82.7% 0.012 200);
-  --color-ocean-blue-gray-500: oklch(48.5% 0.016 200);
-  --color-ocean-blue-gray-600: oklch(48.5% 0.016 200);
-  --color-ocean-blue-gray-700: oklch(38% 0.012 200);
-  --color-ocean-blue-gray-800: oklch(24% 0.006 200);
-  --color-ocean-blue-gray-900: oklch(17% 0.004 200);
-  --color-ocean-blue-gray-950: oklch(17% 0.004 200);
-
+  /* Gray palette (cool ocean-slate grays with distinct navy dark surfaces) */
+  --color-ocean-blue-gray-50: oklch(98% 0.005 245);
+  --color-ocean-blue-gray-100: oklch(95.5% 0.008 245);
+  --color-ocean-blue-gray-200: oklch(89.7% 0.014 245);
+  --color-ocean-blue-gray-300: oklch(82.7% 0.018 245);
+  --color-ocean-blue-gray-400: oklch(82.7% 0.018 245);
+  --color-ocean-blue-gray-500: oklch(42.5% 0.022 245);
+  --color-ocean-blue-gray-600: oklch(38% 0.022 245);
+  --color-ocean-blue-gray-700: oklch(33% 0.032 245);
+  --color-ocean-blue-gray-800: oklch(23% 0.032 245);
+  --color-ocean-blue-gray-900: oklch(18% 0.028 245);
+  --color-ocean-blue-gray-950: oklch(14.5% 0.025 245);
 }
 
 :root[data-theme="theme-ocean-blue"],
@@ -470,9 +469,9 @@
   
   /* MUTED */
   --muted: var(--color-ocean-blue-gray-800);
-  --muted-foreground: oklch(76% 0.012 200);
-  --muted-foreground-1: oklch(76% 0.012 200);
-  --muted-foreground-2: oklch(85% 0.008 200);
+  --muted-foreground: oklch(81% 0.016 245);
+  --muted-foreground-1: oklch(81% 0.016 245);
+  --muted-foreground-2: oklch(89% 0.012 245);
   --muted-hover: var(--color-ocean-blue-gray-700);
   --muted-focus: var(--color-ocean-blue-gray-700);
   --muted-active: var(--color-ocean-blue-gray-700);

@@ -62,10 +62,10 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-teal-600 dark:text-teal-400" />
           <div>
-            <h4 className="text-xs font-bold text-teal-950 dark:text-teal-200">
+            <h3 className="text-xs font-bold text-teal-950 dark:text-teal-200">
               {bi(definition.titleAr, definition.titleEn)}
-            </h4>
-            <p className="text-xs text-teal-700 dark:text-teal-400">
+            </h3>
+            <p className="text-xs text-teal-800 dark:text-teal-400">
               {bi(definition.descriptionAr, definition.descriptionEn)}
             </p>
           </div>
@@ -73,10 +73,10 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
 
         {hasScores && (
           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-teal-200 dark:border-teal-800 shadow-xs">
-            <span className="text-xs text-slate-500 font-bold uppercase">
+            <span className="text-xs text-slate-600 dark:text-slate-400 font-bold uppercase">
               {bi('المجموع:', 'Score:', 'کۆی گشتی:')}
             </span>
-            <span className="font-mono font-black text-sm text-teal-600 dark:text-teal-400">
+            <span className="font-mono font-black text-sm text-teal-700 dark:text-teal-400">
               {totalScore}
             </span>
           </div>
@@ -87,6 +87,7 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {definition.fields.map((field) => {
           const val = value[field.id] ?? field.defaultValue;
+          const fieldInputId = `custom-widget-${definition.id}-${field.id}`;
 
           return (
             <div
@@ -94,11 +95,17 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
               className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-850 space-y-2"
             >
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                  {bi(field.labelAr, field.labelEn)}
-                </label>
+                {field.options ? (
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    {bi(field.labelAr, field.labelEn)}
+                  </span>
+                ) : (
+                  <label htmlFor={fieldInputId} className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    {bi(field.labelAr, field.labelEn)}
+                  </label>
+                )}
                 {field.unit && (
-                  <span className="text-xs text-slate-400 font-mono">{field.unit}</span>
+                  <span className="text-xs text-slate-600 dark:text-slate-400 font-mono">{field.unit}</span>
                 )}
               </div>
 
@@ -106,6 +113,7 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
               {field.type === 'slider' && (
                 <div className="flex items-center gap-3">
                   <input
+                    id={fieldInputId}
                     type="range"
                     min={field.min ?? 0}
                     max={field.max ?? 10}
@@ -115,7 +123,7 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
                     onChange={(e) => handleFieldChange(field.id, Number(e.target.value))}
                     className="w-full accent-teal-600"
                   />
-                  <span className="w-10 text-center font-bold font-mono text-xs text-teal-600 dark:text-teal-400">
+                  <span className="w-10 text-center font-bold font-mono text-xs text-teal-700 dark:text-teal-400">
                     {typeof val === 'number' ? val : 0}
                   </span>
                 </div>
@@ -124,6 +132,7 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
               {/* Number Field */}
               {field.type === 'number' && (
                 <input
+                  id={fieldInputId}
                   type="number"
                   min={field.min}
                   max={field.max}
@@ -146,12 +155,13 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
                       <button
                         key={String(opt.value)}
                         type="button"
+                        aria-pressed={isSelected}
                         disabled={readOnly}
                         onClick={() => handleFieldChange(field.id, opt.value)}
-                        className={`px-2.5 py-1 text-xs font-medium rounded-lg border transition-all ${
+                        className={`min-h-[34px] px-2.5 py-1 text-xs font-medium rounded-lg border transition-all ${
                           isSelected
                             ? 'bg-teal-600 text-white border-teal-600 shadow-xs'
-                            : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                            : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
                         }`}
                       >
                         {bi(opt.labelAr, opt.labelEn)}
@@ -164,6 +174,7 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
               {/* Text Field */}
               {field.type === 'text' && (
                 <textarea
+                  id={fieldInputId}
                   rows={2}
                   disabled={readOnly}
                   value={typeof val === 'string' ? val : ''}

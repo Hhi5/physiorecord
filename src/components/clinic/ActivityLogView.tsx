@@ -199,7 +199,7 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
           <span className="text-muted-foreground-1">
             {bi('حالة التخزين المحلي:', 'Local Storage:', 'دۆخی هەڵگرتنی ناوخۆیی:')}
           </span>
-          <span className={persistenceGranted ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-amber-600 dark:text-amber-400 font-bold'}>
+          <span className={persistenceGranted ? 'text-emerald-700 dark:text-emerald-400 font-bold' : 'text-amber-800 dark:text-amber-400 font-bold'}>
             {persistenceGranted
               ? bi('تخزين دائم ومثبت', 'Persistent Storage', 'هەڵگرتنی هەمیشەیی جێگیر')
               : bi('تخزين قياسي', 'Best-Effort', 'هەڵگرتنی ستاندارد')}
@@ -209,8 +209,8 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
 
       {/* Security & Data Responsibility Notice (Collapsible to preserve fold ergonomics) */}
       <details className="bg-amber-500/10 border border-amber-500/30 rounded-2xl px-4 py-3 text-amber-950 dark:text-amber-200 shadow-2xs">
-        <summary className="flex items-center gap-2.5 text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-100 cursor-pointer select-none">
-          <ShieldAlert className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
+        <summary className="min-h-[40px] flex items-center gap-2.5 text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-100 cursor-pointer select-none">
+          <ShieldAlert className="size-4 text-amber-700 dark:text-amber-400 shrink-0" />
           <span>
             {bi(
               'إشعار المسؤولية وأمان البيانات السريرية (تخزين محلي بالكامل)',
@@ -229,7 +229,7 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
       </details>
 
       {/* Staff Label Clarification Notice */}
-      <div className="p-4 bg-card border border-card-line rounded-2xl text-xs text-muted-foreground-2 flex items-start gap-3 shadow-2xs">
+      <div className="p-4 bg-card border border-card-line rounded-2xl text-xs text-muted-foreground-1 flex items-start gap-3 shadow-2xs">
         <Info className="size-4 text-primary shrink-0 mt-0.5" />
         <p className="leading-relaxed">
           {bi(
@@ -264,9 +264,9 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
                   <UserCheck className="size-4 text-primary" />
                 )}
               </div>
-              <h3 className="text-sm font-bold text-foreground">
+              <h2 className="text-sm font-bold text-foreground">
                 {bi(staff.nameAr, staff.nameEn)}
-              </h3>
+              </h2>
               <p className="text-xs text-muted-foreground-1">
                 {bi(staff.specialtyAr, staff.specialtyEn)}
               </p>
@@ -277,13 +277,13 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
 
       {/* Active Role Intended Clinical Responsibilities */}
       <div className="bg-card p-5 sm:p-6 rounded-2xl border border-card-line shadow-2xs space-y-4">
-        <h3 className="text-xs font-bold text-foreground">
+        <h2 className="text-xs font-bold text-foreground">
           {`${bi(
             'المهام السريرية والإدارية المخصصة لهذا التصنيف',
             'Designated Clinical & Operational Tasks',
             'ئەرکە کلینیکی و کارگێڕییە دیاریکراوەکان'
           )} (${bi(perms.labelAr, perms.labelEn, ROLE_LABEL_CKB[activeStaff.role])}):`}
-        </h3>
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
           {[
             {
@@ -369,7 +369,7 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
               type="button"
               onClick={handleVerifyChain}
               disabled={verifyingChain}
-              className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-surface border border-layer-line text-xs font-semibold text-foreground hover:bg-layer-hover disabled:text-muted-foreground-2 disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-2 px-3 min-h-[36px] rounded-lg bg-surface border border-layer-line text-xs font-semibold text-foreground hover:bg-layer-hover disabled:text-muted-foreground-2 disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
             >
               {verifyingChain ? (
                 <RefreshCw className="size-3.5 animate-spin text-primary" />
@@ -383,7 +383,7 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
               type="button"
               onClick={handleGenerateDailyDigest}
               disabled={buildingDigest}
-              className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-surface border border-layer-line text-xs font-semibold text-foreground hover:bg-layer-hover disabled:text-muted-foreground-2 disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-2 px-3 min-h-[36px] rounded-lg bg-surface border border-layer-line text-xs font-semibold text-foreground hover:bg-layer-hover disabled:text-muted-foreground-2 disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
             >
               <Printer className="size-3.5 text-primary" />
               <span>{bi('ملخص اليوم', 'Daily Digest', 'پوختەی ئەمڕۆ')}</span>
@@ -450,7 +450,7 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
                 <button
                   type="button"
                   onClick={handleDownloadDigestJson}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-layer border border-layer-line text-xs font-semibold text-foreground hover:bg-layer-hover cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg bg-layer border border-layer-line text-xs font-semibold text-foreground hover:bg-layer-hover cursor-pointer"
                 >
                   <Download className="size-3.5 text-primary" />
                   <span>{bi('تصدير JSON', 'Export JSON', 'هەناردەکردنی JSON')}</span>
@@ -458,7 +458,7 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-layer border border-layer-line text-xs font-semibold text-foreground hover:bg-layer-hover cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg bg-layer border border-layer-line text-xs font-semibold text-foreground hover:bg-layer-hover cursor-pointer"
                 >
                   <Printer className="size-3.5 text-primary" />
                   <span>{bi('طباعة', 'Print', 'چاپکردن')}</span>
@@ -471,7 +471,11 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
           </div>
         )}
 
-        <div className="overflow-x-auto">
+        <div
+          tabIndex={0}
+          aria-label={bi('جدول سجل النشاط', 'Activity log table', 'خشتەی تۆماری چالاکی')}
+          className="overflow-x-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
           <table className="min-w-full divide-y divide-card-divider text-start text-xs">
             <thead className="bg-muted/50">
               <tr className="text-muted-foreground-1 font-semibold text-xs">
@@ -509,7 +513,7 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
                         {log.actionType}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-muted-foreground-2">
+                    <td className="py-3.5 px-4 text-muted-foreground-1">
                       {bi(log.summaryAr, log.summaryEn)}
                     </td>
                   </tr>
@@ -539,9 +543,9 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
           >
             <div className="flex items-center gap-2.5 text-sm font-bold text-foreground">
               <KeyRound className="size-4 text-primary shrink-0" />
-              <h3 id="activity-log-admin-pin-title">
+              <h2 id="activity-log-admin-pin-title">
                 {bi('تأكيد رمز المدير السري', 'Enter Staff Admin PIN', 'دڵنیاکردنەوەی کۆدی PIN ـی بەڕێوەبەر')}
-              </h3>
+              </h2>
             </div>
             <p className="text-xs text-muted-foreground-1 leading-relaxed">
               {bi(
@@ -566,7 +570,7 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
               className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-layer-line text-center font-mono text-base font-bold text-foreground focus:outline-none focus:border-primary"
             />
             {pinError && (
-              <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold">
+              <p className="text-xs text-rose-700 dark:text-rose-400 font-semibold">
                 {pinError}
               </p>
             )}
@@ -574,14 +578,14 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
               <button
                 type="button"
                 onClick={() => setPendingAdminStaffId(null)}
-                className="px-3.5 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground cursor-pointer"
+                className="px-3.5 py-2 min-h-[36px] rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground cursor-pointer"
               >
                 {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
               </button>
               <button
                 type="submit"
                 disabled={pinChecking}
-                className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
+                className="px-4 py-2 min-h-[36px] rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
               >
                 {pinChecking
                   ? bi('جاري التحقق...', 'Verifying...', 'خەریکی پشکنینە...')

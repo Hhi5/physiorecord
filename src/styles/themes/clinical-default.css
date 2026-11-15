@@ -9,12 +9,12 @@
   --color-clinical-default-200: oklch(80.4% 0.12 175);
   --color-clinical-default-300: oklch(72.4% 0.14 175);
   --color-clinical-default-400: oklch(64.6% 0.16 175);
-  --color-clinical-default-500: oklch(57% 0.14 175);
-  --color-clinical-default-600: oklch(49.6% 0.12 175);
-  --color-clinical-default-700: oklch(42.4% 0.1 175);
-  --color-clinical-default-800: oklch(35.4% 0.08 175);
-  --color-clinical-default-900: oklch(28.6% 0.06 175);
-  --color-clinical-default-950: oklch(25.3% 0.05 175);
+  --color-clinical-default-500: oklch(54% 0.14 175);
+  --color-clinical-default-600: oklch(45% 0.12 175);
+  --color-clinical-default-700: oklch(39% 0.1 175);
+  --color-clinical-default-800: oklch(33% 0.08 175);
+  --color-clinical-default-900: oklch(27% 0.06 175);
+  --color-clinical-default-950: oklch(23% 0.05 175);
 
   /* Gray palette (consolidated <= 8 distinct neutral grays, WCAG AA >= 4.5:1 text contrast) */
   --color-clinical-default-gray-50: oklch(98% 0.002 175);
@@ -22,13 +22,12 @@
   --color-clinical-default-gray-200: oklch(89.7% 0.008 175);
   --color-clinical-default-gray-300: oklch(82.7% 0.012 175);
   --color-clinical-default-gray-400: oklch(82.7% 0.012 175);
-  --color-clinical-default-gray-500: oklch(48.5% 0.016 175);
-  --color-clinical-default-gray-600: oklch(48.5% 0.016 175);
-  --color-clinical-default-gray-700: oklch(38% 0.012 175);
-  --color-clinical-default-gray-800: oklch(24% 0.006 175);
+  --color-clinical-default-gray-500: oklch(42.5% 0.016 175);
+  --color-clinical-default-gray-600: oklch(38% 0.016 175);
+  --color-clinical-default-gray-700: oklch(33% 0.012 175);
+  --color-clinical-default-gray-800: oklch(23% 0.006 175);
   --color-clinical-default-gray-900: oklch(17% 0.004 175);
-  --color-clinical-default-gray-950: oklch(17% 0.004 175);
-
+  --color-clinical-default-gray-950: oklch(15% 0.004 175);
 }
 
 :root[data-theme="theme-clinical-default"],
@@ -470,9 +469,9 @@
   
   /* MUTED (4 Text Roles: primary=foreground, secondary=muted-foreground-2, muted=muted-foreground-1, inverse=foreground-inverse) */
   --muted: var(--color-clinical-default-gray-800);
-  --muted-foreground: oklch(76% 0.012 175);
-  --muted-foreground-1: oklch(76% 0.012 175);
-  --muted-foreground-2: oklch(85% 0.008 175);
+  --muted-foreground: oklch(80% 0.012 175);
+  --muted-foreground-1: oklch(80% 0.012 175);
+  --muted-foreground-2: oklch(88% 0.008 175);
   --muted-hover: var(--color-clinical-default-gray-700);
   --muted-focus: var(--color-clinical-default-gray-700);
   --muted-active: var(--color-clinical-default-gray-700);

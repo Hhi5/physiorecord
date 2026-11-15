@@ -487,21 +487,24 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex justify-center items-center p-4"
+      className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex justify-center items-center p-3 sm:p-4"
       dir={isRtl ? 'rtl' : 'ltr'}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="synthetic-modal-title"
     >
-      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden border border-card-line flex flex-col">
+      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-xl max-h-[88dvh] overflow-hidden border border-card-line flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-card-divider flex items-center justify-between bg-muted/40">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
+        <div className="px-4 sm:px-6 py-3.5 border-b border-card-divider flex items-center justify-between gap-2 bg-muted/40 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
               <Database className="w-4 h-4" />
             </div>
-            <div>
-              <h2 className="text-base font-bold text-foreground">
+            <div className="min-w-0">
+              <h2 id="synthetic-modal-title" className="text-sm sm:text-base font-bold text-foreground truncate">
                 {bi('إدراج بيانات سريرية تجريبية', 'Insert Synthetic Clinical Demonstration Data')}
               </h2>
-              <p className="text-xs text-muted-foreground-1">
+              <p className="text-xs text-muted-foreground-1 line-clamp-1">
                 {bi(
                   'بيانات وهمية سريرية لاختبار وتجربة كافة ميزات النظام والمخططات الحركية',
                   'Clinical mock cases to test and verify all system features and kinetic progress'
@@ -512,14 +515,15 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover transition-colors cursor-pointer"
+            aria-label={bi('إغلاق', 'Close', 'داخستن')}
+            className="min-w-[36px] min-h-[36px] rounded-lg flex items-center justify-center text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover transition-colors cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content Body */}
-        <div className="p-6 space-y-4">
+        <div tabIndex={0} className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-6 space-y-4">
           <div className="p-3 bg-primary/10 border border-primary/20 rounded-xl text-foreground text-xs flex items-start gap-2">
             <ShieldCheck className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
             <div className="space-y-1">
@@ -619,7 +623,7 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
             </div>
           </div>
 
-          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+          <div tabIndex={0} className="space-y-2 max-h-56 overflow-y-auto pe-1">
             {targetPatients.map((p, idx) => (
               <div key={p.id || idx} className="p-3 bg-muted/40 rounded-xl border border-card-line text-xs">
                 <div className="flex items-center justify-between font-bold text-foreground mb-1">
@@ -665,7 +669,7 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 bg-muted/40 border-t border-card-divider flex flex-wrap items-center justify-between gap-3">
+        <div className="px-4 sm:px-6 py-3.5 bg-muted/40 border-t border-card-divider flex flex-wrap items-center justify-between gap-2.5 shrink-0">
           <div>
             {hasDemoRecords && !confirmDeleteDemo && (
               <button

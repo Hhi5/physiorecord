@@ -123,7 +123,7 @@ export const VitalsPanel: React.FC<VitalsPanelProps> = ({
           <button
             type="button"
             onClick={() => setShowThresholdConfig((v) => !v)}
-            className="px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line font-semibold inline-flex items-center gap-1 cursor-pointer"
+            className="min-h-[36px] px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line font-semibold inline-flex items-center gap-1 cursor-pointer"
           >
             <Settings2 className="size-3.5" />
             <span>{bi('تخصيص الحدود', 'Thresholds')}</span>
@@ -134,10 +134,11 @@ export const VitalsPanel: React.FC<VitalsPanelProps> = ({
       {/* BP / HR / SpO2 Inputs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         <div>
-          <label className="font-semibold text-muted-foreground-1 block mb-1">
+          <label htmlFor="vitals-sbp" className="font-semibold text-muted-foreground-1 block mb-1">
             {bi('الانقباضي BP Sys (mmHg)', 'BP Systolic (mmHg)')}
           </label>
           <input
+            id="vitals-sbp"
             type="number"
             min={40}
             max={280}
@@ -151,10 +152,11 @@ export const VitalsPanel: React.FC<VitalsPanelProps> = ({
           />
         </div>
         <div>
-          <label className="font-semibold text-muted-foreground-1 block mb-1">
+          <label htmlFor="vitals-dbp" className="font-semibold text-muted-foreground-1 block mb-1">
             {bi('الانبساطي BP Dia (mmHg)', 'BP Diastolic (mmHg)')}
           </label>
           <input
+            id="vitals-dbp"
             type="number"
             min={30}
             max={180}
@@ -168,10 +170,11 @@ export const VitalsPanel: React.FC<VitalsPanelProps> = ({
           />
         </div>
         <div>
-          <label className="font-semibold text-muted-foreground-1 block mb-1">
+          <label htmlFor="vitals-hr" className="font-semibold text-muted-foreground-1 block mb-1">
             {bi('النبض HR (bpm)', 'Heart Rate (bpm)')}
           </label>
           <input
+            id="vitals-hr"
             type="number"
             min={25}
             max={240}
@@ -185,10 +188,11 @@ export const VitalsPanel: React.FC<VitalsPanelProps> = ({
           />
         </div>
         <div>
-          <label className="font-semibold text-muted-foreground-1 block mb-1">
+          <label htmlFor="vitals-spo2" className="font-semibold text-muted-foreground-1 block mb-1">
             {bi('الأكسجة SpO2 (%)', 'SpO2 (%)')}
           </label>
           <input
+            id="vitals-spo2"
             type="number"
             min={50}
             max={100}
@@ -231,10 +235,10 @@ export const VitalsPanel: React.FC<VitalsPanelProps> = ({
             <span className="font-bold text-foreground block">
               {bi('منحنى العلامات الحيوية خلال الجلسات', 'Vitals Trend Mini-Chart')}
             </span>
-            <div className="flex items-center gap-3 font-mono text-xs">
-              <span className="text-rose-600">● SBP</span>
-              <span className="text-sky-600">● HR</span>
-              <span className="text-emerald-600">● SpO2</span>
+            <div className="flex items-center gap-3 font-mono text-xs font-semibold">
+              <span className="text-rose-700 dark:text-rose-300">● SBP</span>
+              <span className="text-sky-700 dark:text-sky-300">● HR</span>
+              <span className="text-emerald-700 dark:text-emerald-300">● SpO2</span>
             </div>
           </div>
           <svg
@@ -326,7 +330,7 @@ export const VitalsPanel: React.FC<VitalsPanelProps> = ({
                 ClinicOperationsService.setVitalsThresholds(thresholds);
                 setShowThresholdConfig(false);
               }}
-              className="px-3 py-1 rounded-lg bg-primary text-primary-foreground font-bold cursor-pointer"
+              className="min-h-[36px] px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-bold cursor-pointer"
             >
               {bi('حفظ الحدود', 'Save Thresholds')}
             </button>

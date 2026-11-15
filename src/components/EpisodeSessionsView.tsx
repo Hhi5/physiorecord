@@ -53,6 +53,7 @@ import {
   findMatchingBaselineMmtEntry,
   BODY_LATERALITIES,
 } from '../data/clinicalToolkit/romMmtCatalog';
+import { formatDateDDMMYYYY } from '../utils/date';
 
 interface EpisodeSessionsViewProps {
   episode: EpisodeRecord;
@@ -113,10 +114,12 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
   const [isAddendumModalOpen, setIsAddendumModalOpen] = useState(false);
   const [isDischargeModalOpen, setIsDischargeModalOpen] = useState(false);
 
-  // Cancellation prompt
+  // Cancellation & delete confirmation prompts
   const [sessionToCancel, setSessionToCancel] = useState<SessionRecord | null>(null);
   const [cancellationReasonInput, setCancellationReasonInput] = useState('');
   const [cancellationType, setCancellationType] = useState<'cancelled_patient' | 'cancelled_clinic' | 'no_show'>('cancelled_patient');
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [sessionToDelete, setSessionToDelete] = useState<SessionRecord | null>(null);
 
   // Longitudinal Tracking Accordion
   const [isLongitudinalOpen, setIsLongitudinalOpen] = useState(true);
@@ -278,17 +281,18 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
   const handleConfirmCancelSession = async () => {
     if (!sessionToCancel) return;
     if (!cancellationReasonInput.trim()) {
-      alert('سبب الإلغاء إلزامي.');
+      setCancelError(bi('سبب الإلغاء إلزامي.', 'Cancellation reason is required.'));
       return;
     }
 
+    setCancelError(null);
     try {
       await cancelSession(sessionToCancel.id, cancellationReasonInput.trim(), cancellationType);
       setSessionToCancel(null);
       setCancellationReasonInput('');
       await fetchSessionsAndNotes();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'فشل إلغاء الجلسة.');
+      setCancelError(err instanceof Error ? err.message : bi('فشل إلغاء الجلسة.', 'Failed to cancel session.'));
     }
   };
 
@@ -350,15 +354,15 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-primary-600" />
               <span>{bi('سجل الجلسات وتوثيق SOAP', 'Session Timeline & SOAP Notes')}</span>
-            </h4>
+            </h3>
             <span className="px-2 py-0.5 rounded-full text-xs tabular-nums bg-slate-100 text-slate-700 font-bold">
               {sessions.length} {bi('جلسات', 'Sessions')}
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-600 mt-0.5">
             {bi('توثيق الجلسات العلاجية وملاحظات SOAP اليومية التابعة لحلقة الرعاية هذه', 'Clinical treatment documentation and daily SOAP notes for this episode')}
           </p>
         </div>
@@ -368,7 +372,7 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
             <button
               type="button"
               onClick={() => setIsDischargeModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors cursor-pointer"
             >
               <span>{bi('تخريج الحلقة', 'Discharge Episode')}</span>
             </button>
@@ -382,7 +386,7 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
             }}
             disabled={isEpisodeClosed}
             title={isEpisodeClosed ? bi('لا يمكن إضافة جلسات داخل حلقة مكتملة أو مؤرشفة', 'Cannot add sessions to a closed or archived episode') : bi('إضافة جلسة سريرية', 'Add clinical session')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-40 shadow-2xs hover:shadow transition-all"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[36px] rounded-lg text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-40 shadow-2xs hover:shadow transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>{bi('تسجيل جلسة سريرية جديدة', 'New Clinical Session')}</span>
@@ -440,13 +444,13 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                     <TrendingUp className="w-4 h-4" />
                   </div>
                   <div>
-                    <h5 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                       <span>{bi('تتبع التقدم الحركي والعضلي عبر الجلسات', 'Longitudinal Motor & ROM Progress')}</span>
                       <span className="px-2 py-0.5 rounded-full text-xs bg-teal-100 text-teal-800 font-mono font-bold">
                         {longitudinalRomComparisons.length + longitudinalMmtComparisons.length} {bi('مؤشرات', 'Metrics')}
                       </span>
-                    </h5>
-                    <p className="text-xs text-slate-500">
+                    </h4>
+                    <p className="text-xs text-slate-600">
                       {bi('مقارنة تطور المدى الحركي والقوة العضلية بين الجلسة التقييمية الأولى والجلسة الأحدث', 'Comparing ROM and muscle strength progress between baseline and latest session')}
                     </p>
                   </div>
@@ -572,9 +576,11 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
             ref={sessionsVirtual.containerRef}
             onScroll={sessionsVirtual.onScroll}
             data-testid="episode-sessions-list"
+            tabIndex={sessionsVirtual.isVirtualized ? 0 : undefined}
+            aria-label={sessionsVirtual.isVirtualized ? bi('قائمة الجلسات', 'Sessions list') : undefined}
             className={
               sessionsVirtual.isVirtualized
-                ? 'space-y-3 max-h-[70vh] overflow-y-auto pe-1'
+                ? 'space-y-3 max-h-[70vh] overflow-y-auto pe-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary'
                 : 'space-y-3'
             }
           >
@@ -670,15 +676,15 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                   </div>
 
                   {/* Metadata line */}
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
                     <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{sess.sessionDate}</span>
+                      <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                      <bdi dir="ltr">{formatDateDDMMYYYY(sess.sessionDate)}</bdi>
                     </span>
                     {sess.data.sessionTime && (
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        <span dir="ltr">{sess.data.sessionTime}</span>
+                        <Clock className="w-3.5 h-3.5 text-slate-500" />
+                        <bdi dir="ltr">{sess.data.sessionTime}</bdi>
                       </span>
                     )}
                     {sess.data.sessionDurationMinutes && (
@@ -704,7 +710,7 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => handleOpenSoap(sess)}
-                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 min-h-[36px] rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                       isFinalized
                         ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
                         : soap
@@ -714,17 +720,17 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                   >
                     {isFinalized ? (
                       <>
-                        <Lock className="w-3.5 h-3.5 text-emerald-600" />
+                        <Lock className="w-3.5 h-3.5 text-emerald-700" />
                         <span>{bi('عرض SOAP المعتمدة', 'View Finalized SOAP')}</span>
                       </>
                     ) : soap ? (
                       <>
-                        <FileEdit className="w-3.5 h-3.5 text-primary-600" />
+                        <FileEdit className="w-3.5 h-3.5 text-primary-700" />
                         <span>{bi('تحرير مسودة SOAP', 'Edit Draft SOAP')}</span>
                       </>
                     ) : (
                       <>
-                        <FileText className="w-3.5 h-3.5 text-slate-500" />
+                        <FileText className="w-3.5 h-3.5 text-slate-600" />
                         <span>{bi('توثيق SOAP', 'Document SOAP')}</span>
                       </>
                     )}
@@ -735,10 +741,10 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleOpenAddendum(sess)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 transition-colors"
-                      title="إضافة ملحق سريري وتصحيح للسجل المعتمد"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-[36px] rounded-xl text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 transition-colors cursor-pointer"
+                      title={bi('إضافة ملحق سريري وتصحيح للسجل المعتمد', 'Add clinical addendum')}
                     >
-                      <History className="w-3.5 h-3.5 text-amber-600" />
+                      <History className="w-3.5 h-3.5 text-amber-700" />
                       <span>{addendaCount > 0 ? `الملاحق (${addendaCount})` : 'إضافة ملحق'}</span>
                     </button>
                   )}
@@ -751,8 +757,9 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                         setSessionToEdit(sess);
                         setIsSessionModalOpen(true);
                       }}
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
-                      title="تعديل بيانات الجلسة الإدارية"
+                      className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+                      title={bi('تعديل بيانات الجلسة الإدارية', 'Edit session details')}
+                      aria-label={bi(`تعديل بيانات الجلسة #${sess.sessionNumber}`, `Edit session #${sess.sessionNumber}`)}
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
@@ -765,9 +772,11 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                       onClick={() => {
                         setSessionToCancel(sess);
                         setCancellationReasonInput('');
+                        setCancelError(null);
                       }}
-                      className="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-colors"
-                      title="إلغاء الجلسة"
+                      className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg text-rose-700 hover:text-rose-800 hover:bg-rose-50 transition-colors cursor-pointer"
+                      title={bi('إلغاء الجلسة', 'Cancel session')}
+                      aria-label={bi(`إلغاء الجلسة #${sess.sessionNumber}`, `Cancel session #${sess.sessionNumber}`)}
                     >
                       <XCircle className="w-4 h-4" />
                     </button>
@@ -777,18 +786,10 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                   {!isFinalized && (
                     <button
                       type="button"
-                      onClick={async () => {
-                        if (confirm(`هل أنت متأكد من حذف مسودة الجلسة #${sess.sessionNumber}؟ (لا يمكن التراجع عن هذا الإجراء)`)) {
-                          try {
-                            await deleteSession(sess.id);
-                            await fetchSessionsAndNotes();
-                          } catch (err: unknown) {
-                            alert(err instanceof Error ? err.message : 'فشل حذف المسودة.');
-                          }
-                        }
-                      }}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                      title="حذف مسودة الجلسة غير المعتمدة"
+                      onClick={() => setSessionToDelete(sess)}
+                      className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg text-slate-600 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
+                      title={bi('حذف مسودة الجلسة غير المعتمدة', 'Delete draft session')}
+                      aria-label={bi(`حذف مسودة الجلسة #${sess.sessionNumber}`, `Delete draft session #${sess.sessionNumber}`)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -869,45 +870,75 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
 
       {/* Cancellation Dialog Prompt */}
       {sessionToCancel && (
-        <div className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-rose-200">
-            <h3 className="text-base font-bold text-slate-900 mb-2">
-              إلغاء الجلسة #{sessionToCancel.sessionNumber}
-            </h3>
-            
-            <p className="text-xs text-slate-600 leading-relaxed mb-4">
-              يرجى تحديد سبب الإلغاء ونوع التخلف لحفظه في السجل السريري للمريض:
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="episode-cancel-modal-title"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              e.stopPropagation();
+              setSessionToCancel(null);
+            }
+          }}
+          className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <div className="bg-card border border-rose-500/30 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <h2 id="episode-cancel-modal-title" className="text-base font-bold text-foreground">
+              {bi(`إلغاء الجلسة #${sessionToCancel.sessionNumber}`, `Cancel Session #${sessionToCancel.sessionNumber}`)}
+            </h2>
+
+            <p className="text-xs text-muted-foreground-1 leading-relaxed">
+              {bi(
+                'يرجى تحديد سبب الإلغاء ونوع التخلف لحفظه في السجل السريري للمريض:',
+                'Select cancellation category and reason to record in the patient chart:'
+              )}
             </p>
 
-            <div className="space-y-3 mb-4">
+            <div className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">جهة الإلغاء:</label>
+                <label htmlFor="episode-cancel-type" className="block text-xs font-bold text-foreground mb-1">
+                  {bi('جهة الإلغاء:', 'Cancellation Type:')}
+                </label>
                 <select
+                  id="episode-cancel-type"
                   value={cancellationType}
                   onChange={(e) =>
                     setCancellationType(
                       e.target.value as 'cancelled_patient' | 'cancelled_clinic' | 'no_show'
                     )
                   }
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl"
+                  className="w-full px-3 py-2 text-xs bg-layer border border-layer-line text-foreground rounded-xl focus:outline-none focus:border-primary"
                 >
-                  <option value="cancelled_patient">ألغيت من قبل المريض (Cancelled by Patient)</option>
-                  <option value="cancelled_clinic">ألغيت من قبل العيادة (Cancelled by Clinic)</option>
-                  <option value="no_show">تخلف عن الحضور دون إشعار (No Show)</option>
+                  <option value="cancelled_patient">{bi('ألغيت من قبل المريض', 'Cancelled by Patient')}</option>
+                  <option value="cancelled_clinic">{bi('ألغيت من قبل العيادة', 'Cancelled by Clinic')}</option>
+                  <option value="no_show">{bi('تخلف عن الحضور دون إشعار (No Show)', 'No Show')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">سبب الإلغاء بالتفصيل <span className="text-rose-500">*</span>:</label>
+                <label htmlFor="episode-cancel-reason" className="block text-xs font-bold text-foreground mb-1">
+                  {bi('سبب الإلغاء بالتفصيل', 'Detailed Reason')}{' '}
+                  <span className="text-rose-700 dark:text-rose-400">*</span>:
+                </label>
                 <textarea
+                  id="episode-cancel-reason"
                   value={cancellationReasonInput}
-                  onChange={(e) => setCancellationReasonInput(e.target.value)}
-                  placeholder="اكتب سبب الإلغاء هنا..."
+                  onChange={(e) => {
+                    setCancellationReasonInput(e.target.value);
+                    setCancelError(null);
+                  }}
+                  placeholder={bi('اكتب سبب الإلغاء هنا...', 'Enter reason...')}
                   rows={2}
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl"
+                  className="w-full px-3 py-2 text-xs bg-layer border border-layer-line text-foreground rounded-xl focus:outline-none focus:border-primary"
                   required
                 />
               </div>
+
+              {cancelError && (
+                <p role="alert" className="text-xs font-semibold text-rose-700 dark:text-rose-400">
+                  {cancelError}
+                </p>
+              )}
             </div>
 
             <div className="flex gap-2">
@@ -915,16 +946,69 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                 type="button"
                 onClick={handleConfirmCancelSession}
                 disabled={!cancellationReasonInput.trim()}
-                className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold disabled:opacity-50"
+                className="flex-1 py-2 min-h-[36px] bg-rose-700 hover:bg-rose-800 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer"
               >
-                تأكيد إلغاء الجلسة
+                {bi('تأكيد إلغاء الجلسة', 'Confirm Cancellation')}
               </button>
               <button
                 type="button"
                 onClick={() => setSessionToCancel(null)}
-                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-200"
+                className="px-4 py-2 min-h-[36px] bg-layer border border-layer-line text-foreground rounded-xl text-xs font-semibold hover:bg-layer-hover cursor-pointer"
               >
-                تراجع
+                {bi('تراجع', 'Cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Draft Delete Confirmation Dialog */}
+      {sessionToDelete && (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="episode-delete-modal-title"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              e.stopPropagation();
+              setSessionToDelete(null);
+            }
+          }}
+          className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <div className="bg-card border border-rose-500/30 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+            <h2 id="episode-delete-modal-title" className="text-base font-bold text-foreground">
+              {bi(`حذف مسودة الجلسة #${sessionToDelete.sessionNumber}`, `Delete Draft Session #${sessionToDelete.sessionNumber}`)}
+            </h2>
+            <p className="text-xs text-muted-foreground-1 leading-relaxed">
+              {bi(
+                'هل أنت متأكد من حذف مسودة الجلسة غير المعتمدة؟ لا يمكن التراجع عن هذا الإجراء.',
+                'Are you sure you want to delete this draft session? This action cannot be undone.'
+              )}
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  const targetId = sessionToDelete.id;
+                  setSessionToDelete(null);
+                  try {
+                    await deleteSession(targetId);
+                    await fetchSessionsAndNotes();
+                  } catch (err: unknown) {
+                    setError(err instanceof Error ? err.message : bi('فشل حذف المسودة.', 'Failed to delete draft session.'));
+                  }
+                }}
+                className="flex-1 py-2 min-h-[36px] bg-rose-700 hover:bg-rose-800 text-white rounded-xl text-xs font-bold cursor-pointer"
+              >
+                {bi('تأكيد الحذف', 'Confirm Delete')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSessionToDelete(null)}
+                className="px-4 py-2 min-h-[36px] bg-layer border border-layer-line text-foreground rounded-xl text-xs font-semibold hover:bg-layer-hover cursor-pointer"
+              >
+                {bi('تراجع', 'Cancel')}
               </button>
             </div>
           </div>

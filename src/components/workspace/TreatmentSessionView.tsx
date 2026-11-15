@@ -1667,7 +1667,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
             onClick={() => handleSafeNavigation('back')}
             aria-label={bi('العودة', 'Go back', 'گەڕانەوە')}
             title={bi('العودة', 'Go back', 'گەڕانەوە')}
-            className="size-7 sm:size-8 rounded-lg bg-layer border border-layer-line text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+            className="size-9 rounded-lg bg-layer border border-layer-line text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
           >
             {isRtl ? <ArrowRight className="size-4" /> : <ArrowLeft className="size-4" />}
           </button>
@@ -1687,9 +1687,9 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
               <bdi dir="ltr">{formatDateDDMMYYYY(session.data.sessionDate)}</bdi>
             </span>
             <span className="hidden sm:inline text-muted-foreground-1">·</span>
-            <h2 className="hidden sm:inline text-xs font-bold text-foreground truncate max-w-[240px]">
+            <span className="hidden sm:inline text-xs font-bold text-foreground truncate max-w-[240px]">
               {episodeTitle}
-            </h2>
+            </span>
             {isLocked && (
               <span className="py-0.5 px-2 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold inline-flex items-center gap-1 shrink-0">
                 <Lock className="size-3" />
@@ -1727,7 +1727,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
               <button
                 type="button"
                 onClick={() => setTimerRunning((r) => !r)}
-                className="p-0.5 rounded hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                className="min-w-[36px] min-h-[36px] inline-flex items-center justify-center rounded hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer"
                 aria-label={
                   timerRunning
                     ? bi('إيقاف مؤقت', 'Pause timer', 'وەستاندنی کاتژمێر')
@@ -1739,7 +1739,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
               <button
                 type="button"
                 onClick={() => setElapsedSeconds(0)}
-                className="p-0.5 rounded hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                className="min-w-[36px] min-h-[36px] inline-flex items-center justify-center rounded hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer"
                 aria-label={bi('تصفير المؤقت', 'Reset timer', 'سفرکردنەوەی کاتژمێر')}
               >
                 <RotateCcw className="size-3.5" />
@@ -1855,7 +1855,11 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
       )}
 
       {/* Main Session & Flowsheet Canvas */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 md:pb-6 space-y-5 max-w-5xl mx-auto w-full">
+      <div
+        tabIndex={0}
+        aria-label={bi('مساحة توثيق الجلسة العلاجية', 'Treatment session documentation canvas', 'ڕووبەری تۆمارکردنی دانیشتنی چارەسەر')}
+        className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 md:pb-6 space-y-5 max-w-5xl mx-auto w-full focus:outline-none"
+      >
         {/* Load / Decrypt / Validation Warnings */}
         {loadError && (
           <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-800 dark:text-rose-200 flex items-center justify-between gap-3">
@@ -2080,7 +2084,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                     key={chip.id}
                     type="button"
                     onClick={() => handleApplyFavoriteChip(chip)}
-                    className="min-h-[32px] px-2.5 py-1 rounded-full bg-surface hover:bg-primary/10 border border-line-2 hover:border-primary/40 text-xs font-semibold text-foreground hover:text-primary transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                    className="min-h-[36px] px-2.5 py-1 rounded-full bg-surface hover:bg-primary/10 border border-line-2 hover:border-primary/40 text-xs font-semibold text-foreground hover:text-primary transition-colors inline-flex items-center gap-1.5 cursor-pointer"
                   >
                     {chip.category === 'exercise' ? (
                       <Dumbbell className="size-3 text-emerald-600" />
@@ -2099,7 +2103,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
         {/* 1. SUBJECTIVE AXIS (المحور الذاتي — الألم والشكوى وتغير الأعراض) */}
         <div className="p-5 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-4">
-          <h3 className="text-sm font-bold text-foreground border-b border-card-divider pb-2.5">
+          <h2 className="text-sm font-bold text-foreground border-b border-card-divider pb-2.5">
             {language === 'en' ? (
               '1. Subjective (S): Pre/Post Pain NPRS, Chief Complaint & Symptom Changes'
             ) : (
@@ -2112,7 +2116,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 <ClinicalAbbr code="SOAP" className="text-xs text-muted-foreground-1 ms-1" />
               </>
             )}
-          </h3>
+          </h2>
 
           {/* Pre & Post Session Pain NPRS (Single-row 0-10 segmented control on desktop, slider on mobile; colored by severity) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2224,7 +2228,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                <label className="text-xs font-semibold text-foreground">
+                <label htmlFor="soap-chief-complaint" className="text-xs font-semibold text-foreground">
                   {bi(
                     'الشكوى الحالية للمريض اليوم:',
                     'Chief Complaint (Subjective):',
@@ -2234,6 +2238,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 {renderCopiedFieldBadge('chiefComplaint')}
               </div>
               <AutoResizeTextarea
+                id="soap-chief-complaint"
                 minRows={2}
                 snippetCategory="subjective"
                 disabled={isLocked}
@@ -2255,7 +2260,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-foreground block mb-1.5">
+              <label htmlFor="soap-symptom-changes" className="text-xs font-semibold text-foreground block mb-1.5">
                 {bi(
                   'تغير الأعراض منذ الجلسة السابقة:',
                   'Symptom Changes Since Last Session:',
@@ -2263,6 +2268,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 )}
               </label>
               <AutoResizeTextarea
+                id="soap-symptom-changes"
                 minRows={2}
                 snippetCategory="subjective"
                 disabled={isLocked}
@@ -2284,13 +2290,13 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-card-divider pb-3">
             <div className="flex items-center gap-2">
               <Dumbbell className="size-4 text-primary" />
-              <h3 className="text-sm font-bold text-foreground">
+              <h2 className="text-sm font-bold text-foreground">
                 {bi(
                   '2. جدول التمارين العلاجية المنفذة في الجلسة',
                   '2. Therapeutic Exercise Flowsheet (Sets × Reps × Hold × Load)',
                   '٢. خشتەی ڕاهێنانە چارەسەرییە ئەنجامدراوەکانی دانیشتن'
                 )}
-              </h3>
+              </h2>
             </div>
 
             {!isLocked && (
@@ -2338,7 +2344,11 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
               )}
             </p>
           ) : (
-            <div className="overflow-x-auto -mx-2 px-2">
+            <div
+              tabIndex={0}
+              aria-label={bi('جدول التمارين العلاجية', 'Therapeutic exercise flowsheet table')}
+              className="overflow-x-auto -mx-2 px-2 focus:outline-none"
+            >
               <table className="w-full min-w-[660px] text-start text-xs border-collapse">
                 <thead>
                   <tr className="bg-muted/50 border-b border-card-divider text-muted-foreground-1 font-semibold">
@@ -2377,6 +2387,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                             min={1}
                             max={20}
                             disabled={isLocked}
+                            aria-label={`${bi(ex.nameAr, ex.nameEn)} — ${bi('جولات', 'Sets')}`}
                             value={
                               numericDrafts[setsKey] !== undefined
                                 ? numericDrafts[setsKey]
@@ -2417,6 +2428,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                             min={1}
                             max={200}
                             disabled={isLocked}
+                            aria-label={`${bi(ex.nameAr, ex.nameEn)} — ${bi('تكرار', 'Reps')}`}
                             value={
                               numericDrafts[repsKey] !== undefined
                                 ? numericDrafts[repsKey]
@@ -2457,6 +2469,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                             min={0}
                             max={600}
                             disabled={isLocked}
+                            aria-label={`${bi(ex.nameAr, ex.nameEn)} — ${bi('ثبات بالثواني', 'Hold seconds')}`}
                             value={
                               numericDrafts[holdKey] !== undefined
                                 ? numericDrafts[holdKey]
@@ -2495,6 +2508,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                           <input
                             type="text"
                             disabled={isLocked}
+                            aria-label={`${bi(ex.nameAr, ex.nameEn)} — ${bi('المقاومة / الوزن', 'Load / Band')}`}
                             value={ex.loadOrBand}
                             onChange={(e) => {
                               const next = [...formState.exercises];
@@ -2507,6 +2521,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                         <td className="py-2.5 px-3 align-top">
                           <select
                             disabled={isLocked}
+                            aria-label={`${bi(ex.nameAr, ex.nameEn)} — ${bi('الاستجابة', 'Response')}`}
                             value={ex.rpeOrPainResponse}
                             onChange={(e) => {
                               const next = [...formState.exercises];
@@ -2532,13 +2547,14 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                           {!isLocked && (
                             <button
                               type="button"
+                              aria-label={`${bi('حذف التمرين', 'Remove exercise')}: ${bi(ex.nameAr, ex.nameEn)}`}
                               onClick={() =>
                                 updateField(
                                   'exercises',
                                   formState.exercises.filter((item) => item.id !== ex.id)
                                 )
                               }
-                              className="text-muted-foreground-2 hover:text-rose-600 p-1 cursor-pointer"
+                              className="min-w-[36px] min-h-[36px] inline-flex items-center justify-center rounded-lg text-muted-foreground-2 hover:text-rose-600 p-1 cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -2584,6 +2600,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                     <input
                       type="text"
                       disabled={isLocked}
+                      aria-label={bi('اسم التقنية اليدوية', 'Manual therapy technique', 'ناوی تەکنیکی چارەسەری دەستی')}
                       placeholder={bi('اسم التقنية اليدوية', 'Manual therapy technique', 'ناوی تەکنیکی چارەسەری دەستی')}
                       value={language !== 'en' ? mt.techniqueAr : mt.techniqueEn}
                       onChange={(e) => {
@@ -2599,13 +2616,14 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                     {!isLocked && (
                       <button
                         type="button"
+                        aria-label={bi('حذف التقنية اليدوية', 'Remove manual therapy technique')}
                         onClick={() =>
                           updateField(
                             'manualTherapy',
                             formState.manualTherapy.filter((m) => m.id !== mt.id)
                           )
                         }
-                        className="text-muted-foreground-2 hover:text-rose-600 cursor-pointer p-1"
+                        className="min-w-[36px] min-h-[36px] inline-flex items-center justify-center rounded-lg text-muted-foreground-2 hover:text-rose-600 cursor-pointer p-1"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -2614,10 +2632,11 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <label className="text-xs text-muted-foreground-1 block mb-0.5">
+                      <label htmlFor={`mt-target-${mt.id}`} className="text-xs text-muted-foreground-1 block mb-0.5">
                         {bi('المفصل / النسيج المستهدف', 'Target Joint/Tissue', 'جومگە / شانەی ئامانج')}
                       </label>
                       <input
+                        id={`mt-target-${mt.id}`}
                         type="text"
                         disabled={isLocked}
                         value={mt.targetJointOrTissue}
@@ -2631,10 +2650,11 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                     </div>
 
                     <div>
-                      <label className="text-xs text-muted-foreground-1 block mb-0.5">
+                      <label htmlFor={`mt-grade-${mt.id}`} className="text-xs text-muted-foreground-1 block mb-0.5">
                         {bi('الدرجة / الشدة', 'Grade', 'پلە / توندی')}
                       </label>
                       <select
+                        id={`mt-grade-${mt.id}`}
                         disabled={isLocked}
                         value={mt.gradeOrIntensity}
                         onChange={(e) => {
@@ -2658,10 +2678,11 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                     </div>
 
                     <div>
-                      <label className="text-xs text-muted-foreground-1 block mb-0.5">
+                      <label htmlFor={`mt-duration-${mt.id}`} className="text-xs text-muted-foreground-1 block mb-0.5">
                         {bi('المدة (دقيقة 1–120)', 'Duration (m)', 'ماوە (١–١٢٠ خولەک)')}
                       </label>
                       <input
+                        id={`mt-duration-${mt.id}`}
                         type="number"
                         min={1}
                         max={120}
@@ -2828,13 +2849,14 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                       {!isLocked && (
                         <button
                           type="button"
+                          aria-label={`${bi('حذف الجهاز', 'Remove modality')}: ${bi(pa.modalityAr, pa.modality)}`}
                           onClick={() =>
                             updateField(
                               'physicalAgents',
                               formState.physicalAgents.filter((p) => p.id !== pa.id)
                             )
                           }
-                          className="text-muted-foreground-2 hover:text-rose-600 cursor-pointer p-1"
+                          className="min-w-[36px] min-h-[36px] inline-flex items-center justify-center rounded-lg text-muted-foreground-2 hover:text-rose-600 cursor-pointer p-1"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -2844,10 +2866,11 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <label className="text-xs text-muted-foreground-1 block mb-0.5">
+                      <label htmlFor={`pa-site-${pa.id}`} className="text-xs text-muted-foreground-1 block mb-0.5">
                         {bi('المنطقة المستهدفة (Site)', 'Target Site', 'شوێنی ئامانج (Site)')}
                       </label>
                       <input
+                        id={`pa-site-${pa.id}`}
                         type="text"
                         disabled={isLocked}
                         value={pa.site}
@@ -2861,10 +2884,11 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                     </div>
 
                     <div>
-                      <label className="text-xs text-muted-foreground-1 block mb-0.5">
+                      <label htmlFor={`pa-params-${pa.id}`} className="text-xs text-muted-foreground-1 block mb-0.5">
                         {bi('المعاملات (Parameters)', 'Parameters', 'پێوەرەکان (Parameters)')}
                       </label>
                       <input
+                        id={`pa-params-${pa.id}`}
                         type="text"
                         disabled={isLocked}
                         value={pa.parameters}
@@ -2879,10 +2903,11 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                     </div>
 
                     <div>
-                      <label className="text-xs text-muted-foreground-1 block mb-0.5">
+                      <label htmlFor={`pa-duration-${pa.id}`} className="text-xs text-muted-foreground-1 block mb-0.5">
                         {bi('المدة (دقيقة 1–120)', 'Duration (m)', 'ماوە (خولەک ١–١٢٠)')}
                       </label>
                       <input
+                        id={`pa-duration-${pa.id}`}
                         type="number"
                         min={1}
                         max={120}
@@ -2930,13 +2955,13 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
         {/* 3. OBJECTIVE FREE-TEXT & DERIVED FLOWSHEET SUMMARY */}
         <div className="p-5 rounded-xl bg-card border border-card-line shadow-2xs space-y-4">
-          <h3 className="text-sm font-bold text-foreground border-b border-card-divider pb-2.5">
+          <h2 className="text-sm font-bold text-foreground border-b border-card-divider pb-2.5">
             {bi(
               '3. الملاحظات الموضوعية وملخص التدخلات الحر',
               '3. Objective (O): Clinical Observations & Therapist Free-Text Interventions',
               '٣. تێبینییە بابەتییەکان و پوختەی ئازادی دەستێوەردانەکان'
             )}
-          </h3>
+          </h2>
 
           {derivedFlowsheetSummary && (
             <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-xs space-y-1">
@@ -2971,7 +2996,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                <label className="text-xs font-bold text-foreground">
+                <label htmlFor="soap-interventions-summary" className="text-xs font-bold text-foreground">
                   {bi(
                     'ملخص التدخلات الحر للمعالج:',
                     'Therapist Free-Text Interventions Summary:',
@@ -2981,6 +3006,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 {renderCopiedFieldBadge('interventionsSummary')}
               </div>
               <AutoResizeTextarea
+                id="soap-interventions-summary"
                 minRows={2}
                 disabled={isLocked}
                 value={formState.interventionsSummary}
@@ -3002,7 +3028,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                <label className="text-xs font-bold text-foreground">
+                <label htmlFor="soap-clinical-observations" className="text-xs font-bold text-foreground">
                   {bi(
                     'المشاهدات والفحص السريري الموضوعي:',
                     'Clinical Observations (Objective):',
@@ -3012,6 +3038,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 {renderCopiedFieldBadge('clinicalObservations')}
               </div>
               <AutoResizeTextarea
+                id="soap-clinical-observations"
                 minRows={2}
                 disabled={isLocked}
                 value={formState.clinicalObservations}
@@ -3049,13 +3076,13 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
         {/* 4. ASSESSMENT & PLAN AXES (التقييم والانطباع السريري والخطة القادمة) */}
         <div className="p-5 rounded-xl bg-card border border-card-line shadow-2xs space-y-4">
-          <h3 className="text-sm font-bold text-foreground border-b border-card-divider pb-2.5">
+          <h2 className="text-sm font-bold text-foreground border-b border-card-divider pb-2.5">
             {bi(
               '4. التقييم السريري والخطة العلاجية القادمة',
               '4. Assessment (A) & Plan (P)',
               '٤. هەڵسەنگاندنی کلینیکی و پلانی چارەسەری داهاتوو'
             )}
-          </h3>
+          </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-1">
@@ -3138,7 +3165,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
           <div>
             <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-              <label className="text-xs font-bold text-foreground">
+              <label htmlFor="soap-clinical-impression" className="text-xs font-bold text-foreground">
                 {bi(
                   'الانطباع والتفسير السريري للجلسة *:',
                   'Clinical Impression (Assessment) *:',
@@ -3148,6 +3175,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
               {renderCopiedFieldBadge('clinicalImpression')}
             </div>
             <AutoResizeTextarea
+              id="soap-clinical-impression"
               minRows={2}
               snippetCategory="assessment"
               disabled={isLocked}
@@ -3171,7 +3199,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                <label className="text-xs font-bold text-foreground">
+                <label htmlFor="soap-next-session-plan" className="text-xs font-bold text-foreground">
                   {bi(
                     'خطة الجلسة القادمة والتعديلات المقترحة:',
                     'Next Session Plan:',
@@ -3181,6 +3209,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 {renderCopiedFieldBadge('nextSessionPlan')}
               </div>
               <AutoResizeTextarea
+                id="soap-next-session-plan"
                 minRows={2}
                 snippetCategory="plan"
                 disabled={isLocked}
@@ -3203,7 +3232,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                <label className="text-xs font-bold text-foreground">
+                <label htmlFor="soap-home-instructions" className="text-xs font-bold text-foreground">
                   {language === 'en' ? (
                     'Home Instructions (HEP):'
                   ) : (
@@ -3220,6 +3249,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 {renderCopiedFieldBadge('homeInstructions')}
               </div>
               <AutoResizeTextarea
+                id="soap-home-instructions"
                 minRows={2}
                 snippetCategory="plan"
                 disabled={isLocked}
@@ -3248,13 +3278,13 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
             <div className="flex items-center justify-between border-b border-card-divider pb-3">
               <div className="flex items-center gap-2">
                 <FilePlus2 className="w-4 h-4 text-primary" />
-                <h3 className="text-sm font-bold text-foreground">
+                <h2 className="text-sm font-bold text-foreground">
                   {bi(
                     'الملاحق والتصحيحات السريرية (Append-Only Clinical Addenda)',
                     'Clinical Addenda (Append-Only Post-Finalization Amendments)',
                     'پاشکۆ و ڕاستکردنەوە کلینیکییەکان (Append-Only Clinical Addenda)'
                   )}
-                </h3>
+                </h2>
               </div>
               <span className="text-xs font-mono text-muted-foreground-1">
                 {addenda.length} {bi('ملحق', 'addenda', 'پاشکۆ')}
@@ -3356,7 +3386,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-bold text-foreground">
+                    <label htmlFor="soap-addendum-text" className="text-xs font-bold text-foreground">
                       {bi(
                         'نص الإضافة أو التصحيح السريري (لا يعدل النص الأصلي بل يُلحق به):',
                         'Addendum Text (appended immutably):',
@@ -3368,6 +3398,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                     </span>
                   </div>
                   <AutoResizeTextarea
+                    id="soap-addendum-text"
                     minRows={2}
                     maxLength={MAX_ADDENDUM_TEXT_LENGTH}
                     value={addendumText}
@@ -3444,7 +3475,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
             <button
               type="button"
               onClick={() => setLocalUndoToast(null)}
-              className="p-1 text-muted-foreground-1 hover:text-foreground cursor-pointer"
+              className="min-w-[36px] min-h-[36px] inline-flex items-center justify-center rounded-lg p-1 text-muted-foreground-1 hover:text-foreground cursor-pointer"
               aria-label={bi('إغلاق', 'Dismiss', 'داخستن')}
             >
               <X className="size-4" />
@@ -3492,10 +3523,11 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
           <form onSubmit={handleAddCustomChip} className="p-3.5 rounded-xl bg-surface border border-line-2 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <div>
-                <label className="font-bold text-foreground block mb-1">
+                <label htmlFor="chip-new-category" className="font-bold text-foreground block mb-1">
                   {bi('الفئة:', 'Category:', 'پۆل:')}
                 </label>
                 <select
+                  id="chip-new-category"
                   value={newChipCategory}
                   onChange={(e) => setNewChipCategory(e.target.value as QuickSoapChipCategory)}
                   className="w-full px-2.5 py-2 rounded-lg bg-layer border border-layer-line text-foreground"
@@ -3506,10 +3538,11 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 </select>
               </div>
               <div>
-                <label className="font-bold text-foreground block mb-1">
+                <label htmlFor="chip-new-label-ar" className="font-bold text-foreground block mb-1">
                   {bi('الاسم بالعربية:', 'Arabic Label:', 'ناو بە عەرەبی:')}
                 </label>
                 <input
+                  id="chip-new-label-ar"
                   type="text"
                   value={newChipLabelAr}
                   onChange={(e) => setNewChipLabelAr(e.target.value)}
@@ -3518,10 +3551,11 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 />
               </div>
               <div>
-                <label className="font-bold text-foreground block mb-1">
+                <label htmlFor="chip-new-label-en" className="font-bold text-foreground block mb-1">
                   {bi('الاسم بالإنجليزية:', 'English Label:', 'ناو بە ئینگلیزی:')}
                 </label>
                 <input
+                  id="chip-new-label-en"
                   type="text"
                   value={newChipLabelEn}
                   onChange={(e) => setNewChipLabelEn(e.target.value)}
@@ -3532,10 +3566,11 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
             </div>
             <div className="flex flex-wrap items-end gap-2.5">
               <div className="flex-1 min-w-[180px]">
-                <label className="font-bold text-foreground block mb-1">
+                <label htmlFor="chip-new-detail" className="font-bold text-foreground block mb-1">
                   {bi('الإعدادات / الجرعة الافتراضية:', 'Default Parameters / Load:', 'ڕێکخستنەکان / بڕی بنەڕەتی:')}
                 </label>
                 <input
+                  id="chip-new-detail"
                   type="text"
                   value={newChipDetail}
                   onChange={(e) => setNewChipDetail(e.target.value)}
@@ -3554,7 +3589,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
             </div>
           </form>
 
-          <div className="space-y-2 max-h-60 overflow-y-auto">
+          <div tabIndex={0} className="space-y-2 max-h-60 overflow-y-auto focus:outline-none">
             {favoriteChips.map((chip) => (
               <div
                 key={chip.id}
@@ -3596,7 +3631,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setConfirmDeleteChipId(chip.id)}
-                    className="p-1.5 rounded-lg text-muted-foreground-2 hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer"
+                    className="min-w-[36px] min-h-[36px] inline-flex items-center justify-center p-1.5 rounded-lg text-muted-foreground-2 hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer"
                     aria-label={bi('حذف البطاقة', 'Delete chip', 'سڕینەوەی کارت')}
                   >
                     <Trash2 className="size-3.5" />
@@ -3734,7 +3769,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
             </div>
 
             <div>
-              <label className="block font-bold text-foreground mb-1">
+              <label htmlFor="modality-override-rationale" className="block font-bold text-foreground mb-1">
                 {bi(
                   'مبرر التجاوز السريري (اختياري — يُحفظ في سجل الجلسة):',
                   'Clinical Override Rationale (optional — recorded in session note):',
@@ -3742,6 +3777,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 )}
               </label>
               <AutoResizeTextarea
+                id="modality-override-rationale"
                 minRows={2}
                 value={modalityOverrideReason}
                 onChange={(e) => setModalityOverrideReason(e.target.value)}

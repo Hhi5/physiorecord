@@ -63,22 +63,23 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Top Bar: Movement Type Toggle & Tested Count */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-surface rounded-xl border border-line-2">
-        <div className="flex items-center gap-1.5">
-          <Gauge className="w-4 h-4 text-primary" />
-          <span className="text-xs font-bold text-foreground">
-            {bi('نوع قياس المدى الحركي:', 'Measurement Type:', 'جۆری پێوانی مەودای جووڵە:')}
-          </span>
-          <div className="flex flex-wrap items-center bg-layer rounded-lg p-1 border border-line-2 text-xs">
+      {/* Top Bar: Measurement Type Segmented Toggle & Tested Count */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 bg-surface rounded-xl border border-line-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-1.5">
+            <Gauge className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-xs font-bold text-foreground">
+              {bi('نوع قياس المدى الحركي:', 'Measurement Type:', 'جۆری پێوانی مەودای جووڵە:')}
+            </span>
+          </div>
+          <div className="grid grid-cols-3 w-full sm:w-auto bg-layer rounded-lg p-1 border border-line-2 text-xs gap-1">
             {(Object.keys(ROM_MOVEMENT_TYPES) as RomMovementType[]).map((type) => (
               <button
                 key={type}
                 type="button"
                 aria-pressed={movementType === type}
                 onClick={() => setMovementType(type)}
-                style={{ minHeight: 'unset' }}
-                className={`compact-btn px-3 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                className={`min-h-[34px] px-3 py-1 rounded-md font-semibold transition-colors cursor-pointer text-center ${
                   movementType === type
                     ? 'bg-teal-700 text-white shadow-xs'
                     : 'text-muted-foreground-1 hover:text-foreground'
@@ -90,7 +91,7 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs text-muted-foreground-1 font-medium">
             {bi(
               `الحركات الموثقة: ${entries.length}`,
@@ -156,14 +157,14 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
               className="p-3 sm:p-3.5 rounded-xl border border-line-2 bg-card hover:border-line-3 transition-colors space-y-2.5"
             >
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-xs font-bold text-foreground">
+                <h3 className="text-xs font-bold text-foreground">
                   {bi(mov.nameAr, mov.nameEn)}
-                </h4>
+                </h3>
                 {bilateralDiff !== null && (
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold tabular-nums shrink-0 ${
                       bilateralDiff >= 15
-                        ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                        ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30'
                         : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
                     }`}
                     title={bi('الفرق بين اليمين واليسار', 'Side-to-side difference', 'جیاوازی نێوان ڕاست و چەپ')}
@@ -186,6 +187,7 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                       min="0"
                       max="180"
                       disabled={readOnly}
+                      aria-label={`${bi(mov.nameAr, mov.nameEn)} (${movementType})`}
                       value={midlineVal ?? ''}
                       placeholder="0–180"
                       onChange={(e) =>
@@ -206,7 +208,7 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                   {/* Right Side */}
                   <div className="flex items-center justify-between gap-1.5 p-2 rounded-lg bg-surface border border-line-2">
                     <span className="text-xs font-bold text-foreground">
-                      {bi('يمين (R):', 'Right (R):', 'ڕاست (R):')}
+                      {bi('يمين (R):', 'Right (R):', 'لای ڕاست (R):')}
                     </span>
                     <div className="flex items-center gap-1" dir="ltr">
                       <input
@@ -215,6 +217,7 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                         min="0"
                         max="180"
                         disabled={readOnly}
+                        aria-label={`${bi(mov.nameAr, mov.nameEn)} - ${bi('يمين', 'Right')} (${movementType})`}
                         value={rightVal ?? ''}
                         placeholder="°"
                         onChange={(e) =>
@@ -243,6 +246,7 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                         min="0"
                         max="180"
                         disabled={readOnly}
+                        aria-label={`${bi(mov.nameAr, mov.nameEn)} - ${bi('يسار', 'Left')} (${movementType})`}
                         value={leftVal ?? ''}
                         placeholder="°"
                         onChange={(e) =>

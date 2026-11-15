@@ -211,6 +211,8 @@ export const TimeDisplay: React.FC<TimeDisplayProps> = ({ time, className = '' }
 };
 
 export interface MoneyInputProps {
+  id?: string;
+  ariaLabel?: string;
   value: number;
   onChange: (amount: number) => void;
   placeholder?: string;
@@ -220,6 +222,8 @@ export interface MoneyInputProps {
 }
 
 export const MoneyInput: React.FC<MoneyInputProps> = ({
+  id,
+  ariaLabel,
   value,
   onChange,
   placeholder = '0',
@@ -255,6 +259,7 @@ export const MoneyInput: React.FC<MoneyInputProps> = ({
   return (
     <div dir="ltr" className="relative flex items-center w-full">
       <input
+        id={id}
         type="text"
         inputMode="numeric"
         required={required}
@@ -262,6 +267,7 @@ export const MoneyInput: React.FC<MoneyInputProps> = ({
         value={formattedDisplay}
         onChange={handleChange}
         placeholder={placeholder}
+        aria-label={ariaLabel || bi('المبلغ المالي', 'Monetary amount', 'بڕی پارە')}
         className={`w-full ps-3 pe-14 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground tabular-nums font-bold focus:outline-none focus:border-primary ${className}`.trim()}
       />
       <span className="absolute end-3 text-xs font-semibold text-muted-foreground-1 pointer-events-none select-none">
@@ -272,6 +278,8 @@ export const MoneyInput: React.FC<MoneyInputProps> = ({
 };
 
 export interface PhoneInputProps {
+  id?: string;
+  ariaLabel?: string;
   value: string;
   onChange: (maskedOrStored: string) => void;
   placeholder?: string;
@@ -281,6 +289,8 @@ export interface PhoneInputProps {
 }
 
 export const PhoneInput: React.FC<PhoneInputProps> = ({
+  id,
+  ariaLabel,
   value,
   onChange,
   placeholder = '0770 123 4567',
@@ -288,6 +298,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   disabled = false,
   className = '',
 }) => {
+  const { bi, isRtl } = useLanguage();
   const displayMasked = maskIraqiPhoneInput(value);
 
   return (
@@ -296,6 +307,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
         +964
       </span>
       <input
+        id={id}
         type="tel"
         inputMode="tel"
         dir="ltr"
@@ -312,7 +324,8 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
           }
         }}
         placeholder={placeholder}
-        className={`w-full px-3 py-2 text-xs rounded-e-xl bg-layer border border-layer-line text-foreground tabular-nums text-left focus:outline-none focus:border-primary ${className}`.trim()}
+        aria-label={ariaLabel || bi('رقم الهاتف', 'Phone number', 'ژمارەی تەلەفۆن')}
+        className={`w-full px-3 py-2 text-xs rounded-e-xl bg-layer border border-layer-line text-foreground tabular-nums ${isRtl ? 'text-right' : 'text-left'} focus:outline-none focus:border-primary ${className}`.trim()}
       />
     </div>
   );
@@ -381,6 +394,8 @@ function useAnchoredPopover(
 }
 
 export interface DatePickerInputProps {
+  id?: string;
+  ariaLabel?: string;
   value: string; // YYYY-MM-DD
   onChange: (yyyyMmDd: string) => void;
   min?: string;
@@ -392,6 +407,8 @@ export interface DatePickerInputProps {
 }
 
 export const DatePickerInput: React.FC<DatePickerInputProps> = ({
+  id,
+  ariaLabel,
   value,
   onChange,
   min,
@@ -480,6 +497,7 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     <div ref={containerRef} className="relative w-full">
       <div dir="ltr" className="relative flex items-center w-full">
         <input
+          id={id}
           type="text"
           inputMode="numeric"
           dir="ltr"
@@ -489,6 +507,7 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
           onChange={(e) => handleTextInput(e.target.value)}
           onFocus={() => !disabled && setOpen(true)}
           placeholder={placeholder || 'dd/mm/yyyy'}
+          aria-label={ariaLabel || bi('التاريخ', 'Date', 'بەروار')}
           className={`w-full ps-3 pe-9 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground tabular-nums text-left focus:outline-none focus:border-primary ${className}`.trim()}
         />
         <button
@@ -540,6 +559,7 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
                 <select
                   value={viewMonth}
                   onChange={(e) => setViewMonth(Number(e.target.value))}
+                  aria-label={bi('الشهر', 'Month', 'مانگ')}
                   className="px-1.5 py-1 rounded-lg bg-layer border border-layer-line text-xs font-bold text-foreground max-w-[105px]"
                 >
                   {monthNames.map((mName, idx) => (
@@ -552,6 +572,7 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
                   value={viewYear}
                   onChange={(e) => setViewYear(Number(e.target.value))}
                   dir="ltr"
+                  aria-label={bi('السنة', 'Year', 'ساڵ')}
                   className="px-1.5 py-1 rounded-lg bg-layer border border-layer-line text-xs font-bold tabular-nums text-foreground"
                 >
                   {Array.from({ length: 115 }, (_, i) => new Date().getFullYear() + 2 - i).map(
@@ -645,6 +666,8 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
 };
 
 export interface TimePickerInputProps {
+  id?: string;
+  ariaLabel?: string;
   value: string; // canonical "HH:mm" (24h)
   onChange: (hhMm: string) => void;
   disabled?: boolean;
@@ -652,6 +675,7 @@ export interface TimePickerInputProps {
 }
 
 export const TimePickerInput: React.FC<TimePickerInputProps> = ({
+  id,
   value,
   onChange,
   disabled = false,
@@ -709,10 +733,10 @@ export const TimePickerInput: React.FC<TimePickerInputProps> = ({
   return (
     <div ref={containerRef} className="relative w-full">
       <button
+        id={id}
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setOpen((prev) => !prev)}
-        aria-label={bi('تحديد الوقت', 'Select time', 'دیاریکردنی کات')}
         aria-expanded={open}
         className={`w-full ps-3 pe-9 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground tabular-nums font-bold flex items-center justify-between text-start hover:border-primary/60 focus:outline-none focus:border-primary cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:border-line-2 disabled:cursor-not-allowed relative ${className}`.trim()}
       >
@@ -827,6 +851,7 @@ export const TimePickerInput: React.FC<TimePickerInputProps> = ({
                     min={0}
                     max={59}
                     value={String(minutes).padStart(2, '0')}
+                    aria-label={bi('الدقيقة', 'Minute', 'خولەک')}
                     onChange={(e) => {
                       const parsed = parseInt(e.target.value, 10);
                       if (!Number.isNaN(parsed)) {
@@ -856,6 +881,7 @@ export const TimePickerInput: React.FC<TimePickerInputProps> = ({
                   max={59}
                   step={1}
                   value={minutes}
+                  aria-label={bi('شريط تمرير الدقائق', 'Minutes slider', 'خلیسکێنەری خولەک')}
                   onChange={(e) => emitTime(hours24, Number(e.target.value))}
                   className="w-full h-1.5 accent-primary cursor-pointer"
                 />
@@ -1349,7 +1375,7 @@ export const DemoBadge: React.FC<{ className?: string }> = ({ className = '' }) 
   return (
     <span
       dir="ltr"
-      className={`py-0.5 px-2 rounded-md text-xs font-mono font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 shrink-0 ${className}`.trim()}
+      className={`py-0.5 px-2 rounded-md text-xs font-mono font-bold bg-amber-100 text-amber-900 dark:bg-amber-950/90 dark:text-amber-200 border border-amber-500/40 shrink-0 ${className}`.trim()}
       title="Demo / Synthetic Record"
     >
       DEMO

@@ -578,9 +578,9 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
               </h2>
               <p className="text-xs text-muted-foreground-1">
                 {bi(
-                  'النسخة الاحتياطية محمية بكلمة المرور التي تختارها. إذا فقدتها، لن تتمكن من فتح النسخة.',
-                  'Backup is protected by the password you choose. If you lose it, the backup cannot be opened.',
-                  'کۆپی یەدەگ بەو وشەی نهێنییەی هەڵیدەبژێریت پارێزراوە. ئەگەر لەدەستی بدەیت، ناتوانیت کۆپییەکە بکەیتەوە.'
+                  'تصدير واستعادة السجلات السريرية مشفرة بالكامل (.ptbackup)',
+                  'Export & restore fully encrypted clinical archives (.ptbackup)',
+                  'ناردنەدەرەوە و گەڕاندنەوەی تۆمارە کلینیکییە نهێنیکراوەکان (.ptbackup)'
                 )}
               </p>
             </div>
@@ -589,7 +589,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
             type="button"
             onClick={onClose}
             aria-label={bi('إغلاق نافذة النسخ الاحتياطي', 'Close backup modal', 'داخستنی پەنجەرەی کۆپی یەدەگ')}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover transition-colors cursor-pointer"
+            className="min-w-[36px] min-h-[36px] rounded-lg flex items-center justify-center text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -629,18 +629,18 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
         </div>
 
         {/* Content Body */}
-        <div className="p-6 overflow-y-auto space-y-5 flex-1">
+        <div tabIndex={0} className="p-6 overflow-y-auto space-y-5 flex-1">
           
           {/* TAB 1: EXPORT */}
           {activeTab === 'export' && (
             <div>
-              <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl text-foreground text-xs leading-relaxed mb-5 flex items-center gap-2.5">
-                <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+              <div className="p-4 bg-amber-500/10 border border-amber-500/35 rounded-xl text-foreground text-xs leading-relaxed mb-5 flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
                 <p className="text-foreground font-medium">
                   {bi(
-                    'النسخة الاحتياطية محمية بكلمة المرور التي تختارها. إذا فقدتها، لن تتمكن من فتح النسخة.',
-                    'Backup is protected by the password you choose. If you lose it, the backup cannot be opened.',
-                    'کۆپی یەدەگ بەو وشەی نهێنییەی هەڵیدەبژێریت پارێزراوە. ئەگەر لەدەستی بدەیت، ناتوانیت کۆپییەکە بکەیتەوە.'
+                    'تنبيه أمني: النسخة الاحتياطية محمية بكلمة المرور التي تختارها فقط. إذا فقدتها، لن تتمكن من فتح النسخة.',
+                    'Security notice: This backup is protected only by the password you choose. If lost, the backup cannot be opened.',
+                    'ئاگاداری ئەمنی: کۆپی یەدەگ تەنها بەو وشەی نهێنییەی هەڵیدەبژێریت پارێزراوە. ئەگەر لەدەستی بدەیت، ناتوانیت کۆپییەکە بکەیتەوە.'
                   )}
                 </p>
               </div>
@@ -863,7 +863,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                   <button
                     type="submit"
                     disabled={exportLoading || !exportPassword || !confirmExportPassword}
-                    className="w-full py-3 px-4 bg-primary hover:bg-primary-hover text-primary-foreground text-xs sm:text-sm font-bold rounded-lg transition-all shadow-2xs disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-3 px-4 bg-primary hover:bg-primary-hover text-primary-foreground text-xs sm:text-sm font-bold rounded-lg transition-all shadow-2xs disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-layer-line disabled:shadow-none disabled:opacity-100 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {exportLoading ? (
                       <>
@@ -1145,7 +1145,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                   <button
                     type="submit"
                     disabled={restoreLoading || !restoreFileContent || !restorePassword}
-                    className="w-full py-3 px-4 bg-primary hover:bg-primary-hover text-primary-foreground text-xs sm:text-sm font-bold rounded-lg transition-all shadow-2xs disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-3 px-4 bg-primary hover:bg-primary-hover text-primary-foreground text-xs sm:text-sm font-bold rounded-lg transition-all shadow-2xs disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-layer-line disabled:shadow-none disabled:opacity-100 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {restoreLoading ? (
                       <>

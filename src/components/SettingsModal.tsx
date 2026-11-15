@@ -1001,8 +1001,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 data-testid="settings-mode-simple-btn"
                 aria-pressed={settingsViewMode === 'simple'}
                 onClick={() => handleSwitchSettingsMode('simple')}
-                style={{ minHeight: 'unset', minWidth: 'unset' }}
-                className={`compact-btn px-2 sm:px-2.5 py-1 rounded-md text-xs font-bold cursor-pointer transition-colors ${
+                className={`min-h-[36px] px-2.5 sm:px-3 py-1 rounded-md text-xs font-bold cursor-pointer transition-colors ${
                   settingsViewMode === 'simple'
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground-1 hover:text-foreground'
@@ -1015,8 +1014,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 data-testid="settings-mode-advanced-btn"
                 aria-pressed={settingsViewMode === 'advanced'}
                 onClick={() => handleSwitchSettingsMode('advanced')}
-                style={{ minHeight: 'unset', minWidth: 'unset' }}
-                className={`compact-btn px-2 sm:px-2.5 py-1 rounded-md text-xs font-bold cursor-pointer transition-colors ${
+                className={`min-h-[36px] px-2.5 sm:px-3 py-1 rounded-md text-xs font-bold cursor-pointer transition-colors ${
                   settingsViewMode === 'advanced'
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground-1 hover:text-foreground'
@@ -1031,8 +1029,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               type="button"
               data-testid="open-whats-new-btn"
               onClick={() => setIsWhatsNewOpen(true)}
-              style={{ minHeight: 'unset', minWidth: 'unset' }}
-              className="compact-btn px-2 sm:px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0"
+              className="min-h-[36px] px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0"
               title={bi(
                 `ما الجديد v${APP_SEMVER_VERSION}`,
                 `What's New v${APP_SEMVER_VERSION}`,
@@ -1050,8 +1047,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               type="button"
               onClick={onClose}
               aria-label={bi('إغلاق الإعدادات', 'Close settings', 'داخستنی ڕێکخستنەکان')}
-              style={{ minHeight: 'unset', minWidth: 'unset' }}
-              className="compact-btn size-8 rounded-lg flex items-center justify-center text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover cursor-pointer shrink-0"
+              className="size-9 rounded-lg flex items-center justify-center text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover cursor-pointer shrink-0"
             >
               <X className="size-4 shrink-0" />
             </button>
@@ -1073,8 +1069,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 'Search settings (backup, security, language, font, modules...)',
                 'گەڕان لە ڕێکخستنەکان (کۆپی یەدەگ، ئاسایش، زمان، فۆنت، بەشەکان...)'
               )}
-              style={{ minHeight: '34px' }}
-              className="w-full h-8.5 ps-9 pe-8 py-1 rounded-xl bg-layer border border-layer-line text-xs leading-normal text-foreground placeholder:text-muted-foreground-1 focus:outline-none focus:border-primary"
+              className="w-full min-h-[36px] ps-9 pe-10 py-1.5 rounded-xl bg-layer border border-layer-line text-xs leading-normal text-foreground placeholder:text-muted-foreground-1 focus:outline-none focus:border-primary"
             />
             {settingsSearchQuery.trim().length > 0 && (
               <button
@@ -1082,16 +1077,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 data-testid="settings-search-clear-btn"
                 onClick={() => setSettingsSearchQuery('')}
                 aria-label={bi('مسح البحث', 'Clear search', 'سڕینەوەی گەڕان')}
-                style={{ minHeight: 'unset', minWidth: 'unset' }}
-                className="compact-btn absolute end-1.5 inset-y-0 my-auto size-7 flex items-center justify-center rounded text-muted-foreground-1 hover:text-foreground cursor-pointer z-10"
+                className="absolute end-1 inset-y-0 my-auto size-8 flex items-center justify-center rounded-lg text-muted-foreground-1 hover:text-foreground cursor-pointer z-10"
               >
-                <X className="size-3.5 shrink-0" />
+                <X className="size-4 shrink-0" />
               </button>
             )}
           </div>
         </div>
 
-        {/* Tabs Bar (Single-line horizontally scrollable in both directions; collapses on mobile during active search) */}
+        {/* Tabs Bar (Single-line horizontally scrollable with clear bottom spacing so scrollbar never overlaps tab border) */}
         <div
           role="tablist"
           aria-label={bi('أقسام الإعدادات', 'Settings categories', 'بەشەکانی ڕێکخستن')}
@@ -1102,13 +1096,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           }}
           className={`border-b border-card-divider ${
             settingsSearchQuery.trim().length > 0 ? 'hidden sm:flex' : 'flex'
-          } flex-nowrap items-center gap-1 bg-card shrink-0 overflow-x-auto scroll-smooth touch-pan-x`}
+          } flex-nowrap items-center gap-1.5 px-3 pt-1.5 pb-2.5 bg-card shrink-0 overflow-x-auto scroll-smooth touch-pan-x`}
           style={{
             WebkitOverflowScrolling: 'touch',
-            paddingLeft: '2.375px',
-            paddingRight: '9.375px',
-            paddingTop: '1px',
-            paddingBottom: '0px',
           }}
         >
           <button
@@ -1120,8 +1110,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               setActiveTab('currency');
               e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
             }}
-            style={{ minHeight: 'unset', minWidth: 'unset' }}
-            className={`compact-btn mb-1.5 px-2.5 sm:px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
+            className={`min-h-[36px] px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
               activeTab === 'currency'
                 ? 'border-primary text-primary bg-primary/5'
                 : 'border-transparent text-muted-foreground-1 hover:text-foreground'
@@ -1140,8 +1129,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               setActiveTab('clinic');
               e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
             }}
-            style={{ minHeight: 'unset', minWidth: 'unset' }}
-            className={`compact-btn mb-1.5 px-2.5 sm:px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
+            className={`min-h-[36px] px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
               activeTab === 'clinic'
                 ? 'border-primary text-primary bg-primary/5'
                 : 'border-transparent text-muted-foreground-1 hover:text-foreground'
@@ -1160,8 +1148,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               setActiveTab('display');
               e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
             }}
-            style={{ minHeight: 'unset', minWidth: 'unset' }}
-            className={`compact-btn mb-1.5 px-2.5 sm:px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
+            className={`min-h-[36px] px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
               activeTab === 'display'
                 ? 'border-primary text-primary bg-primary/5'
                 : 'border-transparent text-muted-foreground-1 hover:text-foreground'
@@ -1181,8 +1168,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 setActiveTab('staff');
                 e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
               }}
-              style={{ minHeight: 'unset', minWidth: 'unset' }}
-              className={`compact-btn mb-1.5 px-2.5 sm:px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
+              className={`min-h-[36px] px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
                 activeTab === 'staff'
                   ? 'border-primary text-primary bg-primary/5'
                   : 'border-transparent text-muted-foreground-1 hover:text-foreground'
@@ -1202,8 +1188,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               setActiveTab('security');
               e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
             }}
-            style={{ minHeight: 'unset', minWidth: 'unset' }}
-            className={`compact-btn mb-1.5 px-2.5 sm:px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
+            className={`min-h-[36px] px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
               activeTab === 'security'
                 ? 'border-primary text-primary bg-primary/5'
                 : 'border-transparent text-muted-foreground-1 hover:text-foreground'
@@ -1222,8 +1207,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               setActiveTab('modules');
               e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
             }}
-            style={{ minHeight: 'unset', minWidth: 'unset' }}
-            className={`compact-btn mb-1.5 px-2.5 sm:px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
+            className={`min-h-[36px] px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
               activeTab === 'modules'
                 ? 'border-primary text-primary bg-primary/5'
                 : 'border-transparent text-muted-foreground-1 hover:text-foreground'
@@ -1243,8 +1227,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 setActiveTab('developer');
                 e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
               }}
-              style={{ minHeight: 'unset', minWidth: 'unset' }}
-              className={`compact-btn mb-1.5 px-2.5 sm:px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
+              className={`min-h-[36px] px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
                 activeTab === 'developer'
                   ? 'border-primary text-primary bg-primary/5'
                   : 'border-transparent text-muted-foreground-1 hover:text-foreground'
@@ -1258,7 +1241,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        <div
+          tabIndex={0}
+          aria-label={bi('محتوى الإعدادات', 'Settings content', 'ناوەڕۆکی ڕێکخستنەکان')}
+          className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 focus:outline-none"
+        >
           {/* Live Search Results Panel (Phase F1) */}
           {settingsSearchQuery.trim().length > 0 && (() => {
             const matchedItems = filterSettingsCatalog(settingsSearchQuery, settingsViewMode);
@@ -1414,7 +1401,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {THEME_PALETTE_OPTIONS.map((pal) => {
                     const active = themePalette === pal.id;
                     return (
@@ -1422,7 +1409,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         key={pal.id}
                         type="button"
                         onClick={() => setThemePalette(pal.id)}
-                        className={`p-2.5 rounded-xl border text-start cursor-pointer transition-colors flex items-center gap-2 ${
+                        className={`min-h-[40px] p-2.5 rounded-xl border text-start cursor-pointer transition-colors flex items-center gap-2 ${
                           active
                             ? 'bg-primary/10 border-primary text-primary'
                             : 'bg-card border-card-line hover:bg-layer-hover text-foreground'
@@ -1432,7 +1419,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           className="w-4 h-4 rounded-full shrink-0 border border-black/15"
                           style={{ backgroundColor: pal.swatchHex }}
                         />
-                        <span className="text-xs font-bold truncate">
+                        <span className="text-xs font-bold leading-snug">
                           {bi(pal.labelAr, pal.labelEn, THEME_PALETTE_CKB[pal.id])}
                         </span>
                       </button>
@@ -1449,28 +1436,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="space-y-4">
               {/* World Currency Selector (ISO 4217 standard) */}
               <div className="p-4 rounded-xl bg-surface border border-line-2 space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-2 text-xs font-bold text-foreground">
                     <Coins className="size-4 text-primary" />
                     <span>
-                      {bi(
-                        'اختر عملة العيادة المعتمدة (ISO 4217):',
-                        'Select Active Clinic Currency (ISO 4217):',
-                        'دراوی پەسەندکراوی کلینیک هەڵبژێرە (ISO 4217):'
-                      )}
+                      {bi('اختر عملة العيادة المعتمدة', 'Select Active Clinic Currency', 'دراوی پەسەندکراوی کلینیک هەڵبژێرە')}{' '}
+                      <bdi dir="ltr">(ISO 4217)</bdi>:
                     </span>
                   </div>
                   {currency.code !== 'IQD' ? (
                     <button
                       type="button"
                       onClick={() => setCurrencyCode('IQD')}
-                      className="px-2.5 py-1 text-xs font-bold rounded-lg bg-layer border border-layer-line text-primary hover:bg-primary/10 inline-flex items-center gap-1 cursor-pointer"
+                      className="min-h-[36px] px-2.5 py-1 text-xs font-bold rounded-lg bg-layer border border-layer-line text-primary hover:bg-primary/10 inline-flex items-center gap-1 cursor-pointer"
                     >
                       <RotateCcw className="size-3" />
                       <span>{bi('استعادة الدينار العراقي', 'Reset to IQD', 'گەڕانەوە بۆ دیناری عێراقی')}</span>
                     </button>
                   ) : (
-                    <span className="px-2 py-0.5 text-xs font-bold rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <span className="px-2 py-0.5 text-xs font-bold rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
                       {bi('الدينار العراقي (افتراضي)', 'IQD (Default)', 'دیناری عێراقی (بنەڕەتی)')}
                     </span>
                   )}
@@ -1488,7 +1472,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="relative flex items-center">
                   <Search className="size-3.5 absolute start-3 inset-y-0 my-auto text-muted-foreground-2 pointer-events-none z-10 shrink-0" />
                   <input
+                    id="settings-currency-search"
                     type="text"
+                    aria-label={bi('بحث عن العملة', 'Search currencies', 'گەڕان بۆ دراو')}
                     value={currencySearch}
                     onChange={(e) => setCurrencySearch(e.target.value)}
                     placeholder={bi(
@@ -1496,13 +1482,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       'Search by currency name or code (e.g. USD, EUR, SAR)...',
                       'بە ناو یان کۆدی دراو بگەڕێ (نموونە: USD، دینار، یۆرۆ)...'
                     )}
-                    style={{ minHeight: '36px' }}
-                    className="w-full h-9 ps-9 pe-3 py-1.5 text-xs leading-normal rounded-xl bg-layer border border-layer-line text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:border-primary"
+                    className="w-full min-h-[36px] ps-9 pe-3 py-1.5 text-xs leading-normal rounded-xl bg-layer border border-layer-line text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:border-primary"
                   />
                 </div>
 
                 {/* Currency List */}
-                <div className="max-h-72 overflow-y-auto space-y-1.5 pe-1">
+                <div
+                  tabIndex={0}
+                  aria-label={bi('قائمة العملات', 'Currency list', 'لیستی دراوەکان')}
+                  className="max-h-72 overflow-y-auto space-y-1.5 pe-1 focus:outline-none"
+                >
                   {filteredCurrencies.map((c) => {
                     const isSelected = currency.code === c.code;
                     return (
@@ -1574,10 +1563,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div>
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="clinic-name-ar" className="block text-xs font-bold text-foreground mb-1">
                     {bi('اسم العيادة (بالعربية)', 'Clinic Name (Arabic)', 'ناوی کلینیک (عەرەبی)')}
                   </label>
                   <input
+                    id="clinic-name-ar"
                     type="text"
                     value={clinicProfile.clinicNameAr}
                     onChange={(e) => setClinicProfile((p) => ({ ...p, clinicNameAr: e.target.value }))}
@@ -1585,22 +1575,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="clinic-name-en" className="block text-xs font-bold text-foreground mb-1">
                     {bi('اسم العيادة (بالإنجليزية)', 'Clinic Name (English)', 'ناوی کلینیک (ئینگلیزی)')}
                   </label>
                   <input
+                    id="clinic-name-en"
                     type="text"
                     dir="ltr"
                     value={clinicProfile.clinicNameEn}
                     onChange={(e) => setClinicProfile((p) => ({ ...p, clinicNameEn: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground"
+                    className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground text-start"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="clinic-therapist-ar" className="block text-xs font-bold text-foreground mb-1">
                     {bi('اسم المعالج المسؤول (عربي)', 'Lead Therapist (Arabic)', 'ناوی چارەسەرکاری بەرپرس (عەرەبی)')}
                   </label>
                   <input
+                    id="clinic-therapist-ar"
                     type="text"
                     value={clinicProfile.therapistNameAr}
                     onChange={(e) => setClinicProfile((p) => ({ ...p, therapistNameAr: e.target.value }))}
@@ -1608,46 +1600,50 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="clinic-therapist-en" className="block text-xs font-bold text-foreground mb-1">
                     {bi('اسم المعالج المسؤول (إنجليزي)', 'Lead Therapist (English)', 'ناوی چارەسەرکاری بەرپرس (ئینگلیزی)')}
                   </label>
                   <input
+                    id="clinic-therapist-en"
                     type="text"
                     dir="ltr"
                     value={clinicProfile.therapistNameEn}
                     onChange={(e) => setClinicProfile((p) => ({ ...p, therapistNameEn: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground"
+                    className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground text-start"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="clinic-phone" className="block text-xs font-bold text-foreground mb-1">
                     {bi('هاتف العيادة', 'Clinic Phone', 'تەلەفۆنی کلینیک')}
                   </label>
                   <input
+                    id="clinic-phone"
                     type="text"
                     dir="ltr"
                     value={clinicProfile.phone}
                     onChange={(e) => setClinicProfile((p) => ({ ...p, phone: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-mono text-foreground"
+                    className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-mono text-foreground text-start"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="clinic-license" className="block text-xs font-bold text-foreground mb-1">
                     {bi('رقم الإجازة / التسجيل', 'License / Registration #', 'ژمارەی مۆڵەت / تۆمارکردن')}
                   </label>
                   <input
+                    id="clinic-license"
                     type="text"
                     dir="ltr"
                     value={clinicProfile.licenseNumber}
                     onChange={(e) => setClinicProfile((p) => ({ ...p, licenseNumber: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-mono text-foreground"
+                    className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-mono text-foreground text-start"
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="clinic-address-ar" className="block text-xs font-bold text-foreground mb-1">
                     {bi('العنوان (عربي)', 'Clinic Address (Arabic)', 'ناونیشان (عەرەبی)')}
                   </label>
                   <input
+                    id="clinic-address-ar"
                     type="text"
                     value={clinicProfile.addressAr}
                     onChange={(e) => setClinicProfile((p) => ({ ...p, addressAr: e.target.value }))}
@@ -1655,24 +1651,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="clinic-address-en" className="block text-xs font-bold text-foreground mb-1">
                     {bi('العنوان (إنجليزي)', 'Clinic Address (English)', 'ناونیشان (ئینگلیزی)')}
                   </label>
                   <input
+                    id="clinic-address-en"
                     type="text"
                     dir="ltr"
                     value={clinicProfile.addressEn}
                     onChange={(e) => setClinicProfile((p) => ({ ...p, addressEn: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground"
+                    className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground text-start"
                   />
                 </div>
 
                 {/* 4.4 Receipt / Report Footer */}
                 <div>
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="clinic-footer-ar" className="block text-xs font-bold text-foreground mb-1">
                     {bi('تذييل الفواتير والتقارير (عربي)', 'Receipt / Report Footer (Arabic)', 'بنپەڕی پسوڵە و ڕاپۆرتەکان (عەرەبی)')}
                   </label>
                   <input
+                    id="clinic-footer-ar"
                     type="text"
                     value={clinicProfile.receiptFooterAr || ''}
                     onChange={(e) => setClinicProfile((p) => ({ ...p, receiptFooterAr: e.target.value }))}
@@ -1685,16 +1683,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="clinic-footer-en" className="block text-xs font-bold text-foreground mb-1">
                     {bi('تذييل الفواتير والتقارير (إنجليزي)', 'Receipt / Report Footer (English)', 'بنپەڕی پسوڵە و ڕاپۆرتەکان (ئینگلیزی)')}
                   </label>
                   <input
+                    id="clinic-footer-en"
                     type="text"
                     dir="ltr"
                     value={clinicProfile.receiptFooterEn || ''}
                     onChange={(e) => setClinicProfile((p) => ({ ...p, receiptFooterEn: e.target.value }))}
                     placeholder="Wishing you a speedy recovery..."
-                    className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground"
+                    className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground text-start"
                   />
                 </div>
 
@@ -1728,7 +1727,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                               workingDays: [...preset.days],
                             }))
                           }
-                          className={`px-2.5 py-1 rounded-lg border text-xs font-semibold cursor-pointer ${
+                          className={`min-h-[36px] px-2.5 py-1 rounded-lg border text-xs font-semibold cursor-pointer ${
                             active
                               ? 'bg-primary text-primary-foreground border-primary'
                               : 'bg-layer border-layer-line text-foreground hover:bg-layer-hover'
@@ -1768,7 +1767,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                               workingDays: nextDays,
                             }));
                           }}
-                          className={`px-2 py-1 rounded-lg border text-xs font-semibold cursor-pointer ${
+                          className={`min-h-[36px] px-2.5 py-1 rounded-lg border text-xs font-semibold cursor-pointer ${
                             active
                               ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300'
                               : 'bg-layer border-layer-line text-muted-foreground-1'
@@ -1782,28 +1781,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground-1 mb-1">
+                      <label htmlFor="clinic-work-hours-start" className="block text-xs font-semibold text-muted-foreground-1 mb-1">
                         {bi('بدء الدوام', 'Hours Start', 'دەستپێکردنی دەوام')}
                       </label>
                       <TimePickerInput
+                        id="clinic-work-hours-start"
                         value={clinicProfile.workHoursStart || '09:00'}
                         onChange={(v) => setClinicProfile((p) => ({ ...p, workHoursStart: v }))}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground-1 mb-1">
+                      <label htmlFor="clinic-work-hours-end" className="block text-xs font-semibold text-muted-foreground-1 mb-1">
                         {bi('انتهاء الدوام', 'Hours End', 'کۆتاییهاتنی دەوام')}
                       </label>
                       <TimePickerInput
+                        id="clinic-work-hours-end"
                         value={clinicProfile.workHoursEnd || '21:00'}
                         onChange={(v) => setClinicProfile((p) => ({ ...p, workHoursEnd: v }))}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground-1 mb-1">
+                      <label htmlFor="clinic-default-duration" className="block text-xs font-semibold text-muted-foreground-1 mb-1">
                         {bi('المدة الافتراضية (دقيقة)', 'Default Duration (min)', 'ماوەی بنەڕەتی (خولەک)')}
                       </label>
                       <input
+                        id="clinic-default-duration"
                         type="number"
                         min={10}
                         max={240}
@@ -1966,7 +1968,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <div className="space-y-3 text-xs">
                   <div>
-                    <label className="block font-bold text-foreground mb-1">
+                    <label htmlFor="wa-tpl-reminder-ar" className="block font-bold text-foreground mb-1">
                       {bi(
                         'قالب تذكير الموعد (عربي / إنجليزي)',
                         'Appointment Reminder Template (AR / EN)',
@@ -1974,6 +1976,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       )}
                     </label>
                     <textarea
+                      id="wa-tpl-reminder-ar"
                       rows={2}
                       value={whatsappTemplates.appointmentReminder.ar}
                       onChange={(e) =>
@@ -1985,6 +1988,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground mb-1.5"
                     />
                     <textarea
+                      id="wa-tpl-reminder-en"
+                      aria-label={bi('قالب تذكير الموعد بالإنجليزية', 'Appointment reminder template English', 'داڕشتەی بیرخستنەوەی چاوپێکەوتن بە ئینگلیزی')}
                       rows={2}
                       dir="ltr"
                       value={whatsappTemplates.appointmentReminder.en}
@@ -1994,12 +1999,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           appointmentReminder: { ...w.appointmentReminder, en: e.target.value },
                         }))
                       }
-                      className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground"
+                      className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground text-start"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-bold text-foreground mb-1">
+                    <label htmlFor="wa-tpl-hep-ar" className="block font-bold text-foreground mb-1">
                       {bi(
                         'قالب برنامج التمارين المنزلية HEP (عربي / إنجليزي)',
                         'HEP Program Template (AR / EN)',
@@ -2007,6 +2012,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       )}
                     </label>
                     <textarea
+                      id="wa-tpl-hep-ar"
                       rows={2}
                       value={whatsappTemplates.hepProgram.ar}
                       onChange={(e) =>
@@ -2018,6 +2024,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground mb-1.5"
                     />
                     <textarea
+                      id="wa-tpl-hep-en"
+                      aria-label={bi('قالب برنامج التمارين المنزلية بالإنجليزية', 'HEP program template English', 'داڕشتەی بەرنامەی ڕاهێنانی ماڵەوە بە ئینگلیزی')}
                       rows={2}
                       dir="ltr"
                       value={whatsappTemplates.hepProgram.en}
@@ -2027,12 +2035,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           hepProgram: { ...w.hepProgram, en: e.target.value },
                         }))
                       }
-                      className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground"
+                      className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground text-start"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-bold text-foreground mb-1">
+                    <label htmlFor="wa-tpl-receipt-ar" className="block font-bold text-foreground mb-1">
                       {bi(
                         'قالب وصل الدفع المالي (عربي / إنجليزي)',
                         'Payment Receipt Template (AR / EN)',
@@ -2040,6 +2048,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       )}
                     </label>
                     <textarea
+                      id="wa-tpl-receipt-ar"
                       rows={2}
                       value={whatsappTemplates.paymentReceipt.ar}
                       onChange={(e) =>
@@ -2051,6 +2060,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground mb-1.5"
                     />
                     <textarea
+                      id="wa-tpl-receipt-en"
+                      aria-label={bi('قالب وصل الدفع بالإنجليزية', 'Payment receipt template English', 'داڕشتەی پسوڵەی پارەدان بە ئینگلیزی')}
                       rows={2}
                       dir="ltr"
                       value={whatsappTemplates.paymentReceipt.en}
@@ -2060,7 +2071,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           paymentReceipt: { ...w.paymentReceipt, en: e.target.value },
                         }))
                       }
-                      className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground"
+                      className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground text-start"
                     />
                   </div>
 
@@ -2160,6 +2171,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input
                       type="text"
+                      aria-label={bi('اسم الخدمة بالعربية', 'Service Name (Arabic)', 'ناوی خزمەتگوزاری بە عەرەبی')}
                       value={newSvcNameAr}
                       onChange={(e) => setNewSvcNameAr(e.target.value)}
                       placeholder={bi(
@@ -2172,18 +2184,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <input
                       type="text"
                       dir="ltr"
+                      aria-label={bi('اسم الخدمة بالإنجليزية', 'Service Name (English)', 'ناوی خزمەتگوزاری بە ئینگلیزی')}
                       value={newSvcNameEn}
                       onChange={(e) => setNewSvcNameEn(e.target.value)}
                       placeholder="Service Name (English)"
-                      className="w-full px-3 py-2 rounded-lg bg-layer border border-layer-line text-xs text-foreground"
+                      className="w-full px-3 py-2 rounded-lg bg-layer border border-layer-line text-xs text-foreground text-start"
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
                     <div>
-                      <label className="block text-xs font-bold text-foreground mb-1">
+                      <label htmlFor="settings-svc-type" className="block text-xs font-bold text-foreground mb-1">
                         {bi('النوع:', 'Type:', 'جۆر:')}
                       </label>
                       <select
+                        id="settings-svc-type"
                         value={newSvcType}
                         onChange={(e) =>
                           setNewSvcType(e.target.value as ClinicServiceItem['invoiceType'])
@@ -2196,10 +2210,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-foreground mb-1">
+                      <label htmlFor="settings-svc-fee" className="block text-xs font-bold text-foreground mb-1">
                         {bi('السعر:', 'Fee:', 'نرخ:')}
                       </label>
                       <MoneyInput
+                        id="settings-svc-fee"
                         value={newSvcPrice}
                         onChange={setNewSvcPrice}
                         className="w-full"
@@ -2207,10 +2222,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                     {newSvcType === 'rehab_package' ? (
                       <div>
-                        <label className="block text-xs font-bold text-foreground mb-1">
+                        <label htmlFor="settings-svc-pkg-sessions" className="block text-xs font-bold text-foreground mb-1">
                           {bi('عدد جلسات الكورس:', 'Sessions in Course:', 'ژمارەی دانیشتنەکانی کۆرس:')}
                         </label>
                         <input
+                          id="settings-svc-pkg-sessions"
                           type="number"
                           min={2}
                           max={60}
@@ -2273,9 +2289,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             type="button"
                             onClick={() => void handleDeleteClinicService(svc.id)}
                             aria-label={bi('حذف الخدمة', 'Delete service', 'سڕینەوەی خزمەتگوزاری')}
-                            className="p-1.5 rounded-lg text-muted-foreground-2 hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer"
+                            className="size-9 rounded-lg text-muted-foreground-2 hover:text-rose-600 hover:bg-rose-500/10 inline-flex items-center justify-center cursor-pointer"
                           >
-                            <Trash2 className="size-3.5" />
+                            <Trash2 className="size-4" />
                           </button>
                         </div>
                       </div>
@@ -2338,10 +2354,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   <div className="space-y-2">
                     <div>
-                      <label className="block text-xs font-bold text-muted-foreground-1 mb-1">
+                      <label htmlFor="staff-edit-name-ar" className="block text-xs font-bold text-muted-foreground-1 mb-1">
                         {bi('الاسم الثلاثي بالعربية *', 'Full Name (Arabic) *', 'ناوی سیانی (عەرەبی) *')}
                       </label>
                       <input
+                        id="staff-edit-name-ar"
                         type="text"
                         required
                         value={editingNameAr}
@@ -2352,23 +2369,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-muted-foreground-1 mb-1">
+                      <label htmlFor="staff-edit-name-en" className="block text-xs font-bold text-muted-foreground-1 mb-1">
                         {bi('الاسم بالإنجليزية (اختياري)', 'Full Name (English)', 'ناو بە ئینگلیزی (بژاردەیی)')}
                       </label>
                       <input
+                        id="staff-edit-name-en"
                         type="text"
+                        dir="ltr"
                         value={editingNameEn}
                         onChange={(e) => setEditingNameEn(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground focus:outline-none focus:border-primary"
+                        className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground text-start focus:outline-none focus:border-primary"
                         placeholder="e.g. Dr. Hussein Al-Ramadhani"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-muted-foreground-1 mb-1">
+                      <label htmlFor="staff-edit-spec-ar" className="block text-xs font-bold text-muted-foreground-1 mb-1">
                         {bi('التخصص السريري بالعربية', 'Specialty (Arabic)', 'پسپۆڕی کلینیکی (عەرەبی)')}
                       </label>
                       <input
+                        id="staff-edit-spec-ar"
                         type="text"
                         value={editingSpecialtyAr}
                         onChange={(e) => setEditingSpecialtyAr(e.target.value)}
@@ -2378,23 +2398,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-muted-foreground-1 mb-1">
+                      <label htmlFor="staff-edit-spec-en" className="block text-xs font-bold text-muted-foreground-1 mb-1">
                         {bi('التخصص بالإنجليزية', 'Specialty (English)', 'پسپۆڕی بە ئینگلیزی')}
                       </label>
                       <input
+                        id="staff-edit-spec-en"
                         type="text"
+                        dir="ltr"
                         value={editingSpecialtyEn}
                         onChange={(e) => setEditingSpecialtyEn(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground focus:outline-none focus:border-primary"
+                        className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground text-start focus:outline-none focus:border-primary"
                         placeholder="e.g. Orthopedic & Spine Rehabilitation"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-muted-foreground-1 mb-1">
+                      <label htmlFor="staff-edit-role" className="block text-xs font-bold text-muted-foreground-1 mb-1">
                         {bi('الصلاحية الوظيفية في النظام', 'System Role', 'دەسەڵاتی کارکردن لە سیستەمدا')}
                       </label>
                       <select
+                        id="staff-edit-role"
                         value={editingRole}
                         onChange={(e) => setEditingRole(e.target.value as ClinicRoleId)}
                         className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground focus:outline-none focus:border-primary"
@@ -2419,13 +2442,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <button
                       type="button"
                       onClick={handleCancelEditStaff}
-                      className="px-3 py-1.5 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground hover:bg-layer-hover cursor-pointer"
+                      className="min-h-[36px] px-3 py-1.5 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground hover:bg-layer-hover cursor-pointer"
                     >
                       {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
+                      className="min-h-[36px] px-4 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
                     >
                       {bi('حفظ التعديلات', 'Save Changes', 'پاشەکەوتکردنی گۆڕانکارییەکان')}
                     </button>
@@ -2452,10 +2475,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                               member.role === 'admin'
                                 ? 'bg-primary/10 text-primary border border-primary/20'
                                 : member.role === 'senior_pt'
-                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
                                 : member.role === 'assistant_pt'
-                                ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20'
-                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                                ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20'
+                                : 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20'
                             }`}
                           >
                             {bi(roleMeta.labelAr, roleMeta.labelEn, STAFF_ROLE_CKB[member.role])}
@@ -2469,7 +2492,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <button
                         type="button"
                         onClick={() => handleStartEditStaff(member)}
-                        className="px-2.5 py-1.5 rounded-lg bg-layer border border-layer-line text-xs font-semibold text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary inline-flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+                        className="min-h-[36px] px-2.5 py-1.5 rounded-lg bg-layer border border-layer-line text-xs font-semibold text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary inline-flex items-center gap-1 cursor-pointer transition-colors shrink-0"
                       >
                         <Edit2 className="size-3" />
                         <span>{bi('تعديل', 'Edit', 'دەستکاریکردن')}</span>
@@ -2563,6 +2586,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   )}
                 </p>
                 <select
+                  id="settings-autolock-select"
+                  aria-label={bi('القفل التلقائي عند عدم النشاط', 'Inactivity Auto-Lock Timeout', 'قفڵکردنی خۆکار لە کاتی بێچالاکی')}
                   value={isCustomLockMode ? 'custom' : String(autoLockTimeoutMs)}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -2593,6 +2618,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <div className="pt-1 space-y-1.5">
                     <div className="flex items-center gap-2">
                       <input
+                        id="settings-custom-lock-minutes"
+                        aria-label={bi('مدة القفل المخصصة بالدقائق', 'Custom auto-lock minutes', 'ماوەی قفڵکردنی تایبەت بە خولەک')}
                         type="number"
                         min={1}
                         max={1440}
@@ -2618,7 +2645,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 )}
 
                 {!isCustomLockMode && autoLockTimeoutMs === 0 && (
-                  <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-xs font-medium text-amber-700 dark:text-amber-300">
+                  <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-xs font-medium text-amber-800 dark:text-amber-300">
                     {bi(
                       'تم تعطيل القفل التلقائي؛ ستبقى الخزنة مفتوحة إلى أن تقفلها يدوياً من القائمة.',
                       'Auto-lock is disabled; the vault will stay unlocked until you lock it manually.',
@@ -2693,6 +2720,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         inputMode="numeric"
                         minLength={4}
                         maxLength={32}
+                        aria-label={bi('رمز PIN الجديد', 'New Admin PIN', 'کۆدی PINی نوێ')}
                         value={adminPinInput}
                         onChange={(e) => {
                           setAdminPinInput(e.target.value);
@@ -2707,6 +2735,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         inputMode="numeric"
                         minLength={4}
                         maxLength={32}
+                        aria-label={bi('تأكيد رمز PIN الجديد', 'Confirm New PIN', 'دڵنیابوونەوەی کۆدی نوێ')}
                         value={adminPinConfirm}
                         onChange={(e) => {
                           setAdminPinConfirm(e.target.value);
@@ -2811,7 +2840,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <div className="p-2.5 rounded-lg bg-layer border border-layer-line flex items-center justify-between gap-2">
                         <span className="text-muted-foreground-1">{bi('تثبيت التخزين:', 'Persistence:', 'جێگیرکردنی کۆگا:')}</span>
                         <div className="flex items-center gap-2">
-                          <span className={`font-bold ${localPersistenceState ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                          <span className={`font-bold ${localPersistenceState ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-800 dark:text-amber-300'}`}>
                             {localPersistenceState
                               ? bi('مثبت (Persistent)', 'Persistent', 'جێگیرکراو (Persistent)')
                               : bi('غير مثبت', 'Best-effort', 'جێگیر نەکراو')}
@@ -3249,10 +3278,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           <button
                             type="button"
                             onClick={() => void ClinicOperationsService.deleteCustomWidgetAsync(cw.id)}
-                            className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 cursor-pointer shrink-0"
+                            className="size-9 rounded-lg text-rose-600 hover:bg-rose-500/10 inline-flex items-center justify-center cursor-pointer shrink-0"
                             aria-label={bi('حذف القالب', 'Delete template', 'سڕینەوەی فۆرم')}
                           >
-                            <Trash2 className="size-3.5" />
+                            <Trash2 className="size-4" />
                           </button>
                         </div>
                       ))}
@@ -3267,11 +3296,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <div className="flex items-center gap-2 text-xs font-bold text-foreground">
                     <Target className="size-4 text-primary" />
                     <span>
-                      {bi(
-                        'أهداف SMART التفصيلية ومقياس تحقيق الهدف (GAS -2 إلى +2)',
-                        'SMART Goals & Goal Attainment Scaling (GAS -2 to +2)',
-                        'ئامانجە وردەکانی SMART و پێوەری گەیشتن بە ئامانج (GAS -2 بۆ +2)'
-                      )}
+                      {bi('أهداف SMART التفصيلية ومقياس تحقيق الهدف', 'SMART Goals & Goal Attainment Scaling', 'ئامانجە وردەکانی SMART و پێوەری گەیشتن بە ئامانج')}{' '}
+                      <bdi dir="ltr">(GAS -2 / +2)</bdi>
                     </span>
                   </div>
                   <span
@@ -3588,6 +3614,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <input
                         type="text"
+                        aria-label={bi('اختصار القالب بدون شرطة', 'Slash trigger without slash', 'کورتکراوەی داڕشتە')}
                         value={newTplTrigger}
                         onChange={(e) => setNewTplTrigger(e.target.value)}
                         placeholder={bi(
@@ -3599,12 +3626,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       />
                       <input
                         type="text"
+                        aria-label={bi('عنوان القالب', 'Template Title', 'ناونیشانی داڕشتە')}
                         value={newTplTitle}
                         onChange={(e) => setNewTplTitle(e.target.value)}
                         placeholder={bi('عنوان القالب', 'Template Title', 'ناونیشانی داڕشتە')}
                         className="px-2.5 py-1.5 rounded-lg border border-layer-line bg-layer text-xs text-foreground"
                       />
                       <select
+                        aria-label={bi('تصنيف القالب في SOAP', 'SOAP Category', 'پۆلێنی داڕشتە')}
                         value={newTplCategory}
                         onChange={(e) => setNewTplCategory(e.target.value as NoteTemplateCategory)}
                         className="px-2.5 py-1.5 rounded-lg border border-layer-line bg-layer text-xs text-foreground"
@@ -3619,6 +3648,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <div className="flex gap-2">
                       <input
                         type="text"
+                        aria-label={bi('نص العبارة السريرية', 'Full snippet text to insert', 'دەقی تەواوی ڕستە کلینیکییەکە')}
                         value={newTplBody}
                         onChange={(e) => setNewTplBody(e.target.value)}
                         placeholder={bi(
@@ -3648,12 +3678,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           setNewTplBody('');
                           setNoteTemplates(ClinicOperationsService.getAllNoteTemplates());
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-bold cursor-pointer"
+                        className="min-h-[36px] px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-bold cursor-pointer"
                       >
                         {bi('حفظ', 'Add', 'پاشەکەوتکردن')}
                       </button>
                     </div>
-                    <div className="max-h-36 overflow-y-auto space-y-1">
+                    <div
+                      tabIndex={0}
+                      aria-label={bi('قائمة قوالب الجمل السريرية', 'Clinical note snippets list', 'لیستی داڕشتە کلینیکییەکان')}
+                      className="max-h-36 overflow-y-auto space-y-1 focus:outline-none"
+                    >
                       {noteTemplates.map((tpl) => (
                         <div
                           key={tpl.id}
@@ -3666,7 +3700,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             <span className="font-semibold text-foreground">
                               {bi(tpl.titleAr, tpl.titleEn)}
                             </span>
-                            <span className="text-muted-foreground-1 ms-2">({tpl.license})</span>
+                            <span className="text-muted-foreground-1 ms-2"><bdi dir="ltr">({tpl.license})</bdi></span>
                           </div>
                           {!tpl.isBuiltIn && (
                             <button
@@ -3676,9 +3710,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                 await ClinicOperationsService.deleteNoteTemplateAsync(tpl.id);
                                 setNoteTemplates(ClinicOperationsService.getAllNoteTemplates());
                               }}
-                              className="p-1 text-rose-600 hover:bg-rose-500/10 rounded cursor-pointer"
+                              className="size-9 text-rose-600 hover:bg-rose-500/10 rounded inline-flex items-center justify-center cursor-pointer"
                             >
-                              <Trash2 className="size-3.5" />
+                              <Trash2 className="size-4" />
                             </button>
                           )}
                         </div>
@@ -3932,10 +3966,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block text-xs font-semibold text-foreground mb-1">
+                      <label htmlFor="reeval-sessions-input" className="block text-xs font-semibold text-foreground mb-1">
                         {bi('عتبة عدد الجلسات (N)', 'After N Sessions', 'سنووری ژمارەی دانیشتنەکان (N)')}
                       </label>
                       <input
+                        id="reeval-sessions-input"
                         type="number"
                         min={1}
                         max={50}
@@ -3951,10 +3986,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-foreground mb-1">
+                      <label htmlFor="reeval-days-input" className="block text-xs font-semibold text-foreground mb-1">
                         {bi('عتبة عدد الأيام (D)', 'After D Days', 'سنووری ژمارەی ڕۆژەکان (D)')}
                       </label>
                       <input
+                        id="reeval-days-input"
                         type="number"
                         min={1}
                         max={180}
@@ -4089,6 +4125,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <div className="flex flex-wrap items-center gap-2">
                     <input
                       type="text"
+                      aria-label={bi('اسم أخصائي العلاج الطبيعي الأقدم', 'Senior PT full name for sign-off', 'ناوی تەواوی چارەسەرکاری سروشتی باڵا')}
                       data-testid="modality-safety-reviewer-input"
                       value={reviewerNameDraft}
                       onChange={(e) => setReviewerNameDraft(e.target.value)}
@@ -4390,6 +4427,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       type="number"
                       min={3}
                       max={180}
+                      aria-label={bi('عتبة الانقطاع عن الخطة النشطة بالأيام', 'Active-Plan Inactivity Threshold Days', 'سنووری دابڕان بە ڕۆژ')}
                       data-testid="retention-inactive-days-input"
                       value={retentionInactiveDays}
                       onChange={(e) => {

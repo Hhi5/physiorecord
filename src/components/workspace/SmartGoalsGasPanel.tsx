@@ -171,8 +171,13 @@ export const SmartGoalsGasPanel: React.FC<SmartGoalsGasPanelProps> = ({
           <Target className="size-4 text-primary shrink-0" />
           <span>
             {bi(
-              'أهداف SMART التفصيلية ومقياس GAS (-2 إلى +2) مخفية لتبسيط الإدخال اليومي.',
-              'Structured SMART Goals & GAS (-2 to +2) are optional and hidden by default.'
+              'أهداف SMART التفصيلية ومقياس GAS ',
+              'Structured SMART Goals & GAS '
+            )}
+            <bdi dir="ltr">({bi('-2 إلى +2', '-2 to +2')})</bdi>
+            {bi(
+              ' مخفية لتبسيط الإدخال اليومي.',
+              ' are optional and hidden by default.'
             )}
           </span>
         </div>
@@ -200,12 +205,13 @@ export const SmartGoalsGasPanel: React.FC<SmartGoalsGasPanelProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Target className="size-4 text-primary" />
-          <h5 className="text-xs font-bold text-foreground">
+          <h3 className="text-xs font-bold text-foreground">
             {bi(
-              'أهداف SMART السريرية ومقياس تحقيق الهدف (GAS -2 إلى +2)',
-              'SMART Rehabilitation Goals & Goal Attainment Scaling (GAS -2 to +2)'
+              'أهداف SMART السريرية ومقياس تحقيق الهدف ',
+              'SMART Rehabilitation Goals & Goal Attainment Scaling '
             )}
-          </h5>
+            <bdi dir="ltr">(GAS {bi('-2 إلى +2', '-2 to +2')})</bdi>
+          </h3>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -242,10 +248,11 @@ export const SmartGoalsGasPanel: React.FC<SmartGoalsGasPanelProps> = ({
         <div className="p-3.5 rounded-xl bg-layer border border-layer-line space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1">
+              <label htmlFor="smart-goal-horizon" className="block text-xs font-semibold text-foreground mb-1">
                 {bi('المدى الزمني', 'Goal Horizon')}
               </label>
               <select
+                id="smart-goal-horizon"
                 value={horizon}
                 onChange={(e) => setHorizon(e.target.value as StructuredRehabGoal['horizon'])}
                 className="w-full px-3 py-1.5 rounded-lg bg-surface border border-layer-line text-foreground text-xs"
@@ -255,10 +262,11 @@ export const SmartGoalsGasPanel: React.FC<SmartGoalsGasPanelProps> = ({
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-foreground mb-1">
+              <label htmlFor="smart-goal-summary" className="block text-xs font-semibold text-foreground mb-1">
                 {bi('ملخص الهدف الوظيفي *', 'Goal Statement Summary *')}
               </label>
               <input
+                id="smart-goal-summary"
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -273,10 +281,11 @@ export const SmartGoalsGasPanel: React.FC<SmartGoalsGasPanelProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
             <div>
-              <label className="block text-xs font-bold text-primary mb-1">
+              <label htmlFor="smart-goal-s" className="block text-xs font-bold text-primary mb-1">
                 S — {bi('محدد', 'Specific')}
               </label>
               <input
+                id="smart-goal-s"
                 type="text"
                 value={specific}
                 onChange={(e) => setSpecific(e.target.value)}
@@ -285,10 +294,11 @@ export const SmartGoalsGasPanel: React.FC<SmartGoalsGasPanelProps> = ({
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-primary mb-1">
+              <label htmlFor="smart-goal-m" className="block text-xs font-bold text-primary mb-1">
                 M — {bi('قابل للقياس', 'Measurable')}
               </label>
               <input
+                id="smart-goal-m"
                 type="text"
                 value={measurable}
                 onChange={(e) => setMeasurable(e.target.value)}
@@ -297,10 +307,11 @@ export const SmartGoalsGasPanel: React.FC<SmartGoalsGasPanelProps> = ({
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-primary mb-1">
+              <label htmlFor="smart-goal-a" className="block text-xs font-bold text-primary mb-1">
                 A — {bi('واقعي', 'Achievable')}
               </label>
               <input
+                id="smart-goal-a"
                 type="text"
                 value={achievable}
                 onChange={(e) => setAchievable(e.target.value)}
@@ -309,10 +320,11 @@ export const SmartGoalsGasPanel: React.FC<SmartGoalsGasPanelProps> = ({
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-primary mb-1">
+              <label htmlFor="smart-goal-r" className="block text-xs font-bold text-primary mb-1">
                 R — {bi('ذي صلة', 'Relevant')}
               </label>
               <input
+                id="smart-goal-r"
                 type="text"
                 value={relevant}
                 onChange={(e) => setRelevant(e.target.value)}
@@ -321,10 +333,11 @@ export const SmartGoalsGasPanel: React.FC<SmartGoalsGasPanelProps> = ({
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-primary mb-1">
+              <label htmlFor="smart-goal-t" className="block text-xs font-bold text-primary mb-1">
                 T — {bi('بوقت محدد', 'Time-bound')}
               </label>
               <input
+                id="smart-goal-t"
                 type="text"
                 value={timeBound}
                 onChange={(e) => setTimeBound(e.target.value)}
@@ -442,7 +455,7 @@ export const SmartGoalsGasPanel: React.FC<SmartGoalsGasPanelProps> = ({
                       <button
                         type="button"
                         onClick={() => setConfirmDeleteGoalId(null)}
-                        className="px-2 py-0.5 rounded-md bg-surface border border-line-2 text-xs text-muted-foreground-1 cursor-pointer"
+                        className="min-h-[36px] px-2.5 py-1 rounded-md bg-surface border border-line-2 text-xs font-semibold text-foreground cursor-pointer"
                       >
                         {bi('إلغاء', 'Cancel')}
                       </button>
@@ -452,9 +465,9 @@ export const SmartGoalsGasPanel: React.FC<SmartGoalsGasPanelProps> = ({
                       type="button"
                       onClick={() => setConfirmDeleteGoalId(g.id)}
                       aria-label={bi('حذف الهدف', 'Remove goal')}
-                      className="p-1 text-muted-foreground-2 hover:text-rose-600 cursor-pointer shrink-0"
+                      className="min-w-[36px] min-h-[36px] inline-flex items-center justify-center rounded-lg text-muted-foreground-2 hover:text-rose-600 cursor-pointer shrink-0"
                     >
-                      <Trash2 className="size-3.5" />
+                      <Trash2 className="size-4" />
                     </button>
                   ))}
               </div>

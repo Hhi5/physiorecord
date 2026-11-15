@@ -259,7 +259,6 @@ export const AppLayout: React.FC = () => {
     () => ClinicOperationsService.getBackupMeta().lastBackupAt ?? null
   );
   const [backupBannerDismissed, setBackupBannerDismissed] = useState(false);
-  const [confirmQuickDeleteDemo, setConfirmQuickDeleteDemo] = useState(false);
   const [iosInstallDismissed, setIosInstallDismissed] = useState(false);
   const pwa = usePwaStatus();
 
@@ -319,7 +318,7 @@ export const AppLayout: React.FC = () => {
       setActiveNav(isSoloMode ? 'today' : 'reception');
     } else if (
       isSoloMode &&
-      (activeNav === 'reception' || activeNav === 'schedule' || activeNav === 'activity_log')
+      (activeNav === 'reception' || activeNav === 'activity_log')
     ) {
       setActiveNav('today');
     } else if (!isSoloMode && activeNav === 'today') {
@@ -781,16 +780,6 @@ export const AppLayout: React.FC = () => {
     }
   };
 
-  const handleQuickDeleteAllDemo = async () => {
-    await deleteAllDemoPatients();
-    ClinicOperationsService.deleteAllDemoOperationsData();
-    await refreshPatients();
-    if (selectedPatientId?.startsWith('syn-patient-')) {
-      setSelectedPatientId(null);
-    }
-    window.dispatchEvent(new CustomEvent('physiorecord-demo-data-changed'));
-  };
-
   // Short Page Titles (Desktop & Mobile)
   const navTitleMap: Record<ClinicNavTab, { ar: string; en: string; ckb: string }> = {
     today: {
@@ -878,15 +867,15 @@ export const AppLayout: React.FC = () => {
 
       {/* Main Content Area */}
       <main className={`flex-1 flex flex-col min-w-0 h-screen overflow-hidden pb-14 md:pb-0 transition-all duration-200 ${isPrivacyCoverOpen ? 'filter blur-md pointer-events-none select-none' : ''}`}>
-        {/* Phase F4: Prominent Public Demo Mode Banner */}
+        {/* Phase F4: Compact Public Demo Mode Banner */}
         {isPublicDemoActive && (
           <div
             data-testid="public-demo-mode-banner"
-            className="px-3 sm:px-5 py-2 bg-amber-600 text-white border-b border-amber-700 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 z-50"
+            className="px-3 sm:px-5 py-1.5 bg-amber-800 text-white border-b border-amber-900 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 z-50"
           >
             <div className="flex items-center gap-2 min-w-0 flex-1 font-extrabold">
-              <span className="px-2 py-0.5 rounded bg-black/25 text-white font-mono text-xs shrink-0">
-                DEMO · CC0-1.0
+              <span className="px-2 py-0.5 rounded bg-black/30 text-white font-mono text-xs shrink-0">
+                <bdi dir="ltr">DEMO · CC0-1.0</bdi>
               </span>
               <span className="truncate sm:whitespace-normal">
                 {bi(
@@ -901,7 +890,7 @@ export const AppLayout: React.FC = () => {
                 type="button"
                 data-testid="public-demo-manage-btn"
                 onClick={() => setIsSeedModalOpen(true)}
-                className="px-2.5 py-1 rounded-lg bg-white text-amber-900 hover:bg-amber-50 text-xs font-extrabold cursor-pointer whitespace-nowrap"
+                className="min-h-[36px] px-2.5 py-1 rounded-lg bg-white text-amber-950 hover:bg-amber-50 text-xs font-extrabold cursor-pointer whitespace-nowrap"
               >
                 {bi('إدارة بيانات العرض', 'Manage Demo Data', 'بەڕێوەبردنی داتای پیشاندان')}
               </button>
@@ -913,7 +902,7 @@ export const AppLayout: React.FC = () => {
                   setIsPublicDemoActive(isPublicDemoUrlOrEnv());
                   window.dispatchEvent(new CustomEvent('physiorecord-demo-data-changed'));
                 }}
-                className="px-2.5 py-1 rounded-lg bg-black/25 hover:bg-black/35 text-white text-xs font-bold cursor-pointer whitespace-nowrap"
+                className="min-h-[36px] px-2.5 py-1 rounded-lg bg-black/30 hover:bg-black/45 text-white text-xs font-bold cursor-pointer whitespace-nowrap"
               >
                 {bi('إنهاء وضع العرض', 'Exit Demo Mode', 'دەرچوون لە دۆخی پیشاندان')}
               </button>
@@ -1030,7 +1019,7 @@ export const AppLayout: React.FC = () => {
                   `${userMenuRoleLabel} — لیستی بەکارهێنەر و ڕێکخستنەکان`
                 )}
                 aria-expanded={isUserMenuOpen}
-                aria-haspopup="menu"
+                aria-haspopup="dialog"
                 className="h-9 px-2.5 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <UserCheck className="w-4 h-4 text-primary shrink-0" />
@@ -1047,7 +1036,8 @@ export const AppLayout: React.FC = () => {
                     onClick={() => setIsUserMenuOpen(false)}
                   />
                   <div
-                    role="menu"
+                    role="dialog"
+                    aria-modal="false"
                     aria-label={bi('قائمة المستخدم والإعدادات', 'User & clinic menu')}
                     onKeyDown={(e) => {
                       if (e.key === 'Escape') {
@@ -1153,7 +1143,7 @@ export const AppLayout: React.FC = () => {
                           setIsUserMenuOpen(false);
                           setIsKioskModalOpen(true);
                         }}
-                        className="w-full px-2.5 py-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-700 dark:text-teal-300 font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                        className="min-h-[36px] w-full px-2.5 py-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-800 dark:text-teal-300 font-bold flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <TabletSmartphone className="w-4 h-4" />
                         <span>
@@ -1243,13 +1233,13 @@ export const AppLayout: React.FC = () => {
                         setIsUserMenuOpen(false);
                         setIsPrivacyCoverOpen(true);
                       }}
-                      className="w-full px-2.5 py-2 rounded-xl hover:bg-layer-hover text-foreground font-semibold flex items-center justify-between cursor-pointer mb-1.5"
+                      className="min-h-[36px] w-full px-2.5 py-2 rounded-xl hover:bg-layer-hover text-foreground font-semibold flex items-center justify-between cursor-pointer mb-1.5"
                     >
                       <span className="flex items-center gap-2">
                         <EyeOff className="w-4 h-4 text-primary" />
                         <span>{bi('ستار الخصوصية', 'Privacy Cover', 'داپۆشەری نهێنی')}</span>
                       </span>
-                      <kbd dir="ltr" className="text-xs font-mono text-muted-foreground-1">
+                      <kbd dir="ltr" className="hidden md:inline-block text-xs font-mono text-muted-foreground-1">
                         Esc×2
                       </kbd>
                     </button>
@@ -1260,13 +1250,13 @@ export const AppLayout: React.FC = () => {
                         setIsUserMenuOpen(false);
                         lock();
                       }}
-                      className="w-full px-2.5 py-2 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-foreground font-bold flex items-center justify-between gap-2 cursor-pointer"
+                      className="min-h-[36px] w-full px-2.5 py-2 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-foreground font-bold flex items-center justify-between gap-2 cursor-pointer"
                     >
                       <span className="flex items-center gap-2">
                         <Lock className="w-3.5 h-3.5 text-muted-foreground-1" />
                         <span>{bi('قفل الخزينة المشفرة', 'Lock Vault', 'قوفڵکردنی قاسە')}</span>
                       </span>
-                      <kbd dir="ltr" className="text-xs font-mono text-muted-foreground-1">
+                      <kbd dir="ltr" className="hidden md:inline-block text-xs font-mono text-muted-foreground-1">
                         Ctrl+L
                       </kbd>
                     </button>
@@ -1289,7 +1279,7 @@ export const AppLayout: React.FC = () => {
         {isRecoveryDrillDue && !selectedPatient && (
           <div
             data-testid="recovery-drill-banner"
-            className="px-3 sm:px-4 py-1.5 bg-primary/10 border-b border-primary/25 flex flex-wrap items-center justify-between gap-2 text-xs text-foreground shrink-0"
+            className="px-3 sm:px-4 py-1 bg-primary/10 border-b border-primary/25 flex flex-wrap items-center justify-between gap-2 text-xs text-foreground shrink-0"
           >
             <div className="flex items-center gap-2 min-w-0 flex-1 font-semibold">
               <Database className="size-4 text-primary shrink-0" />
@@ -1305,14 +1295,14 @@ export const AppLayout: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsRecoveryDrillOpen(true)}
-                className="px-2.5 py-1 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer whitespace-nowrap"
+                className="min-h-[36px] px-2.5 py-1 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer whitespace-nowrap"
               >
                 {bi('بدء الاختبار', 'Test Now', 'ئێستا تاقی بکەرەوە')}
               </button>
               <button
                 type="button"
                 onClick={() => snoozeRecoveryDrillBanner(14)}
-                className="px-2 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-xs font-semibold cursor-pointer"
+                className="min-h-[36px] px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-xs font-semibold cursor-pointer"
                 aria-label={bi('تذكيري لاحقاً', 'Remind later', 'دواتر بیرم بخەرەوە')}
               >
                 {bi('لاحقاً', 'Dismiss', 'لابردن')}
@@ -1322,7 +1312,7 @@ export const AppLayout: React.FC = () => {
         )}
 
         {pwa.updateReady && (
-          <div className="px-4 py-2 bg-primary/15 border-b border-primary/30 flex flex-wrap items-center justify-between gap-2 text-xs text-foreground shrink-0">
+          <div className="px-4 py-1.5 bg-primary/15 border-b border-primary/30 flex flex-wrap items-center justify-between gap-2 text-xs text-foreground shrink-0">
             <div className="flex items-center gap-2 font-semibold">
               <RefreshCw className="w-4 h-4 text-primary shrink-0" />
               <span>
@@ -1336,7 +1326,7 @@ export const AppLayout: React.FC = () => {
             <button
               type="button"
               onClick={applyPwaUpdate}
-              className="px-3 py-1 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
+              className="min-h-[36px] px-3 py-1 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
             >
               {bi('تحديث وإعادة التحميل', 'Reload to Update', 'نوێکردنەوە و بارکردنەوە')}
             </button>
@@ -1345,7 +1335,7 @@ export const AppLayout: React.FC = () => {
 
         {/* iOS Safari Add-to-Home-Screen Installation Guidance (1.8) */}
         {pwa.isIosSafariInstallEligible && !iosInstallDismissed && (
-          <div className="px-4 py-2 bg-surface border-b border-card-divider flex items-center justify-between gap-2 text-xs text-foreground shrink-0">
+          <div className="px-4 py-1.5 bg-surface border-b border-card-divider flex items-center justify-between gap-2 text-xs text-foreground shrink-0">
             <div className="flex items-center gap-2">
               <Smartphone className="w-4 h-4 text-primary shrink-0" />
               <span>
@@ -1360,107 +1350,86 @@ export const AppLayout: React.FC = () => {
               type="button"
               onClick={() => setIosInstallDismissed(true)}
               aria-label={bi('إخفاء', 'Dismiss', 'شاردنەوە')}
-              className="p-1 rounded-lg hover:bg-layer-hover cursor-pointer shrink-0"
+              className="size-9 rounded-lg hover:bg-layer-hover inline-flex items-center justify-center cursor-pointer shrink-0"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
-        {/* 7-Day Overdue Backup Reminder Banner (Shown on main clinic views, hidden inside active patient chart) */}
-        {isBackupOverdue && !selectedPatient && (
-          <div className="px-3 sm:px-4 py-1 bg-amber-500/15 border-b border-amber-500/30 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 text-xs text-amber-950 dark:text-amber-200 shrink-0">
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <Database className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-              <span className="font-semibold leading-tight break-words">
-                {!lastBackupIso ? (
-                  <>
-                    {bi(
-                      'تنبيه النسخ: لم تُصدّر نسخة ',
-                      'Backup reminder: No ',
-                      'ئاگاداری پاشەکەوت: هێشتا کۆپی '
-                    )}
-                    <bdi dir="ltr">.ptbackup</bdi>
-                    {bi(' بعد', ' export yet', ' دەرنەکراوە')}
-                  </>
-                ) : (
-                  bi(
-                    `مضى > 7 أيام على آخر نسخة (${formattedLastBackup})`,
-                    `Backup overdue (${formattedLastBackup})`,
-                    `زیاتر لە ٧ ڕۆژ تێپەڕیوە بەسەر دوا کۆپی یەدەگدا (${formattedLastBackup})`
+        {/* Compact Combined Environment Status Strip: Backup Reminder + Active Demo Indicator (V-06 / V-08) */}
+        {(isBackupOverdue || hasDemoRecords) && !selectedPatient && (
+          <div
+            data-testid="environment-status-strip"
+            className="px-3 sm:px-4 py-1 bg-amber-500/12 border-b border-amber-500/30 flex items-center justify-between gap-2 text-xs text-amber-950 dark:text-amber-200 shrink-0 min-h-[38px]"
+          >
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              {hasDemoRecords && <DemoBadge />}
+              <span className="font-semibold truncate">
+                {isBackupOverdue ? (
+                  !lastBackupIso ? (
+                    <>
+                      {bi(
+                        'لم تُصدّر نسخة ',
+                        'No ',
+                        'هێشتا کۆپی '
+                      )}
+                      <bdi dir="ltr">.ptbackup</bdi>
+                      {bi(' بعد', ' backup yet', ' دەرنەکراوە')}
+                    </>
+                  ) : (
+                    bi(
+                      `النسخة الاحتياطية قديمة (${formattedLastBackup})`,
+                      `Backup overdue (${formattedLastBackup})`,
+                      `کۆپی یەدەگ کۆنە (${formattedLastBackup})`
+                    )
                   )
+                ) : (
+                  bi('بيانات تجريبية نشطة', 'Demo data active', 'داتای تاقیکاری چالاکە')
                 )}
               </span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsBackupModalOpen(true)}
-                className="px-2.5 py-1 rounded-lg bg-amber-800 hover:bg-amber-900 text-white font-bold cursor-pointer whitespace-nowrap"
-              >
-                {bi('نسخ احتياطي', 'Backup Now', 'پاشەکەوت ئێستا')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setBackupBannerDismissed(true)}
-                className="p-1 rounded-lg hover:bg-amber-500/20 cursor-pointer"
-                aria-label={bi('إخفاء التنبيه', 'Dismiss backup reminder', 'شاردنەوەی ئاگاداری پاشەکەوت')}
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Active Demo Mode Strip with Confirmed Delete All Demo Data (Shown on main clinic views, hidden inside active patient chart since PatientBanner already has DEMO badge) */}
-        {hasDemoRecords && !selectedPatient && (
-          <div className="px-3 sm:px-4 py-1 sm:py-1.5 bg-amber-500/10 border-b border-amber-500/25 flex items-center justify-between gap-2 text-xs shrink-0">
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <DemoBadge />
-              <span className="text-foreground font-medium truncate">
-                {bi('بيانات تجريبية نشطة', 'Demo data active', 'داتای تاقیکاری چالاکە')}
-              </span>
-            </div>
-            {!confirmQuickDeleteDemo ? (
-              <button
-                type="button"
-                onClick={() => setConfirmQuickDeleteDemo(true)}
-                className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap"
-              >
-                <Trash2 className="size-3" />
-                <span>{bi('حذف التجريبية', 'Delete demo', 'سڕینەوەی تاقیکاری')}</span>
-              </button>
-            ) : (
-              <div className="inline-flex items-center gap-1 shrink-0">
+              {isBackupOverdue && (
                 <button
                   type="button"
-                  onClick={async () => {
-                    await handleQuickDeleteAllDemo();
-                    setConfirmQuickDeleteDemo(false);
-                  }}
-                  className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                  onClick={() => setIsBackupModalOpen(true)}
+                  className="min-h-[36px] px-2.5 py-1 rounded-lg bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold cursor-pointer whitespace-nowrap"
                 >
-                  <Trash2 className="size-3" />
-                  <span>{bi('تأكيد الحذف', 'Confirm Delete', 'دڵنیاکردنەوەی سڕینەوە')}</span>
+                  {bi('نسخ احتياطي', 'Backup Now', 'پاشەکەوت ئێستا')}
                 </button>
+              )}
+              {hasDemoRecords && (
                 <button
                   type="button"
-                  onClick={() => setConfirmQuickDeleteDemo(false)}
-                  className="px-2 py-1 rounded-lg bg-layer border border-layer-line text-foreground text-xs font-semibold cursor-pointer"
+                  data-testid="manage-demo-data-strip-btn"
+                  onClick={() => setIsSeedModalOpen(true)}
+                  className="min-h-[36px] px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-amber-600/35 text-amber-950 dark:text-amber-200 text-xs font-bold inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
                 >
-                  {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
+                  <Database className="size-3.5" />
+                  <span>{bi('إدارة العرض', 'Manage Demo', 'بەڕێوەبردنی تاقیکاری')}</span>
                 </button>
-              </div>
-            )}
+              )}
+              {isBackupOverdue && (
+                <button
+                  type="button"
+                  onClick={() => setBackupBannerDismissed(true)}
+                  className="size-9 rounded-lg hover:bg-amber-500/20 inline-flex items-center justify-center cursor-pointer shrink-0"
+                  aria-label={bi('إخفاء التنبيه', 'Dismiss backup reminder', 'شاردنەوەی ئاگاداری پاشەکەوت')}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         )}
 
         {/* Phase 1.3: Dismissible Legacy Migration Warning -> Review & Resolve Modal */}
         {!migrationBannerDismissed && unmigratedCount > 0 && (
-          <div className="px-3 sm:px-4 py-2 bg-amber-50 dark:bg-amber-950/70 border-b border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 shrink-0">
+          <div className="px-3 sm:px-4 py-1.5 bg-amber-50 dark:bg-amber-950/70 border-b border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 shrink-0">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
                 <span className="font-semibold truncate sm:whitespace-normal">
                   {bi(
                     `تحذير ترحيل البيانات: (${unmigratedCount}) سجل قديم يتطلب المراجعة.`,
@@ -1471,7 +1440,7 @@ export const AppLayout: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsMigrationModalOpen(true)}
-                  className="px-2.5 py-1 rounded-lg bg-amber-700 hover:bg-amber-600 text-white text-xs font-bold cursor-pointer shrink-0"
+                  className="min-h-[36px] px-2.5 py-1 rounded-lg bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold cursor-pointer shrink-0"
                 >
                   {bi('مراجعة ومعالجة', 'Review & resolve', 'پێداچوونەوە و چارەسەرکردن')}
                 </button>
@@ -1481,9 +1450,9 @@ export const AppLayout: React.FC = () => {
                 type="button"
                 onClick={() => setMigrationBannerDismissed(true)}
                 aria-label={bi('إغلاق تحذير الترحيل', 'Dismiss migration warning', 'داخستنی ئاگاداری گواستنەوە')}
-                className="p-1 rounded-lg hover:bg-amber-200/60 dark:hover:bg-amber-800/50 text-amber-800 dark:text-amber-200 cursor-pointer shrink-0"
+                className="size-9 rounded-lg hover:bg-amber-200/60 dark:hover:bg-amber-800/50 text-amber-900 dark:text-amber-200 inline-flex items-center justify-center cursor-pointer shrink-0"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -1494,7 +1463,7 @@ export const AppLayout: React.FC = () => {
           (lastRepairSummary &&
             (lastRepairSummary.repairedCount > 0 || lastRepairSummary.skippedCount > 0))) && (
           <div
-            className={`px-4 py-2 border-b flex items-center justify-between gap-2.5 text-xs shrink-0 ${
+            className={`px-4 py-1.5 border-b flex items-center justify-between gap-2.5 text-xs shrink-0 ${
               repairError
                 ? 'bg-rose-50 dark:bg-rose-950/80 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200'
                 : 'bg-amber-50 dark:bg-amber-950/70 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200'
@@ -1505,7 +1474,7 @@ export const AppLayout: React.FC = () => {
                 className={`w-4 h-4 shrink-0 ${
                   repairError
                     ? 'text-rose-600 dark:text-rose-400'
-                    : 'text-amber-600 dark:text-amber-400'
+                    : 'text-amber-700 dark:text-amber-400'
                 }`}
               />
               <span className="font-bold">
@@ -1522,7 +1491,7 @@ export const AppLayout: React.FC = () => {
               type="button"
               onClick={dismissRepairNotice}
               aria-label={bi('إخفاء التنبيه', 'Dismiss', 'شاردنەوە')}
-              className="p-1 rounded-lg hover:bg-amber-200/60 dark:hover:bg-amber-800/50 text-amber-800 dark:text-amber-200 cursor-pointer shrink-0"
+              className="size-9 rounded-lg hover:bg-amber-200/60 dark:hover:bg-amber-800/50 text-amber-900 dark:text-amber-200 inline-flex items-center justify-center cursor-pointer shrink-0"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1552,7 +1521,11 @@ export const AppLayout: React.FC = () => {
             />
           </Suspense>
         ) : (
-          <div className="flex-1 overflow-y-auto">
+          <div
+            tabIndex={0}
+            aria-label={bi('المحتوى الرئيسي', 'Main workspace content', 'ناوەڕۆکی سەرەکی')}
+            className="flex-1 overflow-y-auto focus:outline-none"
+          >
             <div className="app-content-shell">
             <Suspense
               fallback={
@@ -1628,151 +1601,80 @@ export const AppLayout: React.FC = () => {
         )}
       </main>
 
-      {/* Mobile Bottom Navigation Bar */}
-      {isSoloMode ? (
-        <nav
-          aria-label={bi('التنقل السفلي للمعالج المنفرد', 'Solo Mobile Bottom Navigation', 'گەڕانی خوارەوەی چارەسەرکاری تاک')}
-          className={`md:hidden fixed bottom-0 inset-x-0 z-40 h-14 bg-navbar border-t border-navbar-line grid px-1 ${
-            showExerciseLibrary || showAnalyticsModule ? 'grid-cols-5' : 'grid-cols-4'
-          }`}
-        >
-          {[
-            { id: 'today' as const, icon: CalendarClock, ar: 'اليوم', en: 'Today', ckb: 'ئەمڕۆ' },
-            { id: 'directory' as const, icon: Users, ar: 'المرضى', en: 'Patients', ckb: 'نەخۆشان' },
-            ...(showExerciseLibrary
-              ? [{ id: 'exercises' as const, icon: Dumbbell, ar: 'التمارين', en: 'HEP', ckb: 'ڕاهێنان' }]
-              : []),
-            ...(!showExerciseLibrary && showAnalyticsModule
-              ? [{ id: 'analytics' as const, icon: BarChart3, ar: 'التحليلات', en: 'Analytics', ckb: 'شیکاری' }]
-              : []),
-            { id: 'finance' as const, icon: Wallet, ar: 'المالية', en: 'Finance', ckb: 'دارایی' },
-          ].map((item) => {
-            const Icon = item.icon;
-            const isActive =
-              selectedPatient !== null
-                ? item.id === 'directory'
-                : activeNav === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                aria-label={bi(item.ar, item.en, item.ckb)}
-                aria-current={isActive ? 'page' : undefined}
-                onClick={() => {
-                  setIsMobileMoreOpen(false);
-                  setSelectedSessionLaunch(null);
-                  setSelectedPatientId(null);
-                  setActiveNav(item.id);
-                }}
-                className={`flex flex-col items-center justify-center gap-0.5 text-xs font-bold transition-colors cursor-pointer relative min-h-[44px] ${
-                  isActive ? 'text-primary' : 'text-muted-foreground-1'
-                }`}
-              >
-                {isActive && (
-                  <span className="absolute top-0 inset-x-3 h-0.5 rounded-full bg-primary" />
-                )}
-                <Icon className="w-4 h-4" />
-                <span className="truncate max-w-full px-0.5">
-                  {bi(item.ar, item.en, item.ckb)}
-                </span>
-              </button>
-            );
-          })}
-
-          {showExerciseLibrary && showAnalyticsModule ? (
+      {/* Unified 5-Tab Mobile Bottom Navigation Bar (Consistent in both Solo and Team modes — V-11) */}
+      <nav
+        aria-label={bi(
+          isSoloMode ? 'التنقل السفلي للمعالج المنفرد' : 'التنقل السفلي للجوال',
+          isSoloMode ? 'Solo Mobile Bottom Navigation' : 'Mobile Bottom Navigation',
+          isSoloMode ? 'گەڕانی خوارەوەی چارەسەرکاری تاک' : 'گەڕانی خوارەوەی مۆبایل'
+        )}
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 h-14 bg-navbar border-t border-navbar-line grid grid-cols-5 px-1"
+      >
+        {(isSoloMode
+          ? [
+              { id: 'today' as const, icon: CalendarClock, ar: 'اليوم', en: 'Today', ckb: 'ئەمڕۆ' },
+              { id: 'schedule' as const, icon: Calendar, ar: 'المواعيد', en: 'Schedule', ckb: 'خشتە' },
+              { id: 'directory' as const, icon: Users, ar: 'المرضى', en: 'Patients', ckb: 'نەخۆشان' },
+              { id: 'finance' as const, icon: Wallet, ar: 'المالية', en: 'Finance', ckb: 'دارایی' },
+            ]
+          : [
+              { id: 'reception' as const, icon: MonitorCheck, ar: 'الطابور', en: 'Queue', ckb: 'ڕیز' },
+              { id: 'schedule' as const, icon: Calendar, ar: 'المواعيد', en: 'Schedule', ckb: 'خشتە' },
+              { id: 'directory' as const, icon: Users, ar: 'المرضى', en: 'Patients', ckb: 'نەخۆشان' },
+              { id: 'finance' as const, icon: Wallet, ar: 'المالية', en: 'Finance', ckb: 'دارایی' },
+            ]
+        ).map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            selectedPatient !== null
+              ? item.id === 'directory'
+              : activeNav === item.id;
+          return (
             <button
+              key={item.id}
               type="button"
-              aria-label={bi('المزيد', 'More', 'زیاتر')}
-              aria-expanded={isMobileMoreOpen}
-              onClick={() => setIsMobileMoreOpen((prev) => !prev)}
+              aria-label={bi(item.ar, item.en, item.ckb)}
+              aria-current={isActive ? 'page' : undefined}
+              onClick={() => {
+                setIsMobileMoreOpen(false);
+                setSelectedSessionLaunch(null);
+                setSelectedPatientId(null);
+                setActiveNav(item.id);
+              }}
               className={`flex flex-col items-center justify-center gap-0.5 text-xs font-bold transition-colors cursor-pointer relative min-h-[44px] ${
-                isMoreTabActive || isMobileMoreOpen ? 'text-primary' : 'text-muted-foreground-1'
+                isActive ? 'text-primary' : 'text-muted-foreground-1'
               }`}
             >
-              {isMoreTabActive && (
+              {isActive && (
                 <span className="absolute top-0 inset-x-3 h-0.5 rounded-full bg-primary" />
               )}
-              <MoreHorizontal className="w-4 h-4" />
+              <Icon className="w-4 h-4" />
               <span className="truncate max-w-full px-0.5">
-                {bi('المزيد', 'More', 'زیاتر')}
+                {bi(item.ar, item.en, item.ckb)}
               </span>
             </button>
-          ) : (
-            <button
-              type="button"
-              aria-label={bi('الإعدادات', 'Settings', 'ڕێکخستنەکان')}
-              onClick={() => setIsSettingsModalOpen(true)}
-              className="flex flex-col items-center justify-center gap-0.5 text-xs font-bold transition-colors cursor-pointer relative min-h-[44px] text-muted-foreground-1 hover:text-foreground"
-            >
-              <Settings className="w-4 h-4" />
-              <span className="truncate max-w-full px-0.5">
-                {bi('الإعدادات', 'Settings', 'ڕێکخستن')}
-              </span>
-            </button>
-          )}
-        </nav>
-      ) : (
-        <nav
-          aria-label={bi('التنقل السفلي للجوال', 'Mobile Bottom Navigation', 'گەڕانی خوارەوەی مۆبایل')}
-          className="md:hidden fixed bottom-0 inset-x-0 z-40 h-14 bg-navbar border-t border-navbar-line grid grid-cols-5 px-1"
-        >
-          {[
-            { id: 'reception' as const, icon: MonitorCheck, ar: 'الطابور', en: 'Queue', ckb: 'ڕیز' },
-            { id: 'directory' as const, icon: Users, ar: 'المرضى', en: 'Patients', ckb: 'نەخۆشان' },
-            { id: 'schedule' as const, icon: Calendar, ar: 'المواعيد', en: 'Schedule', ckb: 'خشتە' },
-            { id: 'finance' as const, icon: Wallet, ar: 'المالية', en: 'Finance', ckb: 'دارایی' },
-          ].map((item) => {
-            const Icon = item.icon;
-            const isActive =
-              selectedPatient !== null
-                ? item.id === 'directory'
-                : activeNav === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                aria-label={bi(item.ar, item.en, item.ckb)}
-                aria-current={isActive ? 'page' : undefined}
-                onClick={() => {
-                  setIsMobileMoreOpen(false);
-                  setSelectedPatientId(null);
-                  setActiveNav(item.id);
-                }}
-                className={`flex flex-col items-center justify-center gap-0.5 text-xs font-bold transition-colors cursor-pointer relative min-h-[44px] ${
-                  isActive ? 'text-primary' : 'text-muted-foreground-1'
-                }`}
-              >
-                {isActive && (
-                  <span className="absolute top-0 inset-x-3 h-0.5 rounded-full bg-primary" />
-                )}
-                <Icon className="w-4 h-4" />
-                <span className="truncate max-w-full px-0.5">
-                  {bi(item.ar, item.en, item.ckb)}
-                </span>
-              </button>
-            );
-          })}
+          );
+        })}
 
-          {/* 5th Item: More -> HEP, Audit, Settings */}
-          <button
-            type="button"
-            aria-label={bi('المزيد', 'More', 'زیاتر')}
-            aria-expanded={isMobileMoreOpen}
-            onClick={() => setIsMobileMoreOpen((prev) => !prev)}
-            className={`flex flex-col items-center justify-center gap-0.5 text-xs font-bold transition-colors cursor-pointer relative min-h-[44px] ${
-              isMoreTabActive || isMobileMoreOpen ? 'text-primary' : 'text-muted-foreground-1'
-            }`}
-          >
-            {isMoreTabActive && (
-              <span className="absolute top-0 inset-x-3 h-0.5 rounded-full bg-primary" />
-            )}
-            <MoreHorizontal className="w-4 h-4" />
-            <span className="truncate max-w-full px-0.5">
-              {bi('المزيد', 'More', 'زیاتر')}
-            </span>
-          </button>
-        </nav>
-      )}
+        {/* 5th Unified Tab: More -> HEP, Analytics, Audit (Team), Settings */}
+        <button
+          type="button"
+          aria-label={bi('المزيد', 'More', 'زیاتر')}
+          aria-expanded={isMobileMoreOpen}
+          onClick={() => setIsMobileMoreOpen((prev) => !prev)}
+          className={`flex flex-col items-center justify-center gap-0.5 text-xs font-bold transition-colors cursor-pointer relative min-h-[44px] ${
+            isMoreTabActive || isMobileMoreOpen ? 'text-primary' : 'text-muted-foreground-1'
+          }`}
+        >
+          {isMoreTabActive && (
+            <span className="absolute top-0 inset-x-3 h-0.5 rounded-full bg-primary" />
+          )}
+          <MoreHorizontal className="w-4 h-4" />
+          <span className="truncate max-w-full px-0.5">
+            {bi('المزيد', 'More', 'زیاتر')}
+          </span>
+        </button>
+      </nav>
 
       {/* Mobile "More" Popover Sheet (HEP, Analytics, Audit, Settings) */}
       {isMobileMoreOpen && (
@@ -1802,7 +1704,7 @@ export const AppLayout: React.FC = () => {
                   setSelectedPatientId(null);
                   setActiveNav('exercises');
                 }}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 cursor-pointer ${
+                className={`min-h-[44px] w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 cursor-pointer ${
                   activeNav === 'exercises' && !selectedPatient
                     ? 'bg-primary/10 text-primary'
                     : 'text-foreground hover:bg-layer-hover'
@@ -1821,7 +1723,7 @@ export const AppLayout: React.FC = () => {
                   setSelectedPatientId(null);
                   setActiveNav('analytics');
                 }}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 cursor-pointer ${
+                className={`min-h-[44px] w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 cursor-pointer ${
                   activeNav === 'analytics' && !selectedPatient
                     ? 'bg-primary/10 text-primary'
                     : 'text-foreground hover:bg-layer-hover'
@@ -1840,7 +1742,7 @@ export const AppLayout: React.FC = () => {
                   setSelectedPatientId(null);
                   setActiveNav('activity_log');
                 }}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 cursor-pointer ${
+                className={`min-h-[44px] w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 cursor-pointer ${
                   activeNav === 'activity_log' && !selectedPatient
                     ? 'bg-primary/10 text-primary'
                     : 'text-foreground hover:bg-layer-hover'
@@ -1857,7 +1759,7 @@ export const AppLayout: React.FC = () => {
                 setIsMobileMoreOpen(false);
                 setIsSettingsModalOpen(true);
               }}
-              className="w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 text-foreground hover:bg-layer-hover cursor-pointer"
+              className="min-h-[44px] w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 text-foreground hover:bg-layer-hover cursor-pointer"
             >
               <Settings className="w-4 h-4 text-primary" />
               <span>{bi('الإعدادات والمطور', 'Settings', 'ڕێکخستنەکان')}</span>
@@ -1891,6 +1793,7 @@ export const AppLayout: React.FC = () => {
                 ref={globalSearchInputRef}
                 autoFocus
                 type="text"
+                aria-label={bi('بحث شامل أو أمر سريع', 'Quick command or patient search', 'فەرمانی خێرا یان گەڕان')}
                 value={globalSearchQuery}
                 onChange={(e) => {
                   setGlobalSearchQuery(e.target.value);
@@ -1933,13 +1836,17 @@ export const AppLayout: React.FC = () => {
                 type="button"
                 onClick={() => setIsGlobalSearchOpen(false)}
                 aria-label={bi('إغلاق البحث', 'Close search', 'داخستنی گەڕان')}
-                className="p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                className="size-9 rounded-lg text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="max-h-96 overflow-y-auto divide-y divide-card-divider">
+            <div
+              tabIndex={0}
+              aria-label={bi('نتائج البحث السريع', 'Quick search results', 'ئەنجامەکانی گەڕان')}
+              className="max-h-96 overflow-y-auto divide-y divide-card-divider focus:outline-none"
+            >
               {commandPaletteActions.length > 0 && (
                 <div className="p-2 space-y-1 bg-surface/50">
                   <div className="px-2 py-1 text-xs font-bold text-muted-foreground-1">
@@ -2276,6 +2183,7 @@ export const AppLayout: React.FC = () => {
                 required
                 minLength={4}
                 maxLength={32}
+                aria-label={bi('رمز PIN الجديد', 'New Admin PIN', 'کۆدی PINـی نوێ')}
                 value={firstRunPin}
                 onChange={(e) => {
                   setFirstRunPin(e.target.value);
@@ -2291,6 +2199,7 @@ export const AppLayout: React.FC = () => {
                 required
                 minLength={4}
                 maxLength={32}
+                aria-label={bi('تأكيد رمز PIN الجديد', 'Confirm New Admin PIN', 'دڵنیاکردنەوەی کۆدی PINـی نوێ')}
                 value={firstRunPinConfirm}
                 onChange={(e) => {
                   setFirstRunPinConfirm(e.target.value);
@@ -2364,6 +2273,7 @@ export const AppLayout: React.FC = () => {
               inputMode="numeric"
               autoFocus
               required
+              aria-label={bi('رمز المدير (Admin PIN)', 'Staff Admin PIN', 'کۆدی بەڕێوەبەر')}
               value={adminPinAttempt}
               onChange={(e) => {
                 setAdminPinAttempt(e.target.value);
@@ -2415,7 +2325,7 @@ export const AppLayout: React.FC = () => {
             </div>
             <div className="text-muted-foreground-1">
               {bi('المتبقي:', 'Locking in:', 'کاتی ماوە:')}{' '}
-              <bdi dir="ltr" className="font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+              <bdi dir="ltr" className="font-bold text-amber-800 dark:text-amber-300 tabular-nums">
                 {secondsUntilAutoLock}s
               </bdi>
             </div>

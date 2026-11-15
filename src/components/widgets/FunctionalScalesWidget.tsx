@@ -546,12 +546,13 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="p-3 rounded-xl bg-layer border border-line-2 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-foreground">
+                  <label htmlFor="fs-spadi-pain" className="text-xs font-bold text-foreground">
                     {bi('المقياس الفرعي للألم (0–50)', 'Pain Subscale (0–50)', 'بەشی لاوەکی ئازار (0–50)')}
                   </label>
                   <span className="text-xs font-mono font-bold text-primary">{spadiPainPct}%</span>
                 </div>
                 <input
+                  id="fs-spadi-pain"
                   type="number"
                   min={0}
                   max={50}
@@ -565,12 +566,13 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
 
               <div className="p-3 rounded-xl bg-layer border border-line-2 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-foreground">
+                  <label htmlFor="fs-spadi-disability" className="text-xs font-bold text-foreground">
                     {bi('المقياس الفرعي للإعاقة (0–80)', 'Disability Subscale (0–80)', 'بەشی لاوەکی پەککەوتەیی (0–80)')}
                   </label>
                   <span className="text-xs font-mono font-bold text-primary">{spadiDisabPct}%</span>
                 </div>
                 <input
+                  id="fs-spadi-disability"
                   type="number"
                   min={0}
                   max={80}
@@ -585,10 +587,11 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="text-xs font-bold text-foreground block mb-1">
+                <label htmlFor="fs-raw-score" className="text-xs font-bold text-foreground block mb-1">
                   {bi('النتيجة المسجلة', 'Entered Total Score', 'نمرەی تۆمارکراو')}
                 </label>
                 <input
+                  id="fs-raw-score"
                   type="number"
                   min={activeSpec.minRaw}
                   max={customDenominator}
@@ -602,10 +605,11 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-foreground block mb-1">
+                <label htmlFor="fs-max-score" className="text-xs font-bold text-foreground block mb-1">
                   {bi('الحد الأقصى للدرجة (Max)', 'Max Possible Score', 'بەرزترین نمرەی گونجاو (Max)')}
                 </label>
                 <input
+                  id="fs-max-score"
                   type="number"
                   min={1}
                   max={200}
@@ -624,10 +628,11 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-foreground block mb-1">
+                <label htmlFor="fs-baseline-score" className="text-xs font-bold text-foreground block mb-1">
                   {bi('نتيجة خط الأساس للمقارنة (اختياري)', 'Baseline Score for Δ (Optional)', 'نمرەی بنەڕەتی بۆ بەراورد (ئیختیاری)')}
                 </label>
                 <input
+                  id="fs-baseline-score"
                   type="number"
                   min={0}
                   step="0.5"
@@ -721,6 +726,7 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
                     type="text"
                     disabled={readOnly}
                     value={act.label}
+                    aria-label={bi(`وصف النشاط الوظيفي ${idx + 1}`, `Functional activity ${idx + 1} description`)}
                     onChange={(e) => {
                       const next = psfsItems.map((p) =>
                         p.id === act.id ? { ...p, label: e.target.value } : p
@@ -738,7 +744,8 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
                     <button
                       type="button"
                       onClick={() => handlePsfsChange(psfsItems.filter((p) => p.id !== act.id))}
-                      className="p-1.5 rounded-lg text-muted-foreground-2 hover:text-rose-600 cursor-pointer"
+                      aria-label={bi(`حذف النشاط ${idx + 1}`, `Delete activity ${idx + 1}`)}
+                      className="min-w-[36px] min-h-[36px] p-1.5 rounded-lg text-muted-foreground-2 hover:text-rose-600 inline-flex items-center justify-center cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -753,6 +760,7 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
                     step={1}
                     disabled={readOnly}
                     value={act.score}
+                    aria-label={bi(`تقييم النشاط ${idx + 1} من 10`, `Score for activity ${idx + 1} out of 10`)}
                     onChange={(e) => {
                       const next = psfsItems.map((p) =>
                         p.id === act.id ? { ...p, score: Number(e.target.value) } : p
@@ -843,12 +851,13 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-bold text-foreground block mb-1">
+                <label htmlFor="fs-timed-raw" className="text-xs font-bold text-foreground block mb-1">
                   {selectedId === 'chair_stand_30s'
                     ? bi('عدد التكرارات الكاملة خلال 30 ثانية:', 'Completed repetitions in 30 s:', 'ژمارەی دووبارەبوونەوە تەواوەکان لە ٣٠ چرکەدا:')
                     : bi('الزمن المسجل (بالثواني):', 'Recorded Time (seconds):', 'کاتی تۆمارکراو (بە چرکە):')}
                 </label>
                 <input
+                  id="fs-timed-raw"
                   type="number"
                   min={0}
                   step={selectedId === 'chair_stand_30s' ? '1' : '0.1'}
@@ -861,10 +870,11 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-foreground block mb-1">
+                <label htmlFor="fs-timed-baseline" className="text-xs font-bold text-foreground block mb-1">
                   {bi('قيمة خط الأساس للمقارنة (اختياري):', 'Baseline value for Δ (optional):', 'بەهای بنەڕەتی بۆ بەراورد (ئیختیاری):')}
                 </label>
                 <input
+                  id="fs-timed-baseline"
                   type="number"
                   min={0}
                   step="0.1"
@@ -888,10 +898,11 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-bold text-foreground block mb-1">
+              <label htmlFor="fs-custom-name" className="text-xs font-bold text-foreground block mb-1">
                 {bi('اسم المقياس:', 'Measure Name:', 'ناوی پێوانە:')}
               </label>
               <input
+                id="fs-custom-name"
                 type="text"
                 disabled={readOnly}
                 value={language !== 'en' ? customConfig.nameAr : customConfig.nameEn}
@@ -905,10 +916,11 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
             </div>
 
             <div>
-              <label className="text-xs font-bold text-foreground block mb-1">
+              <label htmlFor="fs-custom-unit" className="text-xs font-bold text-foreground block mb-1">
                 {bi('وحدة القياس:', 'Unit:', 'یەکەی پێوانە:')}
               </label>
               <input
+                id="fs-custom-unit"
                 type="text"
                 disabled={readOnly}
                 value={language !== 'en' ? customConfig.unitAr || '' : customConfig.unitEn || ''}
@@ -923,14 +935,15 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
             </div>
 
             <div>
-              <label className="text-xs font-bold text-foreground block mb-1">
+              <span className="text-xs font-bold text-foreground block mb-1">
                 {bi('الحد الأدنى – الحد الأقصى:', 'Min – Max Bounds:', 'کەمترین – زۆرترین سنوور:')}
-              </label>
+              </span>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
                   disabled={readOnly}
                   value={customConfig.minScore}
+                  aria-label={bi('الحد الأدنى للنتيجة', 'Minimum score bound')}
                   onChange={(e) =>
                     handleCustomConfigChange({ minScore: Number(e.target.value) || 0 })
                   }
@@ -941,6 +954,7 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
                   type="number"
                   disabled={readOnly}
                   value={customConfig.maxScore}
+                  aria-label={bi('الحد الأقصى للنتيجة', 'Maximum score bound')}
                   onChange={(e) =>
                     handleCustomConfigChange({ maxScore: Number(e.target.value) || 100 })
                   }
@@ -950,11 +964,12 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
             </div>
 
             <div>
-              <label className="text-xs font-bold text-foreground block mb-1">
+              <label htmlFor="fs-custom-direction" className="text-xs font-bold text-foreground block mb-1">
                 {bi('اتجاه التحسن وعتبة MCID:', 'Improvement Direction & MCID:', 'ئاراستەی باشبوون و ئاستی MCID:')}
               </label>
               <div className="flex items-center gap-2">
                 <select
+                  id="fs-custom-direction"
                   disabled={readOnly}
                   value={customConfig.higherIsBetter ? 'higher' : 'lower'}
                   onChange={(e) =>
@@ -969,6 +984,7 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
                   type="number"
                   disabled={readOnly}
                   value={customConfig.mcidDelta ?? 0}
+                  aria-label={bi('عتبة التغيير السريري MCID', 'MCID threshold value')}
                   onChange={(e) =>
                     handleCustomConfigChange({ mcidDelta: Number(e.target.value) || 0 })
                   }
@@ -981,10 +997,11 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-line-2">
             <div>
-              <label className="text-xs font-bold text-foreground block mb-1">
+              <label htmlFor="fs-custom-raw" className="text-xs font-bold text-foreground block mb-1">
                 {bi('القيمة المقاسة حالياً:', 'Current Measured Value:', 'بەهای پێوراوی ئێستا:')}
               </label>
               <input
+                id="fs-custom-raw"
                 type="number"
                 step="0.1"
                 disabled={readOnly}
@@ -995,10 +1012,11 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
             </div>
 
             <div>
-              <label className="text-xs font-bold text-foreground block mb-1">
+              <label htmlFor="fs-custom-baseline" className="text-xs font-bold text-foreground block mb-1">
                 {bi('قيمة خط الأساس للمقارنة (اختياري):', 'Baseline Value (optional):', 'بەهای بنەڕەتی (ئیختیاری):')}
               </label>
               <input
+                id="fs-custom-baseline"
                 type="number"
                 step="0.1"
                 disabled={readOnly}
@@ -1038,10 +1056,10 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
           <div
             className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 ${
               changeEvaluation.mcidMet
-                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
                 : changeEvaluation.improved
                   ? 'bg-primary/10 text-primary'
-                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                  : 'bg-amber-500/10 text-amber-800 dark:text-amber-300'
             }`}
           >
             <TrendingUp className="w-4 h-4 flex-shrink-0" />

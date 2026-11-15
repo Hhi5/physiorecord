@@ -619,6 +619,7 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label={bi('بحث في الفحوصات التخصصية', 'Search special tests', 'گەڕان لە تاقیکردنەوە تایبەتەکان')}
             placeholder={bi(
               'ابحث باسم الفحص أو البنية...',
               'Search test or structure...',
@@ -638,7 +639,7 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
               key={j.id}
               type="button"
               onClick={() => setSelectedJoint(j.id)}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+              className={`min-h-[34px] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                 isActive
                   ? 'bg-primary text-primary-foreground shadow-2xs'
                   : 'bg-layer text-muted-foreground-1 border border-layer-line hover:bg-layer-hover hover:text-foreground'
@@ -658,6 +659,7 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
               ref={customNameInputRef}
               type="text"
               value={customTestName}
+              aria-label={bi('اسم الفحص التخصصي غير المدرج', 'Custom special test name', 'ناوی تاقیکردنەوەی تایبەتی نوێ')}
               onChange={(e) => {
                 setCustomTestName(e.target.value);
                 if (customValidationError) setCustomValidationError(null);
@@ -679,7 +681,7 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
             <button
               type="button"
               onClick={handleAddCustomTest}
-              className="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1 shadow-2xs transition-colors cursor-pointer shrink-0"
+              className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1 shadow-2xs transition-colors cursor-pointer shrink-0"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{bi('إضافة', 'Add', 'زیادکردن')}</span>
@@ -700,10 +702,11 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
             <div className="p-3 rounded-xl bg-layer border border-primary/30 space-y-2.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                 <div>
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="special-test-custom-joint" className="block text-xs font-bold text-foreground mb-1">
                     {bi('المنطقة المفصلية:', 'Joint Region:', 'ناوچەی جومگە:')}
                   </label>
                   <select
+                    id="special-test-custom-joint"
                     value={customJoint}
                     onChange={(e) =>
                       setCustomJoint(e.target.value as OrthopedicSpecialTestItem['joint'])
@@ -719,10 +722,11 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="special-test-custom-target" className="block text-xs font-bold text-foreground mb-1">
                     {bi('البنية المستهدفة (اختياري):', 'Target Structure (Optional):', 'پێکهاتەی ئامانج (بژاردەیی):')}
                   </label>
                   <input
+                    id="special-test-custom-target"
                     type="text"
                     value={customTargetStructure}
                     onChange={(e) => setCustomTargetStructure(e.target.value)}
@@ -736,10 +740,11 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="special-test-custom-outcome" className="block text-xs font-bold text-foreground mb-1">
                     {bi('النتيجة:', 'Outcome:', 'ئەنجام:')}
                   </label>
                   <select
+                    id="special-test-custom-outcome"
                     value={customOutcome}
                     onChange={(e) => setCustomOutcome(e.target.value as SpecialTestOutcome)}
                     className="w-full px-2.5 py-1.5 rounded-lg bg-card border border-layer-line text-xs text-foreground"
@@ -754,10 +759,11 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-foreground mb-1">
+                  <label htmlFor="special-test-custom-side" className="block text-xs font-bold text-foreground mb-1">
                     {bi('الجهة:', 'Side:', 'لا:')}
                   </label>
                   <select
+                    id="special-test-custom-side"
                     value={customSide}
                     onChange={(e) => setCustomSide(e.target.value as SpecialTestSide)}
                     className="w-full px-2.5 py-1.5 rounded-lg bg-card border border-layer-line text-xs text-foreground"
@@ -875,7 +881,7 @@ const SpecialTestRowCard: React.FC<SpecialTestRowCardProps> = ({
             type="button"
             onClick={onRemoveCustom}
             aria-label={bi('حذف الفحص', 'Remove test', 'سڕینەوەی تاقیکردنەوە')}
-            className="p-1 rounded-lg text-muted-foreground-2 hover:text-rose-600 cursor-pointer"
+            className="min-w-[36px] min-h-[36px] p-1 rounded-lg text-muted-foreground-2 hover:text-rose-600 inline-flex items-center justify-center cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>

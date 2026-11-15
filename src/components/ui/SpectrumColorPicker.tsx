@@ -355,6 +355,9 @@ export const SpectrumColorPicker: React.FC<SpectrumColorPickerProps> = ({
           role="slider"
           tabIndex={0}
           aria-label={bi('مساحة التشبع والسطوع للون', 'Color saturation and brightness area', 'ڕووبەری تێری و ڕووناکی ڕەنگ')}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(hsv.v * 100)}
           aria-valuetext={activeHex}
           onKeyDown={handleSvKeyDown}
           onPointerDown={(event) => {
@@ -427,6 +430,7 @@ export const SpectrumColorPicker: React.FC<SpectrumColorPickerProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
         <div className="flex items-center gap-2 min-w-0">
           <span
+            role="img"
             aria-label={bi('معاينة اللون المختار', 'Selected color preview', 'پێشبینینی ڕەنگی هەڵبژێردراو')}
             className="size-6 rounded-full border border-card-line shadow-inner shrink-0"
             style={{ backgroundColor: activeHex }}

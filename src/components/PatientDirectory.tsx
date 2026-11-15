@@ -208,14 +208,14 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
       {/* Batch 3 Item 3: Page Header = Title + Max 2 Actions (No repeated hero card or duplicate New Patient button) */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <h1 className="hidden md:block text-base sm:text-lg font-extrabold text-foreground">
+          <h1 className="text-base sm:text-lg font-extrabold text-foreground">
             {bi('سجل المرضى', 'Patient Directory')}
           </h1>
           <span className="py-0.5 px-2.5 rounded-full text-xs font-mono font-bold tabular-nums bg-primary/10 text-primary">
             <Num value={activePatients.length} />
           </span>
           {redFlagCount > 0 && (
-            <span className="py-0.5 px-2.5 rounded-full text-xs font-bold tabular-nums bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 inline-flex items-center gap-1">
+            <span className="py-0.5 px-2.5 rounded-full text-xs font-bold tabular-nums bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 inline-flex items-center gap-1">
               <AlertCircle className="size-3.5" />
               <Num value={redFlagCount} /> {bi('علامات حمراء', 'red flags')}
             </span>
@@ -227,12 +227,12 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
             type="button"
             data-testid="open-patient-merge-modal-btn"
             onClick={() => setIsMergeModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-surface hover:bg-layer-hover border border-layer-line text-xs font-semibold text-foreground inline-flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 min-h-[36px] rounded-xl bg-surface hover:bg-layer-hover border border-layer-line text-xs font-semibold text-foreground inline-flex items-center gap-1.5 cursor-pointer"
           >
-            <GitMerge className="size-4 text-amber-600 dark:text-amber-400" />
+            <GitMerge className="size-4 text-amber-700 dark:text-amber-400" />
             <span>{bi('دمج المكررين', 'Merge Duplicates')}</span>
             {duplicatePairCount > 0 && (
-              <span className="py-0.5 px-1.5 rounded-full text-xs font-mono font-bold tabular-nums bg-amber-500/15 text-amber-700 dark:text-amber-300">
+              <span className="py-0.5 px-1.5 rounded-full text-xs font-mono font-bold tabular-nums bg-amber-500/15 text-amber-800 dark:text-amber-300">
                 {duplicatePairCount}
               </span>
             )}
@@ -242,7 +242,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
             <button
               type="button"
               onClick={() => setIsCsvImportOpen(true)}
-              className="px-3 py-1.5 rounded-xl bg-surface hover:bg-layer-hover border border-layer-line text-xs font-semibold text-foreground inline-flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 min-h-[36px] rounded-xl bg-surface hover:bg-layer-hover border border-layer-line text-xs font-semibold text-foreground inline-flex items-center gap-1.5 cursor-pointer"
             >
               <FileSpreadsheet className="size-4 text-primary" />
               <span>{bi('استيراد مرضى (CSV / XLSX)', 'Import CSV / XLSX')}</span>
@@ -267,7 +267,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                 unarchivePatient(undoArchivedPatient.id);
                 setUndoArchivedPatient(null);
               }}
-              className="px-3 py-1 rounded-lg bg-amber-600 text-white font-bold hover:bg-amber-700 cursor-pointer"
+              className="px-3 py-1.5 min-h-[36px] rounded-lg bg-amber-700 text-white font-bold hover:bg-amber-800 cursor-pointer"
             >
               {bi('تراجع', 'Undo')}
             </button>
@@ -275,7 +275,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
               type="button"
               onClick={() => setUndoArchivedPatient(null)}
               aria-label={bi('إغلاق الإشعار', 'Dismiss notification')}
-              className="p-1 rounded-lg text-muted-foreground-1 hover:text-foreground cursor-pointer"
+              className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg text-muted-foreground-1 hover:text-foreground cursor-pointer"
             >
               <X className="size-3.5" />
             </button>
@@ -293,7 +293,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
               role="tab"
               aria-selected={activeTab === 'active'}
               onClick={() => setActiveTab('active')}
-              className={`py-1.5 px-3 inline-flex items-center gap-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+              className={`py-1.5 px-3 min-h-[36px] inline-flex items-center gap-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 activeTab === 'active'
                   ? 'bg-layer text-primary shadow-2xs border border-layer-line'
                   : 'text-muted-foreground-1 hover:text-foreground'
@@ -310,15 +310,15 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
               role="tab"
               aria-selected={activeTab === 'archived'}
               onClick={() => setActiveTab('archived')}
-              className={`py-1.5 px-3 inline-flex items-center gap-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+              className={`py-1.5 px-3 min-h-[36px] inline-flex items-center gap-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 activeTab === 'archived'
-                  ? 'bg-layer text-amber-600 dark:text-amber-400 shadow-2xs border border-layer-line'
+                  ? 'bg-layer text-amber-700 dark:text-amber-400 shadow-2xs border border-layer-line'
                   : 'text-muted-foreground-1 hover:text-foreground'
               }`}
             >
               <Archive className="size-3.5" />
               <span>{bi('سجل الأرشيف', 'Archived Records')}</span>
-              <span className="py-0.5 px-2 rounded-full text-xs font-mono tabular-nums bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <span className="py-0.5 px-2 rounded-full text-xs font-mono tabular-nums bg-amber-500/10 text-amber-700 dark:text-amber-400">
                 {archivedPatients.length}
               </span>
             </button>
@@ -329,7 +329,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`py-1.5 px-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`py-1.5 px-2.5 min-h-[36px] rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
                 viewMode === 'grid'
                   ? 'bg-layer text-primary shadow-2xs border border-layer-line'
                   : 'text-muted-foreground-1 hover:text-foreground'
@@ -341,7 +341,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`py-1.5 px-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`py-1.5 px-2.5 min-h-[36px] rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
                 viewMode === 'table'
                   ? 'bg-layer text-primary shadow-2xs border border-layer-line'
                   : 'text-muted-foreground-1 hover:text-foreground'
@@ -365,11 +365,12 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                 setSearchIndexActivated(true);
                 setSearchQuery(e.target.value);
               }}
+              aria-label={bi('بحث في سجل المرضى', 'Search patient directory')}
               placeholder={bi(
                 'بحث فوري باسم المريض، رقم الهاتف، التشخيص، أو التاريخ الطبي...',
                 'Instant search by name, phone, diagnosis, or clinical history...'
               )}
-              className="py-2.5 ps-10 pe-9 block w-full bg-layer border border-layer-line rounded-xl text-xs sm:text-sm text-foreground placeholder:text-muted-foreground-1 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
+              className="py-2.5 ps-10 pe-16 block w-full bg-layer border border-layer-line rounded-xl text-xs sm:text-sm text-foreground placeholder:text-muted-foreground-1 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
             />
             <Search
               className="size-4 text-muted-foreground-1 absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -378,7 +379,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground-1 hover:text-foreground bg-surface px-2 py-0.5 rounded-md cursor-pointer inline-flex items-center gap-1"
+                className="absolute end-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground-1 hover:text-foreground bg-surface px-2.5 py-1 min-h-[32px] rounded-md cursor-pointer inline-flex items-center gap-1"
               >
                 <X className="size-3" />
                 <span>{bi('مسح', 'Clear')}</span>
@@ -402,15 +403,15 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
             <button
               type="button"
               onClick={() => setFilterRedFlagsOnly(!filterRedFlagsOnly)}
-              className={`py-2.5 px-3.5 rounded-xl text-xs sm:text-sm font-semibold border inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`py-2.5 px-3.5 min-h-[36px] rounded-xl text-xs sm:text-sm font-semibold border inline-flex items-center gap-1.5 transition-all cursor-pointer ${
                 filterRedFlagsOnly
-                  ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 shadow-2xs'
+                  ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30 shadow-2xs'
                   : 'bg-layer text-layer-foreground border-layer-line hover:bg-layer-hover'
               }`}
             >
               <AlertCircle
                 className={`size-4 ${
-                  filterRedFlagsOnly ? 'text-rose-600 dark:text-rose-400' : 'text-muted-foreground-1'
+                  filterRedFlagsOnly ? 'text-rose-700 dark:text-rose-400' : 'text-muted-foreground-1'
                 }`}
               />
               <span>{bi('علامات حمراء تحذيرية', 'Red Flags')}</span>
@@ -433,7 +434,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                   key={p.id}
                   type="button"
                   onClick={() => setQuickViewEntry({ patient: p, index: idx })}
-                  className="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-foreground font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                  className="px-2.5 py-1.5 min-h-[36px] rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-foreground font-bold inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>{getPatientDisplayName(p.data, language)}</span>
                   {isDemoPatient(p) && <DemoBadge />}
@@ -453,7 +454,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                   key={p.id}
                   type="button"
                   onClick={() => setQuickViewEntry({ patient: p, index: idx })}
-                  className="px-2.5 py-1.5 rounded-xl bg-surface hover:bg-primary/10 border border-line-2 hover:border-primary/40 text-foreground font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                  className="px-2.5 py-1.5 min-h-[36px] rounded-xl bg-surface hover:bg-primary/10 border border-line-2 hover:border-primary/40 text-foreground font-semibold inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>{getPatientDisplayName(p.data, language)}</span>
                   {isDemoPatient(p) && <DemoBadge />}
@@ -482,10 +483,12 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
               ref={patientVirtualWindow.containerRef}
               onScroll={patientVirtualWindow.onScroll}
               data-testid="patient-directory-list"
+              tabIndex={0}
+              aria-label={bi('قائمة المرضى', 'Patient list')}
               className={
                 patientVirtualWindow.isVirtualized
-                  ? 'overflow-auto max-h-[72vh]'
-                  : 'overflow-x-auto'
+                  ? 'overflow-auto max-h-[72vh] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary'
+                  : 'overflow-x-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-primary'
               }
             >
               <table className="min-w-full divide-y divide-card-divider text-start text-xs">
@@ -597,7 +600,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                                   ? bi('إلغاء تثبيت المريض', 'Unpin patient')
                                   : bi('تثبيت المريض', 'Pin patient')
                               }
-                              className="p-1.5 rounded-lg hover:bg-amber-500/10 text-muted-foreground-1 hover:text-amber-600 cursor-pointer"
+                              className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg hover:bg-amber-500/10 text-muted-foreground-1 hover:text-amber-700 cursor-pointer"
                             >
                               <Star
                                 className={`size-4 ${
@@ -613,7 +616,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                                 e.stopPropagation();
                                 setQuickViewEntry({ patient, index: idx });
                               }}
-                              className="inline-flex items-center gap-1 py-1.5 px-3 rounded-lg bg-primary/10 text-primary font-semibold group-hover:bg-primary group-hover:text-primary-foreground transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1 py-1.5 px-3 min-h-[36px] rounded-lg bg-primary/10 text-primary font-semibold group-hover:bg-primary group-hover:text-primary-foreground transition-colors cursor-pointer"
                             >
                               <span>{bi('عرض التقرير', 'View Report')}</span>
                               <ChevronIcon className="size-3.5" />
@@ -642,9 +645,11 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
             ref={patientVirtualWindow.containerRef}
             onScroll={patientVirtualWindow.onScroll}
             data-testid="patient-directory-list"
+            tabIndex={patientVirtualWindow.isVirtualized ? 0 : undefined}
+            aria-label={patientVirtualWindow.isVirtualized ? bi('قائمة المرضى', 'Patient list') : undefined}
             className={
               patientVirtualWindow.isVirtualized
-                ? 'overflow-y-auto max-h-[72vh] pe-1'
+                ? 'overflow-y-auto max-h-[72vh] pe-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary'
                 : ''
             }
           >
@@ -674,13 +679,14 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                     onClick={() => setQuickViewEntry({ patient, index: idx })}
                     role="button"
                     tabIndex={0}
+                    aria-label={primaryName}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         setQuickViewEntry({ patient, index: idx });
                       }
                     }}
-                    className="cursor-pointer focus:outline-none rounded-xl"
+                    className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
                   >
                     {/* Card Header */}
                     <div className="flex items-center justify-between gap-3 mb-3.5">
@@ -690,11 +696,11 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                         </div>
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <h3 className="font-bold text-foreground group-hover:text-primary transition-colors text-sm truncate">
+                            <h2 className="font-bold text-foreground group-hover:text-primary transition-colors text-sm break-words">
                               {primaryName}
-                            </h3>
+                            </h2>
                             {secondaryName && (
-                              <span className="text-xs font-normal text-muted-foreground-1 truncate">
+                              <span className="text-xs font-normal text-muted-foreground-1 break-words">
                                 (<bdi>{secondaryName}</bdi>)
                               </span>
                             )}
@@ -734,14 +740,14 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                     {/* Red Flags Alert Badge */}
                     {hasRedFlags && (
                       <div className="mb-3 px-3 py-2 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2 font-semibold">
-                        <AlertCircle className="size-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                        <AlertCircle className="size-4 text-rose-700 dark:text-rose-400 shrink-0" />
                         <span className="truncate">{p.redFlags || p.contraindications || p.precautions}</span>
                       </div>
                     )}
 
                     {/* Medical Summary Snippet */}
                     {p.medicalHistory && (
-                      <p className="text-xs text-muted-foreground-2 line-clamp-2 mb-3.5 bg-surface p-2.5 rounded-xl border border-line-2">
+                      <p className="text-xs text-muted-foreground-1 line-clamp-2 mb-3.5 bg-surface p-2.5 rounded-xl border border-line-2">
                         {p.medicalHistory}
                       </p>
                     )}
@@ -774,7 +780,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                     <button
                       type="button"
                       onClick={() => onSelectPatient(patient)}
-                      className="text-primary hover:opacity-80 inline-flex items-center gap-1 font-bold cursor-pointer"
+                      className="text-primary hover:opacity-80 inline-flex items-center gap-1 min-h-[36px] font-bold cursor-pointer"
                     >
                       <span>{bi('فتح الملف السريري', 'Open Patient Chart')}</span>
                       <ChevronIcon className="size-4" />
@@ -793,10 +799,10 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                             ? bi('إلغاء تثبيت المريض', 'Unpin patient')
                             : bi('تثبيت المريض', 'Pin patient')
                         }
-                        className={`px-2 py-1 rounded-lg inline-flex items-center gap-1 text-xs cursor-pointer transition-colors ${
+                        className={`p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg gap-1 text-xs cursor-pointer transition-colors ${
                           pinnedIds.includes(patient.id)
-                            ? 'text-amber-600 dark:text-amber-300 bg-amber-500/10'
-                            : 'text-muted-foreground-1 hover:text-amber-600 hover:bg-amber-500/10'
+                            ? 'text-amber-700 dark:text-amber-300 bg-amber-500/10'
+                            : 'text-muted-foreground-1 hover:text-amber-700 hover:bg-amber-500/10'
                         }`}
                       >
                         <Star
@@ -814,7 +820,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                             archivePatient(patient.id);
                             setUndoArchivedPatient({ id: patient.id, name: primaryName });
                           }}
-                          className="text-muted-foreground-1 hover:text-amber-600 dark:hover:text-amber-400 px-2.5 py-1 rounded-lg hover:bg-amber-500/10 inline-flex items-center gap-1 text-xs cursor-pointer transition-colors"
+                          className="text-muted-foreground-1 hover:text-amber-700 dark:hover:text-amber-400 px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-amber-500/10 inline-flex items-center gap-1 text-xs cursor-pointer transition-colors"
                         >
                           <Archive className="size-3.5" />
                           <span>{bi('أرشفة', 'Archive')}</span>
@@ -827,7 +833,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                               e.stopPropagation();
                               unarchivePatient(patient.id);
                             }}
-                            className="text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-lg hover:bg-emerald-500/10 inline-flex items-center gap-1 text-xs cursor-pointer transition-colors"
+                            className="text-emerald-700 dark:text-emerald-400 px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-emerald-500/10 inline-flex items-center gap-1 text-xs cursor-pointer transition-colors"
                           >
                             <RotateCcw className="size-3.5" />
                             <span>{bi('استعادة', 'Restore')}</span>
@@ -857,11 +863,11 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
           <div className="size-16 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center mx-auto mb-4">
             <HeartPulse className="size-8" />
           </div>
-          <h3 className="text-base font-bold text-foreground mb-1">
+          <h2 className="text-base font-bold text-foreground mb-1">
             {activeTab === 'active'
               ? bi('لا يوجد مرضى مسجلون في القائمة النشطة', 'No active patient records found')
               : bi('الأرشيف فارغ حالياً', 'Archive is currently empty')}
-          </h3>
+          </h2>
           <p className="text-xs text-muted-foreground-1 mb-6">
             {activeTab === 'active'
               ? bi(
@@ -876,7 +882,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                 type="button"
                 data-testid="patients-empty-primary-btn"
                 onClick={onOpenNewPatientModal}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold rounded-xl text-xs transition-all shadow-xs cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[36px] bg-primary hover:bg-primary-hover text-primary-foreground font-semibold rounded-xl text-xs transition-all shadow-xs cursor-pointer"
               >
                 <UserPlus className="size-4" />
                 <span>{bi('تسجيل مريض جديد', 'New Patient')}</span>
@@ -884,7 +890,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
               <button
                 type="button"
                 onClick={onOpenSyntheticModal}
-                className="text-xs text-muted-foreground-1 hover:text-primary underline underline-offset-4 transition-colors cursor-pointer"
+                className="text-xs text-muted-foreground-1 hover:text-primary underline underline-offset-4 min-h-[36px] px-3 inline-flex items-center transition-colors cursor-pointer"
               >
                 {bi('تجربة النظام ببيانات تجريبية', 'Try with demo data')}
               </button>

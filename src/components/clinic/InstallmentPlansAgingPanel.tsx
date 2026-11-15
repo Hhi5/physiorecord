@@ -201,6 +201,9 @@ export const InstallmentPlanBuilderModal: React.FC<
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="inst-builder-modal-title"
       className="fixed inset-0 z-50 bg-slate-950/55 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -213,7 +216,7 @@ export const InstallmentPlanBuilderModal: React.FC<
       >
         <div className="px-5 py-4 border-b border-card-divider bg-muted/40 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
+            <h2 id="inst-builder-modal-title" className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
               <CalendarClock className="size-4 text-primary shrink-0" />
               <span>
                 {bi(
@@ -222,7 +225,7 @@ export const InstallmentPlanBuilderModal: React.FC<
                   'ڕێکخستن و گۆڕینی پلانی قیستەکان'
                 )}
               </span>
-            </h3>
+            </h2>
             <p className="text-xs text-muted-foreground-1 mt-0.5 truncate">
               <bdi dir="ltr">{invoice.invoiceNumber}</bdi> · {invoice.patientName} ·{' '}
               {bi(invoice.titleAr, invoice.titleEn)}
@@ -232,7 +235,7 @@ export const InstallmentPlanBuilderModal: React.FC<
             type="button"
             onClick={onClose}
             aria-label={bi('إغلاق', 'Close', 'داخستن')}
-            className="p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover cursor-pointer"
+            className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover cursor-pointer"
           >
             <X className="size-4" />
           </button>
@@ -271,10 +274,11 @@ export const InstallmentPlanBuilderModal: React.FC<
           <div className="p-3.5 rounded-xl bg-surface border border-card-line space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
               <div>
-                <label className="block font-semibold text-foreground mb-1">
+                <label htmlFor="inst-count" className="block font-semibold text-foreground mb-1">
                   {bi('عدد الأقساط (2–12):', 'Installments (2–12):', 'ژمارەی قیستەکان (٢–١٢):')}
                 </label>
                 <select
+                  id="inst-count"
                   value={count}
                   onChange={(e) => {
                     const next = Number(e.target.value);
@@ -291,10 +295,12 @@ export const InstallmentPlanBuilderModal: React.FC<
               </div>
 
               <div>
-                <label className="block font-semibold text-foreground mb-1">
+                <label htmlFor="inst-first-due" className="block font-semibold text-foreground mb-1">
                   {bi('تاريخ أول قسط:', 'First Due Date:', 'ڕێکەوتی یەکەم قیست:')}
                 </label>
                 <DatePickerInput
+                  id="inst-first-due"
+                  ariaLabel={bi('تاريخ أول قسط', 'First Due Date', 'ڕێکەوتی یەکەم قیست')}
                   value={firstDueDate}
                   onChange={(val) => {
                     setFirstDueDate(val);
@@ -303,10 +309,11 @@ export const InstallmentPlanBuilderModal: React.FC<
               </div>
 
               <div>
-                <label className="block font-semibold text-foreground mb-1">
+                <label htmlFor="inst-interval" className="block font-semibold text-foreground mb-1">
                   {bi('الفاصل الزمني:', 'Interval:', 'ماوەی نێوان قیستەکان:')}
                 </label>
                 <select
+                  id="inst-interval"
                   value={intervalDays}
                   onChange={(e) => setIntervalDays(Number(e.target.value))}
                   className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground"
@@ -332,7 +339,7 @@ export const InstallmentPlanBuilderModal: React.FC<
                 onClick={() =>
                   handleRegenerateSchedule(count, firstDueDate, intervalDays)
                 }
-                className="py-2 px-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                className="py-2 px-3 min-h-[36px] rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Sparkles className="size-3.5" />
                 <span>{bi('توزيع متساوٍ', 'Auto-Split', 'دابەشکردنی یەکسان')}</span>
@@ -348,10 +355,11 @@ export const InstallmentPlanBuilderModal: React.FC<
                 className="p-3 rounded-xl bg-surface border border-line-2 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center"
               >
                 <div className="sm:col-span-4">
-                  <label className="block font-semibold text-muted-foreground-1 mb-1">
+                  <label htmlFor={`inst-label-${idx}`} className="block font-semibold text-muted-foreground-1 mb-1">
                     {`${bi('عنوان القسط', 'Label', 'ناونیشانی قیست')} #${idx + 1}`}
                   </label>
                   <input
+                    id={`inst-label-${idx}`}
                     type="text"
                     value={useArabicScheduleLabels ? row.labelAr : row.labelEn}
                     onChange={(e) =>
@@ -367,20 +375,24 @@ export const InstallmentPlanBuilderModal: React.FC<
                 </div>
 
                 <div className="sm:col-span-4">
-                  <label className="block font-semibold text-muted-foreground-1 mb-1">
+                  <label htmlFor={`inst-due-${idx}`} className="block font-semibold text-muted-foreground-1 mb-1">
                     {bi('تاريخ الاستحقاق', 'Due Date', 'ڕێکەوتی شایستەبوون')}
                   </label>
                   <DatePickerInput
+                    id={`inst-due-${idx}`}
+                    ariaLabel={`${bi('تاريخ الاستحقاق', 'Due Date', 'ڕێکەوتی شایستەبوون')} #${idx + 1}`}
                     value={row.dueDate}
                     onChange={(val) => handleUpdateRow(idx, { dueDate: val })}
                   />
                 </div>
 
                 <div className="sm:col-span-4">
-                  <label className="block font-semibold text-muted-foreground-1 mb-1">
+                  <label htmlFor={`inst-amt-${idx}`} className="block font-semibold text-muted-foreground-1 mb-1">
                     {bi('مبلغ القسط', 'Installment Amount', 'بڕی قیست')}
                   </label>
                   <MoneyInput
+                    id={`inst-amt-${idx}`}
+                    ariaLabel={`${bi('مبلغ القسط', 'Installment Amount', 'بڕی قیست')} #${idx + 1}`}
                     value={row.amountIQD}
                     onChange={(val) => handleUpdateRow(idx, { amountIQD: val })}
                   />
@@ -677,7 +689,7 @@ export const InstallmentPlansAgingPanel: React.FC<
                 setFilterMode(f.id);
                 setSelectedBucket('all');
               }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
                 filterMode === f.id && selectedBucket === 'all'
                   ? 'bg-primary text-primary-foreground shadow-2xs'
                   : 'text-muted-foreground-1 hover:text-foreground'
@@ -696,6 +708,7 @@ export const InstallmentPlansAgingPanel: React.FC<
             <select
               value={selectedUnscheduledId || summary.unscheduledInvoices[0]?.id || ''}
               onChange={(e) => setSelectedUnscheduledId(e.target.value)}
+              aria-label={bi('اختر فاتورة غير مجدولة', 'Select unscheduled invoice', 'پسوڵەیەکی خشتەنەکراو هەڵبژێرە')}
               className="px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground max-w-[260px]"
             >
               {summary.unscheduledInvoices.map((inv) => (
@@ -712,7 +725,7 @@ export const InstallmentPlansAgingPanel: React.FC<
                 const inv = targetId ? invoiceById.get(targetId) : undefined;
                 if (inv) setBuilderInvoice(inv);
               }}
-              className="py-2 px-3 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+              className="py-2 px-3 min-h-[36px] rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="size-3.5" />
               <span>
@@ -730,7 +743,7 @@ export const InstallmentPlansAgingPanel: React.FC<
           <button
             type="button"
             onClick={() => setMissingPhoneNotice(null)}
-            className="p-1 rounded-lg hover:bg-black/5 cursor-pointer"
+            className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg hover:bg-black/5 cursor-pointer"
             aria-label={bi('إخفاء', 'Dismiss', 'داخستن')}
           >
             <X className="size-3.5" />
@@ -739,7 +752,11 @@ export const InstallmentPlansAgingPanel: React.FC<
       )}
 
       {/* Installment Rows Table */}
-      <div className="rounded-2xl border border-card-line overflow-x-auto bg-card">
+      <div
+        tabIndex={0}
+        aria-label={bi('جدول الأقساط', 'Installments table', 'خشتەی قیستەکان')}
+        className="rounded-2xl border border-card-line overflow-x-auto bg-card focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      >
         <table className="min-w-full divide-y divide-card-divider text-start text-xs">
           <thead className="bg-muted/50">
             <tr className="text-muted-foreground-1 font-semibold">
@@ -857,7 +874,7 @@ export const InstallmentPlansAgingPanel: React.FC<
                                 )
                               )
                             }
-                            className="px-2.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                            className="px-2.5 py-1.5 min-h-[36px] rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
                           >
                             <CreditCard className="size-3.5" />
                             <span>{bi('قبض', 'Collect', 'وەرگرتن')}</span>
@@ -869,7 +886,7 @@ export const InstallmentPlansAgingPanel: React.FC<
                             href={waUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-2.5 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold inline-flex items-center gap-1 whitespace-nowrap"
+                            className="px-2.5 py-1.5 min-h-[36px] rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold inline-flex items-center gap-1 whitespace-nowrap"
                             title={bi(
                               'إرسال تذكير بالقسط عبر واتساب',
                               'Send installment reminder via WhatsApp',
@@ -891,7 +908,7 @@ export const InstallmentPlansAgingPanel: React.FC<
                                 )
                               )
                             }
-                            className="px-2.5 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-muted-foreground-1 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                            className="px-2.5 py-1.5 min-h-[36px] rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-muted-foreground-1 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
                             title={bi(
                               'رقم الهاتف غير متوفر',
                               'Phone number missing',
@@ -907,7 +924,7 @@ export const InstallmentPlansAgingPanel: React.FC<
                           <button
                             type="button"
                             onClick={() => setBuilderInvoice(parentInvoice)}
-                            className="p-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground cursor-pointer"
+                            className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground cursor-pointer"
                             title={bi(
                               'تعديل خطة الأقساط',
                               'Edit Installment Plan',

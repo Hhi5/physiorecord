@@ -195,25 +195,41 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
     >
       {/* Page Header: Title + 1 Action */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-base sm:text-lg font-bold text-foreground">
-          {bi(
-            'مكتبة التمارين والبرنامج المنزلي',
-            'Exercise Library & HEP Builder',
-            'کتێبخانەی ڕاهێنانەکان و بەرنامەی ماڵەوە',
-          )}
-          {(language === 'ar' || language === 'ckb') && (
-            <>
-              {' '}
-              <ClinicalAbbr code="HEP" className="text-xs text-muted-foreground-1" />
-            </>
-          )}
-        </h1>
+        {embeddedHepProgram !== undefined ? (
+          <h2 className="text-base sm:text-lg font-bold text-foreground">
+            {bi(
+              'مكتبة التمارين والبرنامج المنزلي',
+              'Exercise Library & HEP Builder',
+              'کتێبخانەی ڕاهێنانەکان و بەرنامەی ماڵەوە',
+            )}
+            {(language === 'ar' || language === 'ckb') && (
+              <>
+                {' '}
+                <ClinicalAbbr code="HEP" className="text-xs text-muted-foreground-1" />
+              </>
+            )}
+          </h2>
+        ) : (
+          <h1 className="text-base sm:text-lg font-bold text-foreground">
+            {bi(
+              'مكتبة التمارين والبرنامج المنزلي',
+              'Exercise Library & HEP Builder',
+              'کتێبخانەی ڕاهێنانەکان و بەرنامەی ماڵەوە',
+            )}
+            {(language === 'ar' || language === 'ckb') && (
+              <>
+                {' '}
+                <ClinicalAbbr code="HEP" className="text-xs text-muted-foreground-1" />
+              </>
+            )}
+          </h1>
+        )}
 
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setShowPrintPreview(!showPrintPreview)}
-            className="py-2 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold inline-flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+            className="py-2 px-3.5 min-h-[36px] rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold inline-flex items-center gap-2 shadow-xs transition-all cursor-pointer"
           >
             <Printer className="size-4" />
             <span>
@@ -236,9 +252,9 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowOfficialPrint(true)}
-                className="py-2 px-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-gray-50 dark:hover:bg-neutral-800 text-gray-800 dark:text-neutral-100 text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                className="py-2 px-3 min-h-[36px] rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer"
               >
-                <Printer className="size-3.5 text-teal-600 dark:text-teal-400" />
+                <Printer className="size-3.5 text-primary" />
                 <span>{bi('طباعة رسمية / PDF', 'Official Print / PDF', 'چاپکردنی فەرمی / PDF')}</span>
               </button>
 
@@ -253,10 +269,10 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
                     window.setTimeout(() => setCopiedHep(false), 2000);
                   });
                 }}
-                className="py-2 px-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-gray-50 dark:hover:bg-neutral-800 text-gray-700 dark:text-neutral-200 text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                className="py-2 px-3 min-h-[36px] rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 {copiedHep ? (
-                  <Check className="size-3.5 text-emerald-600" />
+                  <Check className="size-3.5 text-emerald-700 dark:text-emerald-400" />
                 ) : (
                   <Copy className="size-3.5" />
                 )}
@@ -272,7 +288,7 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
                   href={hepWhatsAppHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-all"
+                  className="py-2 px-3 min-h-[36px] rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-all"
                 >
                   <MessageCircle className="size-3.5" />
                   <span>{bi('إرسال عبر واتساب', 'Send via WhatsApp', 'ناردن لە ڕێگەی واتساپەوە')}</span>
@@ -303,19 +319,35 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
         <div className="bg-card p-6 rounded-2xl border border-card-line shadow-2xs space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-card-divider pb-4">
             <div>
-              <h3 className="text-lg font-bold text-foreground">
-                {bi(
-                  'البرنامج العلاجي المنزلي للمريض',
-                  'Patient Home Exercise Program (HEP)',
-                  'بەرنامەی چارەسەری ڕاهێنانی ماڵەوەی نەخۆش',
-                )}
-                {(language === 'ar' || language === 'ckb') && (
-                  <>
-                    {' '}
-                    <ClinicalAbbr code="HEP" className="text-xs text-muted-foreground-1" />
-                  </>
-                )}
-              </h3>
+              {embeddedHepProgram !== undefined ? (
+                <h3 className="text-lg font-bold text-foreground">
+                  {bi(
+                    'البرنامج العلاجي المنزلي للمريض',
+                    'Patient Home Exercise Program (HEP)',
+                    'بەرنامەی چارەسەری ڕاهێنانی ماڵەوەی نەخۆش',
+                  )}
+                  {(language === 'ar' || language === 'ckb') && (
+                    <>
+                      {' '}
+                      <ClinicalAbbr code="HEP" className="text-xs text-muted-foreground-1" />
+                    </>
+                  )}
+                </h3>
+              ) : (
+                <h2 className="text-lg font-bold text-foreground">
+                  {bi(
+                    'البرنامج العلاجي المنزلي للمريض',
+                    'Patient Home Exercise Program (HEP)',
+                    'بەرنامەی چارەسەری ڕاهێنانی ماڵەوەی نەخۆش',
+                  )}
+                  {(language === 'ar' || language === 'ckb') && (
+                    <>
+                      {' '}
+                      <ClinicalAbbr code="HEP" className="text-xs text-muted-foreground-1" />
+                    </>
+                  )}
+                </h2>
+              )}
               <p className="text-xs text-muted-foreground-1 mt-1">
                 {patientName ? `${bi('المريض: ', 'Patient: ', 'نەخۆش: ')}${patientName} · ` : ''}
                 {episodeTitle || bi('خطة التأهيل الحركي', 'Rehabilitation Plan', 'پلانی شیاندنەوەی جووڵەیی')}
@@ -347,15 +379,21 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
                         {idx + 1}
                       </span>
                       <div>
-                        <h4 className="text-xs sm:text-sm font-bold text-foreground">
-                          {item.nameAr}
-                        </h4>
+                        {embeddedHepProgram !== undefined ? (
+                          <h4 className="text-xs sm:text-sm font-bold text-foreground">
+                            {item.nameAr}
+                          </h4>
+                        ) : (
+                          <h3 className="text-xs sm:text-sm font-bold text-foreground">
+                            {item.nameAr}
+                          </h3>
+                        )}
                         <p className="text-xs text-muted-foreground-1">{item.nameEn}</p>
                       </div>
                     </div>
                   </div>
 
-                  <p className="text-xs text-muted-foreground-2 leading-relaxed">
+                  <p className="text-xs text-muted-foreground-1 leading-relaxed">
                     {bi(item.instructionsAr, item.instructionsEn)}
                   </p>
 
@@ -397,6 +435,7 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label={bi('بحث باسم التمرين', 'Search exercise', 'گەڕان بە ناوی ڕاهێنان')}
                   placeholder={bi('بحث باسم التمرين...', 'Search exercise...', 'گەڕان بە ناوی ڕاهێنان...')}
                   className={`w-full ${
                     isRtl ? 'pr-9 pl-3' : 'pl-9 pr-3'
@@ -412,6 +451,7 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
               <select
                 value={selectedRegion}
                 onChange={(e) => setSelectedRegion(e.target.value as ExerciseAnatomicalRegion | 'all')}
+                aria-label={bi('تصفية حسب المنطقة التشريحية', 'Filter by anatomical region', 'پاڵاوتن بەپێی ناوچەی توێکاری')}
                 className="px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground font-semibold focus:outline-none focus:border-primary"
               >
                 {Object.entries(regionLabels).map(([k, v]) => (
@@ -424,6 +464,7 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
               <select
                 value={selectedGoal}
                 onChange={(e) => setSelectedGoal(e.target.value as ExerciseTherapeuticGoal | 'all')}
+                aria-label={bi('تصفية حسب الهدف العلاجي', 'Filter by therapeutic goal', 'پاڵاوتن بەپێی ئامانجی چارەسەری')}
                 className="px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground font-semibold focus:outline-none focus:border-primary"
               >
                 {Object.entries(goalLabels).map(([k, v]) => (
@@ -461,23 +502,29 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
                         )}
                       </div>
 
-                      <h3 className="text-xs sm:text-sm font-bold text-foreground pt-0.5">
-                        {bi(ex.nameAr, ex.nameEn)}
-                      </h3>
+                      {embeddedHepProgram !== undefined ? (
+                        <h3 className="text-xs sm:text-sm font-bold text-foreground pt-0.5">
+                          {bi(ex.nameAr, ex.nameEn)}
+                        </h3>
+                      ) : (
+                        <h2 className="text-xs sm:text-sm font-bold text-foreground pt-0.5">
+                          {bi(ex.nameAr, ex.nameEn)}
+                        </h2>
+                      )}
 
                       <p className="text-xs text-muted-foreground-1 leading-relaxed">
                         {bi(ex.instructionsAr, ex.instructionsEn)}
                       </p>
 
                       {ex.governance?.source && (
-                        <p className="text-xs text-muted-foreground-2">
+                        <p className="text-xs text-muted-foreground-1">
                           {bi('المصدر: ', 'Source: ', 'سەرچاوە: ')}
                           {ex.governance.source}
                         </p>
                       )}
 
                       {ex.precautionsAr && (
-                        <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300">
+                        <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-1.5 text-xs text-amber-800 dark:text-amber-300">
                           <AlertTriangle className="size-3.5 shrink-0" />
                           <span>{bi(ex.precautionsAr, ex.precautionsEn ?? ex.precautionsAr)}</span>
                         </div>
@@ -524,9 +571,15 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
           {/* Right Column: Active HEP Prescription Builder */}
           <div className="bg-card rounded-2xl border border-card-line shadow-2xs overflow-hidden h-fit">
             <div className="px-5 py-4 border-b border-card-divider bg-muted/30 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground">
-                {bi('وصفة التمارين المنزلية النشطة', 'Assigned HEP Prescription', 'ڕەچەتەی ڕاهێنانە چالاکەکانی ماڵەوە')}
-              </h3>
+              {embeddedHepProgram !== undefined ? (
+                <h3 className="text-sm font-bold text-foreground">
+                  {bi('وصفة التمارين المنزلية النشطة', 'Assigned HEP Prescription', 'ڕەچەتەی ڕاهێنانە چالاکەکانی ماڵەوە')}
+                </h3>
+              ) : (
+                <h2 className="text-sm font-bold text-foreground">
+                  {bi('وصفة التمارين المنزلية النشطة', 'Assigned HEP Prescription', 'ڕەچەتەی ڕاهێنانە چالاکەکانی ماڵەوە')}
+                </h2>
+              )}
               <span className="py-0.5 px-2.5 rounded-full text-xs font-bold bg-primary/10 text-primary tabular-nums">
                 <Num value={activeHepList.length} />
               </span>
@@ -544,7 +597,7 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
                 <button
                   type="button"
                   onClick={handleUndoRemoveHepItem}
-                  className="px-2.5 py-1 rounded-lg bg-primary text-primary-foreground font-bold shrink-0 cursor-pointer"
+                  className="px-2.5 py-1 min-h-[36px] rounded-lg bg-primary text-primary-foreground font-bold shrink-0 cursor-pointer"
                 >
                   {bi('تراجع', 'Undo', 'پاشگەزبوونەوە')}
                 </button>
@@ -576,7 +629,7 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
                           `لابردنی ڕاهێنانی ${item.nameAr}`,
                         )}
                         title={bi('إزالة التمرين', 'Remove exercise', 'لابردنی ڕاهێنان')}
-                        className="text-muted-foreground-1 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-500/10 cursor-pointer"
+                        className="text-muted-foreground-1 hover:text-rose-700 dark:hover:text-rose-400 p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg hover:bg-rose-500/10 cursor-pointer"
                       >
                         <Trash2 className="size-3.5" />
                       </button>
@@ -584,10 +637,11 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
 
                     <div className="grid grid-cols-3 gap-2 text-xs tabular-nums">
                       <div>
-                        <label className="text-xs text-muted-foreground-1 block mb-1">
+                        <label htmlFor={`hep-sets-${item.id}`} className="text-xs text-muted-foreground-1 block mb-1">
                           {bi('الجولات', 'Sets', 'گەڕەکان')}
                         </label>
                         <input
+                          id={`hep-sets-${item.id}`}
                           type="number"
                           min="1"
                           value={item.sets}
@@ -598,10 +652,11 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="text-xs text-muted-foreground-1 block mb-1">
+                        <label htmlFor={`hep-reps-${item.id}`} className="text-xs text-muted-foreground-1 block mb-1">
                           {bi('التكرار', 'Reps', 'دووبارەبوونەوە')}
                         </label>
                         <input
+                          id={`hep-reps-${item.id}`}
                           type="number"
                           min="1"
                           value={item.reps}
@@ -612,10 +667,11 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="text-xs text-muted-foreground-1 block mb-1">
+                        <label htmlFor={`hep-hold-${item.id}`} className="text-xs text-muted-foreground-1 block mb-1">
                           {bi('ثبات (ث)', 'Hold (s)', 'ڕاگرتن (چرکە)')}
                         </label>
                         <input
+                          id={`hep-hold-${item.id}`}
                           type="number"
                           min="0"
                           value={item.holdSeconds}

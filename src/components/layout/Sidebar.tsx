@@ -98,6 +98,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       labelCkb: t('navToday'),
     },
     {
+      id: 'schedule',
+      icon: Calendar,
+      labelAr: 'المواعيد',
+      labelEn: 'Schedule',
+      labelCkb: t('navSchedule'),
+    },
+    {
       id: 'directory',
       icon: Users,
       labelAr: 'المرضى',

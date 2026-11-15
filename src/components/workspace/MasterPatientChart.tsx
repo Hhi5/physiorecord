@@ -864,9 +864,8 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                   e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
                 }}
                 title={tab.label}
-                aria-label={tab.label}
                 style={{ minHeight: 'unset', minWidth: 'unset' }}
-                className={`compact-btn px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-semibold border-b-2 inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                className={`compact-btn min-h-[36px] px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-semibold border-b-2 inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   isSelected
                     ? 'text-primary border-primary bg-primary/5'
                     : 'text-muted-foreground-1 border-transparent hover:text-foreground'
@@ -885,41 +884,54 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
         </div>
       </div>
 
-      {/* Main Tab Content Canvas (Episode Selector & Actions scroll naturally with content to maximize viewport) */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 sm:space-y-4">
-        {/* Episode Selector & Action Strip */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 rounded-xl bg-card border border-card-line flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
-            <span className="text-xs font-semibold text-primary whitespace-nowrap">
+      {/* Main Tab Content Canvas */}
+      <div
+        tabIndex={0}
+        aria-label={bi('محتوى الملف السريري للمريض', 'Patient clinical chart content', 'ناوەڕۆکی تۆماری کلینیکیی نەخۆش')}
+        className="flex-1 overflow-y-auto p-3 sm:p-5 pb-24 md:pb-6 space-y-3 sm:space-y-4 focus:outline-none"
+      >
+        {/* Episode Selector & Action Strip (Hidden on Profile tab per V-05/V-10) */}
+        {activeTab !== 'profile' && (
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 rounded-xl bg-card border border-card-line flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+            <label htmlFor="chart-episode-select" className="text-xs font-semibold text-primary whitespace-nowrap">
               {bi('حلقة الرعاية:', 'Episode:', 'قۆناغی چاودێری:')}
-            </span>
+            </label>
             {episodes.length > 0 ? (
-              <select
-                value={activeEpisode?.id || ''}
-                onChange={(e) => onSelectEpisode(e.target.value)}
-                className="py-1 px-2.5 rounded-lg text-xs font-semibold bg-primary/10 border border-primary/20 text-foreground focus:outline-none flex-1 min-w-[140px] sm:flex-none max-w-full"
-              >
+              <div className="flex flex-col gap-1 min-w-0 max-w-full">
+                <select
+                  id="chart-episode-select"
+                  value={activeEpisode?.id || ''}
+                  onChange={(e) => onSelectEpisode(e.target.value)}
+                  className="py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-primary/10 border border-primary/20 text-foreground focus:outline-none max-w-full"
+                >
                 {episodes.map((ep) => (
                   <option key={ep.id} value={ep.id}>
                     {ep.data.title || ep.data.medicalDiagnosis} ({formatDateDDMMYYYY(ep.data.startDate || ep.startDate)})
                   </option>
                 ))}
-              </select>
+                </select>
+                {activeEpisode && (
+                  <p className="text-xs font-bold text-foreground leading-snug break-words sm:hidden">
+                    {activeEpisode.data.title || activeEpisode.data.medicalDiagnosis}
+                  </p>
+                )}
+              </div>
             ) : (
-              <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold">
+              <span className="text-xs text-amber-800 dark:text-amber-300 font-semibold">
                 {bi('لا توجد حلقة رعاية مسجلة بعد', 'No Episode Created Yet', 'هێشتا هیچ قۆناغێکی چاودێری تۆمار نەکراوە')}
               </span>
             )}
             <button
               type="button"
               onClick={onOpenNewEpisode}
-              className="py-1 px-2.5 rounded-lg bg-layer border border-layer-line text-xs font-semibold text-primary hover:bg-layer-hover cursor-pointer whitespace-nowrap"
+              className="min-h-[36px] py-1 px-2.5 rounded-lg bg-layer border border-layer-line text-xs font-semibold text-primary hover:bg-layer-hover cursor-pointer whitespace-nowrap"
             >
               {bi('+ حلقة جديدة', '+ New Episode', '+ قۆناغی نوێ')}
             </button>
 
             {financialSummary.totalDebtIQD > 0 && (
-              <span className="py-0.5 px-2.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-xs tabular-nums font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">
+              <span className="py-0.5 px-2.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-xs tabular-nums font-bold text-rose-700 dark:text-rose-300 whitespace-nowrap">
                 {bi('ذمة متبقية: ', 'Balance Due: ', 'بڕی ماوە: ')}
                 <Money amount={financialSummary.totalDebtIQD} />
               </span>
@@ -933,13 +945,13 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 >
                   <Stethoscope className="size-3.5 shrink-0" />
                   <span>{bi('إحالة:', 'Referral:', 'ڕەوانەکردن:')}</span>
-                  <span className="truncate max-w-[180px]">{referralPillText}</span>
+                  <span>{referralPillText}</span>
                 </span>
                 <button
                   type="button"
                   data-testid="open-report-back-btn"
                   onClick={() => setIsReportBackModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold cursor-pointer whitespace-nowrap"
+                  className="min-h-[36px] inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold cursor-pointer whitespace-nowrap"
                 >
                   <Send className="size-3.5 shrink-0" />
                   <span>{bi('إعداد تقرير للطبيب المحيل', 'Report Back to Doctor', 'ئامادەکردنی ڕاپۆرت بۆ پزیشکی ڕەوانەکەر')}</span>
@@ -948,20 +960,37 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
             )}
           </div>
 
-          {/* Action Controls: Saved indicator, Assessment Tools, New Session & Save */}
+          {/* Action Controls: Live Autosave Status Badge, Assessment Tools, New Session */}
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-            {lastSavedAt && (
-              <span className="text-xs font-medium text-muted-foreground-1 whitespace-nowrap">
-                {bi('تم الحفظ ', 'Saved ', 'پاشەکەوتکرا ')}
-                <bdi dir="ltr" className="font-mono tabular-nums">{lastSavedAt}</bdi>
-              </span>
-            )}
+            <span
+              role="status"
+              aria-live="polite"
+              className={`py-1 px-2.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 border whitespace-nowrap ${
+                isSaving || isDirty
+                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300'
+                  : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300'
+              }`}
+            >
+              {isSaving ? (
+                <span>{bi('جاري الحفظ...', 'Saving...', 'پاشەکەوت دەکرێت...')}</span>
+              ) : isDirty ? (
+                <span>{bi('جاري المزامنة التلقائية...', 'Auto-saving...', 'خەریکی پاشەکەوتکردنە...')}</span>
+              ) : (
+                <>
+                  <CheckCircle2 className="size-3.5 shrink-0" />
+                  <span>{bi('✓ محفوظ تلقائياً', '✓ Auto-saved', '✓ خۆکار پاشەکەوتکرا').replace('✓ ', '')}</span>
+                  {lastSavedAt && (
+                    <bdi dir="ltr" className="font-mono tabular-nums opacity-85">{lastSavedAt}</bdi>
+                  )}
+                </>
+              )}
+            </span>
 
             <button
               type="button"
               data-testid="open-exam-shelf-btn"
               onClick={() => setIsExamShelfModalOpen(true)}
-              className="py-1 px-2.5 rounded-lg bg-layer hover:bg-layer-hover text-primary font-semibold text-xs border border-layer-line inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+              className="min-h-[36px] py-1 px-2.5 rounded-lg bg-layer hover:bg-layer-hover text-primary font-semibold text-xs border border-layer-line inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
             >
               <Layers className="size-3.5" />
               <span>{bi('أدوات الفحص', 'Assessment Tools', 'ئامرازەکانی پشکنین')}</span>
@@ -974,42 +1003,17 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
               <button
                 type="button"
                 onClick={onOpenNewSession}
-                className="py-1 px-2.5 rounded-lg bg-layer hover:bg-layer-hover text-primary font-semibold text-xs border border-layer-line inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+                className="min-h-[36px] py-1 px-2.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
               >
                 <Plus className="size-3.5" />
                 <span>{bi('جلسة جديدة', 'New Session', 'دانیشتنی نوێ')}</span>
               </button>
             )}
-
-            <button
-              type="button"
-              onClick={handleSaveMasterAndEpisode}
-              disabled={isSaving}
-              className={`py-1 px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-all cursor-pointer whitespace-nowrap ${
-                saveSuccess
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-primary hover:bg-primary-hover text-primary-foreground'
-              }`}
-            >
-              {isSaving ? (
-                <div className="size-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : saveSuccess ? (
-                <CheckCircle2 className="size-3.5" />
-              ) : (
-                <Save className="size-3.5" />
-              )}
-              <span>
-                {isSaving
-                  ? bi('جاري الحفظ...', 'Saving...', 'پاشەکەوت دەکرێت...')
-                  : saveSuccess
-                  ? bi('تم الحفظ', 'Saved', 'پاشەکەوتکرا')
-                  : bi('حفظ', 'Save', 'پاشەکەوتکردن')}
-              </span>
-            </button>
           </div>
         </div>
+        )}
 
-        {/* Collapsible Plain-Text Clinical Summary (Zero colored boxes/badges/pills) */}
+        {/* Collapsible Plain-Text Clinical Summary */}
         <section
           data-testid="clinical-summary-collapsible"
           className="max-w-7xl mx-auto border-b border-card-line pb-2 text-xs text-foreground"
@@ -1019,7 +1023,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
             data-testid="toggle-clinical-summary-btn"
             onClick={() => setClinicalSummaryExpanded((prev) => !prev)}
             aria-expanded={clinicalSummaryExpanded}
-            className="w-full py-1 flex items-center justify-between gap-2 text-start text-xs font-semibold text-muted-foreground-1 hover:text-foreground transition-colors cursor-pointer"
+            className="w-full min-h-[36px] py-1.5 flex items-center justify-between gap-2 text-start text-xs font-semibold text-muted-foreground-1 hover:text-foreground transition-colors cursor-pointer"
           >
             <span>
               {bi(
@@ -1322,10 +1326,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                             className="pt-2 border-t border-card-divider grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end"
                           >
                             <div className="sm:col-span-3">
-                              <label className="block text-xs font-semibold text-foreground mb-1">
+                              <label htmlFor={`followup-nprs-${item.episodeId}`} className="block text-xs font-semibold text-foreground mb-1">
                                 {bi('الألم NPRS (0-10)', 'NPRS Pain (0-10)', 'ئازاری NPRS (0-10)')}
                               </label>
                               <input
+                                id={`followup-nprs-${item.episodeId}`}
                                 type="number"
                                 min={0}
                                 max={10}
@@ -1337,10 +1342,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                               />
                             </div>
                             <div className="sm:col-span-3">
-                              <label className="block text-xs font-semibold text-foreground mb-1">
+                              <label htmlFor={`followup-psfs-${item.episodeId}`} className="block text-xs font-semibold text-foreground mb-1">
                                 {bi('الوظيفة PSFS (0-10)', 'PSFS Function (0-10)', 'فرمانی PSFS (0-10)')}
                               </label>
                               <input
+                                id={`followup-psfs-${item.episodeId}`}
                                 type="number"
                                 min={0}
                                 max={10}
@@ -1352,10 +1358,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                               />
                             </div>
                             <div className="sm:col-span-4">
-                              <label className="block text-xs font-semibold text-foreground mb-1">
+                              <label htmlFor={`followup-notes-${item.episodeId}`} className="block text-xs font-semibold text-foreground mb-1">
                                 {bi('ملاحظات المتابعة', 'Follow-Up Notes', 'تێبینییەکانی بەدواداچوون')}
                               </label>
                               <input
+                                id={`followup-notes-${item.episodeId}`}
                                 type="text"
                                 value={followUpNotes}
                                 onChange={(e) => setFollowUpNotes(e.target.value)}
@@ -1370,7 +1377,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                             <div className="sm:col-span-2">
                               <button
                                 type="submit"
-                                className="w-full py-1.5 px-3 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
+                                className="w-full min-h-[36px] py-1.5 px-3 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
                               >
                                 {bi('حفظ', 'Save', 'پاشەکەوتکردن')}
                               </button>
@@ -1465,13 +1472,13 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
             {/* Structured Initial Evaluation Subjective & Objective Intake Card */}
             <div className="p-5 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-4">
               <div className="border-b border-card-divider pb-3.5">
-                <h3 className="text-sm font-bold text-foreground">
+                <h2 className="text-sm font-bold text-foreground">
                   {bi(
                     'التقييم السريري المهيكل لحلقة الرعاية',
                     'Episode-Scoped Subjective & Objective Clinical Evaluation',
                     'هەڵسەنگاندنی کلینیکی پێکهاتەدار بۆ قۆناغی چاودێری'
                   )}
-                </h3>
+                </h2>
               </div>
 
               {/* Pain NPRS Segmented Controls (Rest / Activity / Worst 24h) */}
@@ -1495,10 +1502,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="eval-chief-complaint" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('الشكوى الرئيسية للمريض:', 'Chief Complaint:', 'سکاڵای سەرەکی نەخۆش:')}
                   </label>
                   <AutoResizeTextarea
+                    id="eval-chief-complaint"
                     minRows={2}
                     value={episodeStore.chiefComplaint}
                     onChange={(e) => updateEpisodeField('chiefComplaint', e.target.value)}
@@ -1512,10 +1520,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="eval-hpi" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('آلية الإصابة وتاريخ الحالة:', 'Mechanism of Injury & HPI:', 'میکانیزمی برینداری و مێژووی حاڵەت:')}
                   </label>
                   <AutoResizeTextarea
+                    id="eval-hpi"
                     minRows={2}
                     value={episodeStore.historyOfPresentIllness}
                     onChange={(e) =>
@@ -1531,10 +1540,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="eval-pain-nature" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('طبيعة الألم وانتشاره:', 'Pain Quality & Pattern:', 'جۆر و بڵاوبوونەوەی ئازار:')}
                   </label>
                   <AutoResizeTextarea
+                    id="eval-pain-nature"
                     minRows={2}
                     value={episodeStore.painNature}
                     onChange={(e) => updateEpisodeField('painNature', e.target.value)}
@@ -1548,10 +1558,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="eval-aggravating" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('العوامل المهيجة للألم:', 'Aggravating Factors:', 'هۆکارە زیادکەرەکانی ئازار:')}
                   </label>
                   <AutoResizeTextarea
+                    id="eval-aggravating"
                     minRows={2}
                     value={episodeStore.aggravatingFactors}
                     onChange={(e) => updateEpisodeField('aggravatingFactors', e.target.value)}
@@ -1565,10 +1576,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="eval-relieving" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('العوامل المخففة للألم:', 'Relieving Factors:', 'هۆکارە کەمکەرەوەکانی ئازار:')}
                   </label>
                   <AutoResizeTextarea
+                    id="eval-relieving"
                     minRows={2}
                     value={episodeStore.relievingFactors}
                     onChange={(e) => updateEpisodeField('relievingFactors', e.target.value)}
@@ -1582,10 +1594,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="eval-palpation" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('الجس والملاحظة السريرية:', 'Observation & Palpation:', 'تێبینی کلینیکی و دەستلێدان (Palpation):')}
                   </label>
                   <AutoResizeTextarea
+                    id="eval-palpation"
                     minRows={2}
                     value={episodeStore.palpationFindings}
                     onChange={(e) => updateEpisodeField('palpationFindings', e.target.value)}
@@ -1688,13 +1701,13 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
             <div className="p-5 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-card-divider pb-3">
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">
+                  <h2 className="text-sm font-bold text-foreground">
                     {bi(
                       'الانطباع السريري، خطة الرعاية، والأهداف التأهيلية',
                       'Clinical Impression, Plan of Care & Rehabilitation Goals',
                       'تێگەیشتنی کلینیکی، پلانی چاودێری و ئامانجەکانی ڕاهێنانەوە'
                     )}
-                  </h3>
+                  </h2>
                   <p className="text-xs text-muted-foreground-1">
                     {activeEpisode
                       ? `${activeEpisode.data.title || activeEpisode.data.medicalDiagnosis}`
@@ -1705,10 +1718,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="hep-treatment-frequency" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('معدل تكرار الجلسات:', 'Treatment Frequency:', 'ڕێژەی دووبارەبوونەوەی دانیشتنەکان:')}
                   </label>
                   <input
+                    id="hep-treatment-frequency"
                     type="text"
                     value={episodeStore.treatmentFrequency}
                     onChange={(e) => updateEpisodeField('treatmentFrequency', e.target.value)}
@@ -1718,10 +1732,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="hep-planned-duration" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('المدة المتوقعة للخطة (بالأسابيع):', 'Planned Duration (Weeks):', 'ماوەی پێشبینیکراو (بە هەفتە):')}
                   </label>
                   <input
+                    id="hep-planned-duration"
                     type="number"
                     value={episodeStore.plannedDurationWeeks}
                     onChange={(e) =>
@@ -1732,10 +1747,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="hep-personal-goals" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('أهداف المريض الوظيفية والشخصية:', 'Patient Functional Goals:', 'ئامانجە فرمانی و کەسییەکانی نەخۆش:')}
                   </label>
                   <input
+                    id="hep-personal-goals"
                     type="text"
                     value={episodeStore.patientPersonalGoals}
                     onChange={(e) =>
@@ -1764,7 +1780,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
               </Suspense>
 
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                <label htmlFor="hep-clinical-impression" className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi(
                     'الانطباع السريري والتشخيص الوظيفي وملخص التخريج:',
                     'Clinical Impression & Discharge Summary:',
@@ -1772,6 +1788,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                   )}
                 </label>
                 <AutoResizeTextarea
+                  id="hep-clinical-impression"
                   minRows={2}
                   value={episodeStore.clinicalImpression}
                   onChange={(e) => updateEpisodeField('clinicalImpression', e.target.value)}
@@ -1815,15 +1832,15 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
         {/* TAB 4: TREATMENT SESSIONS LOG */}
         {activeTab === 'sessions' && (
           <div className="max-w-5xl mx-auto space-y-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <h3 className="text-sm font-bold text-foreground">
+                <h2 className="text-sm font-bold text-foreground">
                   {bi(
                     'سجل الجلسات العلاجية لحلقة الرعاية الحالية:',
                     'Episode Treatment Sessions:',
                     'تۆماری دانیشتنە چارەسەرییەکانی قۆناغی چاودێری ئێستا:'
                   )}
-                </h3>
+                </h2>
                 <p className="text-xs text-muted-foreground-1">
                   {bi(
                     'افتح أي جلسة لتوثيق جدول التمارين اليومي، العلاج اليدوي، والأجهزة.',
@@ -1837,10 +1854,10 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 <button
                   type="button"
                   onClick={onOpenNewSession}
-                  className="py-2 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-xs inline-flex items-center gap-2 shadow-xs cursor-pointer"
+                  className="min-h-[36px] py-2 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-xs inline-flex items-center gap-2 shadow-xs cursor-pointer"
                 >
                   <Plus className="size-4" />
-                  <span>{bi('+ بدء جلسة علاجية جديدة', '+ New Treatment Session', '+ دەستپێکردنی دانیشتنێکی چارەسەری نوێ')}</span>
+                  <span>{bi('بدء جلسة علاجية جديدة', 'New Treatment Session', 'دەستپێکردنی دانیشتنێکی چارەسەری نوێ')}</span>
                 </button>
               )}
             </div>
@@ -1850,13 +1867,13 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Repeat className="size-4 text-primary" />
-                  <h4 className="text-xs sm:text-sm font-bold text-foreground">
+                  <h3 className="text-xs sm:text-sm font-bold text-foreground">
                     {bi(
                       'مواعيد الجلسات الأسبوعية (إضافة تلقائية للطابور)',
                       'Weekly Recurring Sessions (Auto-Queue)',
                       'کاتی دانیشتنە هەفتانەکان (زیادکردنی خۆکار بۆ ڕیز)'
                     )}
-                  </h4>
+                  </h3>
                   <span className="py-0.5 px-2 rounded-full text-xs font-mono font-bold bg-primary/10 text-primary tabular-nums">
                     <Num value={patientRecurringRules.length} />
                   </span>
@@ -1865,8 +1882,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowRecurringForm(!showRecurringForm)}
-                  className="py-1.5 px-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs font-semibold transition-colors cursor-pointer compact-btn"
-                  style={{ minHeight: 'unset' }}
+                  className="min-h-[36px] py-1.5 px-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs font-semibold transition-colors cursor-pointer"
                 >
                   {showRecurringForm
                     ? bi('إغلاق النموذج', 'Close Form', 'داخستنی فۆرم')
@@ -1887,16 +1903,14 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                       <button
                         type="button"
                         onClick={() => setRecWeekdays([0, 2, 4])}
-                        className="px-2 py-0.5 rounded-md text-xs font-semibold bg-card border border-line-2 text-primary hover:bg-primary/10 cursor-pointer compact-btn"
-                        style={{ minHeight: 'unset' }}
+                        className="min-h-[32px] px-2.5 py-1 rounded-md text-xs font-semibold bg-card border border-line-2 text-primary hover:bg-primary/10 cursor-pointer"
                       >
                         {bi('أحد · ثلاثاء · خميس', 'Sun · Tue · Thu', 'یەکشەممە · سێشەممە · پێنجشەممە')}
                       </button>
                       <button
                         type="button"
                         onClick={() => setRecWeekdays([6, 1, 3])}
-                        className="px-2 py-0.5 rounded-md text-xs font-semibold bg-card border border-line-2 text-primary hover:bg-primary/10 cursor-pointer compact-btn"
-                        style={{ minHeight: 'unset' }}
+                        className="min-h-[32px] px-2.5 py-1 rounded-md text-xs font-semibold bg-card border border-line-2 text-primary hover:bg-primary/10 cursor-pointer"
                       >
                         {bi('سبت · إثنين · أربعاء', 'Sat · Mon · Wed', 'شەممە · دووشەممە · چوارشەممە')}
                       </button>
@@ -1911,12 +1925,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                           key={day.index}
                           type="button"
                           onClick={() => handleToggleRecWeekday(day.index)}
-                          className={`py-2 px-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer compact-btn text-center ${
+                          className={`min-h-[36px] py-2 px-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer text-center ${
                             activeDay
                               ? 'bg-primary text-primary-foreground border-primary shadow-2xs'
                               : 'bg-card text-foreground border-layer-line hover:bg-layer-hover'
                           }`}
-                          style={{ minHeight: 'unset' }}
                         >
                           {bi(day.ar, day.shortEn, day.ckb)}
                         </button>
@@ -1926,19 +1939,19 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="text-xs font-semibold text-foreground block mb-1">
+                      <label htmlFor="rec-start-time" className="text-xs font-semibold text-foreground block mb-1">
                         {bi('وقت الجلسة:', 'Session Time:', 'کاتی دانیشتن:')}
                       </label>
-                      <TimePickerInput value={recStartTime} onChange={setRecStartTime} />
+                      <TimePickerInput id="rec-start-time" value={recStartTime} onChange={setRecStartTime} />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-foreground block mb-1">
+                      <label htmlFor="rec-start-date" className="text-xs font-semibold text-foreground block mb-1">
                         {bi('يبدأ من تاريخ:', 'Starts On:', 'دەستپێدەکات لە بەرواری:')}
                       </label>
-                      <DatePickerInput value={recStartDate} onChange={setRecStartDate} />
+                      <DatePickerInput id="rec-start-date" value={recStartDate} onChange={setRecStartDate} />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-foreground block mb-1">
+                      <label htmlFor="rec-custom-duration" className="text-xs font-semibold text-foreground block mb-1">
                         {bi('المدة (بالدقائق):', 'Duration (min):', 'ماوە (بە خولەک):')}
                       </label>
                       <div className="grid grid-cols-4 gap-1" dir="ltr">
@@ -1950,12 +1963,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                               setRecCustomDurationMode(false);
                               setRecDuration(preset);
                             }}
-                            className={`py-2 rounded-xl text-xs font-mono font-bold border transition-colors cursor-pointer compact-btn ${
+                            className={`min-h-[36px] py-2 rounded-xl text-xs font-mono font-bold border transition-colors cursor-pointer ${
                               !recCustomDurationMode && recDuration === preset
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-card text-foreground border-layer-line'
                             }`}
-                            style={{ minHeight: 'unset' }}
                           >
                             {preset}
                           </button>
@@ -1966,12 +1978,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                             setRecCustomDurationMode(true);
                             setRecCustomDurationDraft(String(recDuration || 45));
                           }}
-                          className={`py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer compact-btn ${
+                          className={`min-h-[36px] py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
                             recCustomDurationMode
                               ? 'bg-primary text-primary-foreground border-primary'
                               : 'bg-card text-foreground border-layer-line'
                           }`}
-                          style={{ minHeight: 'unset' }}
                         >
                           {bi('يدوي', 'Custom', 'دەستی')}
                         </button>
@@ -1979,11 +1990,13 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                       {recCustomDurationMode && (
                         <div className="mt-1.5 flex items-center gap-1.5">
                           <input
+                            id="rec-custom-duration"
                             type="number"
                             min={5}
                             max={480}
                             step={1}
                             dir="ltr"
+                            aria-label={bi('مدة الجلسة المخصصة بالدقائق', 'Custom session duration in minutes')}
                             value={recCustomDurationDraft}
                             onChange={(e) => {
                               const raw = e.target.value;
@@ -2085,8 +2098,12 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                             ClinicOperationsService.toggleRecurringScheduleActive(rule.id);
                             reloadPatientRecurring();
                           }}
-                          className="p-1.5 rounded-lg text-muted-foreground-1 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer compact-btn"
-                          style={{ minHeight: 'unset' }}
+                          className="min-w-[36px] min-h-[36px] p-1.5 rounded-lg text-muted-foreground-1 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer inline-flex items-center justify-center"
+                          aria-label={
+                            rule.isActive
+                              ? bi('إيقاف مؤقت للجدول الأسبوعي', 'Pause weekly schedule', 'وەستاندنی کاتی')
+                              : bi('تفعيل الجدول الأسبوعي', 'Resume weekly schedule', 'کاراکردن')
+                          }
                           title={
                             rule.isActive
                               ? bi('إيقاف مؤقت', 'Pause', 'وەستاندنی کاتی')
@@ -2105,8 +2122,8 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                             ClinicOperationsService.deleteRecurringSchedule(rule.id);
                             reloadPatientRecurring();
                           }}
-                          className="p-1.5 rounded-lg text-muted-foreground-1 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer compact-btn"
-                          style={{ minHeight: 'unset' }}
+                          className="min-w-[36px] min-h-[36px] p-1.5 rounded-lg text-muted-foreground-1 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer inline-flex items-center justify-center"
+                          aria-label={bi('حذف الجدول الأسبوعي', 'Delete weekly schedule', 'سڕینەوە')}
                           title={bi('حذف', 'Delete', 'سڕینەوە')}
                         >
                           <Trash2 className="size-3.5" />
@@ -2134,6 +2151,8 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 ref={chartSessionsVirtual.containerRef}
                 onScroll={chartSessionsVirtual.onScroll}
                 data-testid="chart-sessions-list"
+                tabIndex={chartSessionsVirtual.isVirtualized ? 0 : undefined}
+                aria-label={chartSessionsVirtual.isVirtualized ? bi('قائمة الجلسات العلاجية', 'Treatment sessions list') : undefined}
                 className={
                   chartSessionsVirtual.isVirtualized
                     ? 'max-h-[70vh] overflow-y-auto pe-1'
@@ -2210,7 +2229,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
             {/* Patient Iraqi Financial Summary Strip (IQD) */}
             <div className="p-5 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                <h2 className="flex items-center gap-2 text-xs font-bold text-foreground">
                   <Wallet className="size-4 text-primary" />
                   <span>
                     {bi(
@@ -2219,7 +2238,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                       'پوختەی دارایی نەخۆش بە دیناری عێراقی'
                     )}
                   </span>
-                </div>
+                </h2>
                 <span className="text-xs text-muted-foreground-1 tabular-nums">
                   <Num value={financialSummary.invoices.length} /> {bi('فواتير', 'invoices', 'پسوولە')}
                 </span>
@@ -2238,7 +2257,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                   <span className="text-xs text-muted-foreground-1 block font-sans">
                     {bi('إجمالي المدفوع نقداً / إلكترونياً', 'Total Paid', 'کۆی پارەی دراو (نەقد / ئەلیکترۆنی)')}
                   </span>
-                  <span className="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 block">
+                  <span className="text-base font-bold text-emerald-700 dark:text-emerald-400 mt-0.5 block">
                     <Money amount={financialSummary.totalPaidIQD} />
                   </span>
                 </div>
@@ -2249,7 +2268,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                   <span
                     className={`text-base font-bold mt-0.5 block ${
                       financialSummary.totalDebtIQD > 0
-                        ? 'text-rose-600 dark:text-rose-400'
+                        ? 'text-rose-700 dark:text-rose-400'
                         : 'text-muted-foreground-1'
                     }`}
                   >
@@ -2262,7 +2281,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
             {/* Referral Physician & Emergency Contact Card */}
             <div className="p-5 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-primary">
+                <h2 className="flex items-center gap-2 text-xs font-bold text-primary">
                   <UserCheck className="size-4" />
                   <span>
                     {bi(
@@ -2271,26 +2290,48 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                       'پزیشکی ڕەوانەکار و پەیوەندیی فریاگوزاری'
                     )}
                   </span>
-                </div>
-                {enableReferralsModule && (
+                </h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  {enableReferralsModule && (
+                    <button
+                      type="button"
+                      onClick={() => setIsReportBackModalOpen(true)}
+                      className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-layer border border-layer-line hover:bg-layer-hover text-foreground text-xs font-semibold cursor-pointer"
+                    >
+                      <Send className="size-3.5 text-primary" />
+                      <span>{bi('إعداد تقرير للطبيب المحيل', 'Report Back to Doctor', 'ئامادەکردنی ڕاپۆرت بۆ پزیشکی ڕەوانەکار')}</span>
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => setIsReportBackModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold cursor-pointer"
+                    onClick={handleSaveMasterAndEpisode}
+                    disabled={isSaving}
+                    className={`min-h-[36px] py-1.5 px-3.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-all cursor-pointer ${
+                      saveSuccess
+                        ? 'bg-emerald-700 text-white'
+                        : 'bg-primary hover:bg-primary-hover text-primary-foreground'
+                    }`}
                   >
-                    <Send className="size-3.5" />
-                    <span>{bi('إعداد تقرير للطبيب المحيل', 'Report Back to Doctor', 'ئامادەکردنی ڕاپۆرت بۆ پزیشکی ڕەوانەکار')}</span>
+                    <Save className="size-3.5" />
+                    <span>
+                      {isSaving
+                        ? bi('جاري الحفظ...', 'Saving...', 'پاشەکەوت دەکرێت...')
+                        : saveSuccess
+                        ? bi('تم حفظ الملف', 'Saved', 'پاشەکەوتکرا')
+                        : bi('حفظ بيانات الملف', 'Save Profile', 'پاشەکەوتکردن')}
+                    </span>
                   </button>
-                )}
+                </div>
               </div>
 
               {enableReferralsModule && (
                 <div className="p-3.5 rounded-xl bg-surface/60 border border-card-line grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1.5">
+                    <label htmlFor="profile-referral-source" className="text-xs font-semibold text-foreground block mb-1.5">
                       {bi('مصدر الإحالة:', 'Referral Source:', 'سەرچاوەی ڕەوانەکردن:')}
                     </label>
                     <select
+                      id="profile-referral-source"
                       value={referralSourceType}
                       onChange={(e) =>
                         setReferralSourceType((e.target.value as ReferralSourceType) || '')
@@ -2312,10 +2353,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1.5">
+                    <label htmlFor="profile-referring-doctor-id" className="text-xs font-semibold text-foreground block mb-1.5">
                       {bi('الطبيب المحيل (من الدليل):', 'Directory Doctor:', 'پزیشکی ڕەوانەکار (لە ڕێبەرەوە):')}
                     </label>
                     <select
+                      id="profile-referring-doctor-id"
                       value={referringDoctorId}
                       onChange={(e) => {
                         const nextId = e.target.value;
@@ -2350,10 +2392,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1.5">
+                    <label htmlFor="profile-referral-notes" className="text-xs font-semibold text-foreground block mb-1.5">
                       {bi('ملاحظات الإحالة:', 'Referral Notes:', 'تێبینییەکانی ڕەوانەکردن:')}
                     </label>
                     <input
+                      id="profile-referral-notes"
                       type="text"
                       value={referralNotes}
                       onChange={(e) => setReferralNotes(e.target.value)}
@@ -2370,10 +2413,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="profile-referring-physician" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('الطبيب الاستشاري المحيل:', 'Referring Physician:', 'پزیشکی ڕاوێژکاری ڕەوانەکار:')}
                   </label>
                   <input
+                    id="profile-referring-physician"
                     type="text"
                     value={referringPhysician}
                     onChange={(e) => setReferringPhysician(e.target.value)}
@@ -2383,10 +2427,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="profile-referring-clinic" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('المستشفى / المركز المحيل:', 'Referring Hospital / Clinic:', 'نەخۆشخانە / سەنتەری ڕەوانەکار:')}
                   </label>
                   <input
+                    id="profile-referring-clinic"
                     type="text"
                     value={referringClinic}
                     onChange={(e) => setReferringClinic(e.target.value)}
@@ -2396,10 +2441,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="profile-emergency-name" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('اسم قريب الطوارئ وصلة القرابة:', 'Emergency Contact & Relation:', 'ناوی خزمی فریاگوزاری و پەیوەندی:')}
                   </label>
                   <input
+                    id="profile-emergency-name"
                     type="text"
                     value={emergencyContactName}
                     onChange={(e) => setEmergencyContactName(e.target.value)}
@@ -2409,17 +2455,18 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="profile-emergency-phone" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('هاتف الطوارئ:', 'Emergency Phone:', 'ژمارەی تەلەفۆنی فریاگوزاری:')}
                   </label>
                   <PhoneInput
+                    id="profile-emergency-phone"
                     value={emergencyContactPhone}
                     onChange={setEmergencyContactPhone}
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="text-xs font-semibold text-rose-700 dark:text-rose-400 block mb-1.5">
+                  <label htmlFor="profile-contraindications" className="text-xs font-semibold text-rose-700 dark:text-rose-400 block mb-1.5">
                     {bi(
                       'موانع الاستعمال والمحاذير الطبية:',
                       'Contraindications & Precautions:',
@@ -2427,6 +2474,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                     )}
                   </label>
                   <AutoResizeTextarea
+                    id="profile-contraindications"
                     minRows={2}
                     value={contraindications}
                     onChange={(e) => setContraindications(e.target.value)}
@@ -2503,19 +2551,20 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
 
             {/* Medical History & Surgeries */}
             <div className="p-5 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-4">
-              <h3 className="text-xs font-bold text-primary uppercase tracking-wider">
+              <h2 className="text-xs font-bold text-primary uppercase tracking-wider">
                 {bi(
                   'التاريخ المرضي والعمليات الجراحية والحساسية:',
                   'Medical History, Surgeries & Allergies:',
                   'مێژووی نەخۆشی، نەشتەرگەرییەکان و هەستیاری:'
                 )}
-              </h3>
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="profile-medical-history" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('الأمراض المزمنة والتاريخ المرضي:', 'Medical History:', 'نەخۆشییە درێژخایەنەکان و مێژووی نەخۆشی:')}
                   </label>
                   <AutoResizeTextarea
+                    id="profile-medical-history"
                     minRows={3}
                     value={medicalHistory}
                     onChange={(e) => setMedicalHistory(e.target.value)}
@@ -2523,16 +2572,38 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="profile-previous-surgeries" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('العمليات الجراحية السابقة:', 'Previous Surgeries:', 'نەشتەرگەرییەکانی پێشوو:')}
                   </label>
                   <AutoResizeTextarea
+                    id="profile-previous-surgeries"
                     minRows={3}
                     value={previousSurgeries}
                     onChange={(e) => setPreviousSurgeries(e.target.value)}
                     className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
                   />
                 </div>
+              </div>
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={handleSaveMasterAndEpisode}
+                  disabled={isSaving}
+                  className={`min-h-[36px] py-1.5 px-4 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-all cursor-pointer ${
+                    saveSuccess
+                      ? 'bg-emerald-700 text-white'
+                      : 'bg-primary hover:bg-primary-hover text-primary-foreground'
+                  }`}
+                >
+                  <Save className="size-3.5" />
+                  <span>
+                    {isSaving
+                      ? bi('جاري الحفظ...', 'Saving...', 'پاشەکەوت دەکرێت...')
+                      : saveSuccess
+                      ? bi('تم الحفظ', 'Saved', 'پاشەکەوتکرا')
+                      : bi('حفظ التغييرات', 'Save Changes', 'پاشەکەوتکردن')}
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -2551,13 +2622,13 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-card-divider pb-3">
                 <div className="flex items-center gap-2">
                   <Printer className="size-4 text-primary" />
-                  <h3 className="text-sm font-bold text-foreground">
+                  <h2 className="text-sm font-bold text-foreground">
                     {bi(
                       'التقارير الطبية والطباعة الرسمية (PDF)',
                       'Official Printable Clinical Reports (PDF)',
                       'ڕاپۆرتە پزیشکییەکان و چاپکردنی فەرمی (PDF)'
                     )}
-                  </h3>
+                  </h2>
                 </div>
                 <span className="text-xs text-muted-foreground-1">
                   {bi(

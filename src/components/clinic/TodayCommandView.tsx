@@ -28,7 +28,7 @@ import {
   localDate,
   addDaysToDateStr,
   formatClinicalDate,
-  formatTimeIraq,
+  formatDateDDMMYYYY,
   formatIraqiPhoneDisplay,
 } from '../../utils/date';
 import {
@@ -468,7 +468,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
         ar: 'وصل / بالانتظار',
         en: 'Arrived',
         ckb: 'گەیشت / چاوەڕوانە',
-        cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30',
+        cls: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30',
       },
       in_session: {
         ar: 'داخل الجلسة',
@@ -523,35 +523,35 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-2xl bg-card border border-card-line shadow-2xs">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <h2
-              className={`text-base sm:text-lg font-extrabold text-foreground ${
-                subTab === 'today' ? 'hidden md:block' : ''
-              }`}
-            >
-              {subTab === 'eod'
-                ? bi('إغلاق نهاية اليوم', 'End of Day Closing', 'داخستنی کۆتایی ڕۆژ')
-                : subTab === 'schedule'
-                ? bi(
-                    'جدول المواعيد الأسبوعي وقائمة الانتظار',
-                    'Schedule & Recurring Calendar',
-                    'خشتەی مۆڵەتی هەفتانە و لیستی چاوەڕوانی'
-                  )
-                : subTab === 'referrals_retention'
-                ? bi(
-                    'الإحالات والمتابعة والاحتفاظ بالمرضى',
-                    'Referrals & Patient Retention',
-                    'ئاڕاستەکردن، بەدواداچوون و مانەوەی نەخۆشان'
-                  )
-                : subTab === 'data_health'
-                ? bi(
-                    'صحة البيانات وسلة المهملات (30 يوماً)',
-                    'Data Health & 30-Day Recycle Bin',
-                    'تەندروستیی داتا و سەبەتەی سڕاوەکان (٣٠ ڕۆژ)'
-                  )
-                : bi('اليوم — جدول الجلسات الفوري', 'Today — Daily Timeline', 'ئەمڕۆ — خشتەی ڕاستەوخۆی دانیشتنەکان')}
-            </h2>
+            {subTab === 'schedule' ? (
+              <h2 className="text-base sm:text-lg font-extrabold text-foreground">
+                {bi(
+                  'جدول المواعيد الأسبوعي وقائمة الانتظار',
+                  'Schedule & Recurring Calendar',
+                  'خشتەی مۆڵەتی هەفتانە و لیستی چاوەڕوانی'
+                )}
+              </h2>
+            ) : (
+              <h1 className="text-base sm:text-lg font-extrabold text-foreground">
+                {subTab === 'eod'
+                  ? bi('إغلاق نهاية اليوم', 'End of Day Closing', 'داخستنی کۆتایی ڕۆژ')
+                  : subTab === 'referrals_retention'
+                  ? bi(
+                      'الإحالات والمتابعة والاحتفاظ بالمرضى',
+                      'Referrals & Patient Retention',
+                      'ئاڕاستەکردن، بەدواداچوون و مانەوەی نەخۆشان'
+                    )
+                  : subTab === 'data_health'
+                  ? bi(
+                      'صحة البيانات وسلة المهملات (30 يوماً)',
+                      'Data Health & 30-Day Recycle Bin',
+                      'تەندروستیی داتا و سەبەتەی سڕاوەکان (٣٠ ڕۆژ)'
+                    )
+                  : bi('اليوم — جدول الجلسات الفوري', 'Today — Daily Timeline', 'ئەمڕۆ — خشتەی ڕاستەوخۆی دانیشتنەکان')}
+              </h1>
+            )}
             {draftSessions.length > 0 && (
-              <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-bold">
+              <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 text-xs font-bold">
                 <Num value={draftSessions.length} /> {bi('مسودة غير موقعة', 'unsigned drafts', 'مسۆدەی واژوونەکراو')}
               </span>
             )}
@@ -633,7 +633,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
       </div>
 
       {actionError && (
-        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs font-semibold text-rose-600 dark:text-rose-400">
+        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs font-semibold text-rose-700 dark:text-rose-300">
           {actionError}
         </div>
       )}
@@ -653,9 +653,9 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                 </span>
                 {nextUpAppointment ? (
                   <>
-                    <h3 className={`text-sm sm:text-base font-extrabold text-foreground truncate ${privacyBlur ? 'blur-xs select-none' : ''}`}>
+                    <h2 className={`text-sm sm:text-base font-extrabold text-foreground leading-snug ${privacyBlur ? 'blur-xs select-none' : ''}`}>
                       {nextUpAppointment.patientName}
-                    </h3>
+                    </h2>
                     <p className="text-xs text-muted-foreground-1 flex flex-wrap items-center gap-1.5">
                       <TimeDisplay
                         time={nextUpAppointment.startTime}
@@ -670,9 +670,9 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                   </>
                 ) : (
                   <>
-                    <h3 className="text-sm sm:text-base font-extrabold text-foreground">
+                    <h2 className="text-sm sm:text-base font-extrabold text-foreground">
                       {bi('لا توجد جلسة منتظرة الآن', 'Queue is clear right now', 'لە ئێستادا هیچ دانیشتنێک چاوەڕوان نییە')}
-                    </h3>
+                    </h2>
                     <p className="hidden sm:block text-xs text-muted-foreground-1">
                       {bi(
                         'أضف مراجعاً فورياً خلال 10 ثوانٍ أو افتح ملف مريض حالي.',
@@ -712,9 +712,9 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
             <div className="md:col-span-5 p-2.5 sm:p-4 rounded-2xl bg-card border border-card-line flex flex-col justify-between gap-2 sm:gap-3">
               <div className="hidden sm:flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="text-sm font-extrabold text-foreground">
+                  <h2 className="text-sm font-extrabold text-foreground">
                     {bi('مراجع مفاجئ / تسجيل سريع', 'Quick Walk-In (10s)', 'نەخۆشی کتوپڕ / تۆماری خێرا')}
-                  </h3>
+                  </h2>
                   <p className="text-xs text-muted-foreground-1 mt-0.5">
                     {bi(
                       'الاسم والهاتف فقط ← مريض + موعد + جلسة مفتوحة',
@@ -753,7 +753,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
               <div className="flex flex-wrap items-center gap-3 text-xs">
                 {pinnedPatients.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="inline-flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400">
+                    <span className="inline-flex items-center gap-1 font-bold text-amber-800 dark:text-amber-300">
                       <Star className="size-3.5 fill-current" />
                       <span>{bi('المثبتون:', 'Pinned:', 'چەسپاوەکان:')}</span>
                     </span>
@@ -765,7 +765,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                           ClinicOperationsService.recordPatientVisitMemory(p.id);
                           onOpenPatientSession(p);
                         }}
-                        className={`px-2.5 py-1 rounded-full bg-amber-500/12 hover:bg-amber-500/20 border border-amber-500/30 text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer ${privacyBlur ? 'blur-xs' : ''}`}
+                        className={`min-h-[36px] px-2.5 py-1 rounded-full bg-amber-500/12 hover:bg-amber-500/20 border border-amber-500/30 text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer ${privacyBlur ? 'blur-xs' : ''}`}
                       >
                         <span>{getPatientDisplayName(p.data, language)}</span>
                         {isDemoPatient(p) && <DemoBadge />}
@@ -788,7 +788,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                           ClinicOperationsService.recordPatientVisitMemory(p.id);
                           onOpenPatientSession(p);
                         }}
-                        className={`px-2.5 py-1 rounded-full bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer ${privacyBlur ? 'blur-xs' : ''}`}
+                        className={`min-h-[36px] px-2.5 py-1 rounded-full bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer ${privacyBlur ? 'blur-xs' : ''}`}
                       >
                         <span>{getPatientDisplayName(p.data, language)}</span>
                         {isDemoPatient(p) && <DemoBadge />}
@@ -815,7 +815,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                   key={f.id}
                   type="button"
                   onClick={() => setStatusFilter(f.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+                  className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
                     statusFilter === f.id
                       ? 'bg-foreground text-background border-foreground'
                       : 'bg-card text-foreground border-card-line hover:bg-muted'
@@ -858,7 +858,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                   type="button"
                   data-testid="today-empty-primary-btn"
                   onClick={() => setShowWalkInModal(true)}
-                  className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                  className="min-h-[40px] px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <UserPlus className="size-4" />
                   <span>
@@ -935,9 +935,9 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                             </span>
                           )}
                           {appt.patientPhone && (
-                            <span dir="ltr" className="font-mono">
+                            <bdi dir="ltr" className="font-mono">
                               {formatIraqiPhoneDisplay(appt.patientPhone)}
-                            </span>
+                            </bdi>
                           )}
                           <span>· {appt.roomOrBed}</span>
                           {appt.episodeTitle && (
@@ -955,7 +955,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleRowStatus(appt.id, 'arrived')}
-                          className="min-h-[40px] px-3 py-1.5 rounded-xl bg-amber-500/12 hover:bg-amber-500/20 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                          className="min-h-[40px] px-3 py-1.5 rounded-xl bg-amber-500/12 hover:bg-amber-500/20 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
                         >
                           <UserCheck className="size-3.5" />
                           <span>{bi('وصل', 'Arrived', 'گەیشت')}</span>
@@ -1005,13 +1005,13 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="size-4 text-primary shrink-0" />
-                  <h3 className="text-xs sm:text-sm font-extrabold text-foreground">
+                  <h2 className="text-xs sm:text-sm font-extrabold text-foreground">
                     {bi(
                       'قائمة البدء السريع لإعداد العيادة',
                       'Clinic Onboarding Checklist',
                       'لیستی دەستپێکی خێرا بۆ ڕێکخستنی کلینیک'
                     )}
-                  </h3>
+                  </h2>
                   <span
                     data-testid="onboarding-checklist-progress"
                     dir="ltr"
@@ -1027,7 +1027,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                     setChecklistDismissed(true);
                     void ClinicOperationsService.setOnboardingChecklistDismissedAsync(true);
                   }}
-                  className="px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-muted-foreground-1 hover:text-foreground text-xs font-bold cursor-pointer"
+                  className="min-h-[36px] px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-muted-foreground-1 hover:text-foreground text-xs font-bold cursor-pointer"
                 >
                   {bi('إخفاء القائمة', 'Dismiss', 'شاردنەوەی لیست')}
                 </button>
@@ -1083,13 +1083,13 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                             onOpenRecoveryDrill?.();
                           }
                         }}
-                        className={`w-full px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer ${
+                        className={`min-h-[36px] w-full px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer ${
                           step.completed
                             ? 'bg-layer hover:bg-layer-hover border border-layer-line text-foreground'
                             : 'bg-primary hover:bg-primary-hover text-primary-foreground'
                         }`}
                       >
-                        {step.completed && <Check className="size-3.5 text-emerald-600 dark:text-emerald-400" />}
+                        {step.completed && <Check className="size-3.5 text-emerald-700 dark:text-emerald-300" />}
                         <span>{bi(step.ctaAr, step.ctaEn, stepCkb?.cta)}</span>
                       </button>
                     </div>
@@ -1107,7 +1107,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                     setChecklistDismissed(false);
                     void ClinicOperationsService.setOnboardingChecklistDismissedAsync(false);
                   }}
-                  className="px-3 py-1.5 rounded-full bg-surface hover:bg-layer-hover border border-line-2 text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                  className="min-h-[36px] px-3 py-1.5 rounded-full bg-surface hover:bg-layer-hover border border-line-2 text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   <ShieldCheck className="size-3.5 text-primary" />
                   <span>
@@ -1133,8 +1133,8 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <div className="lg:col-span-8 p-4 rounded-2xl bg-card border border-card-line space-y-3">
               <div className="flex items-center justify-between gap-2 border-b border-card-divider pb-2.5">
-                <div className="flex items-center gap-2 text-sm font-extrabold text-foreground">
-                  <Banknote className="size-4 text-emerald-600 dark:text-emerald-400" />
+                <h2 className="flex items-center gap-2 text-sm font-extrabold text-foreground">
+                  <Banknote className="size-4 text-emerald-700 dark:text-emerald-400" />
                   <span>
                     {bi(
                       'ملخص الصندوق والتحصيل اليومي',
@@ -1142,7 +1142,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                       'پوختەی سندووق و پارەدانی ئەمڕۆ'
                     )}
                   </span>
-                </div>
+                </h2>
                 <span className="text-xs font-semibold text-muted-foreground-1">
                   <Num value={todayFinanceSummary.paymentCount} /> {bi('عملية قبض', 'receipts', 'وەسڵ')}
                 </span>
@@ -1219,8 +1219,8 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
           {/* 2. Unsigned / Draft Notes Checklist */}
           <div className="p-4 rounded-2xl bg-card border border-card-line space-y-3">
             <div className="flex items-center justify-between gap-2 border-b border-card-divider pb-2.5">
-              <div className="flex items-center gap-2 text-sm font-extrabold text-foreground">
-                <FileWarning className="size-4 text-amber-600 dark:text-amber-400" />
+              <h2 className="flex items-center gap-2 text-sm font-extrabold text-foreground">
+                <FileWarning className="size-4 text-amber-700 dark:text-amber-400" />
                 <span>
                   {bi(
                     'ملاحظات الجلسات غير الموقعة (المسودات)',
@@ -1228,7 +1228,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                     'تێبینییە واژوونەکراوەکانی دانیشتنەکان (مسۆدەکان)'
                   )}
                 </span>
-              </div>
+              </h2>
               <span className="text-xs font-bold text-muted-foreground-1">
                 {loadingDrafts
                   ? bi('جاري الفحص...', 'Scanning...', 'پشکنین دەکرێت...')
@@ -1237,7 +1237,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
             </div>
 
             {draftSessions.length === 0 ? (
-              <p className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold py-2">
+              <p className="text-xs text-emerald-700 dark:text-emerald-300 font-semibold py-2">
                 {bi(
                   'ممتاز! جميع جلساتك معتمدة ومقفلة بالختم ولا توجد مسودات معلّقة.',
                   'All clear! Every session note is finalized and sealed.',
@@ -1255,13 +1255,13 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                       className="p-3 rounded-xl bg-surface border border-line-2 flex items-center justify-between gap-2 text-xs"
                     >
                       <div className="min-w-0">
-                        <p className={`font-bold text-foreground truncate ${privacyBlur ? 'blur-xs' : ''}`}>
+                        <p className={`font-bold text-foreground leading-snug ${privacyBlur ? 'blur-xs' : ''}`}>
                           {name}
                         </p>
                         <p className="text-muted-foreground-1 mt-0.5">
                           {bi('جلسة #', 'Session #', 'دانیشتن #')}
                           <Num value={draft.sessionNumber} /> ·{' '}
-                          <bdi dir="ltr" className="font-mono">{draft.sessionDate}</bdi>
+                          <bdi dir="ltr" className="font-mono">{formatDateDDMMYYYY(draft.sessionDate)}</bdi>
                         </p>
                       </div>
                       {p && (
@@ -1283,8 +1283,8 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
           {/* 3. Tomorrow's Schedule + WhatsApp Reminders */}
           <div className="p-4 rounded-2xl bg-card border border-card-line space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-card-divider pb-2.5">
-              <div className="flex items-center gap-2 text-sm font-extrabold text-foreground">
-                <MessageCircle className="size-4 text-emerald-600 dark:text-emerald-400" />
+              <h2 className="flex items-center gap-2 text-sm font-extrabold text-foreground">
+                <MessageCircle className="size-4 text-emerald-700 dark:text-emerald-400" />
                 <span>
                   {bi(
                     `مواعيد الغد وتذكيرات واتساب (${formatClinicalDate(tomorrow, language)})`,
@@ -1292,7 +1292,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                     `خشتەی سبەینێ و یادخەرەوەکانی واتساپ (${formatClinicalDate(tomorrow, language)})`
                   )}
                 </span>
-              </div>
+              </h2>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold text-muted-foreground-1">
                   <Num value={tomorrowAppointments.length} /> {bi('موعد', 'visits', 'سەردان')}
@@ -1348,9 +1348,9 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                             {appt.patientName}
                           </span>
                           {appt.patientPhone && (
-                            <span dir="ltr" className="font-mono text-muted-foreground-1">
+                            <bdi dir="ltr" className="font-mono text-muted-foreground-1">
                               {formatIraqiPhoneDisplay(appt.patientPhone)}
-                            </span>
+                            </bdi>
                           )}
                         </div>
                       </div>
@@ -1379,7 +1379,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                             href={waUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="min-h-[38px] px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold inline-flex items-center gap-1.5"
+                            className="min-h-[38px] px-3.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold inline-flex items-center gap-1.5"
                           >
                             <MessageCircle className="size-3.5" />
                             <span>{bi('تذكير واتساب', 'WhatsApp', 'واتساپ')}</span>

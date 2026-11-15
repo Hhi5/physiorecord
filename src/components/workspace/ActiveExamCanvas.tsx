@@ -102,6 +102,7 @@ export const ActiveExamCanvas: React.FC<ActiveExamCanvasProps> = ({
 
   const [isDragOver, setIsDragOver] = useState(false);
   const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
+  const [pendingRemoveWidgetId, setPendingRemoveWidgetId] = useState<string | null>(null);
 
   const [customDefinitions, setCustomDefinitions] = useState<CustomWidgetDefinition[]>(() =>
     ClinicOperationsService.getCustomWidgets()
@@ -249,13 +250,13 @@ export const ActiveExamCanvas: React.FC<ActiveExamCanvasProps> = ({
             <Inbox className="size-6" />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-foreground">
+            <h2 className="text-sm font-bold text-foreground">
               {bi(
                 'لم يتم إدراج أي فحوصات سريرية بعد',
                 'No clinical examination cards added yet',
                 'هێشتا هیچ کارتی پشکنینێکی کلینیکی زیاد نەکراوە'
               )}
-            </h4>
+            </h2>
             <p className="text-xs text-muted-foreground-1 max-w-md mx-auto mt-1">
               {bi(
                 'افتح أدوات الفحص من الشريط العلوي لإدراج الأدوات المناسبة (مخطط الجسم، ROM، MMT، خريطة القطاعات الجلدية، أو الفحوصات العظمية).',
@@ -293,15 +294,15 @@ export const ActiveExamCanvas: React.FC<ActiveExamCanvasProps> = ({
                   <div className="p-1.5 rounded-lg bg-card border border-card-line shadow-2xs shrink-0">
                     {icon}
                   </div>
-                  <h3 className="text-xs font-bold text-foreground tracking-wide truncate">{title}</h3>
+                  <h2 className="text-xs font-bold text-foreground tracking-wide truncate">{title}</h2>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     aria-expanded={!isCollapsed}
                     onClick={() => toggleCollapse(widgetId)}
-                    className="py-1 px-2.5 text-muted-foreground-1 hover:text-foreground rounded-lg hover:bg-surface transition-colors cursor-pointer inline-flex items-center gap-1"
+                    className="min-h-[36px] py-1 px-2.5 text-muted-foreground-1 hover:text-foreground rounded-lg hover:bg-surface transition-colors cursor-pointer inline-flex items-center gap-1"
                     title={
                       isCollapsed
                         ? bi('توسيع', 'Expand', 'کردنەوە')
@@ -316,16 +317,38 @@ export const ActiveExamCanvas: React.FC<ActiveExamCanvasProps> = ({
                     {isCollapsed ? <ChevronDown className="size-3.5" /> : <ChevronUp className="size-3.5" />}
                   </button>
 
-                  {!readOnly && (
-                    <button
-                      type="button"
-                      onClick={() => onRemoveWidget(widgetId)}
-                      className="p-1.5 text-muted-foreground-1 hover:text-rose-600 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer"
-                      title={bi('إزالة الفحص', 'Remove card', 'لابردنی پشکنین')}
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  )}
+                  {!readOnly &&
+                    (pendingRemoveWidgetId === widgetId ? (
+                      <div className="inline-flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPendingRemoveWidgetId(null);
+                            onRemoveWidget(widgetId);
+                          }}
+                          className="min-h-[36px] px-2.5 py-1 rounded-lg bg-rose-600 text-white text-xs font-bold cursor-pointer"
+                        >
+                          {bi('تأكيد الإزالة', 'Confirm Remove', 'دڵنیاکردنەوەی لابردن')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPendingRemoveWidgetId(null)}
+                          className="min-h-[36px] px-2.5 py-1 rounded-lg bg-surface border border-line-2 text-foreground text-xs font-semibold cursor-pointer"
+                        >
+                          {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setPendingRemoveWidgetId(widgetId)}
+                        className="min-w-[36px] min-h-[36px] p-1.5 text-muted-foreground-1 hover:text-rose-600 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer inline-flex items-center justify-center"
+                        aria-label={bi('إزالة الفحص', 'Remove card', 'لابردنی پشکنین')}
+                        title={bi('إزالة الفحص', 'Remove card', 'لابردنی پشکنین')}
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    ))}
                 </div>
               </div>
 

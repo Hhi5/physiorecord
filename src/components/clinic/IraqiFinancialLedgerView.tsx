@@ -356,6 +356,46 @@ export const IraqiFinancialLedgerView: React.FC = () => {
     return () => clearTimeout(timer);
   }, [undoItem]);
 
+  useEffect(() => {
+    const hasModal =
+      showNewInvoiceForm ||
+      showNewExpenseForm ||
+      Boolean(pkgAdjustInvoice) ||
+      Boolean(voidTargetInvoice) ||
+      Boolean(historyInvoice);
+    if (!hasModal) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (historyInvoice) {
+        setHistoryInvoice(null);
+        return;
+      }
+      if (voidTargetInvoice) {
+        setVoidTargetInvoice(null);
+        return;
+      }
+      if (pkgAdjustInvoice) {
+        setPkgAdjustInvoice(null);
+        return;
+      }
+      if (showNewExpenseForm) {
+        setShowNewExpenseForm(false);
+        return;
+      }
+      if (showNewInvoiceForm) {
+        setShowNewInvoiceForm(false);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [
+    showNewInvoiceForm,
+    showNewExpenseForm,
+    pkgAdjustInvoice,
+    voidTargetInvoice,
+    historyInvoice,
+  ]);
+
   const handleUndoDelete = () => {
     if (!undoItem) return;
     setExpenses(ClinicOperationsService.restoreExpenseIQD(undoItem.data));
@@ -723,9 +763,9 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               setShowNewExpenseForm(true);
               setShowNewInvoiceForm(false);
             }}
-            className="py-2 px-3 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-layer-foreground text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+            className="min-h-[36px] py-2 px-3 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-layer-foreground text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
           >
-            <TrendingDown className="size-3.5 text-rose-600 dark:text-rose-400" />
+            <TrendingDown className="size-3.5 text-rose-700 dark:text-rose-400" />
             <span>{bi('+ تسجيل مصروف', '+ Log Expense', '+ تۆمارکردنی خەرجی')}</span>
           </button>
 
@@ -736,7 +776,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               setShowNewInvoiceForm(true);
               setShowNewExpenseForm(false);
             }}
-            className="py-2 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-all cursor-pointer whitespace-nowrap"
+            className="min-h-[36px] py-2 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-all cursor-pointer whitespace-nowrap"
           >
             <Plus className="size-4" />
             <span>
@@ -763,7 +803,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
           <button
             type="button"
             onClick={handleUndoDelete}
-            className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-bold inline-flex items-center gap-1.5 cursor-pointer"
+            className="min-h-[36px] px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-bold inline-flex items-center gap-1.5 cursor-pointer"
           >
             <RotateCcw className="size-3.5" />
             <span>{bi('تراجع (8 ثوانٍ)', 'Undo (8s)', 'گەڕاندنەوە (8 چرکە)')}</span>
@@ -775,14 +815,14 @@ export const IraqiFinancialLedgerView: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-card p-4 sm:p-5 rounded-2xl border border-card-line shadow-2xs flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <span className="text-xs font-semibold text-muted-foreground-1 truncate block">
+            <span className="text-xs font-semibold text-muted-foreground-1 block leading-snug">
               {bi(
                 'إجمالي الفواتير الصادرة (الصافي)',
                 `Total Net Billed (${currency.code})`,
                 'کۆی پسوولە دەرچووەکان (سافی)'
               )}
             </span>
-            <p className="text-lg sm:text-xl xl:text-2xl font-bold text-foreground tabular-nums mt-1 truncate">
+            <p className="text-lg sm:text-xl xl:text-2xl font-bold text-foreground tabular-nums mt-1 break-words">
               <Money amount={totalBilledIQD} />
             </p>
             <p className="text-xs text-muted-foreground-1 mt-1 tabular-nums">
@@ -797,17 +837,17 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
         <div className="bg-card p-4 sm:p-5 rounded-2xl border border-card-line shadow-2xs flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <span className="text-xs font-semibold text-muted-foreground-1 truncate block">
+            <span className="text-xs font-semibold text-muted-foreground-1 block leading-snug">
               {bi(
                 'المقبوضات الفعلية بالصندوق',
                 `Total Cash Collected (${currency.code})`,
                 'کۆی پارەی وەرگیراو لە سندووق'
               )}
             </span>
-            <p className="text-lg sm:text-xl xl:text-2xl font-bold text-emerald-700 dark:text-emerald-300 tabular-nums mt-1 truncate">
+            <p className="text-lg sm:text-xl xl:text-2xl font-bold text-emerald-700 dark:text-emerald-300 tabular-nums mt-1 break-words">
               <Money amount={totalCollectedIQD} colorize={false} />
             </p>
-            <p className="text-xs text-muted-foreground-1 mt-1 truncate">
+            <p className="text-xs text-muted-foreground-1 mt-1 leading-snug">
               {bi(
                 'نقداً + زين كاش + كي كارد',
                 'Cash + ZainCash + QiCard',
@@ -822,7 +862,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
         <div className="bg-card p-4 sm:p-5 rounded-2xl border border-card-line shadow-2xs flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <span className="text-xs font-semibold text-muted-foreground-1 truncate block">
+            <span className="text-xs font-semibold text-muted-foreground-1 block leading-snug">
               {bi(
                 'إجمالي ديون المرضى المتبقية',
                 `Outstanding Debt (${currency.code})`,
@@ -830,13 +870,13 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               )}
             </span>
             <p
-              className={`text-lg sm:text-xl xl:text-2xl font-bold tabular-nums mt-1 truncate ${
+              className={`text-lg sm:text-xl xl:text-2xl font-bold tabular-nums mt-1 break-words ${
                 totalDebtIQD > 0 ? 'text-amber-700 dark:text-amber-300' : 'text-foreground'
               }`}
             >
               <Money amount={totalDebtIQD} colorize={false} />
             </p>
-            <p className="text-xs text-muted-foreground-1 mt-1 tabular-nums truncate">
+            <p className="text-xs text-muted-foreground-1 mt-1 tabular-nums leading-snug">
               <Num value={activeInvoices.filter((i) => i.balanceDueIQD > 0).length} />{' '}
               {bi(
                 'حسابات بذمتها مبالغ متبقية',
@@ -852,7 +892,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
         <div className="bg-card p-4 sm:p-5 rounded-2xl border border-card-line shadow-2xs flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <span className="text-xs font-semibold text-muted-foreground-1 truncate block">
+            <span className="text-xs font-semibold text-muted-foreground-1 block leading-snug">
               {bi(
                 'صافي التدفق النقدي (بعد المصاريف)',
                 `Net Cash Flow (${currency.code})`,
@@ -860,7 +900,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               )}
             </span>
             <p
-              className={`text-lg sm:text-xl xl:text-2xl font-bold tabular-nums mt-1 truncate ${
+              className={`text-lg sm:text-xl xl:text-2xl font-bold tabular-nums mt-1 break-words ${
                 netCashFlowIQD < 0
                   ? 'text-rose-700 dark:text-rose-300'
                   : 'text-foreground'
@@ -868,7 +908,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
             >
               <Money amount={netCashFlowIQD} />
             </p>
-            <p className="text-xs text-rose-700 dark:text-rose-300 mt-1 tabular-nums truncate">
+            <p className="text-xs text-rose-700 dark:text-rose-300 mt-1 tabular-nums leading-snug">
               {bi('المصاريف: ', 'Expenses: ', 'خەرجییەکان: ')}
               <Money amount={totalExpensesIQD} colorize={false} />
             </p>
@@ -888,22 +928,25 @@ export const IraqiFinancialLedgerView: React.FC = () => {
           }}
         >
           <form
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="fin-new-inv-title"
             onSubmit={handleCreateInvoice}
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md bg-card h-full border-s border-card-line shadow-2xl flex flex-col overflow-hidden"
           >
             <div className="px-5 py-4 border-b border-card-divider flex items-center justify-between bg-muted/40">
-              <h3 className="text-sm font-bold text-foreground">
+              <h2 id="fin-new-inv-title" className="text-sm font-bold text-foreground">
                 {bi(
                   'إصدار فاتورة علاج طبيعي أو باقة (IQD)',
                   'Create IQD Invoice or Package',
                   'دەرکردنی پسوولەی چارەسەری سروشتی یان پاکێج (IQD)'
                 )}
-              </h3>
+              </h2>
               <button
                 type="button"
                 onClick={() => setShowNewInvoiceForm(false)}
-                className="p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer"
                 aria-label={bi('إغلاق', 'Close', 'داخستن')}
               >
                 <X className="size-4" />
@@ -912,9 +955,9 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                <span className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi('نوع الفاتورة:', 'Invoice Type:', 'جۆری پسوولە:')}
-                </label>
+                </span>
                 <div className="grid grid-cols-3 gap-2">
                   {(
                     [
@@ -927,7 +970,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                       key={preset.id}
                       type="button"
                       onClick={() => handleInvoicePresetChange(preset.id)}
-                      className={`py-2 px-3 rounded-xl text-xs font-semibold text-center transition-all cursor-pointer ${
+                      className={`min-h-[36px] py-2 px-3 rounded-xl text-xs font-semibold text-center transition-all cursor-pointer ${
                         invType === preset.id
                           ? 'bg-primary text-primary-foreground shadow-2xs font-bold'
                           : 'bg-surface border border-line-2 text-muted-foreground-1 hover:text-foreground'
@@ -941,10 +984,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
               {invType === 'rehab_package' && (
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="fin-inv-pkg-sessions" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('عدد جلسات الكورس:', 'Course Sessions Count:', 'ژمارەی دانیشتنەکانی کۆرس:')}
                   </label>
                   <input
+                    id="fin-inv-pkg-sessions"
                     type="number"
                     min="1"
                     max="100"
@@ -964,7 +1008,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               )}
 
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                <label htmlFor="fin-inv-patient" className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi(
                     'اختيار مريض مسجل (إلزامي):',
                     'Select Registered Patient (Required):',
@@ -972,6 +1016,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                   )}
                 </label>
                 <select
+                  id="fin-inv-patient"
                   required
                   value={invPatientId}
                   onChange={(e) => setInvPatientId(e.target.value)}
@@ -993,10 +1038,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                <label htmlFor="fin-inv-title" className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi('بيان الخدمة العلاجية:', 'Service Description:', 'بەیانی خزمەتگوزاریی چارەسەر:')}
                 </label>
                 <input
+                  id="fin-inv-title"
                   type="text"
                   value={invTitle}
                   onChange={(e) => setInvTitle(e.target.value)}
@@ -1006,7 +1052,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
               {practiceLocationsEnabled && activePracticeLocations.length > 0 && (
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="fin-inv-location" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi(
                       'موقع تقديم الخدمة (اختياري):',
                       'Practice Location (Optional):',
@@ -1014,6 +1060,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                     )}
                   </label>
                   <select
+                    id="fin-inv-location"
                     value={invLocationId}
                     onChange={(e) => setInvLocationId(e.target.value)}
                     className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
@@ -1032,22 +1079,30 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="fin-inv-total" className="text-xs font-semibold text-foreground block mb-1.5">
                     {homeVisitsEnabled
                       ? bi('رسوم الخدمة العلاجية:', 'Service Amount:', 'کرێی خزمەتگوزاریی چارەسەر:')
                       : bi('المبلغ الكلي (د.ع):', 'Total Amount (IQD):', 'کۆی بڕی پارە (د.ع):')}
                   </label>
                   <MoneyInput
+                    id="fin-inv-total"
+                    ariaLabel={
+                      homeVisitsEnabled
+                        ? bi('رسوم الخدمة العلاجية', 'Service Amount', 'کرێی خزمەتگوزاریی چارەسەر')
+                        : bi('المبلغ الكلي', 'Total Amount', 'کۆی بڕی پارە')
+                    }
                     value={invTotalIQD}
                     onChange={setInvTotalIQD}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="fin-inv-discount" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('الخصم الممنوح (د.ع):', 'Discount (IQD):', 'داشکاندن (د.ع):')}
                   </label>
                   <MoneyInput
+                    id="fin-inv-discount"
+                    ariaLabel={bi('الخصم الممنوح', 'Discount', 'داشکاندن')}
                     value={invDiscountIQD}
                     onChange={setInvDiscountIQD}
                   />
@@ -1056,7 +1111,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
               {homeVisitsEnabled && (
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="fin-inv-travel" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi(
                       'أجرة التنقل / الزيارة المنزلية (اختياري):',
                       'Home Visit Travel Fee (Optional):',
@@ -1064,6 +1119,8 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                     )}
                   </label>
                   <MoneyInput
+                    id="fin-inv-travel"
+                    ariaLabel={bi('أجرة التنقل', 'Home Visit Travel Fee', 'کرێی هاتوچۆ')}
                     value={invTravelFeeIQD}
                     onChange={setInvTravelFeeIQD}
                   />
@@ -1080,10 +1137,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1.5">
+                    <label htmlFor="fin-inv-pay-currency" className="text-xs font-semibold text-foreground block mb-1.5">
                       {bi('عملة الدفعة المستلمة:', 'Payment Currency:', 'دراوی پارەدانی وەرگیراو:')}
                     </label>
                     <select
+                      id="fin-inv-pay-currency"
                       value={invPayCurrency}
                       onChange={(e) => {
                         setInvPayCurrency(e.target.value);
@@ -1104,10 +1162,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1.5">
+                    <label htmlFor="fin-inv-pay-method" className="text-xs font-semibold text-foreground block mb-1.5">
                       {bi('طريقة الدفع:', 'Payment Method:', 'شێوازی پارەدان:')}
                     </label>
                     <select
+                      id="fin-inv-pay-method"
                       value={invMethod}
                       onChange={(e) => setInvMethod(e.target.value as IraqiPaymentMethod)}
                       className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
@@ -1123,7 +1182,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
                 {invPayCurrency === currency.code ? (
                   <div>
-                    <label className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 block mb-1.5">
+                    <label htmlFor="fin-inv-paid" className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 block mb-1.5">
                       {bi(
                         `المبلغ المقبوض الآن (${currency.symbolAr}):`,
                         `Paid Today (${currency.code}):`,
@@ -1131,6 +1190,8 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                       )}
                     </label>
                     <MoneyInput
+                      id="fin-inv-paid"
+                      ariaLabel={bi('المبلغ المقبوض الآن', 'Paid Today', 'بڕی وەرگیراوی ئێستا')}
                       value={invPaidIQD}
                       onChange={setInvPaidIQD}
                       className="w-full py-2 text-xs rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-foreground font-bold tabular-nums focus:outline-none"
@@ -1139,7 +1200,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                 ) : (
                   <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/25">
                     <div>
-                      <label className="text-xs font-semibold text-foreground block mb-1">
+                      <label htmlFor="fin-inv-fx-amt" className="text-xs font-semibold text-foreground block mb-1">
                         {bi(
                           `المبلغ بعملة (${invPayCurrency}):`,
                           `Paid (${invPayCurrency}):`,
@@ -1147,6 +1208,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                         )}
                       </label>
                       <input
+                        id="fin-inv-fx-amt"
                         type="number"
                         step="any"
                         min={0}
@@ -1157,7 +1219,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-foreground block mb-1">
+                      <label htmlFor="fin-inv-fx-rate" className="text-xs font-semibold text-foreground block mb-1">
                         {bi(
                           `سعر الصرف (1 ${invPayCurrency} = ? ${currency.code}):`,
                           `FX Rate (1 ${invPayCurrency} = ? ${currency.code}):`,
@@ -1165,6 +1227,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                         )}
                       </label>
                       <input
+                        id="fin-inv-fx-rate"
                         type="number"
                         step="any"
                         min={0}
@@ -1178,7 +1241,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                 )}
 
                 {invError && (
-                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-600 dark:text-rose-400">
+                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-700 dark:text-rose-300">
                     {invError}
                   </div>
                 )}
@@ -1186,7 +1249,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
               {invMethod === 'other' && (
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="fin-inv-custom-method" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi(
                       'أدخل وسيلة الدفع الأخرى:',
                       'Enter Custom Payment Method:',
@@ -1194,6 +1257,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                     )}
                   </label>
                   <input
+                    id="fin-inv-custom-method"
                     type="text"
                     value={invCustomMethod}
                     onChange={(e) => setInvCustomMethod(e.target.value)}
@@ -1255,10 +1319,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                       <div className="space-y-3 pt-1 border-t border-card-divider">
                         <div className="grid grid-cols-2 gap-2.5">
                           <div>
-                            <label className="text-xs font-semibold text-foreground block mb-1">
+                            <label htmlFor="fin-inv-inst-count" className="text-xs font-semibold text-foreground block mb-1">
                               {bi('عدد الأقساط:', 'Installments:', 'ژمارەی قیستەکان:')}
                             </label>
                             <select
+                              id="fin-inv-inst-count"
                               value={invInstallmentCount}
                               onChange={(e) =>
                                 setInvInstallmentCount(Number(e.target.value))
@@ -1276,10 +1341,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                           </div>
 
                           <div>
-                            <label className="text-xs font-semibold text-foreground block mb-1">
+                            <label htmlFor="fin-inv-inst-interval" className="text-xs font-semibold text-foreground block mb-1">
                               {bi('الفاصل الزمني:', 'Interval:', 'ماوەی نێوان قیستەکان:')}
                             </label>
                             <select
+                              id="fin-inv-inst-interval"
                               value={invInstallmentIntervalDays}
                               onChange={(e) =>
                                 setInvInstallmentIntervalDays(Number(e.target.value))
@@ -1300,7 +1366,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                         </div>
 
                         <div>
-                          <label className="text-xs font-semibold text-foreground block mb-1">
+                          <label htmlFor="fin-inv-inst-start" className="text-xs font-semibold text-foreground block mb-1">
                             {bi(
                               'تاريخ استحقاق القسط الأول:',
                               'First Due Date:',
@@ -1308,6 +1374,12 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                             )}
                           </label>
                           <DatePickerInput
+                            id="fin-inv-inst-start"
+                            ariaLabel={bi(
+                              'تاريخ استحقاق القسط الأول',
+                              'First Due Date',
+                              'بەرواری گەیشتنی قیستی یەکەم'
+                            )}
                             value={invInstallmentStartDate}
                             onChange={setInvInstallmentStartDate}
                           />
@@ -1320,7 +1392,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                                 key={item.id}
                                 className="flex items-center justify-between gap-2 text-muted-foreground-1 tabular-nums"
                               >
-                                <span className="truncate">
+                                <span>
                                   {bi(item.labelAr, item.labelEn)} (
                                   <bdi dir="ltr">{formatDateDDMMYYYY(item.dueDate)}</bdi>)
                                 </span>
@@ -1387,11 +1459,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                       <span>{bi('الصافي المطلوب:', 'Net Due:', 'بڕی سافی داواکراو:')}</span>
                       <Money amount={netDue} />
                     </div>
-                    <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                    <div className="flex justify-between text-emerald-700 dark:text-emerald-300">
                       <span>{bi('المدفوع الآن:', 'Paid Now:', 'پارەی دراوی ئێستا:')}</span>
                       <Money amount={Math.min(netDue, Math.max(0, effPaid))} />
                     </div>
-                    <div className="flex justify-between font-bold text-amber-600 dark:text-amber-400 border-t border-card-divider pt-1.5">
+                    <div className="flex justify-between font-bold text-amber-700 dark:text-amber-300 border-t border-card-divider pt-1.5">
                       <span>{bi('المتبقي بذمة المريض:', 'Remaining:', 'بڕی ماوە لەسەر نەخۆش:')}</span>
                       <Money amount={Math.max(0, netDue - Math.max(0, effPaid))} />
                     </div>
@@ -1409,13 +1481,13 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                     refreshRecoveredDrafts()
                   );
                 }}
-                className="py-2 px-4 rounded-xl bg-layer border border-layer-line text-layer-foreground text-xs font-semibold cursor-pointer"
+                className="min-h-[36px] py-2 px-4 rounded-xl bg-layer border border-layer-line text-layer-foreground text-xs font-semibold cursor-pointer"
               >
                 {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
               </button>
               <button
                 type="submit"
-                className="py-2 px-5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold shadow-xs cursor-pointer"
+                className="min-h-[36px] py-2 px-5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold shadow-xs cursor-pointer"
               >
                 {bi(
                   'إصدار الفاتورة وحفظ الوصل',
@@ -1437,22 +1509,25 @@ export const IraqiFinancialLedgerView: React.FC = () => {
           }}
         >
           <form
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="fin-new-exp-title"
             onSubmit={handleAddExpense}
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md bg-card h-full border-s border-card-line shadow-2xl flex flex-col overflow-hidden"
           >
             <div className="px-5 py-4 border-b border-card-divider flex items-center justify-between bg-muted/40">
-              <h3 className="text-sm font-bold text-foreground">
+              <h2 id="fin-new-exp-title" className="text-sm font-bold text-foreground">
                 {bi(
                   'تسجيل مصروف تشغيلي للعيادة (IQD)',
                   'Log Clinic Operating Expense (IQD)',
                   'تۆمارکردنی خەرجیی کارپێکردنی کلینیک (IQD)'
                 )}
-              </h3>
+              </h2>
               <button
                 type="button"
                 onClick={() => setShowNewExpenseForm(false)}
-                className="p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer"
                 aria-label={bi('إغلاق', 'Close', 'داخستن')}
               >
                 <X className="size-4" />
@@ -1461,10 +1536,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                <label htmlFor="fin-exp-cat" className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi('تبويب المصروف:', 'Category:', 'پۆلی خەرجی:')}
                 </label>
                 <select
+                  id="fin-exp-cat"
                   value={expCategory}
                   onChange={(e) => setExpCategory(e.target.value as ExpenseCategoryIQD)}
                   className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
@@ -1503,7 +1579,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               </div>
               {expCategory === 'marketing_other' && (
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="fin-exp-custom-cat" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi(
                       'تسمية فئة مخصصة (اختياري):',
                       'Custom Category Label (Optional):',
@@ -1511,6 +1587,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                     )}
                   </label>
                   <input
+                    id="fin-exp-custom-cat"
                     type="text"
                     value={expCustomCategoryLabel}
                     onChange={(e) => setExpCustomCategoryLabel(e.target.value)}
@@ -1524,10 +1601,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                 </div>
               )}
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                <label htmlFor="fin-exp-patient" className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi('ربط بمريض (اختياري):', 'Link to Patient (Optional):', 'بەستنەوە بە نەخۆش (ئارەزوومەندانە):')}
                 </label>
                 <select
+                  id="fin-exp-patient"
                   value={expPatientId}
                   onChange={(e) => setExpPatientId(e.target.value)}
                   className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
@@ -1543,10 +1621,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                <label htmlFor="fin-exp-title" className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi('بيان المصروف:', 'Description:', 'بەیانی خەرجی:')}
                 </label>
                 <input
+                  id="fin-exp-title"
                   type="text"
                   required
                   value={expTitle}
@@ -1560,19 +1639,22 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                <label htmlFor="fin-exp-amt" className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi('المبلغ (د.ع):', 'Amount (IQD):', 'بڕی پارە (د.ع):')}
                 </label>
                 <MoneyInput
+                  id="fin-exp-amt"
+                  ariaLabel={bi('مبلغ المصروف', 'Expense amount', 'بڕی خەرجی')}
                   value={expAmountIQD}
                   onChange={setExpAmountIQD}
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                <label htmlFor="fin-exp-notes" className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi('ملاحظات (اختياري):', 'Notes (Optional):', 'تێبینی (ئارەزوومەندانە):')}
                 </label>
                 <input
+                  id="fin-exp-notes"
                   type="text"
                   value={expNotes}
                   onChange={(e) => setExpNotes(e.target.value)}
@@ -1590,13 +1672,13 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowNewExpenseForm(false)}
-                className="py-2 px-4 rounded-xl bg-layer border border-layer-line text-layer-foreground text-xs font-semibold cursor-pointer"
+                className="min-h-[36px] py-2 px-4 rounded-xl bg-layer border border-layer-line text-layer-foreground text-xs font-semibold cursor-pointer"
               >
                 {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
               </button>
               <button
                 type="submit"
-                className="py-2 px-5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold cursor-pointer"
+                className="min-h-[36px] py-2 px-5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold cursor-pointer"
               >
                 {bi('حفظ المصروف', 'Save Expense', 'پاشەکەوتکردنی خەرجی')}
               </button>
@@ -1613,13 +1695,13 @@ export const IraqiFinancialLedgerView: React.FC = () => {
         >
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-foreground">
+              <h2 className="text-sm font-bold text-foreground">
                 {bi(
                   `استلام دفعة مالية من المريض: ${selectedInvoiceForPayment.patientName}`,
                   `Collect Payment from: ${selectedInvoiceForPayment.patientName}`,
                   `وەرگرتنی پارە لە نەخۆش: ${selectedInvoiceForPayment.patientName}`
                 )}
-              </h3>
+              </h2>
               <p className="text-xs text-muted-foreground-1 font-mono mt-0.5">
                 {selectedInvoiceForPayment.invoiceNumber} ·{' '}
                 {bi('المتبقي بالذمة: ', 'Balance Due: ', 'بڕی ماوە لەسەر نەخۆش: ')}
@@ -1629,7 +1711,8 @@ export const IraqiFinancialLedgerView: React.FC = () => {
             <button
               type="button"
               onClick={() => setSelectedInvoiceForPayment(null)}
-              className="p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground cursor-pointer"
+              aria-label={bi('إغلاق نموذج استلام الدفعة', 'Close payment collection form', 'داخستنی فۆرمی وەرگرتنی پارە')}
+              className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer"
             >
               <X className="size-4" />
             </button>
@@ -1637,10 +1720,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="text-xs font-semibold text-foreground block mb-1.5">
+              <label htmlFor="fin-pay-currency" className="text-xs font-semibold text-foreground block mb-1.5">
                 {bi('عملة الدفع:', 'Currency:', 'دراوی پارەدان:')}
               </label>
               <select
+                id="fin-pay-currency"
                 value={paymentCurrency}
                 onChange={(e) => {
                   setPaymentCurrency(e.target.value);
@@ -1662,7 +1746,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
             {paymentCurrency === currency.code ? (
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                <label htmlFor="fin-pay-amt" className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi(
                     `المبلغ المستلم اليوم (${currency.symbolAr}):`,
                     `Payment Amount (${currency.code}):`,
@@ -1670,6 +1754,8 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                   )}
                 </label>
                 <MoneyInput
+                  id="fin-pay-amt"
+                  ariaLabel={bi('المبلغ المستلم اليوم', 'Payment Amount', 'بڕی وەرگیراوی ئەمڕۆ')}
                   value={paymentAmountIQD}
                   onChange={(val) =>
                     setPaymentAmountIQD(
@@ -1682,7 +1768,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
             ) : (
               <>
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="fin-pay-fx-amt" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi(
                       `المبلغ بعملة (${paymentCurrency}):`,
                       `Amount (${paymentCurrency}):`,
@@ -1690,6 +1776,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                     )}
                   </label>
                   <input
+                    id="fin-pay-fx-amt"
                     type="number"
                     step="any"
                     min={0}
@@ -1700,7 +1787,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="fin-pay-fx-rate" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi(
                       `سعر الصرف (1 ${paymentCurrency} = ? ${currency.code}):`,
                       `FX Rate (1 ${paymentCurrency} = ? ${currency.code}):`,
@@ -1708,6 +1795,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                     )}
                   </label>
                   <input
+                    id="fin-pay-fx-rate"
                     type="number"
                     step="any"
                     min={0}
@@ -1721,10 +1809,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
             )}
 
             <div>
-              <label className="text-xs font-semibold text-foreground block mb-1.5">
+              <label htmlFor="fin-pay-method" className="text-xs font-semibold text-foreground block mb-1.5">
                 {bi('وسيلة الدفع:', 'Payment Method:', 'شێوازی پارەدان:')}
               </label>
               <select
+                id="fin-pay-method"
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value as IraqiPaymentMethod)}
                 className="w-full px-3 py-2 text-xs rounded-xl bg-card border border-card-line text-foreground"
@@ -1739,10 +1828,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
             {paymentMethod === 'other' && (
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                <label htmlFor="fin-pay-custom-method" className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi('حدد وسيلة الدفع الأخرى:', 'Specify Custom Method:', 'شێوازی پارەدانی تر دیاری بکە:')}
                 </label>
                 <input
+                  id="fin-pay-custom-method"
                   type="text"
                   value={paymentCustomMethod}
                   onChange={(e) => setPaymentCustomMethod(e.target.value)}
@@ -1753,10 +1843,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
             )}
 
             <div className="sm:col-span-2 lg:col-span-4">
-              <label className="text-xs font-semibold text-foreground block mb-1.5">
+              <label htmlFor="fin-pay-note" className="text-xs font-semibold text-foreground block mb-1.5">
                 {bi('ملاحظات الوصل:', 'Receipt Notes:', 'تێبینیی وەسڵ:')}
               </label>
               <input
+                id="fin-pay-note"
                 type="text"
                 value={paymentNote}
                 onChange={(e) => setPaymentNote(e.target.value)}
@@ -1779,7 +1870,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
           )}
 
           {paymentError && (
-            <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-600 dark:text-rose-400">
+            <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-700 dark:text-rose-300">
               {paymentError}
             </div>
           )}
@@ -1787,7 +1878,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
           <div className="flex justify-end">
             <button
               type="submit"
-              className="py-2 px-5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold shadow-xs cursor-pointer"
+              className="min-h-[36px] py-2 px-5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold shadow-xs cursor-pointer"
             >
               {bi(
                 'تأكيد استلام الدفعة وإصدار وصل قبض',
@@ -1850,8 +1941,9 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               <button
                 key={tab.id}
                 type="button"
+                aria-pressed={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-1.5 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap inline-flex items-center gap-1.5 ${
+                className={`min-h-[36px] py-1.5 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap inline-flex items-center gap-1.5 ${
                   activeTab === tab.id
                     ? 'bg-layer text-primary shadow-2xs border border-layer-line'
                     : 'text-muted-foreground-1 hover:text-foreground'
@@ -1876,7 +1968,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                   buildInvoicesCsv(invoices, currency.code)
                 )
               }
-              className="px-2.5 py-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+              className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
             >
               <Download className="size-3.5 text-primary" />
               <span>{bi('CSV الفواتير', 'Invoices CSV', 'CSV پسوولەکان')}</span>
@@ -1889,7 +1981,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                   buildPaymentsCsv(invoices, currency.code)
                 )
               }
-              className="px-2.5 py-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+              className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
             >
               <Download className="size-3.5 text-primary" />
               <span>{bi('CSV الدفعات', 'Payments CSV', 'CSV پارەدانەکان')}</span>
@@ -1902,7 +1994,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                   buildExpensesCsv(expenses, currency.code)
                 )
               }
-              className="px-2.5 py-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+              className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
             >
               <Download className="size-3.5 text-primary" />
               <span>{bi('CSV المصاريف', 'Expenses CSV', 'CSV خەرجییەکان')}</span>
@@ -1917,15 +2009,17 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               {/* Live Draft & Close Cash Form */}
               <div className="p-4 rounded-2xl bg-surface border border-card-line space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-sm font-bold text-foreground">
+                  <h2 className="text-sm font-bold text-foreground">
                     {bi(
                       'مسودة إغلاق الصندوق اليومي (Z-Report)',
                       'Daily Cash Close Draft',
                       'ڕەشنووسی داخستنی سندووقی ڕۆژانە (Z-Report)'
                     )}
-                  </h3>
+                  </h2>
                   <input
+                    id="fin-z-date"
                     type="date"
+                    aria-label={bi('تاريخ تقرير الإغلاق اليومي', 'Z-Report date', 'بەرواری ڕاپۆرتی داخستن')}
                     value={zReportDate}
                     onChange={(e) => setZReportDate(e.target.value || localDate())}
                     className="px-2.5 py-1.5 rounded-lg bg-layer border border-layer-line text-xs font-mono text-foreground"
@@ -1975,7 +2069,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="block font-semibold text-foreground mb-1">
+                    <label htmlFor="fin-z-counted-cash" className="block font-semibold text-foreground mb-1">
                       {bi(
                         `النقد الفعلي المعدود في الدرج (${currency.symbolAr}):`,
                         `Counted Physical Cash (${currency.code}):`,
@@ -1983,6 +2077,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                       )}
                     </label>
                     <input
+                      id="fin-z-counted-cash"
                       type="number"
                       step="any"
                       value={zCountedCashInput}
@@ -1992,10 +2087,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-foreground mb-1">
+                    <label htmlFor="fin-z-notes" className="block font-semibold text-foreground mb-1">
                       {bi('ملاحظات الإغلاق (اختياري):', 'Closing Notes (Optional):', 'تێبینیی داخستن (ئارەزوومەندانە):')}
                     </label>
                     <input
+                      id="fin-z-notes"
                       type="text"
                       value={zNotes}
                       onChange={(e) => setZNotes(e.target.value)}
@@ -2023,7 +2119,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                   type="button"
                   disabled={zSaving}
                   onClick={() => void handleCloseZReport()}
-                  className="w-full py-2.5 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed"
+                  className="w-full min-h-[40px] py-2.5 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed"
                 >
                   <FileText className="size-4" />
                   <span>
@@ -2040,13 +2136,13 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
               {/* Saved Z-Reports History */}
               <div className="p-4 rounded-2xl bg-surface border border-card-line space-y-3">
-                <h3 className="text-sm font-bold text-foreground">
+                <h2 className="text-sm font-bold text-foreground">
                   {bi(
                     `سجل تقارير الإغلاق (${cashCloses.length})`,
                     `Closed Z-Reports (${cashCloses.length})`,
                     `تۆماری ڕاپۆرتەکانی داخستن (${cashCloses.length})`
                   )}
-                </h3>
+                </h2>
                 {cashCloses.length === 0 ? (
                   <p className="text-xs text-muted-foreground-1 py-6 text-center">
                     {bi(
@@ -2056,7 +2152,12 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                     )}
                   </p>
                 ) : (
-                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                  <div
+                    tabIndex={0}
+                    role="region"
+                    aria-label={bi('سجل تقارير الإغلاق اليومي', 'Closed Z-Reports history', 'تۆماری ڕاپۆرتەکانی داخستنی ڕۆژانە')}
+                    className="space-y-2 max-h-80 overflow-y-auto focus:outline-none focus:ring-2 focus:ring-primary rounded-xl"
+                  >
                     {cashCloses.map((rep) => (
                       <div
                         key={rep.id}
@@ -2075,7 +2176,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setPrintDoc({ type: 'z_report', zReport: rep })}
-                          className="px-2.5 py-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+                          className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
                         >
                           <Printer className="size-3.5" />
                           <span>{bi('طباعة', 'Print', 'چاپکردن')}</span>
@@ -2091,10 +2192,11 @@ export const IraqiFinancialLedgerView: React.FC = () => {
           <div className="p-5 space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <label className="text-xs font-bold text-foreground">
+                <label htmlFor="fin-monthly-month" className="text-xs font-bold text-foreground">
                   {bi('الشهر المطلوب:', 'Select Month:', 'مانگی داواکراو:')}
                 </label>
                 <input
+                  id="fin-monthly-month"
                   type="month"
                   value={monthlyMonthKey}
                   onChange={(e) => setMonthlyMonthKey(e.target.value || localDate().slice(0, 7))}
@@ -2109,7 +2211,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                     buildMonthlySummaryCsv(monthlySummary)
                   )
                 }
-                className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                className="min-h-[36px] px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <Download className="size-3.5" />
                 <span>
@@ -2131,13 +2233,13 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               </div>
               <div className="p-3.5 rounded-xl bg-surface border border-line-2">
                 <div className="text-muted-foreground-1">{bi('صافي التحصيل', 'Net Collected', 'پوختەی وەرگیراو')}</div>
-                <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-1 tabular-nums">
+                <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300 mt-1 tabular-nums">
                   <Money amount={monthlySummary.netCollectedPrimary} />
                 </div>
               </div>
               <div className="p-3.5 rounded-xl bg-surface border border-line-2">
                 <div className="text-muted-foreground-1">{bi('المصاريف الشهرية', 'Monthly Expenses', 'خەرجیی مانگانە')}</div>
-                <div className="text-sm font-bold text-rose-600 dark:text-rose-400 mt-1 tabular-nums">
+                <div className="text-sm font-bold text-rose-700 dark:text-rose-300 mt-1 tabular-nums">
                   <Money amount={monthlySummary.totalExpensesPrimary} />
                 </div>
               </div>
@@ -2146,7 +2248,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                 <div
                   className={`text-sm font-extrabold mt-1 tabular-nums ${
                     monthlySummary.netCashFlowPrimary < 0
-                      ? 'text-rose-600 dark:text-rose-400'
+                      ? 'text-rose-700 dark:text-rose-300'
                       : 'text-foreground'
                   }`}
                 >
@@ -2157,13 +2259,13 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
             {Object.keys(monthlySummary.byCurrency).length > 0 && (
               <div className="p-4 rounded-xl bg-surface border border-card-line space-y-2 text-xs">
-                <h4 className="font-bold text-foreground">
+                <h2 className="font-bold text-foreground">
                   {bi(
                     'توزيع المقبوضات حسب العملة:',
                     'Collected Breakdown by Payment Currency:',
                     'دابەشبوونی وەرگیراوەکان بەپێی دراو:'
                   )}
-                </h4>
+                </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {Object.entries(monthlySummary.byCurrency).map(([code, bucket]) => (
                     <div key={code} className="p-2.5 rounded-lg bg-card border border-line-2">
@@ -2195,7 +2297,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setLocationSummaryScope('all')}
-                      className={`px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer ${
+                      className={`min-h-[36px] px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer ${
                         locationSummaryScope === 'all'
                           ? 'bg-primary text-primary-foreground'
                           : 'text-muted-foreground-1 hover:text-foreground'
@@ -2206,7 +2308,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setLocationSummaryScope('month')}
-                      className={`px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer ${
+                      className={`min-h-[36px] px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer ${
                         locationSummaryScope === 'month'
                           ? 'bg-primary text-primary-foreground'
                           : 'text-muted-foreground-1 hover:text-foreground'
@@ -2287,7 +2389,12 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                 </Suspense>
               </div>
             )}
-            <div className="overflow-x-auto">
+            <div
+              tabIndex={0}
+              role="region"
+              aria-label={bi('جدول مصاريف العيادة', 'Clinic expenses table', 'خشتەی خەرجییەکانی کلینیک')}
+              className="overflow-x-auto focus:outline-none focus:ring-2 focus:ring-primary"
+            >
               <table className="min-w-full divide-y divide-card-divider text-start text-xs">
                 <thead className="bg-muted/50">
                   <tr className="text-muted-foreground-1 font-semibold text-xs">
@@ -2343,7 +2450,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                           )}
                         </td>
                         <td className="py-3.5 px-4 text-muted-foreground-1">{exp.paidBy}</td>
-                        <td className="py-3.5 px-4 text-end font-bold text-rose-600 dark:text-rose-400 tabular-nums">
+                        <td className="py-3.5 px-4 text-end font-bold text-rose-700 dark:text-rose-300 tabular-nums">
                           <Money amount={exp.amountIQD} colorize={false} />
                         </td>
                         <td className="py-3.5 px-4 text-end">
@@ -2354,7 +2461,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                                 setUndoItem({ type: 'expense', data: exp });
                                 setExpenses(ClinicOperationsService.deleteExpenseIQD(exp.id));
                               }}
-                              className="text-muted-foreground-1 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-500/10 cursor-pointer"
+                              className="min-h-[36px] min-w-[36px] text-muted-foreground-1 hover:text-rose-700 dark:hover:text-rose-300 p-1.5 rounded-lg hover:bg-rose-500/10 inline-flex items-center justify-center cursor-pointer"
                               title={bi('حذف المصروف', 'Delete expense', 'سڕینەوەی خەرجی')}
                               aria-label={bi(
                                 `حذف المصروف ${exp.titleAr}`,
@@ -2377,11 +2484,14 @@ export const IraqiFinancialLedgerView: React.FC = () => {
           <div
             ref={invoiceVirtual.containerRef}
             onScroll={invoiceVirtual.onScroll}
+            tabIndex={0}
+            role="region"
+            aria-label={bi('جدول الفواتير والديون', 'Invoices and debts table', 'خشتەی پسوولە و قەرزەکان')}
             data-testid="financial-invoices-list"
             className={
               invoiceVirtual.isVirtualized
-                ? 'overflow-auto max-h-[72vh]'
-                : 'overflow-x-auto'
+                ? 'overflow-auto max-h-[72vh] focus:outline-none focus:ring-2 focus:ring-primary'
+                : 'overflow-x-auto focus:outline-none focus:ring-2 focus:ring-primary'
             }
           >
             <table className="min-w-full divide-y divide-card-divider text-start text-xs">
@@ -2461,7 +2571,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                           <div className="font-mono flex items-center gap-1.5 flex-wrap">
                             <bdi dir="ltr">{inv.invoiceNumber}</bdi>
                             {isVoided && (
-                              <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 text-xs font-sans font-bold">
+                              <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 text-xs font-sans font-bold">
                                 {bi(
                                   `ملغاة (${inv.creditNoteNumber || ''})`,
                                   `Void (${inv.creditNoteNumber || ''})`,
@@ -2521,7 +2631,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                             </div>
                           )}
                           {isVoided && inv.voidReason && (
-                            <div className="text-xs text-rose-600 dark:text-rose-400 mt-0.5">
+                            <div className="text-xs text-rose-700 dark:text-rose-300 mt-0.5">
                               {bi('سبب الإلغاء: ', 'Void reason: ', 'هۆکاری هەڵوەشاندنەوە: ')}
                               {inv.voidReason}
                             </div>
@@ -2543,7 +2653,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                                       setPkgAdjustReason('');
                                       setPkgAdjustError(null);
                                     }}
-                                    className="py-0.5 px-2 rounded-md bg-primary/10 hover:bg-primary hover:text-primary-foreground text-primary border border-primary/20 text-xs font-semibold transition-colors cursor-pointer"
+                                    className="min-h-[36px] py-1 px-2.5 rounded-md bg-primary/10 hover:bg-primary hover:text-primary-foreground text-primary border border-primary/20 text-xs font-semibold transition-colors cursor-pointer"
                                   >
                                     {bi('تعديل إداري', 'Admin Adjust', 'دەستکاری کارگێڕی')}
                                   </button>
@@ -2599,7 +2709,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                                   setPaymentFxRate('');
                                   setPaymentError(null);
                                 }}
-                                className="py-1.5 px-2.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
+                                className="min-h-[36px] py-1.5 px-2.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
                               >
                                 {bi('قبض دفعة', 'Collect', 'وەرگرتنی پارە')}
                               </button>
@@ -2609,7 +2719,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => setInstallmentBuilderInvoice(inv)}
-                                className="py-1.5 px-2.5 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap inline-flex items-center gap-1"
+                                className="min-h-[36px] py-1.5 px-2.5 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap inline-flex items-center gap-1"
                                 title={
                                   inv.installmentPlan && inv.installmentPlan.length > 0
                                     ? bi('تعديل خطة الأقساط', 'Edit Installment Plan', 'دەستکاریکردنی پلانی قیستەکان')
@@ -2628,8 +2738,13 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setPrintDoc({ type: 'invoice', invoice: inv })}
-                              className="p-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground cursor-pointer"
+                              className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground inline-flex items-center justify-center cursor-pointer"
                               title={bi('طباعة الفاتورة', 'Print Invoice', 'چاپکردنی پسوولە')}
+                              aria-label={bi(
+                                `طباعة الفاتورة ${inv.invoiceNumber}`,
+                                `Print invoice ${inv.invoiceNumber}`,
+                                `چاپکردنی پسوولە ${inv.invoiceNumber}`
+                              )}
                             >
                               <Printer className="size-3.5" />
                             </button>
@@ -2642,8 +2757,13 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                                 setReversePayReason('');
                                 setReversePayError(null);
                               }}
-                              className="p-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground cursor-pointer"
+                              className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground inline-flex items-center justify-center cursor-pointer"
                               title={bi('الدفعات / عكس دفعة / وصولات', 'Payments, Receipts & Reversals', 'پارەدانەکان / پێچەوانەکردنەوە / پسوولەکان')}
+                              aria-label={bi(
+                                `سجل دفعات الفاتورة ${inv.invoiceNumber}`,
+                                `Payments and receipts history for ${inv.invoiceNumber}`,
+                                `تۆماری پارەدانی پسوولە ${inv.invoiceNumber}`
+                              )}
                             >
                               <History className="size-3.5" />
                             </button>
@@ -2667,8 +2787,13 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                                   href={waHref}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="p-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
+                                  className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 inline-flex items-center justify-center"
                                   title={bi('إرسال الوصل عبر واتساب', 'Send Receipt via WhatsApp', 'ناردنی پسوولە لە ڕێگەی WhatsApp')}
+                                  aria-label={bi(
+                                    `إرسال الوصل عبر واتساب للمريض ${inv.patientName}`,
+                                    `Send receipt via WhatsApp to ${inv.patientName}`,
+                                    `ناردنی پسوولە لە ڕێگەی WhatsApp بۆ ${inv.patientName}`
+                                  )}
                                 >
                                   <MessageSquare className="size-3.5" />
                                 </a>
@@ -2683,8 +2808,13 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                                   setVoidReason('');
                                   setVoidError(null);
                                 }}
-                                className="text-muted-foreground-1 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-500/10 cursor-pointer"
+                                className="min-h-[36px] min-w-[36px] text-muted-foreground-1 hover:text-rose-700 dark:hover:text-rose-300 p-1.5 rounded-lg hover:bg-rose-500/10 inline-flex items-center justify-center cursor-pointer"
                                 title={bi('إلغاء فاتورة بإشعار دائن', 'Void with Credit Note', 'هەڵوەشاندنەوەی پسوولە بە ئاگاداری دائن')}
+                                aria-label={bi(
+                                  `إلغاء الفاتورة ${inv.invoiceNumber} بإشعار دائن`,
+                                  `Void invoice ${inv.invoiceNumber} with credit note`,
+                                  `هەڵوەشاندنەوەی پسوولە ${inv.invoiceNumber}`
+                                )}
                               >
                                 <Ban className="size-3.5" />
                               </button>
@@ -2718,22 +2848,26 @@ export const IraqiFinancialLedgerView: React.FC = () => {
           onClick={() => setPkgAdjustInvoice(null)}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="fin-pkg-adj-title"
             className="w-full max-w-md rounded-2xl bg-card border border-card-line shadow-2xl p-5 space-y-4"
             dir={isRtl ? 'rtl' : 'ltr'}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-bold text-foreground">
+              <h2 id="fin-pkg-adj-title" className="text-sm font-bold text-foreground">
                 {bi(
                   'تعديل إداري لعدد جلسات الكورس',
                   'Admin Manual Package Visit Adjustment',
                   'دەستکاریکردنی کارگێڕی ژمارەی دانیشتنەکانی کۆرس'
                 )}
-              </h3>
+              </h2>
               <button
                 type="button"
                 onClick={() => setPkgAdjustInvoice(null)}
-                className="p-1 text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                aria-label={bi('إغلاق', 'Close', 'داخستن')}
+                className="min-h-[36px] min-w-[36px] p-1 text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center rounded-lg cursor-pointer"
               >
                 <X className="size-4" />
               </button>
@@ -2757,7 +2891,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setPkgAdjustDelta(1)}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold border cursor-pointer ${
+                className={`flex-1 min-h-[36px] py-2 rounded-xl text-xs font-bold border cursor-pointer ${
                   pkgAdjustDelta === 1
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-surface text-foreground border-layer-line'
@@ -2768,7 +2902,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setPkgAdjustDelta(-1)}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold border cursor-pointer ${
+                className={`flex-1 min-h-[36px] py-2 rounded-xl text-xs font-bold border cursor-pointer ${
                   pkgAdjustDelta === -1
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-surface text-foreground border-layer-line'
@@ -2779,7 +2913,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-foreground mb-1">
+              <label htmlFor="fin-pkg-adj-reason" className="block text-xs font-bold text-foreground mb-1">
                 {bi(
                   'سبب التعديل (إلزامي لسجل التدقيق) *',
                   'Adjustment Reason (Required for Audit Log) *',
@@ -2787,6 +2921,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                 )}
               </label>
               <input
+                id="fin-pkg-adj-reason"
                 type="text"
                 value={pkgAdjustReason}
                 onChange={(e) => {
@@ -2808,7 +2943,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setPkgAdjustInvoice(null)}
-                className="px-3.5 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground cursor-pointer"
+                className="min-h-[36px] px-3.5 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground cursor-pointer"
               >
                 {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
               </button>
@@ -2827,7 +2962,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                     setPkgAdjustError(err instanceof Error ? err.message : 'Failed');
                   }
                 }}
-                className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
+                className="min-h-[36px] px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
               >
                 {bi('حفظ التعديل', 'Confirm Adjustment', 'پاشەکەوتکردنی دەستکاری')}
               </button>
@@ -2843,13 +2978,16 @@ export const IraqiFinancialLedgerView: React.FC = () => {
           onClick={() => setVoidTargetInvoice(null)}
         >
           <form
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="fin-void-title"
             onSubmit={handleVoidInvoiceSubmit}
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-2xl bg-card border border-card-line shadow-2xl p-5 space-y-4 text-xs"
             dir={isRtl ? 'rtl' : 'ltr'}
           >
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2">
+              <h2 id="fin-void-title" className="text-sm font-bold text-rose-700 dark:text-rose-300 flex items-center gap-2">
                 <Ban className="size-4" />
                 <span>
                   {bi(
@@ -2858,11 +2996,12 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                     'هەڵوەشاندنەوەی پسوولە و دەرکردنی ئاگاداری دائن'
                   )}
                 </span>
-              </h3>
+              </h2>
               <button
                 type="button"
                 onClick={() => setVoidTargetInvoice(null)}
-                className="p-1 text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                aria-label={bi('إغلاق', 'Close', 'داخستن')}
+                className="min-h-[36px] min-w-[36px] p-1 text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center rounded-lg cursor-pointer"
               >
                 <X className="size-4" />
               </button>
@@ -2882,7 +3021,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-bold text-foreground mb-1">
+              <label htmlFor="fin-void-reason" className="block font-bold text-foreground mb-1">
                 {bi(
                   'سبب الإلغاء (إلزامي لسجل التدقيق) *',
                   'Void Reason (Mandatory) *',
@@ -2890,6 +3029,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                 )}
               </label>
               <input
+                id="fin-void-reason"
                 type="text"
                 required
                 value={voidReason}
@@ -2904,7 +3044,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
             </div>
 
             {voidError && (
-              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-600 dark:text-rose-400">
+              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-700 dark:text-rose-300">
                 {voidError}
               </div>
             )}
@@ -2913,14 +3053,14 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setVoidTargetInvoice(null)}
-                className="px-3.5 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground cursor-pointer"
+                className="min-h-[36px] px-3.5 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground cursor-pointer"
               >
                 {bi('تراجع', 'Cancel', 'پاشگەزبوونەوە')}
               </button>
               <button
                 type="submit"
                 disabled={!voidReason.trim()}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed"
+                className="min-h-[36px] px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed"
               >
                 {bi(
                   'تأكيد الإلغاء وإصدار إشعار دائن',
@@ -2940,19 +3080,22 @@ export const IraqiFinancialLedgerView: React.FC = () => {
           onClick={() => setHistoryInvoice(null)}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="fin-history-title"
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-2xl rounded-2xl bg-card border border-card-line shadow-2xl p-5 space-y-4 text-xs max-h-[85vh] flex flex-col"
             dir={isRtl ? 'rtl' : 'ltr'}
           >
             <div className="flex items-center justify-between gap-2 border-b border-card-divider pb-3">
               <div>
-                <h3 className="text-sm font-bold text-foreground">
+                <h2 id="fin-history-title" className="text-sm font-bold text-foreground">
                   {bi(
                     'سجل الدفعات والوصولات والعكوسات',
                     'Payments, Receipts & Reversals',
                     'تۆماری پارەدان و پسوولە و پێچەوانەکردنەوەکان'
                   )}
-                </h3>
+                </h2>
                 <p className="text-muted-foreground-1 font-mono mt-0.5">
                   <bdi dir="ltr">{historyInvoice.invoiceNumber}</bdi> · {historyInvoice.patientName}
                 </p>
@@ -2960,13 +3103,19 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setHistoryInvoice(null)}
-                className="p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                aria-label={bi('إغلاق', 'Close', 'داخستن')}
+                className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer"
               >
                 <X className="size-4" />
               </button>
             </div>
 
-            <div className="overflow-y-auto space-y-2.5 flex-1 pe-1">
+            <div
+              tabIndex={0}
+              role="region"
+              aria-label={bi('قائمة الدفعات والوصولات', 'Payment entries list', 'لیستی پارەدان و پسوولەکان')}
+              className="overflow-y-auto space-y-2.5 flex-1 pe-1 focus:outline-none focus:ring-2 focus:ring-primary rounded-xl"
+            >
               {(historyInvoice.payments || []).length === 0 ? (
                 <p className="text-center text-muted-foreground-1 py-6">
                   {bi(
@@ -3002,7 +3151,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                           <div className="font-mono font-bold text-foreground flex items-center gap-2 flex-wrap">
                             <bdi dir="ltr">{pay.receiptNumber}</bdi>
                             {pay.status === 'reversed' && (
-                              <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 font-sans text-xs">
+                              <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 font-sans text-xs">
                                 {bi('تم عكسها', 'Reversed', 'پێچەوانەکرایەوە')}
                               </span>
                             )}
@@ -3029,7 +3178,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                             onClick={() =>
                               setPrintDoc({ type: 'receipt', invoice: historyInvoice, payment: pay })
                             }
-                            className="px-2.5 py-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground font-semibold inline-flex items-center gap-1 cursor-pointer"
+                            className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground font-semibold inline-flex items-center gap-1 cursor-pointer"
                           >
                             <Printer className="size-3.5" />
                             <span>{bi('وصل', 'Receipt', 'پسوولە')}</span>
@@ -3040,7 +3189,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                               href={waHref}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="px-2.5 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold inline-flex items-center gap-1"
+                              className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold inline-flex items-center gap-1"
                             >
                               <MessageSquare className="size-3.5" />
                               <span>{bi('واتساب', 'WhatsApp', 'WhatsApp')}</span>
@@ -3054,7 +3203,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                               setCopiedWaReceiptId(pay.id);
                               setTimeout(() => setCopiedWaReceiptId(null), 1800);
                             }}
-                            className="px-2 py-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground inline-flex items-center gap-1 cursor-pointer"
+                            className="min-h-[36px] px-2 py-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground inline-flex items-center gap-1 cursor-pointer"
                           >
                             <Copy className="size-3.5" />
                             <span>
@@ -3075,7 +3224,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                                   setReversePayReason('');
                                   setReversePayError(null);
                                 }}
-                                className="px-2.5 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 font-semibold cursor-pointer"
+                                className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300 font-semibold cursor-pointer"
                               >
                                 {bi('عكس الدفعة', 'Reverse', 'پێچەوانەکردنەوەی پارەدان')}
                               </button>
@@ -3085,8 +3234,13 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
                       {reversingPayId === pay.id && (
                         <div className="pt-2 border-t border-line-2 flex flex-wrap items-center gap-2">
+                          <label htmlFor={`fin-rev-reason-${pay.id}`} className="sr-only">
+                            {bi('سبب عكس الدفعة', 'Payment reversal reason', 'هۆکاری پێچەوانەکردنەوەی پارەدان')}
+                          </label>
                           <input
+                            id={`fin-rev-reason-${pay.id}`}
                             type="text"
+                            aria-label={bi('سبب عكس الدفعة', 'Payment reversal reason', 'هۆکاری پێچەوانەکردنەوەی پارەدان')}
                             value={reversePayReason}
                             onChange={(e) => setReversePayReason(e.target.value)}
                             placeholder={bi(
@@ -3100,19 +3254,19 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                             type="button"
                             disabled={!reversePayReason.trim()}
                             onClick={() => handleReversePaymentSubmit(historyInvoice.id, pay.id)}
-                            className="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-bold cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed"
+                            className="min-h-[36px] px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white font-bold cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed"
                           >
                             {bi('تأكيد العكس', 'Confirm Reverse', 'پشتڕاستکردنەوەی پێچەوانە')}
                           </button>
                           <button
                             type="button"
                             onClick={() => setReversingPayId(null)}
-                            className="px-2.5 py-1.5 rounded-lg border border-layer-line text-muted-foreground-1 cursor-pointer"
+                            className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-layer-line text-muted-foreground-1 cursor-pointer"
                           >
                             {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
                           </button>
                           {reversePayError && (
-                            <div className="w-full text-rose-600 dark:text-rose-400">
+                            <div className="w-full text-rose-700 dark:text-rose-300">
                               {reversePayError}
                             </div>
                           )}

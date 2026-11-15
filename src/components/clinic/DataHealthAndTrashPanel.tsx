@@ -120,20 +120,20 @@ function getCategoryToneClasses(severity: DataHealthCategoryItem['severity']): {
     return {
       card: 'border-rose-500/35 bg-rose-500/5',
       pill: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/35',
-      icon: 'text-rose-600 dark:text-rose-400',
+      icon: 'text-rose-700 dark:text-rose-400',
     };
   }
   if (severity === 'warning') {
     return {
       card: 'border-amber-500/35 bg-amber-500/5',
       pill: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/35',
-      icon: 'text-amber-600 dark:text-amber-400',
+      icon: 'text-amber-700 dark:text-amber-400',
     };
   }
   return {
     card: 'border-line-2 bg-surface',
     pill: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
-    icon: 'text-emerald-600 dark:text-emerald-400',
+    icon: 'text-emerald-700 dark:text-emerald-400',
   };
 }
 
@@ -481,7 +481,7 @@ export const DataHealthAndTrashPanel: React.FC<DataHealthAndTrashPanelProps> = (
           <button
             type="button"
             onClick={() => setFeedback(null)}
-            className="text-xs font-bold underline cursor-pointer shrink-0"
+            className="text-xs font-bold underline cursor-pointer shrink-0 min-h-[32px] px-2"
           >
             {bi('إغلاق', 'Dismiss', 'داخستن')}
           </button>
@@ -500,13 +500,13 @@ export const DataHealthAndTrashPanel: React.FC<DataHealthAndTrashPanelProps> = (
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <Activity className="size-4 text-primary shrink-0" />
-                <h3 className="text-sm font-extrabold text-foreground">
+                <h2 className="text-sm font-extrabold text-foreground">
                   {bi(
                     'شاشة صحة البيانات وسلامة السجلات',
                     'Clinic Data Health & Integrity Screen',
                     'پەڕەی تەندروستیی داتا و دروستیی تۆمارەکان'
                   )}
-                </h3>
+                </h2>
                 <span
                   data-testid="data-health-score-badge"
                   className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold border ${
@@ -565,13 +565,13 @@ export const DataHealthAndTrashPanel: React.FC<DataHealthAndTrashPanelProps> = (
                       <div className="flex items-start gap-2 min-w-0">
                         <Icon className={`size-4 mt-0.5 shrink-0 ${tone.icon}`} />
                         <div className="min-w-0">
-                          <h4 className="text-xs font-extrabold text-foreground">
+                          <h3 className="text-xs font-extrabold text-foreground">
                             {bi(
                               cat.titleAr,
                               cat.titleEn,
                               DATA_HEALTH_CATEGORY_CKB[cat.id]?.title
                             )}
-                          </h4>
+                          </h3>
                           <p className="text-xs text-muted-foreground-1 mt-0.5">
                             {bi(
                               cat.descriptionAr,
@@ -644,7 +644,7 @@ export const DataHealthAndTrashPanel: React.FC<DataHealthAndTrashPanelProps> = (
                                           cat.id === 'unsigned_notes' ? item.sessionId : undefined
                                         )
                                       }
-                                      className="px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-xs font-bold text-foreground cursor-pointer shrink-0"
+                                      className="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-xs font-bold text-foreground cursor-pointer shrink-0"
                                     >
                                       {bi('فتح', 'Open', 'کردنەوە')}
                                     </button>
@@ -662,7 +662,7 @@ export const DataHealthAndTrashPanel: React.FC<DataHealthAndTrashPanelProps> = (
                                       data-testid={`resolve-orphan-btn-${item.id}`}
                                       disabled={busyActionId === item.id}
                                       onClick={() => void handleResolveSingleOrphan(item)}
-                                      className="px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary text-xs font-bold cursor-pointer disabled:opacity-50"
+                                      className="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary text-xs font-bold cursor-pointer disabled:opacity-50"
                                     >
                                       {!orphan.isClinicalRecord
                                         ? bi(
@@ -688,10 +688,11 @@ export const DataHealthAndTrashPanel: React.FC<DataHealthAndTrashPanelProps> = (
 
                               {orphan && orphan.isClinicalRecord && canReassign && (
                                 <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-card-divider">
-                                  <label className="text-xs font-semibold text-muted-foreground-1">
+                                  <label htmlFor={`orphan-reassign-${item.id}`} className="text-xs font-semibold text-muted-foreground-1">
                                     {bi('ربط إلى المريض:', 'Target patient:', 'بەستنەوە بە نەخۆش:')}
                                   </label>
                                   <select
+                                    id={`orphan-reassign-${item.id}`}
                                     value={reassignTargets[item.id] || defaultTargetPatientId || ''}
                                     onChange={(e) =>
                                       setReassignTargets((prev) => ({
@@ -785,13 +786,13 @@ export const DataHealthAndTrashPanel: React.FC<DataHealthAndTrashPanelProps> = (
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-card-divider pb-3">
             <div className="flex items-center gap-2">
               <Trash2 className="size-4 text-primary shrink-0" />
-              <h3 className="text-sm font-extrabold text-foreground">
+              <h2 className="text-sm font-extrabold text-foreground">
                 {bi(
                   'سلة المهملات التشغيلية (احتفاظ 30 يوماً)',
                   '30-Day Non-Clinical Recycle Bin',
                   'سەبەتەی خۆڵی کارگێڕی (پاراستن بۆ ٣٠ ڕۆژ)'
                 )}
-              </h3>
+              </h2>
             </div>
             <span className="px-2.5 py-0.5 rounded-full bg-surface border border-line-2 text-xs font-bold text-foreground">
               <Num value={recycleBinItems.length} /> {bi('عنصر', 'items', 'بڕگە')}
@@ -880,7 +881,7 @@ export const DataHealthAndTrashPanel: React.FC<DataHealthAndTrashPanelProps> = (
                         type="button"
                         data-testid={`recycle-bin-restore-btn-${item.id}`}
                         onClick={() => handleRestoreTrashItem(item)}
-                        className="min-h-[36px] px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                        className="min-h-[36px] px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
                       >
                         <RotateCcw className="size-3.5" />
                         <span>{bi('استعادة', 'Restore', 'گەڕاندنەوە')}</span>

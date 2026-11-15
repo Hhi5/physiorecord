@@ -165,7 +165,7 @@ export const WhatsNewChangelogModal: React.FC<WhatsNewChangelogModalProps> = ({
             data-testid="whats-new-close-btn"
             onClick={onClose}
             aria-label={bi('إغلاق', 'Close', 'داخستن')}
-            className="size-8 rounded-lg flex items-center justify-center text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover cursor-pointer shrink-0"
+            className="min-w-[36px] min-h-[36px] rounded-lg flex items-center justify-center text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover cursor-pointer shrink-0"
           >
             <X className="size-4" />
           </button>
@@ -215,7 +215,7 @@ export const WhatsNewChangelogModal: React.FC<WhatsNewChangelogModalProps> = ({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        <div tabIndex={0} className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-4">
           {view === 'changelog' && (
             <div className="space-y-4">
               {BUNDLED_CHANGELOG_RELEASES.map((rel) => {

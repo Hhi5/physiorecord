@@ -168,7 +168,7 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('dermatomes')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'dermatomes'
                 ? 'bg-teal-600 text-white shadow-2xs'
                 : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700'
@@ -179,7 +179,7 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('reflexes')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'reflexes'
                 ? 'bg-teal-600 text-white shadow-2xs'
                 : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700'
@@ -190,7 +190,7 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('myotomes')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'myotomes'
                 ? 'bg-teal-600 text-white shadow-2xs'
                 : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700'
@@ -236,9 +236,9 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
                     <span className="px-1.5 py-0.5 rounded-md text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800 font-mono">
                       {ref.root}
                     </span>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100">
                       {bi(ref.ar, ref.en)}
-                    </h4>
+                    </h3>
                   </div>
                 </div>
 
@@ -375,10 +375,11 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
 
       {/* Clinical Notes */}
       <div>
-        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+        <label htmlFor="neuro-clinical-notes" className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
           {bi('ملاحظات الفحص العصبي (Dermatomal pattern / Babinski / Clonus):', 'Neurological Findings Notes:', 'تێبینییەکانی پشکنینی دەماری (Dermatomal / Babinski / Clonus):')}
         </label>
         <textarea
+          id="neuro-clinical-notes"
           rows={2}
           value={clinicalNotes}
           disabled={readOnly}

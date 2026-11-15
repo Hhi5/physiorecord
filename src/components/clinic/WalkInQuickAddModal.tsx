@@ -205,10 +205,11 @@ export const WalkInQuickAddModal: React.FC<WalkInQuickAddModalProps> = ({
     >
       <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
         <div>
-          <label className="text-xs font-bold text-foreground block mb-1">
+          <label htmlFor="walkin-name-field" className="text-xs font-bold text-foreground block mb-1">
             {bi('اسم المريض الكامل *', 'Patient Full Name *', 'ناوی تەواوی نەخۆش *')}
           </label>
           <input
+            id="walkin-name-field"
             type="text"
             required
             autoFocus
@@ -226,10 +227,12 @@ export const WalkInQuickAddModal: React.FC<WalkInQuickAddModalProps> = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-bold text-foreground block mb-1">
+            <label htmlFor="walkin-phone-field" className="text-xs font-bold text-foreground block mb-1">
               {bi('رقم الهاتف:', 'Phone Number:', 'ژمارەی مۆبایل:')}
             </label>
             <PhoneInput
+              id="walkin-phone-field"
+              ariaLabel={bi('رقم الهاتف', 'Phone Number', 'ژمارەی مۆبایل')}
               value={phone}
               onChange={setPhone}
               placeholder="0770 123 4567"
@@ -237,12 +240,13 @@ export const WalkInQuickAddModal: React.FC<WalkInQuickAddModalProps> = ({
           </div>
 
           <div>
-            <label className="text-xs font-bold text-foreground block mb-1">
+            <span className="text-xs font-bold text-foreground block mb-1">
               {bi('الجنس:', 'Gender:', 'ڕەگەز:')}
-            </label>
+            </span>
             <div className="grid grid-cols-2 gap-1.5">
               <button
                 type="button"
+                aria-pressed={gender === 'male'}
                 onClick={() => setGender('male')}
                 className={`py-2 rounded-xl border text-xs font-bold cursor-pointer ${
                   gender === 'male'
@@ -254,6 +258,7 @@ export const WalkInQuickAddModal: React.FC<WalkInQuickAddModalProps> = ({
               </button>
               <button
                 type="button"
+                aria-pressed={gender === 'female'}
                 onClick={() => setGender('female')}
                 className={`py-2 rounded-xl border text-xs font-bold cursor-pointer ${
                   gender === 'female'
@@ -268,7 +273,7 @@ export const WalkInQuickAddModal: React.FC<WalkInQuickAddModalProps> = ({
         </div>
 
         <div>
-          <label className="text-xs font-bold text-foreground block mb-1">
+          <label htmlFor="walkin-complaint-field" className="text-xs font-bold text-foreground block mb-1">
             {bi(
               'الشكوى أو المنطقة المصابة (اختياري):',
               'Chief Complaint / Region (Optional):',
@@ -276,6 +281,7 @@ export const WalkInQuickAddModal: React.FC<WalkInQuickAddModalProps> = ({
             )}
           </label>
           <input
+            id="walkin-complaint-field"
             type="text"
             value={chiefComplaintOrRegion}
             onChange={(e) => setChiefComplaintOrRegion(e.target.value)}
@@ -290,16 +296,17 @@ export const WalkInQuickAddModal: React.FC<WalkInQuickAddModalProps> = ({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-bold text-foreground block mb-1">
+            <label htmlFor="walkin-start-time" className="text-xs font-bold text-foreground block mb-1">
               {bi('وقت البدء:', 'Start Time:', 'کاتی دەستپێکردن:')}
             </label>
-            <TimePickerInput value={startTime} onChange={setStartTime} />
+            <TimePickerInput id="walkin-start-time" value={startTime} onChange={setStartTime} />
           </div>
           <div>
-            <label className="text-xs font-bold text-foreground block mb-1">
+            <label htmlFor="walkin-duration-field" className="text-xs font-bold text-foreground block mb-1">
               {bi('المدة (دقيقة):', 'Duration (min):', 'ماوە (خولەک):')}
             </label>
             <input
+              id="walkin-duration-field"
               type="number"
               min={5}
               max={240}
@@ -307,6 +314,23 @@ export const WalkInQuickAddModal: React.FC<WalkInQuickAddModalProps> = ({
               onChange={(e) => setDurationMinutes(Math.max(5, Math.min(240, Number(e.target.value) || 45)))}
               className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground font-mono font-bold focus:outline-none focus:border-primary"
             />
+            <div className="flex items-center gap-1 mt-1.5" dir="ltr">
+              {[30, 45, 60].map((mins) => (
+                <button
+                  key={mins}
+                  type="button"
+                  onClick={() => setDurationMinutes(mins)}
+                  style={{ minHeight: 'unset' }}
+                  className={`compact-btn flex-1 py-1 rounded-lg text-xs font-mono font-bold border transition-colors cursor-pointer ${
+                    durationMinutes === mins
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-surface text-foreground border-layer-line hover:bg-layer-hover'
+                  }`}
+                >
+                  {mins}m
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

@@ -22,7 +22,8 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useVault } from '../../context/VaultContext';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
 import { processAttachmentFile } from '../../utils/attachmentMedia';
-import { localDate } from '../../utils/date';
+import { formatDateDDMMYYYY, localDate } from '../../utils/date';
+import { DatePickerInput } from '../ui/Primitives';
 import {
   ATTACHMENT_CATEGORY_OPTIONS,
   CUSTOM_REPORT_TYPE_SUGGESTIONS,
@@ -194,13 +195,13 @@ export const PatientImagingReportsPanel: React.FC<PatientImagingReportsPanelProp
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Paperclip className="size-4 text-primary" />
-          <h4 className="text-xs sm:text-sm font-bold text-foreground">
+          <h3 className="text-xs sm:text-sm font-bold text-foreground">
             {bi(
               'الأشعة، الرنين، والمستندات السريرية',
               'Clinical Attachments & Imaging Reports (MRI / X-Ray / Referrals)',
               'تیشک، ڕەنین (MRI)، و بەڵگەنامە کلینیکییەکان'
             )}
-          </h4>
+          </h3>
         </div>
 
         <button
@@ -239,10 +240,11 @@ export const PatientImagingReportsPanel: React.FC<PatientImagingReportsPanelProp
             <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5">
               {/* Category Selector (Includes "Other — Manual Entry") */}
               <div>
-                <label className="block text-xs font-bold text-foreground mb-1">
+                <label htmlFor={`img-cat-${row.draftId}`} className="block text-xs font-bold text-foreground mb-1">
                   {bi('نوع التقرير:', 'Document Type:', 'جۆری ڕاپۆرت:')}
                 </label>
                 <select
+                  id={`img-cat-${row.draftId}`}
                   value={row.category}
                   onChange={(e) =>
                     updateDraft(row.draftId, {
@@ -262,10 +264,11 @@ export const PatientImagingReportsPanel: React.FC<PatientImagingReportsPanelProp
 
               {/* Title Input */}
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-foreground mb-1">
+                <label htmlFor={`img-title-${row.draftId}`} className="block text-xs font-bold text-foreground mb-1">
                   {bi('عنوان التقرير / الفحص:', 'Report Title / Exam:', 'ناونیشانی ڕاپۆرت / پشکنین:')}
                 </label>
                 <input
+                  id={`img-title-${row.draftId}`}
                   ref={(el) => {
                     titleInputRefs.current[row.draftId] = el;
                   }}
@@ -283,15 +286,14 @@ export const PatientImagingReportsPanel: React.FC<PatientImagingReportsPanelProp
 
               {/* Study Date */}
               <div>
-                <label className="block text-xs font-bold text-foreground mb-1">
+                <label htmlFor={`img-date-${row.draftId}`} className="block text-xs font-bold text-foreground mb-1">
                   {bi('تاريخ الفحص:', 'Study Date:', 'بەرواری پشکنین:')}
                 </label>
-                <input
-                  type="date"
-                  dir="ltr"
+                <DatePickerInput
+                  id={`img-date-${row.draftId}`}
+                  ariaLabel={bi('تاريخ الفحص', 'Study Date', 'بەرواری پشکنین')}
                   value={row.studyDate}
-                  onChange={(e) => updateDraft(row.draftId, { studyDate: e.target.value })}
-                  className="w-full py-2 px-2.5 rounded-xl border border-layer-line bg-layer text-xs text-foreground font-mono"
+                  onChange={(val) => updateDraft(row.draftId, { studyDate: val })}
                 />
               </div>
             </div>
@@ -299,7 +301,7 @@ export const PatientImagingReportsPanel: React.FC<PatientImagingReportsPanelProp
             {/* Conditional Manual "Other" Category Input + Quick Suggestions */}
             {row.category === 'other' && (
               <div className="p-2.5 rounded-xl bg-layer border border-primary/30 space-y-2">
-                <label className="block text-xs font-bold text-foreground">
+                <label htmlFor={`img-custom-cat-${row.draftId}`} className="block text-xs font-bold text-foreground">
                   {bi(
                     'اكتب نوع المستند أو الفحص يدوياً:',
                     'Specify Manual Document Type ("Other"):',
@@ -307,6 +309,7 @@ export const PatientImagingReportsPanel: React.FC<PatientImagingReportsPanelProp
                   )}
                 </label>
                 <input
+                  id={`img-custom-cat-${row.draftId}`}
                   type="text"
                   value={row.customCategoryLabel}
                   onChange={(e) =>
@@ -342,10 +345,11 @@ export const PatientImagingReportsPanel: React.FC<PatientImagingReportsPanelProp
             {/* Region, Summary Notes & Optional Real Image / PDF File Attachment */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground-1 mb-1">
+                <label htmlFor={`img-region-${row.draftId}`} className="block text-xs font-semibold text-muted-foreground-1 mb-1">
                   {bi('المنطقة التشريحية (اختياري):', 'Body Region (Optional):', 'ناوچەی توێکاری (ئارەزوومەندانە):')}
                 </label>
                 <input
+                  id={`img-region-${row.draftId}`}
                   type="text"
                   value={row.bodyRegion}
                   onChange={(e) => updateDraft(row.draftId, { bodyRegion: e.target.value })}
@@ -355,10 +359,11 @@ export const PatientImagingReportsPanel: React.FC<PatientImagingReportsPanelProp
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground-1 mb-1">
+                <label htmlFor={`img-notes-${row.draftId}`} className="block text-xs font-semibold text-muted-foreground-1 mb-1">
                   {bi('ملخص النتائج / التقرير:', 'Key Findings / Notes:', 'پوختەی ئەنجامەکان / ڕاپۆرت:')}
                 </label>
                 <input
+                  id={`img-notes-${row.draftId}`}
                   type="text"
                   value={row.summaryNotes}
                   onChange={(e) => updateDraft(row.draftId, { summaryNotes: e.target.value })}
@@ -372,14 +377,14 @@ export const PatientImagingReportsPanel: React.FC<PatientImagingReportsPanelProp
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground-1 mb-1">
+                <label htmlFor={`img-file-${row.draftId}`} className="block text-xs font-semibold text-muted-foreground-1 mb-1">
                   {bi(
                     'إرفاق صورة / PDF مشفر (اختياري):',
                     'Attach Encrypted Image / PDF (Optional):',
                     'هاوپێچکردنی وێنە / PDF ی نهێنیکراو (ئارەزوومەندانە):'
                   )}
                 </label>
-                <label className="flex items-center justify-between gap-2 py-2 px-3 rounded-xl border border-dashed border-layer-line bg-layer hover:bg-layer-hover text-xs text-foreground cursor-pointer">
+                <label htmlFor={`img-file-${row.draftId}`} className="flex items-center justify-between gap-2 py-2 px-3 rounded-xl border border-dashed border-layer-line bg-layer hover:bg-layer-hover text-xs text-foreground cursor-pointer">
                   <span className="truncate flex items-center gap-1.5">
                     <Upload className="size-3.5 text-primary shrink-0" />
                     <span>
@@ -389,6 +394,7 @@ export const PatientImagingReportsPanel: React.FC<PatientImagingReportsPanelProp
                     </span>
                   </span>
                   <input
+                    id={`img-file-${row.draftId}`}
                     type="file"
                     accept="image/*,.pdf,application/pdf"
                     onChange={(e) =>
@@ -476,7 +482,7 @@ export const PatientImagingReportsPanel: React.FC<PatientImagingReportsPanelProp
                   {att.bodyRegion && <span>• {att.bodyRegion}</span>}
                   {att.studyDate && (
                     <span dir="ltr" className="font-mono">
-                      • {att.studyDate}
+                      • {formatDateDDMMYYYY(att.studyDate)}
                     </span>
                   )}
                 </div>

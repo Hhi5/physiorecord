@@ -245,6 +245,7 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
             <div className="lg:col-span-7 space-y-2">
               <input
                 type="text"
+                aria-label={bi('نوع ألم مخصص أو يدوي', 'Optional manual pain type', 'جۆری ئازاری دەستی یان تایبەت')}
                 value={customPainType}
                 onChange={(e) => setCustomPainType(e.target.value)}
                 maxLength={80}
@@ -287,10 +288,11 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
         {/* Severity Slider & Clear */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-slate-500 dark:text-slate-400 font-medium">
+            <label htmlFor="bodychart-default-severity" className="text-slate-600 dark:text-slate-300 font-medium">
               {bi('الشدة:', 'Severity:', 'توندی:')}
-            </span>
+            </label>
             <input
+              id="bodychart-default-severity"
               type="range"
               min="1"
               max="10"
@@ -299,12 +301,12 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
               className="w-20 accent-teal-600"
             />
             <span
-              className={`px-2 py-0.5 rounded font-bold text-white text-xs ${
+              className={`px-2 py-0.5 rounded font-bold text-xs ${
                 defaultSeverityNrs >= 7
-                  ? 'bg-red-600'
+                  ? 'bg-red-600 text-white'
                   : defaultSeverityNrs >= 4
-                  ? 'bg-amber-500'
-                  : 'bg-emerald-600'
+                  ? 'bg-amber-400 text-slate-950'
+                  : 'bg-emerald-700 text-white'
               }`}
             >
               <Fraction value={defaultSeverityNrs} total={10} />
@@ -397,15 +399,19 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
 
         {/* Markers Sidebar List (when points exist) */}
         {markers.length > 0 && (
-          <div className="lg:col-span-4 space-y-3 bg-white dark:bg-slate-850 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 max-h-[460px] overflow-y-auto">
+          <div
+            tabIndex={0}
+            aria-label={bi('قائمة الأعراض المحددة', 'Identified symptoms list', 'لیستی نیشانە دیاریکراوەکان')}
+            className="lg:col-span-4 space-y-3 bg-white dark:bg-slate-850 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 max-h-[460px] overflow-y-auto focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
-              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300">
                 {bi(
                   `الأعراض المحددة (${markers.length})`,
                   `Identified Symptoms (${markers.length})`,
                   `نیشانە دیاریکراوەکان (${markers.length})`
                 )}
-              </h4>
+              </h3>
               <span className="text-xs text-teal-600 dark:text-teal-400 font-medium">
                 {bi('مرتبة بالترقيم', 'Numbered', 'ژمارەکراو')}
               </span>
@@ -457,7 +463,8 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
                           e.stopPropagation();
                           handleRemoveMarker(marker.markerId);
                         }}
-                        className="text-slate-400 hover:text-red-500 p-1 rounded-md transition-colors"
+                        className="min-w-[36px] min-h-[36px] flex items-center justify-center text-slate-500 hover:text-red-600 p-1.5 rounded-md transition-colors cursor-pointer"
+                        aria-label={bi('حذف هذه النقطة', 'Remove pin', 'سڕینەوەی ئەم خاڵە')}
                         title={bi('حذف هذه النقطة', 'Remove pin', 'سڕینەوەی ئەم خاڵە')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -471,7 +478,7 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
             {/* Selected Marker Pain Type, Color & Severity editor */}
             {selectedMarker && !readOnly && (
               <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                <label htmlFor="bodychart-selected-pain-type" className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
                   {bi(
                     'تخصيص نوع الألم ولون العلامة المحددة:',
                     'Customize Selected Marker Type & Color:',
@@ -479,6 +486,7 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
                   )}
                 </label>
                 <input
+                  id="bodychart-selected-pain-type"
                   type="text"
                   value={selectedMarker.painTypeCustom || ''}
                   maxLength={80}
@@ -535,7 +543,7 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
                     });
                   }}
                 />
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                <label htmlFor="bodychart-selected-severity" className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
                   {bi(
                     'تعديل شدة النقطة المحددة:',
                     'Edit Pin Severity:',
@@ -544,6 +552,7 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
                 </label>
                 <div className="flex items-center gap-2">
                   <input
+                    id="bodychart-selected-severity"
                     type="range"
                     min="1"
                     max="10"
@@ -574,7 +583,7 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
 
       {/* Clinician Summary Notes */}
       <div>
-        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+        <label htmlFor="bodychart-summary-notes" className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
           {bi(
             'ملاحظات المعالج السريرية حول موضع وطبيعة الأعراض:',
             'Clinician Body Chart Summary Notes:',
@@ -582,6 +591,7 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
           )}
         </label>
         <AutoResizeTextarea
+          id="bodychart-summary-notes"
           minRows={2}
           value={clinicianSummaryNotes}
           disabled={readOnly}

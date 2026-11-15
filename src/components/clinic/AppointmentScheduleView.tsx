@@ -848,13 +848,13 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
       id: 'scheduled',
       ar: 'مجدول',
       en: 'Scheduled',
-      cls: 'bg-surface text-muted-foreground-2 border-line-2',
+      cls: 'bg-surface text-muted-foreground-1 border-line-2',
     },
     {
       id: 'arrived',
       ar: 'وصل للعيادة',
       en: 'Arrived',
-      cls: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
+      cls: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30',
     },
     {
       id: 'in_session',
@@ -866,19 +866,19 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
       id: 'completed',
       ar: 'مكتمل',
       en: 'Completed',
-      cls: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+      cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
     },
     {
       id: 'cancelled',
       ar: 'ملغى',
       en: 'Cancelled',
-      cls: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
+      cls: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30',
     },
     {
       id: 'no_show',
       ar: 'لم يحضر',
       en: 'No-Show',
-      cls: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
+      cls: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30',
     },
   ];
 
@@ -913,7 +913,11 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
         {/* Actions: DatePicker + Closed Days/Locations Modal + Book Appointment */}
         <div className="flex flex-wrap items-center gap-2">
           <div className="w-40">
-            <DatePickerInput value={selectedDate} onChange={setSelectedDate} />
+            <DatePickerInput
+              value={selectedDate}
+              onChange={setSelectedDate}
+              ariaLabel={bi('تاريخ جدول المواعيد', 'Schedule date', 'بەرواری خشتە')}
+            />
           </div>
 
           <button
@@ -1123,13 +1127,13 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                       : 'bg-card border-card-line hover:bg-layer-hover text-foreground'
                   }`}
                 >
-                  <span className="inline-flex items-center gap-1.5 min-w-0 font-semibold text-muted-foreground-1 truncate">
+                  <span className="inline-flex items-center gap-1.5 min-w-0 font-semibold text-muted-foreground-1">
                     {locItem.type === 'home_visits' ? (
-                      <Home className="size-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                      <Home className="size-3.5 text-teal-700 dark:text-teal-400 shrink-0" />
                     ) : (
                       <Building2 className="size-3.5 text-primary shrink-0" />
                     )}
-                    <span className="truncate">
+                    <span className="break-words">
                       {bi(locItem.nameAr, locItem.nameEn)}
                     </span>
                   </span>
@@ -1206,7 +1210,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
             <span
               className={`font-mono font-bold ${
                 attendanceStats.attendanceRatePercent > 0
-                  ? 'text-emerald-600 dark:text-emerald-400'
+                  ? 'text-emerald-700 dark:text-emerald-400'
                   : 'text-foreground'
               }`}
             >
@@ -1228,7 +1232,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
             <span
               className={`font-mono font-bold ${
                 attendanceStats.cancelled > 0
-                  ? 'text-amber-600 dark:text-amber-400'
+                  ? 'text-amber-800 dark:text-amber-400'
                   : 'text-foreground'
               }`}
             >
@@ -1244,7 +1248,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
             <span
               className={`font-mono font-bold ${
                 attendanceStats.noShow > 0
-                  ? 'text-rose-600 dark:text-rose-400'
+                  ? 'text-rose-700 dark:text-rose-400'
                   : 'text-foreground'
               }`}
             >
@@ -1273,7 +1277,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
             <button
               type="button"
               onClick={() => setFreedSlotBanner(null)}
-              className="p-1 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 rounded-lg cursor-pointer"
+              className="min-h-[36px] min-w-[36px] p-1 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 rounded-lg inline-flex items-center justify-center cursor-pointer"
               aria-label={bi('إغلاق الاقتراح', 'Dismiss', 'داخستنی پێشنیار')}
             >
               <X className="size-4" />
@@ -1287,12 +1291,12 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
               >
                 <div className="min-w-0">
                   <div
-                    className={`font-bold text-foreground truncate ${privacyBlur ? 'blur-sm select-none' : ''}`}
+                    className={`font-bold text-foreground break-words ${privacyBlur ? 'blur-sm select-none' : ''}`}
                     data-privacy-blurred={privacyBlur ? 'true' : undefined}
                   >
                     {s.entry.patientName}
                   </div>
-                  <div className="text-muted-foreground-1 truncate">
+                  <div className="text-muted-foreground-1 break-words">
                     {bi(s.matchReasonAr, s.matchReasonEn)}
                   </div>
                 </div>
@@ -1301,7 +1305,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                   onClick={() =>
                     handleBookWaitlistIntoFreedSlot(s.entry, freedSlotBanner.freedAppt)
                   }
-                  className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold shrink-0 cursor-pointer"
+                  className="min-h-[36px] px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold shrink-0 cursor-pointer"
                 >
                   {bi('تثبيت الموعد', 'Book Slot', 'جێگیرکردنی کات')}
                 </button>
@@ -1369,7 +1373,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                 <button
                   type="button"
                   onClick={() => setViewMode('list')}
-                  className={`px-2.5 py-1 rounded-lg font-semibold inline-flex items-center gap-1 cursor-pointer ${
+                  className={`min-h-[36px] px-2.5 py-1 rounded-lg font-semibold inline-flex items-center gap-1 cursor-pointer ${
                     viewMode === 'list'
                       ? 'bg-layer text-primary shadow-2xs border border-layer-line'
                       : 'text-muted-foreground-1 hover:text-foreground'
@@ -1381,7 +1385,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                 <button
                   type="button"
                   onClick={() => setViewMode('timeline')}
-                  className={`px-2.5 py-1 rounded-lg font-semibold inline-flex items-center gap-1 cursor-pointer ${
+                  className={`min-h-[36px] px-2.5 py-1 rounded-lg font-semibold inline-flex items-center gap-1 cursor-pointer ${
                     viewMode === 'timeline'
                       ? 'bg-layer text-primary shadow-2xs border border-layer-line'
                       : 'text-muted-foreground-1 hover:text-foreground'
@@ -1458,7 +1462,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                                     <span
-                                      className={`font-bold text-foreground truncate ${privacyBlur ? 'blur-sm select-none' : ''}`}
+                                      className={`font-bold text-foreground break-words ${privacyBlur ? 'blur-sm select-none' : ''}`}
                                       data-privacy-blurred={privacyBlur ? 'true' : undefined}
                                     >
                                       {appt.patientName}
@@ -1494,13 +1498,13 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                                     </span>
                                   )}
                                   {appt.roomOrBed && (
-                                    <span className="text-muted-foreground-2">· {appt.roomOrBed}</span>
+                                    <span className="text-muted-foreground-1">· {appt.roomOrBed}</span>
                                   )}
                                 </div>
                                 {isHome && addrDisplay && (
                                   <div className="flex flex-wrap items-center justify-between gap-1.5 pt-0.5 text-muted-foreground-1">
                                     <span
-                                      className={`truncate ${privacyBlur ? 'blur-sm select-none' : ''}`}
+                                      className={`break-words ${privacyBlur ? 'blur-sm select-none' : ''}`}
                                       data-privacy-blurred={privacyBlur ? 'true' : undefined}
                                     >
                                       {addrDisplay}
@@ -1514,7 +1518,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                                             appt.homeVisitAddress
                                           )
                                         }
-                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 font-semibold cursor-pointer shrink-0"
+                                        className="min-h-[36px] inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 font-semibold cursor-pointer shrink-0"
                                       >
                                         <ExternalLink className="size-3" />
                                         <span>{bi('فتح في الخرائط', 'Open in maps', 'کردنەوە لە نەخشە')}</span>
@@ -1534,7 +1538,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                           setStartTime(`${hourPrefix}00`);
                           setShowNewApptSheet(true);
                         }}
-                        className="w-full text-start px-3 py-1.5 rounded-xl border border-dashed border-line-2 text-xs text-muted-foreground-1 hover:border-primary/40 hover:text-primary transition-colors cursor-pointer"
+                        className="min-h-[36px] w-full text-start px-3 py-1.5 rounded-xl border border-dashed border-line-2 text-xs text-muted-foreground-1 hover:border-primary/40 hover:text-primary transition-colors cursor-pointer"
                       >
                         {slotAppts.length === 0
                           ? bi('+ حجز في هذا الوقت', '+ Book at this hour', '+ تۆمارکردن لەم کاتەدا')
@@ -1689,7 +1693,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                               : bi('جلسة متابعة', 'Follow-up', 'دانیشتنی بەدواداچوون')}
                           </span>
                           {appt.recurringScheduleId && (
-                            <span className="inline-flex items-center gap-1 py-0.5 px-2 rounded-md text-xs font-bold bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400">
+                            <span className="inline-flex items-center gap-1 py-0.5 px-2 rounded-md text-xs font-bold bg-indigo-500/10 border border-indigo-500/20 text-indigo-700 dark:text-indigo-300">
                               <Repeat className="size-3" />
                               <span>{bi('أسبوعي', 'Weekly', 'هەفتانە')}</span>
                             </span>
@@ -1697,7 +1701,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                         </div>
 
                         {appt.episodeTitle && (
-                          <p className="text-xs text-muted-foreground-2 font-medium">
+                          <p className="text-xs text-muted-foreground-1 font-medium">
                             <bdi dir="auto">{appt.episodeTitle}</bdi>
                           </p>
                         )}
@@ -1767,7 +1771,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                                 onClick={() =>
                                   openMapsConfirmation(appt.patientName, appt.homeVisitAddress)
                                 }
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 font-bold cursor-pointer"
+                                className="min-h-[36px] inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 font-bold cursor-pointer"
                               >
                                 <ExternalLink className="size-3" />
                                 <span>{bi('فتح في الخرائط', 'Open in maps', 'کردنەوە لە نەخشە')}</span>
@@ -1777,7 +1781,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                         )}
 
                         {(appt.cancellationReason || appt.noShowReason) && (
-                          <div className="text-xs text-rose-600 dark:text-rose-400 pt-0.5">
+                          <div className="text-xs text-rose-700 dark:text-rose-400 pt-0.5">
                             {bi('السبب: ', 'Reason: ', 'هۆکار: ')}
                             {appt.cancellationReason || appt.noShowReason}
                           </div>
@@ -1802,7 +1806,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                             href={waHref}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 transition-colors"
+                            className="min-h-[36px] min-w-[36px] p-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 inline-flex items-center justify-center transition-colors"
                             title={bi('تذكير واتساب للموعد', 'Send WhatsApp Reminder', 'ناردنی بیرخەرەوەی واتساپ')}
                             aria-label={bi(
                               `إرسال تذكير واتساب إلى ${appt.patientName}`,
@@ -1831,7 +1835,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                             `Export .ics for ${appt.patientName}`,
                             `هەناردەکردنی چاوپێکەوتنی ${appt.patientName} (.ics)`
                           )}
-                          className="px-2.5 py-2 rounded-xl border border-card-line bg-surface hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer"
+                          className="min-h-[36px] min-w-[36px] px-2.5 py-2 rounded-xl border border-card-line bg-surface hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
                         >
                           <Calendar className="size-3.5 text-primary shrink-0" />
                           <span className="hidden xl:inline">.ics</span>
@@ -1878,7 +1882,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                             `Print visit card for ${appt.patientName}`,
                             `چاپکردنی کارتی سەردانی ${appt.patientName}`
                           )}
-                          className="px-2.5 py-2 rounded-xl border border-card-line bg-surface hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer"
+                          className="min-h-[36px] min-w-[36px] px-2.5 py-2 rounded-xl border border-card-line bg-surface hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
                         >
                           <Printer className="size-3.5 text-primary shrink-0" />
                           <span className="hidden xl:inline">
@@ -1894,8 +1898,12 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                             setOpenStatusMenuId(isMenuOpen ? null : appt.id)
                           }
                           aria-expanded={isMenuOpen}
-                          aria-label={bi('تغيير حالة الموعد', 'Change appointment status', 'گۆڕینی دۆخی چاوپێکەوتن')}
-                          className={`py-1.5 px-3 rounded-xl text-xs font-bold border inline-flex items-center gap-1.5 cursor-pointer ${currentStatusObj.cls}`}
+                          aria-label={bi(
+                            `تغيير حالة موعد ${appt.patientName}`,
+                            `Change status for ${appt.patientName}`,
+                            `گۆڕینی دۆخی چاوپێکەوتنی ${appt.patientName}`
+                          )}
+                          className={`min-h-[36px] py-1.5 px-3 rounded-xl text-xs font-bold border inline-flex items-center gap-1.5 cursor-pointer ${currentStatusObj.cls}`}
                         >
                           <span>
                             {bi(currentStatusObj.ar, currentStatusObj.en, STATUS_CKB[currentStatusObj.id])}
@@ -1935,7 +1943,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                                     setAppointments(updated);
                                     setOpenStatusMenuId(null);
                                   }}
-                                  className={`w-full px-3 py-1.5 text-start flex items-center justify-between hover:bg-layer-hover cursor-pointer ${
+                                  className={`min-h-[36px] w-full px-3 py-1.5 text-start flex items-center justify-between hover:bg-layer-hover cursor-pointer ${
                                     appt.status === opt.id
                                       ? 'font-bold text-primary bg-primary/5'
                                       : 'text-foreground'
@@ -1960,7 +1968,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                             ClinicOperationsService.deleteAppointment(appt.id)
                           );
                         }}
-                        className="p-2 rounded-xl text-muted-foreground-1 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                        className="min-h-[36px] min-w-[36px] p-2 rounded-xl text-muted-foreground-1 hover:text-rose-700 dark:hover:text-rose-400 hover:bg-rose-500/10 inline-flex items-center justify-center transition-colors cursor-pointer"
                         title={bi('حذف الموعد', 'Delete', 'سڕینەوە')}
                         aria-label={bi(
                           `حذف موعد ${appt.patientName}`,
@@ -2006,15 +2014,20 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                   setRecurringStartDate(selectedDate || localDate());
                   setShowNewApptSheet(true);
                 }}
-                className="py-1.5 px-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap"
+                className="min-h-[36px] py-1.5 px-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap"
               >
                 {bi('+ جدول أسبوعي', '+ Weekly Rule', '+ خشتەی هەفتانە')}
               </button>
             </div>
 
-            <div className="p-4 space-y-2.5 max-h-80 overflow-y-auto">
+            <div
+              tabIndex={0}
+              role="region"
+              aria-label={bi('الجداول الأسبوعية الثابتة', 'Weekly recurring schedules', 'خشتە هەفتانە جێگیرەکان')}
+              className="p-4 space-y-2.5 max-h-80 overflow-y-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
               {recurringSchedules.length === 0 ? (
-                <p className="text-xs text-center text-muted-foreground-2 py-5">
+                <p className="text-xs text-center text-muted-foreground-1 py-5">
                   {bi(
                     'لا توجد جداول أسبوعية ثابتة بعد. حدّد أيام الأسبوع للمريض ليُضاف تلقائياً في طابور اليوم.',
                     'No weekly recurring schedules yet. Assign patient weekdays to auto-queue them.',
@@ -2047,12 +2060,12 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 space-y-1">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="text-xs font-bold text-foreground truncate">
+                          <span className="text-xs font-bold text-foreground break-words">
                             {rule.patientName}
                           </span>
                           {rule.isDemo && <DemoBadge />}
                           {ruleIsHome && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-bold bg-teal-500/15 text-teal-700 dark:text-teal-300">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-bold bg-teal-500/15 text-teal-800 dark:text-teal-300">
                               <Home className="size-3" />
                               <span>{bi('زيارة منزلية', 'Home Visit', 'سەردانی ماڵەوە')}</span>
                             </span>
@@ -2066,7 +2079,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                             className={`px-1.5 py-0.5 rounded text-xs font-bold ${
                               rule.isActive
                                 ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
-                                : 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+                                : 'bg-amber-500/15 text-amber-800 dark:text-amber-400'
                             }`}
                           >
                             {rule.isActive
@@ -2091,14 +2104,14 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                           {rule.therapistName && (
                             <>
                               <span>•</span>
-                              <span className="truncate">{rule.therapistName}</span>
+                              <span className="break-words">{rule.therapistName}</span>
                             </>
                           )}
                         </div>
 
                         {ruleIsHome && (ruleAddrDisplay || rule.homeVisitAddress?.notes) && (
                           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground-1">
-                            <span className="truncate">
+                            <span className="break-words">
                               {ruleAddrDisplay || rule.homeVisitAddress?.notes}
                             </span>
                             {hasHomeVisitAddress(rule.homeVisitAddress) && (
@@ -2107,7 +2120,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                                 onClick={() =>
                                   openMapsConfirmation(rule.patientName, rule.homeVisitAddress)
                                 }
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 font-semibold cursor-pointer"
+                                className="min-h-[36px] inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 font-semibold cursor-pointer"
                               >
                                 <ExternalLink className="size-3" />
                                 <span>{bi('فتح في الخرائط', 'Open in maps', 'کردنەوە لە نەخشە')}</span>
@@ -2116,7 +2129,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                           </div>
                         )}
 
-                        <div className="text-xs text-muted-foreground-2">
+                        <div className="text-xs text-muted-foreground-1">
                           {bi('يبدأ من ', 'From ', 'لە ')}
                           <bdi dir="ltr">{formatDateDDMMYYYY(rule.startDate)}</bdi>
                           {rule.endDate && (
@@ -2136,8 +2149,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                             ClinicOperationsService.toggleRecurringScheduleActive(rule.id);
                             reloadSchedule(selectedDate);
                           }}
-                          className="p-1.5 rounded-lg text-muted-foreground-1 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer compact-btn"
-                          style={{ minHeight: 'unset' }}
+                          className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg text-muted-foreground-1 hover:text-primary hover:bg-primary/10 inline-flex items-center justify-center transition-colors cursor-pointer"
                           title={
                             rule.isActive
                               ? bi('إيقاف مؤقت', 'Pause schedule', 'وەستاندنی کاتی')
@@ -2170,8 +2182,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                             ClinicOperationsService.deleteRecurringSchedule(rule.id);
                             reloadSchedule(selectedDate);
                           }}
-                          className="p-1.5 rounded-lg text-muted-foreground-1 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer compact-btn"
-                          style={{ minHeight: 'unset' }}
+                          className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg text-muted-foreground-1 hover:text-rose-700 dark:hover:text-rose-400 hover:bg-rose-500/10 inline-flex items-center justify-center transition-colors cursor-pointer"
                           title={bi('حذف الجدول الأسبوعي', 'Delete weekly schedule', 'سڕینەوەی خشتەی هەفتانە')}
                           aria-label={bi(
                             `حذف الجدول الأسبوعي للمريض ${rule.patientName}`,
@@ -2194,7 +2205,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
           <div className="bg-card rounded-2xl border border-card-line shadow-2xs overflow-hidden h-fit">
           <div className="px-5 py-3.5 border-b border-card-divider flex items-center justify-between bg-muted/30">
             <div className="flex items-center gap-2">
-              <ClipboardList className="size-4 text-amber-600 dark:text-amber-400" />
+              <ClipboardList className="size-4 text-amber-700 dark:text-amber-400" />
               <h3 className="text-sm font-bold text-foreground">
                 {bi('قائمة الانتظار', 'Waiting List', 'لیستی چاوەڕوانی')}
               </h3>
@@ -2202,7 +2213,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
             <button
               type="button"
               onClick={() => setShowNewWaitlistForm(!showNewWaitlistForm)}
-              className="py-1.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/20 text-xs font-semibold transition-colors cursor-pointer"
+              className="min-h-[36px] py-1.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/20 text-xs font-semibold transition-colors cursor-pointer"
             >
               {bi('+ إضافة للانتظار', '+ Add Waitlist', '+ زیادکردن بۆ چاوەڕوانی')}
             </button>
@@ -2213,39 +2224,55 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
               onSubmit={handleAddWaitlist}
               className="p-4 bg-amber-500/5 border-b border-card-divider space-y-2.5"
             >
-              <select
-                required
-                value={waitPatientId}
-                onChange={(e) => setWaitPatientId(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
-              >
-                <option value="">
-                  {bi(
-                    '-- اختر مريضاً مسجلاً --',
-                    '-- Select registered patient --',
-                    '-- نەخۆشێکی تۆمارکراو هەڵبژێرە --'
-                  )}
-                </option>
-                {activePatients.map((p, idx) => (
-                  <option key={p.id} value={p.id}>
-                    {p.data.fullNameAr || p.data.fullName} ({getPatientMrn(p, idx)})
-                  </option>
-                ))}
-              </select>
-              <input
-                type="text"
-                value={waitCondition}
-                onChange={(e) => setWaitCondition(e.target.value)}
-                placeholder={bi('الحالة / الإصابة...', 'Condition...', 'دۆخ / پێکان...')}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
-              />
-              <div className="flex items-center gap-2">
+              <div>
+                <label htmlFor="appt-waitlist-patient" className="sr-only">
+                  {bi('اختيار المريض لقائمة الانتظار', 'Select patient for waiting list', 'هەڵبژاردنی نەخۆش بۆ لیستی چاوەڕوانی')}
+                </label>
                 <select
+                  id="appt-waitlist-patient"
+                  required
+                  value={waitPatientId}
+                  onChange={(e) => setWaitPatientId(e.target.value)}
+                  className="w-full min-h-[36px] px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
+                >
+                  <option value="">
+                    {bi(
+                      '-- اختر مريضاً مسجلاً --',
+                      '-- Select registered patient --',
+                      '-- نەخۆشێکی تۆمارکراو هەڵبژێرە --'
+                    )}
+                  </option>
+                  {activePatients.map((p, idx) => (
+                    <option key={p.id} value={p.id}>
+                      {p.data.fullNameAr || p.data.fullName} ({getPatientMrn(p, idx)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="appt-waitlist-condition" className="sr-only">
+                  {bi('الحالة أو الإصابة', 'Condition or region', 'دۆخ یان پێکان')}
+                </label>
+                <input
+                  id="appt-waitlist-condition"
+                  type="text"
+                  value={waitCondition}
+                  onChange={(e) => setWaitCondition(e.target.value)}
+                  placeholder={bi('الحالة / الإصابة...', 'Condition...', 'دۆخ / پێکان...')}
+                  className="w-full min-h-[36px] px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label htmlFor="appt-waitlist-priority" className="sr-only">
+                  {bi('أولوية الانتظار', 'Waitlist priority', 'لەپێشینەی چاوەڕوانی')}
+                </label>
+                <select
+                  id="appt-waitlist-priority"
                   value={waitPriority}
                   onChange={(e) =>
                     setWaitPriority(e.target.value as 'urgent' | 'high' | 'normal')
                   }
-                  className="flex-1 px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground"
+                  className="flex-1 min-h-[36px] px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground"
                 >
                   <option value="normal">
                     {bi('أولوية اعتيادية', 'Normal Priority', 'لەپێشینەی ئاسایی')}
@@ -2260,7 +2287,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                 </select>
                 <button
                   type="submit"
-                  className="py-2 px-4 rounded-xl bg-primary text-primary-foreground text-xs font-semibold cursor-pointer"
+                  className="min-h-[36px] py-2 px-4 rounded-xl bg-primary text-primary-foreground text-xs font-semibold cursor-pointer"
                 >
                   {bi('حفظ', 'Save', 'پاشەکەوتکردن')}
                 </button>
@@ -2296,7 +2323,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                     <span
                       className={`py-0.5 px-2 rounded-full text-xs font-semibold border ${
                         entry.priority === 'urgent'
-                          ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
+                          ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20'
                           : 'bg-surface text-muted-foreground-1 border-line-2'
                       }`}
                     >
@@ -2305,7 +2332,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                         : bi('اعتيادي', 'Normal', 'ئاسایی')}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground-2">
+                  <p className="text-xs text-muted-foreground-1">
                     <bdi dir="auto">{entry.conditionOrRegion}</bdi>
                   </p>
                   <div className="text-xs text-muted-foreground-1 flex items-center justify-between">
@@ -2322,7 +2349,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                     <button
                       type="button"
                       onClick={() => handlePromoteWaitlistToAppointment(entry)}
-                      className="flex-1 py-2 px-3 rounded-xl bg-primary/10 hover:bg-primary hover:text-primary-foreground text-primary border border-primary/20 text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="min-h-[36px] flex-1 py-2 px-3 rounded-xl bg-primary/10 hover:bg-primary hover:text-primary-foreground text-primary border border-primary/20 text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <CheckCircle2 className="size-3.5" />
                       <span>{bi('تحويل لموعد اليوم', 'Book Today', 'گۆڕین بۆ چاوپێکەوتنی ئەمڕۆ')}</span>
@@ -2335,7 +2362,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                           ClinicOperationsService.removeWaitingListEntry(entry.id)
                         );
                       }}
-                      className="p-2 rounded-xl text-muted-foreground-1 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      className="min-h-[36px] min-w-[36px] p-2 rounded-xl text-muted-foreground-1 hover:text-rose-700 dark:hover:text-rose-400 hover:bg-rose-500/10 inline-flex items-center justify-center transition-colors cursor-pointer"
                       title={bi('حذف من قائمة الانتظار', 'Remove from waiting list', 'سڕینەوە لە لیستی چاوەڕوانی')}
                       aria-label={bi(
                         `حذف ${entry.patientName} من قائمة الانتظار`,
@@ -2374,14 +2401,14 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
           >
             {/* Sheet Header */}
             <div className="px-5 py-4 border-b border-card-divider flex items-center justify-between bg-muted/40 shrink-0">
-              <h3 className="text-sm font-bold text-foreground">
+              <h2 className="text-sm font-bold text-foreground">
                 {bi('حجز موعد جديد', 'Book Appointment', 'تۆمارکردنی چاوپێکەوتنی نوێ')}
-              </h3>
+              </h2>
               <button
                 type="button"
                 onClick={() => setShowNewApptSheet(false)}
                 aria-label={bi('إغلاق', 'Close', 'داخستن')}
-                className="p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground hover:bg-surface cursor-pointer"
+                className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground hover:bg-surface inline-flex items-center justify-center cursor-pointer"
               >
                 <X className="size-4" />
               </button>
@@ -2390,7 +2417,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
             {/* Sheet Body */}
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               {formError && (
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold">
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-bold">
                   {formError}
                 </div>
               )}
@@ -2540,7 +2567,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
 
               {/* 1. ONE Patient Combobox ("search or add new") */}
               <div className="relative">
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                <label htmlFor="appt-sheet-patient-search" className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi(
                     'المريض (ابحث أو أضف جديداً):',
                     'Patient (Search or Add New):',
@@ -2564,7 +2591,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                         setPatientId('');
                         setIsComboboxOpen(true);
                       }}
-                      className="text-xs font-bold text-primary hover:underline cursor-pointer"
+                      className="min-h-[36px] px-2 text-xs font-bold text-primary hover:underline cursor-pointer"
                     >
                       {bi('تغيير', 'Change', 'گۆڕین')}
                     </button>
@@ -2572,6 +2599,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                 ) : (
                   <div className="relative">
                     <input
+                      id="appt-sheet-patient-search"
                       type="text"
                       value={patientSearchQuery}
                       onFocus={() => setIsComboboxOpen(true)}
@@ -2591,22 +2619,29 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                 )}
 
                 {isComboboxOpen && !selectedPatientObj && (
-                  <div className="mt-1 rounded-xl bg-card border border-card-line shadow-lg max-h-48 overflow-y-auto divide-y divide-card-divider z-20">
+                  <div
+                    tabIndex={0}
+                    role="listbox"
+                    aria-label={bi('نتائج البحث عن المرضى', 'Patient search results', 'ئەنجامی گەڕانی نەخۆشەکان')}
+                    className="mt-1 rounded-xl bg-card border border-card-line shadow-lg max-h-48 overflow-y-auto divide-y divide-card-divider z-20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
                     {comboboxFilteredPatients.map((p, idx) => (
                       <button
                         key={p.id}
                         type="button"
+                        role="option"
+                        aria-selected={false}
                         onClick={() => {
                           setPatientId(p.id);
                           setIsComboboxOpen(false);
                           setFormError(null);
                         }}
-                        className="w-full px-3.5 py-2 text-start hover:bg-layer-hover flex items-center justify-between text-xs cursor-pointer"
+                        className="min-h-[36px] w-full px-3.5 py-2 text-start hover:bg-layer-hover flex items-center justify-between gap-2 text-xs cursor-pointer"
                       >
-                        <span className="font-bold text-foreground truncate">
+                        <span className="font-bold text-foreground break-words">
                           {getPatientDisplayName(p.data, language)}
                         </span>
-                        <span className="text-xs font-mono text-muted-foreground-1">
+                        <span className="text-xs font-mono text-muted-foreground-1 shrink-0">
                           <bdi dir="ltr">{getPatientMrn(p, idx)}</bdi>
                         </span>
                       </button>
@@ -2619,7 +2654,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                           setShowNewApptSheet(false);
                           onNewPatient();
                         }}
-                        className="w-full px-3.5 py-2.5 text-start bg-primary/5 hover:bg-primary/10 text-primary font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+                        className="min-h-[36px] w-full px-3.5 py-2.5 text-start bg-primary/5 hover:bg-primary/10 text-primary font-bold text-xs flex items-center gap-1.5 cursor-pointer"
                       >
                         <UserPlus className="size-3.5" />
                         <span>
@@ -2634,9 +2669,9 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
               {/* 2. Schedule Mode + Date / Weekdays & Modern Time Picker */}
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <span className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('نوع الجدولة:', 'Schedule Mode:', 'شێوازی خشتە:')}
-                  </label>
+                  </span>
                   <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-muted/60 border border-line-2">
                     <button
                       type="button"
@@ -2675,30 +2710,40 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                 {scheduleMode === 'single' ? (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-semibold text-foreground block mb-1.5">
+                      <label htmlFor="appt-sheet-date" className="text-xs font-semibold text-foreground block mb-1.5">
                         {bi('التاريخ:', 'Date:', 'بەروار:')}
                       </label>
-                      <DatePickerInput value={selectedDate} onChange={setSelectedDate} />
+                      <DatePickerInput
+                        id="appt-sheet-date"
+                        ariaLabel={bi('التاريخ', 'Date', 'بەروار')}
+                        value={selectedDate}
+                        onChange={setSelectedDate}
+                      />
                     </div>
 
                     <div>
-                      <label className="text-xs font-semibold text-foreground block mb-1.5">
+                      <label htmlFor="appt-sheet-start-time" className="text-xs font-semibold text-foreground block mb-1.5">
                         {bi('وقت البدء:', 'Start Time:', 'کاتی دەستپێکردن:')}
                       </label>
-                      <TimePickerInput value={startTime} onChange={setStartTime} />
+                      <TimePickerInput
+                        id="appt-sheet-start-time"
+                        ariaLabel={bi('وقت البدء', 'Start Time', 'کاتی دەستپێکردن')}
+                        value={startTime}
+                        onChange={setStartTime}
+                      />
                     </div>
                   </div>
                 ) : (
                   <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 space-y-3">
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <label className="text-xs font-bold text-foreground">
+                        <span className="text-xs font-bold text-foreground">
                           {bi(
                             'أيام الحضور الأسبوعية:',
                             'Weekly Session Days:',
                             'ڕۆژانی سەردانی هەفتانە:'
                           )}
-                        </label>
+                        </span>
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
@@ -2734,13 +2779,13 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                             <button
                               key={day.index}
                               type="button"
+                              aria-pressed={isSelected}
                               onClick={() => toggleWeekdayChip(day.index)}
-                              className={`py-2 px-1 rounded-xl text-xs font-bold border transition-colors cursor-pointer compact-btn text-center ${
+                              className={`min-h-[36px] py-2 px-1 rounded-xl text-xs font-bold border transition-colors cursor-pointer text-center ${
                                 isSelected
                                   ? 'bg-primary text-primary-foreground border-primary shadow-2xs'
                                   : 'bg-card text-foreground border-layer-line hover:bg-layer-hover'
                               }`}
-                              style={{ minHeight: 'unset' }}
                             >
                               {bi(day.ar, day.shortEn, WEEKDAY_CKB[day.index])}
                             </button>
@@ -2751,26 +2796,33 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-xs font-semibold text-foreground block mb-1.5">
+                        <label htmlFor="appt-sheet-rec-start" className="text-xs font-semibold text-foreground block mb-1.5">
                           {bi('يبدأ من تاريخ:', 'Starts On:', 'لە بەرواری:')}
                         </label>
                         <DatePickerInput
+                          id="appt-sheet-rec-start"
+                          ariaLabel={bi('تاريخ البدء', 'Starts On', 'لە بەرواری')}
                           value={recurringStartDate}
                           onChange={setRecurringStartDate}
                         />
                       </div>
 
                       <div>
-                        <label className="text-xs font-semibold text-foreground block mb-1.5">
+                        <label htmlFor="appt-sheet-rec-time" className="text-xs font-semibold text-foreground block mb-1.5">
                           {bi('وقت الجلسة:', 'Session Time:', 'کاتی دانیشتن:')}
                         </label>
-                        <TimePickerInput value={startTime} onChange={setStartTime} />
+                        <TimePickerInput
+                          id="appt-sheet-rec-time"
+                          ariaLabel={bi('وقت الجلسة', 'Session Time', 'کاتی دانیشتن')}
+                          value={startTime}
+                          onChange={setStartTime}
+                        />
                       </div>
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
-                        <label className="text-xs font-semibold text-foreground">
+                        <label htmlFor="appt-sheet-rec-end" className="text-xs font-semibold text-foreground">
                           {bi(
                             'تاريخ الانتهاء (اختياري):',
                             'End Date (Optional):',
@@ -2781,7 +2833,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                           <button
                             type="button"
                             onClick={() => setRecurringEndDate('')}
-                            className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer compact-btn"
+                            className="text-xs font-semibold text-rose-700 dark:text-rose-400 hover:underline cursor-pointer compact-btn"
                             style={{ minHeight: 'unset' }}
                           >
                             {bi('مسح', 'Clear', 'سڕینەوە')}
@@ -2789,6 +2841,8 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                         )}
                       </div>
                       <DatePickerInput
+                        id="appt-sheet-rec-end"
+                        ariaLabel={bi('تاريخ الانتهاء', 'End Date', 'بەرواری کۆتایی')}
                         value={recurringEndDate}
                         onChange={setRecurringEndDate}
                         placeholder={bi(
@@ -2812,13 +2866,13 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
 
               {/* 3. Duration Presets (30 / 45 / 60) + Manual Custom Input */}
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                <span className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi(
                     'مدة الجلسة (بالدقائق):',
                     'Duration (Minutes):',
                     'ماوەی دانیشتن (بە خولەک):'
                   )}
-                </label>
+                </span>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" dir="ltr">
                   {([30, 45, 60] as const).map((preset) => (
                     <button
@@ -2828,7 +2882,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                         setIsCustomDuration(false);
                         setDurationMinutes(preset);
                       }}
-                      className={`py-2 rounded-xl text-xs font-mono font-bold border transition-colors cursor-pointer ${
+                      className={`min-h-[36px] py-2 rounded-xl text-xs font-mono font-bold border transition-colors cursor-pointer ${
                         !isCustomDuration && durationMinutes === preset
                           ? 'bg-primary text-primary-foreground border-primary shadow-2xs'
                           : 'bg-layer text-foreground border-layer-line hover:bg-layer-hover'
@@ -2843,7 +2897,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                       setIsCustomDuration(true);
                       setCustomDurationDraft(String(durationMinutes || 45));
                     }}
-                    className={`py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
+                    className={`min-h-[36px] py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
                       isCustomDuration
                         ? 'bg-primary text-primary-foreground border-primary shadow-2xs'
                         : 'bg-layer text-foreground border-layer-line hover:bg-layer-hover'
@@ -2855,7 +2909,11 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
 
                 {isCustomDuration && (
                   <div className="mt-2 flex items-center gap-2">
+                    <label htmlFor="appt-sheet-custom-dur" className="sr-only">
+                      {bi('مدة الجلسة المخصصة بالدقائق', 'Custom duration in minutes', 'ماوەی دانیشتن بە خولەک')}
+                    </label>
                     <input
+                      id="appt-sheet-custom-dur"
                       type="number"
                       min={5}
                       max={480}
@@ -2883,9 +2941,9 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
               {/* 4. Appointment Mode (C1) + Practice Location (C2) + Room / Home Visit Address */}
               {homeVisitsEnabled && (
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <span className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('نمط الحضور:', 'Appointment Mode:', 'شێوازی ئامادەبوون:')}
-                  </label>
+                  </span>
                   <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-muted/60 border border-line-2">
                     <button
                       type="button"
@@ -2921,14 +2979,15 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
 
               {practiceLocationsEnabled && (
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="appt-sheet-location" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('موقع الخدمة / الفرع:', 'Practice Location:', 'شوێنی خزمەتگوزاری / لق:')}
                   </label>
                   <select
+                    id="appt-sheet-location"
                     data-testid="sheet-practice-location-select"
                     value={locationId}
                     onChange={(e) => setLocationId(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground font-semibold focus:outline-none focus:border-primary"
+                    className="w-full min-h-[36px] px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground font-semibold focus:outline-none focus:border-primary"
                   >
                     {activePracticeLocations.map((loc) => (
                       <option key={loc.id} value={loc.id}>
@@ -2969,10 +3028,11 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label className="text-xs font-semibold text-foreground block mb-1">
+                      <label htmlFor="appt-sheet-hv-gov" className="text-xs font-semibold text-foreground block mb-1">
                         {bi('المحافظة:', 'Governorate:', 'پارێزگا:')}
                       </label>
                       <input
+                        id="appt-sheet-hv-gov"
                         type="text"
                         list="iraq-governorates-sheet-list"
                         value={homeVisitGov}
@@ -2982,10 +3042,11 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-foreground block mb-1">
+                      <label htmlFor="appt-sheet-hv-area" className="text-xs font-semibold text-foreground block mb-1">
                         {bi('المنطقة / الحي:', 'Area / District:', 'ناوچە / گەڕەک:')}
                       </label>
                       <input
+                        id="appt-sheet-hv-area"
                         type="text"
                         value={homeVisitArea}
                         onChange={(e) => setHomeVisitArea(e.target.value)}
@@ -3000,10 +3061,11 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1">
+                    <label htmlFor="appt-sheet-hv-landmark" className="text-xs font-semibold text-foreground block mb-1">
                       {bi('أقرب نقطة دالة:', 'Nearest Landmark:', 'نزیکترین نیشانەی دیار:')}
                     </label>
                     <input
+                      id="appt-sheet-hv-landmark"
                       type="text"
                       value={homeVisitLandmark}
                       onChange={(e) => setHomeVisitLandmark(e.target.value)}
@@ -3017,7 +3079,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1">
+                    <label htmlFor="appt-sheet-hv-notes" className="text-xs font-semibold text-foreground block mb-1">
                       {bi(
                         'ملاحظات الوصول (اختياري):',
                         'Access Notes (Optional):',
@@ -3025,6 +3087,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                       )}
                     </label>
                     <input
+                      id="appt-sheet-hv-notes"
                       type="text"
                       value={homeVisitNotes}
                       onChange={(e) => setHomeVisitNotes(e.target.value)}
@@ -3039,7 +3102,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
 
                   <div className="grid grid-cols-2 gap-2.5">
                     <div>
-                      <label className="text-xs font-semibold text-foreground block mb-1">
+                      <label htmlFor="appt-sheet-hv-before" className="text-xs font-semibold text-foreground block mb-1">
                         {bi(
                           'تنقل قبل الجلسة (دقيقة):',
                           'Travel Before (min):',
@@ -3047,6 +3110,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                         )}
                       </label>
                       <input
+                        id="appt-sheet-hv-before"
                         type="number"
                         min={0}
                         max={240}
@@ -3059,7 +3123,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-foreground block mb-1">
+                      <label htmlFor="appt-sheet-hv-after" className="text-xs font-semibold text-foreground block mb-1">
                         {bi(
                           'تنقل بعد الجلسة (دقيقة):',
                           'Travel After (min):',
@@ -3067,6 +3131,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                         )}
                       </label>
                       <input
+                        id="appt-sheet-hv-after"
                         type="number"
                         min={0}
                         max={240}
@@ -3082,13 +3147,14 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                 </div>
               ) : (
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="appt-sheet-room" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('الغرفة العلاجية:', 'Treatment Room:', 'ژووری چارەسەر:')}
                   </label>
                   <select
+                    id="appt-sheet-room"
                     value={roomOrBed}
                     onChange={(e) => setRoomOrBed(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground font-semibold focus:outline-none focus:border-primary"
+                    className="w-full min-h-[36px] px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground font-semibold focus:outline-none focus:border-primary"
                   >
                     {CLINIC_ROOMS.map((room) => (
                       <option key={room.ar} value={room.ar}>
@@ -3102,13 +3168,14 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
               {/* 5. Visit Type & Assigned Therapist */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="appt-sheet-visit-type" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('نوع الزيارة:', 'Visit Type:', 'جۆری سەردان:')}
                   </label>
                   <select
+                    id="appt-sheet-visit-type"
                     value={visitType}
                     onChange={(e) => setVisitType(e.target.value as SessionType)}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
+                    className="w-full min-h-[36px] px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
                   >
                     <option value="initial_evaluation">
                       {bi('تقييم أولي', 'Initial Evaluation', 'هەڵسەنگاندنی سەرەتایی')}
@@ -3126,13 +3193,14 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  <label htmlFor="appt-sheet-therapist" className="text-xs font-semibold text-foreground block mb-1.5">
                     {bi('المعالج:', 'Therapist:', 'چارەسەرکار:')}
                   </label>
                   <select
+                    id="appt-sheet-therapist"
                     value={therapistName}
                     onChange={(e) => setTherapistName(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
+                    className="w-full min-h-[36px] px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
                   >
                     {therapists.map((t) => (
                       <option key={t.id} value={t.nameAr}>
@@ -3145,7 +3213,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
 
               {/* 6. Condition / Episode Title */}
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                <label htmlFor="appt-sheet-episode-title" className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi(
                     'الحالة أو المنطقة العلاجية:',
                     'Condition / Episode:',
@@ -3153,6 +3221,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                   )}
                 </label>
                 <input
+                  id="appt-sheet-episode-title"
                   type="text"
                   value={episodeTitle}
                   onChange={(e) => setEpisodeTitle(e.target.value)}
@@ -3176,13 +3245,13 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                     refreshRecoveredDrafts()
                   );
                 }}
-                className="py-2 px-4 rounded-xl bg-layer border border-layer-line text-layer-foreground text-xs font-semibold cursor-pointer"
+                className="min-h-[36px] py-2 px-4 rounded-xl bg-layer border border-layer-line text-layer-foreground text-xs font-semibold cursor-pointer"
               >
                 {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
               </button>
               <button
                 type="submit"
-                className="py-2 px-5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold shadow-xs cursor-pointer"
+                className="min-h-[36px] py-2 px-5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold shadow-xs cursor-pointer"
               >
                 {scheduleMode === 'recurring'
                   ? bi('حفظ الجدول الأسبوعي', 'Save Weekly Schedule', 'پاشەکەوتکردنی خشتەی هەفتانە')
@@ -3222,7 +3291,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
         {reasonModalTarget && (
           <>
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-bold text-foreground">
+              <h2 className="text-sm font-bold text-foreground">
                 {reasonModalTarget.targetStatus === 'cancelled'
                   ? bi(
                       'تسجيل سبب إلغاء الموعد',
@@ -3234,12 +3303,12 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                       'Record No-Show Reason',
                       'تۆمارکردنی هۆکاری ئامادەنەبوون (No-Show)'
                     )}
-              </h3>
+              </h2>
               <button
                 type="button"
                 onClick={() => setReasonModalTarget(null)}
                 aria-label={bi('إغلاق', 'Close', 'داخستن')}
-                className="p-1 text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                className="min-h-[36px] min-w-[36px] p-1 text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer"
               >
                 <X className="size-4" />
               </button>
@@ -3280,7 +3349,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                     key={preset.en}
                     type="button"
                     onClick={() => setStatusReasonInput(label)}
-                    className="px-2.5 py-1 rounded-lg border border-layer-line bg-surface hover:bg-layer-hover text-foreground font-semibold cursor-pointer"
+                    className="min-h-[36px] px-2.5 py-1 rounded-lg border border-layer-line bg-surface hover:bg-layer-hover text-foreground font-semibold cursor-pointer"
                   >
                     {label}
                   </button>
@@ -3289,10 +3358,11 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
             </div>
 
             <div>
-              <label className="block font-bold text-foreground mb-1">
+              <label htmlFor="appt-reason-input" className="block font-bold text-foreground mb-1">
                 {bi('السبب (مطلوب): *', 'Reason (Required): *', 'هۆکار (پێویستە): *')}
               </label>
               <input
+                id="appt-reason-input"
                 type="text"
                 value={statusReasonInput}
                 onChange={(e) => setStatusReasonInput(e.target.value)}
@@ -3305,7 +3375,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
               <button
                 type="button"
                 onClick={() => setReasonModalTarget(null)}
-                className="px-3.5 py-2 rounded-xl bg-layer border border-layer-line text-foreground font-semibold cursor-pointer"
+                className="min-h-[36px] px-3.5 py-2 rounded-xl bg-layer border border-layer-line text-foreground font-semibold cursor-pointer"
               >
                 {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
               </button>
@@ -3334,7 +3404,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                   setReasonModalTarget(null);
                   setStatusReasonInput('');
                 }}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed"
+                className="min-h-[36px] px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-bold cursor-pointer disabled:bg-surface disabled:text-muted-foreground-1 disabled:border disabled:border-line-2 disabled:cursor-not-allowed"
               >
                 {bi('تأكيد وتحديث الموعد', 'Confirm Status', 'دڵنیاکردنەوە و نوێکردنەوەی دۆخ')}
               </button>

@@ -46,7 +46,7 @@ export const RecoveredWorkBanner: React.FC<RecoveredWorkBannerProps> = ({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 font-bold text-amber-950 dark:text-amber-200">
-          <History className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
+          <History className="size-4 text-amber-700 dark:text-amber-400 shrink-0" />
           <span>
             {bi(
               'تم استرجاع مسودات مشفرة غير محفوظة من جلستك السابقة:',
@@ -60,9 +60,9 @@ export const RecoveredWorkBanner: React.FC<RecoveredWorkBannerProps> = ({
           <button
             type="button"
             onClick={onDiscardAll}
-            className="px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-xs font-semibold text-foreground inline-flex items-center gap-1 cursor-pointer"
+            className="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-xs font-semibold text-foreground inline-flex items-center gap-1 cursor-pointer"
           >
-            <Trash2 className="size-3.5 text-rose-500" />
+            <Trash2 className="size-3.5 text-rose-700 dark:text-rose-400" />
             <span>{bi('تجاهل الكل', 'Discard All', 'لابردنی هەمووان')}</span>
           </button>
         )}
@@ -76,19 +76,21 @@ export const RecoveredWorkBanner: React.FC<RecoveredWorkBannerProps> = ({
             className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-card border border-amber-500/35 shadow-2xs"
           >
             <div className="min-w-0">
-              <div className="font-bold text-foreground truncate max-w-[240px]">
+              <div className="font-bold text-foreground break-words">
                 {labelForType(d.draftType)}
                 {d.patientName ? ` — ${d.patientName}` : ''}
               </div>
-              <div className="text-xs text-muted-foreground-1 truncate max-w-[240px]">
+              <div className="text-xs text-muted-foreground-1 break-words">
                 {d.summaryLabel ? `${d.summaryLabel} • ` : ''}
-                {new Date(d.updatedAt).toLocaleTimeString(language === 'en' ? 'en-GB' : 'ar-IQ', { hour: '2-digit', minute: '2-digit' })}
+                <bdi dir="ltr">
+                  {new Date(d.updatedAt).toLocaleTimeString(language === 'en' ? 'en-GB' : 'ar-IQ', { hour: '2-digit', minute: '2-digit' })}
+                </bdi>
               </div>
             </div>
             <button
               type="button"
               onClick={() => onRestoreDraft(d)}
-              className="px-2.5 py-1 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
+              className="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
             >
               <RotateCcw className="size-3.5" />
               <span>{bi('استعادة', 'Restore', 'گەڕاندنەوە')}</span>
@@ -96,7 +98,7 @@ export const RecoveredWorkBanner: React.FC<RecoveredWorkBannerProps> = ({
             <button
               type="button"
               onClick={() => onDiscardDraft(d.id)}
-              className="px-2 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-semibold cursor-pointer whitespace-nowrap"
+              className="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-semibold cursor-pointer whitespace-nowrap"
             >
               {bi('تجاهل', 'Discard', 'لابردن')}
             </button>

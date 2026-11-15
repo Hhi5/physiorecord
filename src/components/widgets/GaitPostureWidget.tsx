@@ -70,11 +70,11 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Timer className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-            <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+            <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100">
               {bi('اختبار النهوض والمشي الموقوت (Timed Up & Go - TUG)', 'Timed Up & Go (TUG) Test', 'پشکنینی هەستانەوە و ڕۆیشتنی کاتبەند (TUG)')}
-            </h4>
+            </h3>
           </div>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-slate-600 dark:text-slate-400">
             {bi('مسافة 3 أمتار قياسية', 'Standard 3m Walk', 'مەودای ستانداردی ٣ مەتر')}
           </span>
         </div>
@@ -83,6 +83,7 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
               <input
+                id="gait-tug-seconds"
                 type="number"
                 step="0.1"
                 min="1"
@@ -90,6 +91,7 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
                 disabled={readOnly}
                 value={currentData.tugSeconds ?? ''}
                 placeholder="0.0"
+                aria-label={bi('زمن اختبار النهوض والمشي بالثواني', 'TUG duration in seconds', 'کاتی TUG بە چرکە')}
                 onChange={(e) =>
                   handleUpdate({
                     tugSeconds: e.target.value === '' ? null : Number(e.target.value),
@@ -97,9 +99,9 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
                 }
                 className="w-24 px-3 py-1.5 font-bold font-mono text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-center focus:ring-2 focus:ring-teal-500"
               />
-              <span className="text-xs font-bold text-slate-500">
+              <label htmlFor="gait-tug-seconds" className="text-xs font-bold text-slate-600 dark:text-slate-400">
                 {bi('ثانية (Seconds)', 'sec', 'چرکە (sec)')}
-              </span>
+              </label>
             </div>
 
             {currentData.tugSeconds !== null && currentData.tugSeconds !== undefined && (
@@ -113,10 +115,11 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+            <label htmlFor="gait-tug-norm-select" className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
               {bi('الفئة المرجعية للمقارنة السريرية:', 'Reference Cohort Context:', 'پۆلی سەرچاوە بۆ بەراوردکردنی کلینیکی:')}
             </label>
             <select
+              id="gait-tug-norm-select"
               disabled={readOnly}
               value={selectedNorm.profileId}
               onChange={(e) =>
@@ -201,10 +204,11 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Gait Pattern */}
         <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-850 space-y-2">
-          <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+          <label htmlFor="gait-pattern-select" className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
             {bi('نمط المشي السريري (Gait Pattern):', 'Clinical Gait Pattern:', 'شێوازی ڕۆیشتنی کلینیکی (Gait Pattern):')}
           </label>
           <select
+            id="gait-pattern-select"
             disabled={readOnly}
             value={currentData.gaitPattern}
             onChange={(e) => handleUpdate({ gaitPattern: e.target.value as GaitPostureData['gaitPattern'] })}
@@ -221,10 +225,11 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
 
         {/* Assistive Device */}
         <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-850 space-y-2">
-          <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+          <label htmlFor="gait-device-select" className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
             {bi('الأداة المساعدة على المشي:', 'Assistive Device:', 'ئامرازی یارمەتیدەر بۆ ڕۆیشتن:')}
           </label>
           <select
+            id="gait-device-select"
             disabled={readOnly}
             value={currentData.assistiveDevice}
             onChange={(e) => handleUpdate({ assistiveDevice: e.target.value as GaitPostureData['assistiveDevice'] })}
@@ -241,9 +246,9 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
 
       {/* Postural Deviations Multi-Select */}
       <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-850 space-y-2.5">
-        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
           {bi('المشاهدات الميكانيكية للقوام (Postural Deviations):', 'Postural Deviations Observed:', 'تێبینییە میکانیکییەکانی شێوازی وەستان (Posture):')}
-        </label>
+        </span>
         <div className="flex flex-wrap gap-1.5">
           {POSTURE_DEVIATIONS_LIST.map((dev) => {
             const isSelected = currentData.postureDeviations.includes(dev.id);

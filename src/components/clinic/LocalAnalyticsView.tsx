@@ -134,9 +134,9 @@ export const LocalAnalyticsView: React.FC = () => {
             <BarChart3 className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">
+            <h1 className="text-xl font-bold text-foreground">
               {t('analytics.title')}
-            </h2>
+            </h1>
             <p className="text-xs text-muted-foreground-1 mt-1">
               {t('analytics.subtitle')}
             </p>
@@ -214,7 +214,7 @@ export const LocalAnalyticsView: React.FC = () => {
             <span
               className={`font-bold ${
                 summary.noShowRatePercent > 0
-                  ? 'text-rose-600 dark:text-rose-400'
+                  ? 'text-rose-700 dark:text-rose-400'
                   : 'text-foreground'
               }`}
             >
@@ -233,13 +233,13 @@ export const LocalAnalyticsView: React.FC = () => {
         <div className="bg-layer border border-card-stroke rounded-2xl p-4 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground-1">
             <span>{isEn ? 'Outcome Improvement & MCID' : 'تحسن المقاييس الوظيفية'}</span>
-            <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <TrendingUp className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
           </div>
           <div className="flex items-baseline gap-2">
             <span
               className={`text-2xl font-extrabold ${
                 summary.outcomeImprovementRatePercent > 0
-                  ? 'text-emerald-600 dark:text-emerald-400'
+                  ? 'text-emerald-700 dark:text-emerald-400'
                   : 'text-foreground'
               }`}
             >
@@ -267,11 +267,11 @@ export const LocalAnalyticsView: React.FC = () => {
         <div className="bg-layer border border-card-stroke rounded-2xl p-4 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground-1">
             <span>{isEn ? 'Net Local Cashflow' : 'صافي التدفق المالي'}</span>
-            <Wallet className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <Wallet className="w-4 h-4 text-amber-700 dark:text-amber-400" />
           </div>
           <div
             className={`text-2xl font-extrabold ${
-              summary.netCashflowIQD < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'
+              summary.netCashflowIQD < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-foreground'
             }`}
           >
             <Money amount={summary.netCashflowIQD} />
@@ -297,9 +297,9 @@ export const LocalAnalyticsView: React.FC = () => {
       <div className="bg-layer border border-card-stroke rounded-2xl p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h3 className="text-base font-bold text-foreground">
+            <h2 className="text-base font-bold text-foreground">
               {isEn ? 'Monthly Income vs Operating Expenses (Last 6 Months)' : 'الإيرادات مقابل المصاريف التشغيلية (آخر 6 أشهر)'}
-            </h3>
+            </h2>
             <p className="text-xs text-muted-foreground-1">
               {isEn
                 ? 'Calculated directly from encrypted local payments and expenses.'
@@ -344,13 +344,13 @@ export const LocalAnalyticsView: React.FC = () => {
                       <span className="text-teal-700 dark:text-teal-300 font-semibold">
                         + <Money amount={row.incomeIQD} />
                       </span>
-                      <span className="text-rose-600 dark:text-rose-400 font-semibold">
+                      <span className="text-rose-700 dark:text-rose-400 font-semibold">
                         − <Money amount={row.expensesIQD} />
                       </span>
                       <span
                         className={`font-bold ${
                           row.netIQD < 0
-                            ? 'text-rose-600 dark:text-rose-400'
+                            ? 'text-rose-700 dark:text-rose-400'
                             : 'text-foreground'
                         }`}
                       >

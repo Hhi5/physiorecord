@@ -121,13 +121,13 @@ export const LongitudinalComparisonView: React.FC<LongitudinalComparisonViewProp
             <FileBarChart className="size-5" />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-bold text-foreground">
+            <h2 className="text-sm sm:text-base font-bold text-foreground">
               {bi(
                 'مصفوفة المقارنة السريرية الطولية',
                 'Longitudinal Clinical Comparison Matrix (Baseline vs. Re-evals vs. Current)',
                 'ماتریکسی بەراوردکردنی کلینیکی درێژخایەن (بنەڕەتی لەگەڵ دووبارە هەڵسەنگاندن و ئێستا)'
               )}
-            </h3>
+            </h2>
             <p className="text-xs text-muted-foreground-1 mt-0.5">
               {language === 'ar' ? (
                 <>
@@ -146,6 +146,7 @@ export const LongitudinalComparisonView: React.FC<LongitudinalComparisonViewProp
 
         <div className="flex flex-wrap items-center gap-2">
           <select
+            aria-label={bi('نوع اللقطة المرجعية', 'Snapshot type', 'جۆری وێنەگرتن')}
             value={snapshotType}
             onChange={(e) =>
               setSnapshotType(e.target.value as ClinicalAssessmentSnapshot['snapshotType'])
@@ -202,9 +203,9 @@ export const LongitudinalComparisonView: React.FC<LongitudinalComparisonViewProp
           <div className="size-12 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto">
             <FileBarChart className="size-6" />
           </div>
-          <h4 className="text-sm font-bold text-foreground">
+          <h3 className="text-sm font-bold text-foreground">
             {bi('التقط قراءة مرجعية للمقارنة', 'Capture a snapshot to compare', 'پێوانەیەکی بنەڕەتی تۆمار بکە بۆ بەراوردکردن')}
-          </h4>
+          </h3>
           <p className="text-xs text-muted-foreground-1 max-w-md mx-auto leading-relaxed">
             {bi(
               'لم يتم حفظ أي قراءة مرجعية (Baseline) لحلقة الرعاية هذه بعد. اضغط على الزر أعلاه لتثبيت القراءات الحالية ومقارنة التحسن بمرور الجلسات.',
@@ -225,7 +226,11 @@ export const LongitudinalComparisonView: React.FC<LongitudinalComparisonViewProp
         </div>
       ) : (
       <div className="bg-card rounded-2xl border border-card-line shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
+        <div
+          tabIndex={0}
+          aria-label={bi('جدول المقارنة السريرية', 'Clinical comparison table', 'خشتەی بەراوردی کلینیکی')}
+          className="overflow-x-auto focus:outline-none focus:ring-2 focus:ring-primary/30"
+        >
           <table className="min-w-full divide-y divide-card-divider text-start text-xs">
             <thead className="bg-muted/50">
               <tr className="text-muted-foreground-1 font-semibold uppercase tracking-wider text-xs">

@@ -210,7 +210,11 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
     () => mergedPresets.filter((p) => appliedSet.has(p.id)),
     [mergedPresets, appliedSet]
   );
+  const [showAllRegions, setShowAllRegions] = useState<boolean>(() => appliedPresets.length === 0);
   const primaryAppliedPreset = appliedPresets[0] || lastAppliedPreset;
+
+  const visiblePresets =
+    appliedPresets.length > 0 && !showAllRegions ? appliedPresets : mergedPresets;
 
   if (isCollapsed) {
     return (
@@ -248,7 +252,7 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
           type="button"
           onClick={toggleCollapse}
           data-testid="expand-exam-preset-btn"
-          className="px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-xs font-semibold text-foreground inline-flex items-center gap-1 cursor-pointer shrink-0"
+          className="min-h-[36px] px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-xs font-semibold text-foreground inline-flex items-center gap-1 cursor-pointer shrink-0"
         >
           <span>{bi('توسيع القوالب', 'Expand Presets', 'فراوانکردنی تێمپلەیتەکان')}</span>
           <ChevronDown className="size-3 text-muted-foreground-1" />
@@ -265,41 +269,40 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <Sparkles className="size-3.5 text-primary shrink-0" />
-          <h3 className="text-xs font-bold text-foreground">
+          <h2 className="text-xs font-bold text-foreground">
             {bi(
               'قوالب الفحص الإقليمي السريع',
               'Regional Exam Presets',
               'تێمپلەیتەکانی پشکنینی خێرا'
             )}
-          </h3>
+          </h2>
         </div>
 
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => handleOpenCustomize()}
-            className="px-2 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-xs font-semibold text-foreground inline-flex items-center gap-1 cursor-pointer"
+            className="min-h-[36px] px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-xs font-semibold text-foreground inline-flex items-center gap-1 cursor-pointer"
           >
             <Sliders className="size-3 text-primary" />
-            <span>{bi('تخصيص / JSON', 'Customize / Packs', 'تایبەتکردن / JSON')}</span>
+            <span>{bi('تخصيص القوالب', 'Customize Presets', 'تایبەتکردنی تێمپلەیتەکان')}</span>
           </button>
           <button
             type="button"
             onClick={toggleCollapse}
             data-testid="collapse-exam-preset-btn"
-            aria-label={bi('طوي الشريط', 'Collapse bar', 'کۆکردنەوەی شریت')}
-            title={bi('طوي الشريط', 'Collapse bar', 'کۆکردنەوەی شریت')}
-            className="px-2 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-xs font-semibold text-foreground inline-flex items-center gap-1 cursor-pointer"
+            title={bi('طي الشريط', 'Collapse bar', 'کۆکردنەوەی شریت')}
+            className="min-h-[36px] px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-xs font-semibold text-foreground inline-flex items-center gap-1 cursor-pointer"
           >
             <ChevronUp className="size-3 text-muted-foreground-1" />
-            <span>{bi('طوي', 'Collapse', 'کۆکردنەوە')}</span>
+            <span>{bi('طي', 'Collapse', 'کۆکردنەوە')}</span>
           </button>
         </div>
       </div>
 
-      {/* 11 Regional One-Tap Preset Chips */}
+      {/* Regional One-Tap Preset Chips (auto-compacts unselected regions when an exam preset is active) */}
       <div className="flex flex-wrap gap-1.5">
-        {mergedPresets.map((preset) => {
+        {visiblePresets.map((preset) => {
           const isApplied = appliedSet.has(preset.id);
           return (
             <button
@@ -310,9 +313,10 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
               onClick={() => {
                 const updated = applyExamPresetToEpisodeStore(episodeStore, preset);
                 setLastAppliedPreset(preset);
+                setShowAllRegions(false);
                 onApplyStore(updated, preset);
               }}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors inline-flex items-center gap-1 cursor-pointer ${
+              className={`min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors inline-flex items-center gap-1 cursor-pointer ${
                 isApplied
                   ? 'bg-primary/12 text-primary border-primary/40'
                   : 'bg-surface hover:bg-layer-hover text-foreground border-line-2'
@@ -323,6 +327,23 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
             </button>
           );
         })}
+        {appliedPresets.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowAllRegions((prev) => !prev)}
+            className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-semibold border border-dashed border-layer-line bg-layer hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground inline-flex items-center gap-1 cursor-pointer"
+          >
+            <span>
+              {showAllRegions
+                ? bi('إخفاء المناطق الأخرى', 'Show Active Only', 'تەنها چالاک نیشان بدە')
+                : bi(
+                    `تغيير المنطقة (${mergedPresets.length})`,
+                    `All Regions (${mergedPresets.length})`,
+                    `گۆڕینی ناوچە (${mergedPresets.length})`
+                  )}
+            </span>
+          </button>
+        )}
       </div>
 
       {/* Red-Flag Safety Reminder for Applied Preset */}
@@ -425,10 +446,11 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
           {/* Edit Selected / New Preset Form */}
           <div className="p-4 rounded-xl bg-surface border border-line-2 space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-bold text-foreground">
+              <label htmlFor="preset-editor-select" className="font-bold text-foreground">
                 {bi('تحرير القالب:', 'Preset Editor:', 'دەستکاریکەری تێمپلەیت:')}
-              </span>
+              </label>
               <select
+                id="preset-editor-select"
                 value={editSourcePreset?.id || ''}
                 onChange={(e) => {
                   const found = mergedPresets.find((m) => m.id === e.target.value);
@@ -446,10 +468,11 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="font-semibold block mb-1">
+                <label htmlFor="preset-title-ar" className="font-semibold block mb-1">
                   {bi('الاسم بالعربية', 'Arabic Title', 'ناونیشان بە عەرەبی')}
                 </label>
                 <input
+                  id="preset-title-ar"
                   type="text"
                   value={editTitleAr}
                   onChange={(e) => setEditTitleAr(e.target.value)}
@@ -457,10 +480,11 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
                 />
               </div>
               <div>
-                <label className="font-semibold block mb-1">
+                <label htmlFor="preset-title-en" className="font-semibold block mb-1">
                   {bi('الاسم بالإنجليزية', 'English Title', 'ناونیشان بە ئینگلیزی')}
                 </label>
                 <input
+                  id="preset-title-en"
                   type="text"
                   dir="ltr"
                   value={editTitleEn}
@@ -471,10 +495,11 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
             </div>
 
             <div>
-              <label className="font-semibold block mb-1">
+              <label htmlFor="preset-scale-select" className="font-semibold block mb-1">
                 {bi('المقياس الوظيفي المقترح', 'Recommended Outcome Scale', 'پێوەری فەرمانی پێشنیارکراو')}
               </label>
               <select
+                id="preset-scale-select"
                 value={editScaleId}
                 onChange={(e) =>
                   setEditScaleId(e.target.value as RegionalExamPresetDefinition['recommendedScaleId'])

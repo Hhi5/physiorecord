@@ -252,7 +252,7 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
           <button
             type="button"
             onClick={() => setLetterLang(letterLang === 'ar' ? 'en' : 'ar')}
-            className="px-3 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+            className="min-h-[36px] px-3 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
           >
             <Languages className="size-3.5 text-primary" />
             <span>
@@ -265,10 +265,10 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
           <button
             type="button"
             onClick={() => void handleCopy()}
-            className="px-3 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+            className="min-h-[36px] px-3 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
           >
             {copied ? (
-              <Check className="size-3.5 text-emerald-600" />
+              <Check className="size-3.5 text-emerald-700 dark:text-emerald-400" />
             ) : (
               <Copy className="size-3.5 text-primary" />
             )}
@@ -282,7 +282,7 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
           <button
             type="button"
             onClick={() => window.print()}
-            className="px-4 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+            className="min-h-[36px] px-4 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
           >
             <Printer className="size-3.5" />
             <span>{bi('طباعة / حفظ PDF', 'Print / Save PDF', 'چاپ / پاشەکەوتکردنی PDF')}</span>
@@ -292,7 +292,7 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
             type="button"
             onClick={onClose}
             aria-label={bi('إغلاق', 'Close', 'داخستن')}
-            className="p-2 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer"
+            className="min-h-[36px] min-w-[36px] p-2 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer"
           >
             <X className="size-4" />
           </button>
@@ -305,10 +305,11 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
         onClick={(e) => e.stopPropagation()}
       >
         <div>
-          <label className="block text-xs font-semibold text-foreground mb-1">
+          <label htmlFor="doc-letter-subject" className="block text-xs font-semibold text-foreground mb-1">
             {bi('عنوان الرسالة / الموضوع:', 'Letter Subject:', 'ناونیشانی نامە / بابەت:')}
           </label>
           <input
+            id="doc-letter-subject"
             type="text"
             dir={isLetterAr ? 'rtl' : 'ltr'}
             value={subjectText}
@@ -317,10 +318,11 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-foreground mb-1">
+          <label htmlFor="doc-letter-body" className="block text-xs font-semibold text-foreground mb-1">
             {bi('نص التقرير السريري للطبيب المحيل:', 'Report Body:', 'دەقی ڕاپۆرتی کلینیکی بۆ پزیشکی نێردەر:')}
           </label>
           <AutoResizeTextarea
+            id="doc-letter-body"
             minRows={6}
             dir={isLetterAr ? 'rtl' : 'ltr'}
             value={bodyText}
@@ -1069,7 +1071,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                     </div>
                     <div className="text-xs text-muted-foreground-1 flex items-center justify-between">
                       <span>{bi('المحصّل:', 'Collected:', 'وەرگیراو:')}</span>
-                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                      <span className="font-semibold text-emerald-700 dark:text-emerald-400">
                         <Money amount={src.collectedRevenueIQD} colorize={false} />
                       </span>
                     </div>
@@ -1109,13 +1111,14 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
                   <div>
-                    <label className="block text-xs font-semibold text-foreground mb-1">
+                    <label htmlFor="ref-letter-patient" className="block text-xs font-semibold text-foreground mb-1">
                       {bi('المريض:', 'Patient:', 'نەخۆش:')}
                     </label>
                     <select
+                      id="ref-letter-patient"
                       value={letterPatientId}
                       onChange={(e) => setLetterPatientId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-surface border border-layer-line text-xs text-foreground focus:outline-none focus:border-primary"
+                      className="w-full min-h-[36px] px-3 py-2 rounded-xl bg-surface border border-layer-line text-xs text-foreground focus:outline-none focus:border-primary"
                     >
                       {sortedPatientsForLetter.map((p) => {
                         const src = resolvePatientReferralSource(p.data);
@@ -1137,13 +1140,14 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-foreground mb-1">
+                    <label htmlFor="ref-letter-episode" className="block text-xs font-semibold text-foreground mb-1">
                       {bi('حلقة الرعاية:', 'Episode:', 'قۆناغی چارەسەر:')}
                     </label>
                     <select
+                      id="ref-letter-episode"
                       value={letterEpisodeId}
                       onChange={(e) => setLetterEpisodeId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-surface border border-layer-line text-xs text-foreground focus:outline-none focus:border-primary"
+                      className="w-full min-h-[36px] px-3 py-2 rounded-xl bg-surface border border-layer-line text-xs text-foreground focus:outline-none focus:border-primary"
                     >
                       {letterPatientEpisodes.length === 0 ? (
                         <option value="">
@@ -1160,13 +1164,14 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-foreground mb-1">
+                    <label htmlFor="ref-letter-doctor" className="block text-xs font-semibold text-foreground mb-1">
                       {bi('الطبيب المستلم:', 'Target Doctor:', 'پزیشکی وەرگر:')}
                     </label>
                     <select
+                      id="ref-letter-doctor"
                       value={letterDoctorId}
                       onChange={(e) => setLetterDoctorId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-surface border border-layer-line text-xs text-foreground focus:outline-none focus:border-primary"
+                      className="w-full min-h-[36px] px-3 py-2 rounded-xl bg-surface border border-layer-line text-xs text-foreground focus:outline-none focus:border-primary"
                     >
                       <option value="">
                         {letterPatient?.data.referringPhysician
@@ -1196,7 +1201,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                     type="button"
                     disabled={!letterPatient || loadingLetterContext}
                     onClick={() => void handleOpenReportBackLetter()}
-                    className="py-2 px-4 rounded-xl bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                    className="min-h-[36px] py-2 px-4 rounded-xl bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
                   >
                     <FileText className="size-3.5" />
                     <span>
@@ -1235,7 +1240,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                 <button
                   type="button"
                   onClick={openAddDoctorForm}
-                  className="py-2 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                  className="min-h-[36px] py-2 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
                 >
                   <Plus className="size-3.5" />
                   <span>{bi('إضافة طبيب محيل', 'Add Doctor', 'زیادکردنی پزیشکی نێردەر')}</span>
@@ -1284,11 +1289,11 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 space-y-1">
-                            <div className="text-sm font-bold text-foreground truncate">
+                            <div className="text-sm font-bold text-foreground break-words">
                               {primaryDocName}
                             </div>
                             {secondaryDocName && (
-                              <div className="text-xs text-muted-foreground-1 truncate">
+                              <div className="text-xs text-muted-foreground-1 break-words">
                                 {secondaryDocName}
                               </div>
                             )}
@@ -1308,12 +1313,12 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                             )}
                           </div>
 
-                          <div className="flex items-center gap-1 shrink-0">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             <button
                               type="button"
                               onClick={() => openEditDoctorForm(doc)}
-                              aria-label={bi('تعديل الطبيب', 'Edit doctor', 'دەستکاریکردنی پزیشک')}
-                              className="p-1.5 rounded-lg border border-layer-line bg-card hover:bg-layer-hover text-foreground cursor-pointer"
+                              aria-label={bi(`تعديل ${primaryDocName}`, `Edit ${primaryDocName}`, `دەستکاریکردنی ${primaryDocName}`)}
+                              className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg border border-layer-line bg-card hover:bg-layer-hover text-foreground inline-flex items-center justify-center cursor-pointer"
                             >
                               <Edit3 className="size-3.5" />
                             </button>
@@ -1325,7 +1330,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                                   ClinicOperationsService.deleteReferringDoctor(doc.id);
                                   setConfirmDeleteDocId(null);
                                 }}
-                                className="px-2 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer"
+                                className="min-h-[36px] px-2.5 py-1 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold cursor-pointer"
                               >
                                 {bi('تأكيد الحذف', 'Confirm', 'دڵنیاکردنەوەی سڕینەوە')}
                               </button>
@@ -1333,8 +1338,8 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                               <button
                                 type="button"
                                 onClick={() => setConfirmDeleteDocId(doc.id)}
-                                aria-label={bi('حذف الطبيب', 'Delete doctor', 'سڕینەوەی پزیشک')}
-                                className="p-1.5 rounded-lg border border-layer-line bg-card hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground-1 cursor-pointer"
+                                aria-label={bi(`حذف ${primaryDocName}`, `Delete ${primaryDocName}`, `سڕینەوەی ${primaryDocName}`)}
+                                className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg border border-layer-line bg-card hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-400 text-muted-foreground-1 inline-flex items-center justify-center cursor-pointer"
                               >
                                 <Trash2 className="size-3.5" />
                               </button>
@@ -1396,7 +1401,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                     key={preset}
                     type="button"
                     onClick={() => ClinicOperationsService.setRetentionInactiveDaysThreshold(preset)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border cursor-pointer tabular-nums ${
+                    className={`min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-bold border cursor-pointer tabular-nums ${
                       inactiveThreshold === preset
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'bg-surface border-layer-line text-foreground hover:bg-layer-hover'
@@ -1434,7 +1439,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
               <section className="bg-card border border-card-line rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between gap-2 border-b border-card-divider pb-2.5">
                   <div className="flex items-center gap-2">
-                    <Clock className="size-4 text-amber-600 dark:text-amber-400" />
+                    <Clock className="size-4 text-amber-700 dark:text-amber-400" />
                     <h4 className="text-sm font-bold text-foreground">
                       {bi(
                         `منقطعون عن الخطة النشطة (≥ ${inactiveThreshold} يوم)`,
@@ -1443,7 +1448,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                       )}
                     </h4>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-bold tabular-nums">
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 text-xs font-bold tabular-nums">
                     <Num value={retentionLists.inactiveActivePlan.length} />
                   </span>
                 </div>
@@ -1457,7 +1462,12 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                     )}
                   </p>
                 ) : (
-                  <div className="space-y-2.5 max-h-96 overflow-y-auto pe-1">
+                  <div
+                    tabIndex={0}
+                    role="region"
+                    aria-label={bi('قائمة المنقطعين عن الخطة النشطة', 'Inactive active-plan patients list', 'لیستی دابڕاوانی پلانی چالاک')}
+                    className="space-y-2.5 max-h-96 overflow-y-auto pe-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
+                  >
                     {retentionLists.inactiveActivePlan.map((item) => {
                       const pName = bi(item.patientName, item.patientNameEn, item.patientName);
                       const details = isNonEn
@@ -1487,11 +1497,11 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                           className="p-3 rounded-xl bg-surface border border-line-2 flex flex-wrap items-center justify-between gap-2.5"
                         >
                           <div className="min-w-0 space-y-0.5">
-                            <div className="text-xs font-bold text-foreground">{pName}</div>
-                            <div className="text-xs text-muted-foreground-1 truncate">
+                            <div className="text-xs font-bold text-foreground break-words">{pName}</div>
+                            <div className="text-xs text-muted-foreground-1 break-words">
                               {item.episodeTitle}
                             </div>
-                            <div className="text-xs text-amber-700 dark:text-amber-300 font-semibold tabular-nums">
+                            <div className="text-xs text-amber-800 dark:text-amber-300 font-semibold tabular-nums">
                               {bi('منذ ', '', 'لە ماوەی ')}
                               <Num value={item.daysInactive} />{' '}
                               {bi('يوم', 'days inactive', 'ڕۆژ پێش ئێستا')} ·{' '}
@@ -1504,7 +1514,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                               <button
                                 type="button"
                                 onClick={() => onOpenPatientChart(pRecord)}
-                                className="px-2.5 py-1.5 rounded-lg border border-layer-line bg-card hover:bg-layer-hover text-xs font-semibold text-foreground cursor-pointer"
+                                className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-layer-line bg-card hover:bg-layer-hover text-xs font-semibold text-foreground cursor-pointer"
                               >
                                 {bi('فتح الملف', 'Chart', 'کردنەوەی دۆسیە')}
                               </button>
@@ -1514,7 +1524,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                                 href={waUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1"
+                                className="min-h-[36px] px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold inline-flex items-center gap-1"
                               >
                                 <MessageCircle className="size-3.5" />
                                 <span>{bi('واتساب', 'WhatsApp', 'واتساپ')}</span>
@@ -1523,10 +1533,10 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                               <button
                                 type="button"
                                 onClick={() => void handleCopyMessage(rowKey, msgText)}
-                                className="px-2.5 py-1.5 rounded-lg border border-layer-line bg-card hover:bg-layer-hover text-xs font-semibold text-foreground inline-flex items-center gap-1 cursor-pointer"
+                                className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-layer-line bg-card hover:bg-layer-hover text-xs font-semibold text-foreground inline-flex items-center gap-1 cursor-pointer"
                               >
                                 {copiedRowKey === rowKey ? (
-                                  <Check className="size-3.5 text-emerald-600" />
+                                  <Check className="size-3.5 text-emerald-700 dark:text-emerald-400" />
                                 ) : (
                                   <Copy className="size-3.5" />
                                 )}
@@ -1568,7 +1578,12 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                     )}
                   </p>
                 ) : (
-                  <div className="space-y-2.5 max-h-96 overflow-y-auto pe-1">
+                  <div
+                    tabIndex={0}
+                    role="region"
+                    aria-label={bi('قائمة متابعة ما بعد التخريج', 'Post-discharge follow-ups list', 'لیستی بەدواداچوونی دوای تەواوبوون')}
+                    className="space-y-2.5 max-h-96 overflow-y-auto pe-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
+                  >
                     {retentionLists.postDischargeFollowUpsDue.map((item) => {
                       const pName = bi(item.patientName, item.patientNameEn, item.patientName);
                       const milestoneLabel = bi(
@@ -1599,12 +1614,12 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                         >
                           <div className="min-w-0 space-y-0.5">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs font-bold text-foreground">{pName}</span>
+                              <span className="text-xs font-bold text-foreground break-words">{pName}</span>
                               <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold">
                                 {milestoneLabel}
                               </span>
                             </div>
-                            <div className="text-xs text-muted-foreground-1 truncate">
+                            <div className="text-xs text-muted-foreground-1 break-words">
                               {item.episodeTitle}
                             </div>
                             <div className="text-xs text-muted-foreground-1 tabular-nums">
@@ -1618,7 +1633,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                             <button
                               type="button"
                               onClick={() => openFollowUpEntry(item)}
-                              className="px-2.5 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
+                              className="min-h-[36px] px-2.5 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
                             >
                               {bi('تسجيل النتيجة', 'Record NPRS/PSFS', 'تۆمارکردنی ئەنجام')}
                             </button>
@@ -1627,7 +1642,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                                 href={waUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1"
+                                className="min-h-[36px] px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold inline-flex items-center gap-1"
                               >
                                 <MessageCircle className="size-3.5" />
                                 <span>{bi('واتساب', 'WhatsApp', 'واتساپ')}</span>
@@ -1643,7 +1658,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                 {followUps.length > 0 && (
                   <div className="pt-2 border-t border-card-divider space-y-1.5">
                     <div className="text-xs font-bold text-muted-foreground-1 flex items-center gap-1.5">
-                      <CheckCircle2 className="size-3.5 text-emerald-600" />
+                      <CheckCircle2 className="size-3.5 text-emerald-700 dark:text-emerald-400" />
                       <span>
                         {bi(
                           'آخر المتابعات المسجلة:',
@@ -1684,7 +1699,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
               <section className="bg-card border border-card-line rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between gap-2 border-b border-card-divider pb-2.5">
                   <div className="flex items-center gap-2">
-                    <Package className="size-4 text-sky-600 dark:text-sky-400" />
+                    <Package className="size-4 text-sky-700 dark:text-sky-400" />
                     <h4 className="text-sm font-bold text-foreground">
                       {bi(
                         'باقات علاجية قاربت على الانتهاء (≤ 2 جلسة)',
@@ -1693,7 +1708,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                       )}
                     </h4>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300 text-xs font-bold tabular-nums">
+                  <span className="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-800 dark:text-sky-300 text-xs font-bold tabular-nums">
                     <Num value={retentionLists.packageExpiring.length} />
                   </span>
                 </div>
@@ -1707,7 +1722,12 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                     )}
                   </p>
                 ) : (
-                  <div className="space-y-2.5 max-h-96 overflow-y-auto pe-1">
+                  <div
+                    tabIndex={0}
+                    role="region"
+                    aria-label={bi('قائمة الباقات القريبة من الانتهاء', 'Expiring rehab packages list', 'لیستی کۆرسە نزیک لە تەواوبوونەکان')}
+                    className="space-y-2.5 max-h-96 overflow-y-auto pe-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
+                  >
                     {retentionLists.packageExpiring.map((item) => {
                       const details = isNonEn
                         ? `متبقي ${item.remainingSessions} من أصل ${item.packageTotalSessions} جلسات — ${item.invoiceNumber}`
@@ -1735,7 +1755,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                           className="p-3 rounded-xl bg-surface border border-line-2 flex flex-wrap items-center justify-between gap-2.5"
                         >
                           <div className="min-w-0 space-y-0.5">
-                            <div className="text-xs font-bold text-foreground">
+                            <div className="text-xs font-bold text-foreground break-words">
                               {item.patientName}
                             </div>
                             <div className="text-xs text-muted-foreground-1">
@@ -1749,7 +1769,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                                 total={item.packageTotalSessions}
                               />
                             </div>
-                            <div className="text-xs font-bold text-sky-700 dark:text-sky-300">
+                            <div className="text-xs font-bold text-sky-800 dark:text-sky-300">
                               {bi('متبقي: ', 'Remaining: ', 'ماوە: ')}
                               <Num value={item.remainingSessions} />{' '}
                               {bi('جلسات', 'session(s)', 'دانیشتن')}
@@ -1761,7 +1781,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                               href={waUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1 shrink-0"
+                              className="min-h-[36px] px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold inline-flex items-center gap-1 shrink-0"
                             >
                               <MessageCircle className="size-3.5" />
                               <span>{bi('واتساب', 'WhatsApp', 'واتساپ')}</span>
@@ -1770,10 +1790,10 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                             <button
                               type="button"
                               onClick={() => void handleCopyMessage(rowKey, msgText)}
-                              className="px-2.5 py-1.5 rounded-lg border border-layer-line bg-card hover:bg-layer-hover text-xs font-semibold text-foreground inline-flex items-center gap-1 shrink-0 cursor-pointer"
+                              className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-layer-line bg-card hover:bg-layer-hover text-xs font-semibold text-foreground inline-flex items-center gap-1 shrink-0 cursor-pointer"
                             >
                               {copiedRowKey === rowKey ? (
-                                <Check className="size-3.5 text-emerald-600" />
+                                <Check className="size-3.5 text-emerald-700 dark:text-emerald-400" />
                               ) : (
                                 <Copy className="size-3.5" />
                               )}
@@ -1791,7 +1811,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
               <section className="bg-card border border-card-line rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between gap-2 border-b border-card-divider pb-2.5">
                   <div className="flex items-center gap-2">
-                    <Wallet className="size-4 text-rose-600 dark:text-rose-400" />
+                    <Wallet className="size-4 text-rose-700 dark:text-rose-400" />
                     <h4 className="text-sm font-bold text-foreground">
                       {bi('تذكيرات الأرصدة والذمم المستحقة', 'Unpaid Balance Reminders', 'یادخەرەوەکانی باڵانس و قەرزە ماوەکان')}
                     </h4>
@@ -1810,7 +1830,12 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                     )}
                   </p>
                 ) : (
-                  <div className="space-y-2.5 max-h-96 overflow-y-auto pe-1">
+                  <div
+                    tabIndex={0}
+                    role="region"
+                    aria-label={bi('قائمة الأرصدة غير المدفوعة', 'Unpaid invoice balances list', 'لیستی قەرزە ماوەکان')}
+                    className="space-y-2.5 max-h-96 overflow-y-auto pe-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
+                  >
                     {retentionLists.unpaidBalances.map((item) => {
                       const amountStr = formatAmountText(item.balanceDueIQD, item.currencyCode);
                       const details = isNonEn
@@ -1839,7 +1864,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                           className="p-3 rounded-xl bg-surface border border-line-2 flex flex-wrap items-center justify-between gap-2.5"
                         >
                           <div className="min-w-0 space-y-0.5">
-                            <div className="text-xs font-bold text-foreground">
+                            <div className="text-xs font-bold text-foreground break-words">
                               {item.patientName}
                             </div>
                             <div className="text-xs text-muted-foreground-1 tabular-nums">
@@ -1848,7 +1873,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                               </bdi>{' '}
                               · <bdi dir="ltr">{formatDateDDMMYYYY(item.date)}</bdi>
                             </div>
-                            <div className="text-xs font-extrabold text-rose-600 dark:text-rose-400">
+                            <div className="text-xs font-extrabold text-rose-700 dark:text-rose-400">
                               {bi('المتبقي: ', 'Due: ', 'بڕی ماوە: ')}
                               <Money amount={item.balanceDueIQD} colorize={false} />
                             </div>
@@ -1859,7 +1884,7 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                               href={waUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1 shrink-0"
+                              className="min-h-[36px] px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold inline-flex items-center gap-1 shrink-0"
                             >
                               <MessageCircle className="size-3.5" />
                               <span>{bi('واتساب', 'WhatsApp', 'واتساپ')}</span>
@@ -1868,10 +1893,10 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                             <button
                               type="button"
                               onClick={() => void handleCopyMessage(rowKey, msgText)}
-                              className="px-2.5 py-1.5 rounded-lg border border-layer-line bg-card hover:bg-layer-hover text-xs font-semibold text-foreground inline-flex items-center gap-1 shrink-0 cursor-pointer"
+                              className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-layer-line bg-card hover:bg-layer-hover text-xs font-semibold text-foreground inline-flex items-center gap-1 shrink-0 cursor-pointer"
                             >
                               {copiedRowKey === rowKey ? (
-                                <Check className="size-3.5 text-emerald-600" />
+                                <Check className="size-3.5 text-emerald-700 dark:text-emerald-400" />
                               ) : (
                                 <Copy className="size-3.5" />
                               )}
@@ -1910,10 +1935,11 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1">
+              <label htmlFor="ref-doc-name-ar" className="block text-xs font-semibold text-foreground mb-1">
                 {bi('اسم الطبيب بالعربية *', 'Doctor Name (AR) *', 'ناوی پزیشک بە عەرەبی/کوردی *')}
               </label>
               <input
+                id="ref-doc-name-ar"
                 type="text"
                 value={doctorForm.nameAr}
                 onChange={(e) => setDoctorForm({ ...doctorForm, nameAr: e.target.value })}
@@ -1923,10 +1949,11 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1">
+              <label htmlFor="ref-doc-name-en" className="block text-xs font-semibold text-foreground mb-1">
                 {bi('الاسم بالإنجليزية (اختياري)', 'Doctor Name (EN)', 'ناو بە ئینگلیزی (ئارەزوومەندانە)')}
               </label>
               <input
+                id="ref-doc-name-en"
                 type="text"
                 dir="ltr"
                 value={doctorForm.nameEn}
@@ -1937,10 +1964,11 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1">
+              <label htmlFor="ref-doc-spec-ar" className="block text-xs font-semibold text-foreground mb-1">
                 {bi('التخصص الطبي (عربي)', 'Specialty (AR)', 'پسپۆڕیی پزیشکی (عەرەبی/کوردی)')}
               </label>
               <input
+                id="ref-doc-spec-ar"
                 type="text"
                 value={doctorForm.specialtyAr}
                 onChange={(e) => setDoctorForm({ ...doctorForm, specialtyAr: e.target.value })}
@@ -1950,10 +1978,11 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1">
+              <label htmlFor="ref-doc-spec-en" className="block text-xs font-semibold text-foreground mb-1">
                 {bi('التخصص الطبي (إنجليزي)', 'Specialty (EN)', 'پسپۆڕیی پزیشکی (ئینگلیزی)')}
               </label>
               <input
+                id="ref-doc-spec-en"
                 type="text"
                 dir="ltr"
                 value={doctorForm.specialtyEn}
@@ -1964,10 +1993,11 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1">
+              <label htmlFor="ref-doc-fac-ar" className="block text-xs font-semibold text-foreground mb-1">
                 {bi('المستشفى / العيادة (عربي)', 'Facility / Hospital (AR)', 'نەخۆشخانە / کلینیک (عەرەبی/کوردی)')}
               </label>
               <input
+                id="ref-doc-fac-ar"
                 type="text"
                 value={doctorForm.facilityAr}
                 onChange={(e) => setDoctorForm({ ...doctorForm, facilityAr: e.target.value })}
@@ -1981,10 +2011,11 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1">
+              <label htmlFor="ref-doc-fac-en" className="block text-xs font-semibold text-foreground mb-1">
                 {bi('المستشفى / العيادة (إنجليزي)', 'Facility / Hospital (EN)', 'نەخۆشخانە / کلینیک (ئینگلیزی)')}
               </label>
               <input
+                id="ref-doc-fac-en"
                 type="text"
                 dir="ltr"
                 value={doctorForm.facilityEn}
@@ -1996,10 +2027,12 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-foreground mb-1">
+            <label htmlFor="ref-doc-phone" className="block text-xs font-semibold text-foreground mb-1">
               {bi('رقم هاتف الطبيب / السكرتارية', 'Phone Number', 'ژمارە تەلەفۆنی پزیشک / سکرتاریەت')}
             </label>
             <PhoneInput
+              id="ref-doc-phone"
+              ariaLabel={bi('رقم هاتف الطبيب / السكرتارية', 'Phone Number', 'ژمارە تەلەفۆنی پزیشک / سکرتاریەت')}
               value={doctorForm.phone}
               onChange={(val) => setDoctorForm({ ...doctorForm, phone: val })}
               placeholder="0770 123 4567"
@@ -2007,10 +2040,11 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-foreground mb-1">
+            <label htmlFor="ref-doc-notes" className="block text-xs font-semibold text-foreground mb-1">
               {bi('ملاحظات', 'Notes', 'تێبینییەکان')}
             </label>
             <AutoResizeTextarea
+              id="ref-doc-notes"
               minRows={2}
               value={doctorForm.notes}
               onChange={(e) => setDoctorForm({ ...doctorForm, notes: e.target.value })}
@@ -2027,13 +2061,13 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
             <button
               type="button"
               onClick={() => setDoctorFormOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground-1 hover:bg-layer-hover cursor-pointer"
+              className="min-h-[36px] px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground-1 hover:bg-layer-hover cursor-pointer"
             >
               {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
             </button>
             <button
               type="submit"
-              className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+              className="min-h-[36px] px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
             >
               <UserCheck className="size-3.5" />
               <span>{bi('حفظ الطبيب', 'Save Doctor', 'پاشەکەوتکردنی پزیشک')}</span>
@@ -2069,10 +2103,11 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
           <form onSubmit={handleSavePostDischargeFollowUp} className="space-y-3.5" dir={isRtl ? 'rtl' : 'ltr'}>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
+                <label htmlFor="ref-fu-nprs" className="block text-xs font-semibold text-foreground mb-1">
                   {bi('مقياس الألم NPRS (0–10)', 'Pain NPRS (0–10)', 'پێوەری ئازار NPRS (٠–١٠)')}
                 </label>
                 <input
+                  id="ref-fu-nprs"
                   type="number"
                   min={0}
                   max={10}
@@ -2086,10 +2121,11 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
+                <label htmlFor="ref-fu-psfs" className="block text-xs font-semibold text-foreground mb-1">
                   {bi('مقياس الوظيفة PSFS (0–10)', 'Function PSFS (0–10)', 'پێوەری کارایی PSFS (٠–١٠)')}
                 </label>
                 <input
+                  id="ref-fu-psfs"
                   type="number"
                   min={0}
                   max={10}
@@ -2104,10 +2140,11 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1">
+              <label htmlFor="ref-fu-notes" className="block text-xs font-semibold text-foreground mb-1">
                 {bi('ملاحظات المتابعة:', 'Follow-Up Notes:', 'تێبینییەکانی بەدواداچوون:')}
               </label>
               <AutoResizeTextarea
+                id="ref-fu-notes"
                 minRows={2}
                 value={fuNotes}
                 onChange={(e) => setFuNotes(e.target.value)}
@@ -2124,13 +2161,13 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
               <button
                 type="button"
                 onClick={() => setActiveFollowUpDue(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground-1 hover:bg-layer-hover cursor-pointer"
+                className="min-h-[36px] px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground-1 hover:bg-layer-hover cursor-pointer"
               >
                 {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
+                className="min-h-[36px] px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
               >
                 {bi('حفظ المتابعة', 'Save Follow-Up', 'پاشەکەوتکردنی بەدواداچوون')}
               </button>

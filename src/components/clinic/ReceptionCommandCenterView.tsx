@@ -32,6 +32,7 @@ import {
   Wallet,
   Sparkles,
   ArrowUpRight,
+  ArrowUpLeft,
   Filter,
   Eye,
   EyeOff,
@@ -186,7 +187,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           ar: 'وصل — بالانتظار',
           en: 'Arrived',
           ckb: 'گەیشت — لە چاوەڕوانیدا',
-          cls: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800',
+          cls: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800',
           dot: 'bg-amber-500 animate-pulse',
         };
       case 'in_session':
@@ -249,6 +250,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
   const waitingCount = todayAppointments.filter((a) => a.status === 'arrived').length;
   const inSessionCount = todayAppointments.filter((a) => a.status === 'in_session').length;
   const completedCount = todayAppointments.filter((a) => a.status === 'completed').length;
+  const ArrowOpenIcon = isRtl ? ArrowUpLeft : ArrowUpRight;
 
   return (
     <div className="p-3 sm:p-6 max-w-7xl mx-auto space-y-3 sm:space-y-4">
@@ -271,7 +273,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
       {/* Batch 3 Item 3: Page Header = Title + Max 2 Actions (No repeated hero card or New Patient button) */}
       <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
         <div className="flex items-center gap-2">
-          <h1 className="hidden md:block text-lg font-extrabold text-foreground">
+          <h1 className="text-base sm:text-lg font-extrabold text-foreground">
             {bi('طابور الاستقبال اليومي', "Today's Reception Queue", 'ڕیزی پێشوازیی ئەمڕۆ')}
           </h1>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold tabular-nums bg-primary/10 text-primary border border-primary/20">
@@ -284,9 +286,9 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           <button
             type="button"
             onClick={togglePrivacyBlur}
-            className={`px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`min-h-[36px] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
               privacyBlur
-                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30'
                 : 'bg-layer hover:bg-layer-hover text-foreground border-layer-line'
             }`}
           >
@@ -297,7 +299,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           <button
             type="button"
             onClick={() => onNavigateTab('schedule')}
-            className="px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-layer hover:bg-layer-hover text-foreground border border-layer-line text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="min-h-[36px] px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-layer hover:bg-layer-hover text-foreground border border-layer-line text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <Calendar className="w-3.5 h-3.5 text-primary" />
             <span>{bi('حجز موعد', 'Book Slot', 'نۆرەگرتن')}</span>
@@ -308,25 +310,25 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
       {/* Batch 3 Item 4: Compact 4-Stat Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 tabular-nums">
         <div className="bg-card border border-card-line rounded-xl p-2.5 sm:p-3 flex flex-col justify-between gap-1 shadow-2xs">
-          <span className="text-xs font-semibold text-muted-foreground-1 truncate">
+          <span className="text-xs font-semibold text-muted-foreground-1 leading-snug">
             {bi('مواعيد اليوم', "Today's Queue", 'نۆرەکانی ئەمڕۆ')}
           </span>
           <div className="flex items-baseline justify-between gap-1 mt-0.5 sm:mt-1">
             <span className="text-base sm:text-lg font-extrabold font-mono text-foreground">
               <Num value={todayAppointments.length} />
             </span>
-            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">
+            <span className="text-xs text-emerald-700 dark:text-emerald-300 font-bold">
               (<Num value={completedCount} /> {bi('مكتمل', 'done', 'تەواو')})
             </span>
           </div>
         </div>
 
         <div className="bg-card border border-card-line rounded-xl p-2.5 sm:p-3 flex flex-col justify-between gap-1 shadow-2xs">
-          <span className="text-xs font-semibold text-muted-foreground-1 truncate">
+          <span className="text-xs font-semibold text-muted-foreground-1 leading-snug">
             {bi('الانتظار / الجلسات', 'Waiting / In Room', 'چاوەڕوانی / دانیشتن')}
           </span>
           <div className="flex items-baseline justify-between gap-1 mt-0.5 sm:mt-1 text-xs font-bold">
-            <span className="text-amber-600 dark:text-amber-400">
+            <span className="text-amber-800 dark:text-amber-300">
               <Num value={waitingCount} /> {bi('انتظار', 'wait', 'چاوەڕوان')}
             </span>
             <span className="text-muted-foreground-1">·</span>
@@ -337,12 +339,12 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
         </div>
 
         <div className="bg-card border border-card-line rounded-xl p-2.5 sm:p-3 flex flex-col justify-between gap-1 shadow-2xs">
-          <span className="text-xs font-semibold text-muted-foreground-1 truncate">
+          <span className="text-xs font-semibold text-muted-foreground-1 leading-snug">
             {bi('مقبوضات اليوم', 'Collected Today', 'داهاتی ئەمڕۆ')}
           </span>
           <div className="mt-0.5 sm:mt-1">
             <span
-              className={`text-xs sm:text-sm font-extrabold text-emerald-600 dark:text-emerald-400 ${
+              className={`text-xs sm:text-sm font-extrabold text-emerald-700 dark:text-emerald-300 ${
                 privacyBlur ? 'blur-xs select-none' : ''
               }`}
             >
@@ -352,14 +354,14 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
         </div>
 
         <div className="bg-card border border-card-line rounded-xl p-2.5 sm:p-3 flex flex-col justify-between gap-1 shadow-2xs">
-          <span className="text-xs font-semibold text-muted-foreground-1 truncate">
+          <span className="text-xs font-semibold text-muted-foreground-1 leading-snug">
             {bi('ذمم متبقية', 'Receivables', 'قەرزە ماوەکان')}
           </span>
           <div className="mt-0.5 sm:mt-1">
             <span
               className={`text-xs sm:text-sm font-extrabold ${
                 totalUnpaidIqd > 0
-                  ? 'text-amber-700 dark:text-amber-300'
+                  ? 'text-amber-800 dark:text-amber-300'
                   : 'text-foreground'
               } ${privacyBlur || isReceptionRole ? 'blur-xs select-none' : ''}`}
             >
@@ -398,7 +400,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                   key={tab.id}
                   type="button"
                   onClick={() => setQueueFilter(tab.id)}
-                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
+                  className={`min-h-[36px] px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
                     queueFilter === tab.id
                       ? 'bg-layer text-primary font-bold shadow-2xs'
                       : 'text-muted-foreground-1 hover:text-foreground'
@@ -457,7 +459,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                             }`}
                           >
                             <span>{appt.patientName}</span>
-                            <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground-1" />
+                            <ArrowOpenIcon className="w-3.5 h-3.5 text-muted-foreground-1" />
                           </button>
                           {appt.isDemo && <DemoBadge />}
                         </div>
@@ -479,7 +481,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                             </span>
                           </span>
                           {appt.recurringScheduleId && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold text-xs">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-bold text-xs">
                               <Repeat className="size-3" />
                               <span>{bi('أسبوعي', 'Weekly', 'هەفتانە')}</span>
                             </span>
@@ -504,7 +506,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                           }
                           aria-expanded={isMenuOpen}
                           aria-label={bi('تغيير حالة الموعد', 'Change appointment status', 'گۆڕینی دۆخی نۆرە')}
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border cursor-pointer transition-colors ${badge.cls}`}
+                          className={`min-h-[36px] inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border cursor-pointer transition-colors ${badge.cls}`}
                         >
                           <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
                           <span>{bi(badge.ar, badge.en, badge.ckb)}</span>
@@ -526,7 +528,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                                   key={opt.id}
                                   type="button"
                                   onClick={() => handleStatusChange(appt.id, opt.id)}
-                                  className={`w-full px-3 py-1.5 text-start flex items-center justify-between hover:bg-layer-hover cursor-pointer ${
+                                  className={`min-h-[36px] w-full px-3 py-1.5 text-start flex items-center justify-between hover:bg-layer-hover cursor-pointer ${
                                     appt.status === opt.id
                                       ? 'font-bold text-primary bg-primary/5'
                                       : 'text-foreground'
@@ -548,7 +550,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                         <button
                           type="button"
                           onClick={() => handleStatusChange(appt.id, 'arrived')}
-                          className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold cursor-pointer transition-colors"
+                          className="min-h-[36px] px-3 py-1.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold cursor-pointer transition-colors"
                         >
                           {bi('وصول', 'Arrived', 'گەیشت')}
                         </button>
@@ -558,7 +560,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                         <button
                           type="button"
                           onClick={() => handleStatusChange(appt.id, 'in_session')}
-                          className="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                          className="min-h-[36px] px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
                         >
                           <Play className="w-3 h-3" />
                           <span>{bi('بدء الجلسة', 'Start', 'دەستپێکردن')}</span>
@@ -569,7 +571,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                         <button
                           type="button"
                           onClick={() => handleStatusChange(appt.id, 'completed')}
-                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                          className="min-h-[36px] px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>{bi('إكمال', 'Done', 'تەواوکردن')}</span>
@@ -589,12 +591,12 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           <div className="bg-card border border-card-line rounded-2xl shadow-2xs overflow-hidden">
             <div className="p-4 border-b border-card-divider flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-amber-500" />
-                <h3 className="text-xs font-bold text-foreground">
+                <Users className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                <h2 className="text-xs font-bold text-foreground">
                   {bi('قائمة الانتظار', 'Waiting List', 'لیستی چاوەڕوانی')}
-                </h3>
+                </h2>
               </div>
-              <span className="px-2 py-0.5 rounded-full text-xs tabular-nums font-bold bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+              <span className="px-2 py-0.5 rounded-full text-xs tabular-nums font-bold bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                 <Num value={waitingListActive.length} />
               </span>
             </div>
@@ -625,7 +627,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                         className={`px-2 py-0.5 rounded text-xs font-bold ${
                           w.priority === 'urgent'
                             ? 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950 dark:text-rose-300'
-                            : 'bg-surface text-muted-foreground-2'
+                            : 'bg-surface text-muted-foreground-1'
                         }`}
                       >
                         {w.priority === 'urgent'
@@ -645,18 +647,18 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                       </div>
                     )}
                     <div className="flex items-center justify-between pt-1">
-                      <span
+                      <bdi
                         className={`text-xs tabular-nums text-muted-foreground-1 ${
                           privacyBlur ? 'blur-xs select-none' : ''
                         }`}
                         dir="ltr"
                       >
                         {formatIraqiPhoneDisplay(w.phone)}
-                      </span>
+                      </bdi>
                       <button
                         type="button"
                         onClick={() => handleBookFromWaitlist(w)}
-                        className="px-2.5 py-1 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                        className="min-h-[36px] px-2.5 py-1 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
                       >
                         <Sparkles className="w-3 h-3" />
                         <span>{bi('حجز اليوم', 'Book Today', 'نۆرەگرتنی ئەمڕۆ')}</span>
@@ -673,15 +675,15 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
             <div className="bg-card border border-card-line rounded-2xl shadow-2xs overflow-hidden">
               <div className="p-4 border-b border-card-divider flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Wallet className="w-4 h-4 text-rose-500" />
-                  <h3 className="text-xs font-bold text-foreground">
+                  <Wallet className="w-4 h-4 text-rose-700 dark:text-rose-400" />
+                  <h2 className="text-xs font-bold text-foreground">
                     {bi('الذمم المالية المتبقية', 'Unpaid Balances', 'قەرزە داراییە ماوەکان')}
-                  </h3>
+                  </h2>
                 </div>
                 <button
                   type="button"
                   onClick={() => onNavigateTab('finance')}
-                  className="text-xs font-bold text-primary hover:underline cursor-pointer"
+                  className="min-h-[36px] inline-flex items-center text-xs font-bold text-primary hover:underline cursor-pointer"
                 >
                   {bi('السجل المالي', 'Ledger', 'تۆماری دارایی')}
                 </button>
@@ -707,7 +709,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                           <button
                             type="button"
                             onClick={() => onOpenPatient(inv.patientId)}
-                            className={`text-xs font-bold text-foreground hover:text-primary truncate block cursor-pointer ${
+                            className={`text-xs font-bold text-foreground hover:text-primary text-start leading-snug block cursor-pointer ${
                               privacyBlur ? 'blur-xs select-none' : ''
                             }`}
                           >
@@ -715,7 +717,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                           </button>
                           {inv.isDemo && <DemoBadge />}
                         </div>
-                        <span className="text-xs text-muted-foreground-1 truncate block">
+                        <span className="text-xs text-muted-foreground-1 block leading-snug">
                           {bi(inv.titleAr, inv.titleEn)}{' '}
                           {inv.packageTotalSessions ? (
                             <>
@@ -739,7 +741,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                         <span
                           className={`text-xs font-extrabold block ${
                             inv.balanceDueIQD > 0
-                              ? 'text-amber-700 dark:text-amber-300'
+                              ? 'text-amber-800 dark:text-amber-300'
                               : 'text-foreground'
                           }`}
                         >

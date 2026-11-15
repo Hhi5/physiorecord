@@ -160,6 +160,7 @@ export const EpisodeProblemListGoalsPanel: React.FC<EpisodeProblemListGoalsPanel
         <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
+            aria-label={bi('وصف المشكلة السريرية', 'Clinical problem description', 'وەسفی کێشەی کلینیکی')}
             data-testid="problem-list-input"
             value={problemText}
             onChange={(e) => setProblemText(e.target.value)}
@@ -177,6 +178,7 @@ export const EpisodeProblemListGoalsPanel: React.FC<EpisodeProblemListGoalsPanel
             className="flex-1 px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground"
           />
           <select
+            aria-label={bi('تصنيف المشكلة السريرية', 'Problem category', 'پۆلێنکردنی کێشە')}
             value={problemCategory}
             onChange={(e) =>
               setProblemCategory(e.target.value as EpisodeProblemItem['category'])
@@ -275,6 +277,7 @@ export const EpisodeProblemListGoalsPanel: React.FC<EpisodeProblemListGoalsPanel
         <div className="space-y-2 p-3 rounded-xl bg-surface border border-line-2 text-xs">
           <input
             type="text"
+            aria-label={bi('وصف الهدف الوظيفي', 'Functional goal description', 'وەسفی ئامانجی فەرمانی')}
             data-testid="outcome-goal-title-input"
             value={goalTitle}
             onChange={(e) => setGoalTitle(e.target.value)}
@@ -286,10 +289,11 @@ export const EpisodeProblemListGoalsPanel: React.FC<EpisodeProblemListGoalsPanel
           />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div>
-              <label className="text-xs text-muted-foreground-1 block mb-0.5">
+              <label htmlFor="goal-instrument-select" className="text-xs text-muted-foreground-1 block mb-0.5">
                 {bi('المقياس', 'Measure')}
               </label>
               <select
+                id="goal-instrument-select"
                 data-testid="outcome-goal-instrument-select"
                 value={goalInstrument}
                 onChange={(e) => {
@@ -308,10 +312,11 @@ export const EpisodeProblemListGoalsPanel: React.FC<EpisodeProblemListGoalsPanel
               </select>
             </div>
             <div>
-              <label className="text-xs text-muted-foreground-1 block mb-0.5">
+              <label htmlFor="goal-baseline-input" className="text-xs text-muted-foreground-1 block mb-0.5">
                 {bi('الأساس (Baseline)', 'Baseline')}
               </label>
               <input
+                id="goal-baseline-input"
                 type="number"
                 dir="ltr"
                 data-testid="outcome-goal-baseline-input"
@@ -321,10 +326,11 @@ export const EpisodeProblemListGoalsPanel: React.FC<EpisodeProblemListGoalsPanel
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground-1 block mb-0.5">
+              <label htmlFor="goal-target-input" className="text-xs text-muted-foreground-1 block mb-0.5">
                 {bi('المستهدف (Target)', 'Target')}
               </label>
               <input
+                id="goal-target-input"
                 type="number"
                 dir="ltr"
                 data-testid="outcome-goal-target-input"
@@ -334,10 +340,12 @@ export const EpisodeProblemListGoalsPanel: React.FC<EpisodeProblemListGoalsPanel
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground-1 block mb-0.5">
+              <label htmlFor="goal-target-date" className="text-xs text-muted-foreground-1 block mb-0.5">
                 {bi('تاريخ الاستحقاق', 'Target Date')}
               </label>
               <DatePickerInput
+                id="goal-target-date"
+                ariaLabel={bi('تاريخ الاستحقاق', 'Target Date')}
                 value={targetDate}
                 onChange={setTargetDate}
               />
@@ -348,7 +356,7 @@ export const EpisodeProblemListGoalsPanel: React.FC<EpisodeProblemListGoalsPanel
               type="button"
               data-testid="outcome-goal-add-btn"
               onClick={handleAddGoal}
-              className="min-h-[34px] px-3 py-1 rounded-lg bg-primary text-primary-foreground font-bold inline-flex items-center gap-1 cursor-pointer"
+              className="min-h-[36px] px-3 py-1 rounded-lg bg-primary text-primary-foreground font-bold inline-flex items-center gap-1 cursor-pointer"
             >
               <Plus className="size-3.5" />
               <span>{bi('إضافة هدف مرتبط بمقياس', 'Add Outcome Goal')}</span>
@@ -369,7 +377,7 @@ export const EpisodeProblemListGoalsPanel: React.FC<EpisodeProblemListGoalsPanel
                   : evalRes.status === 'worse'
                   ? 'bg-rose-500/12 text-rose-700 dark:text-rose-300 border-rose-500/30'
                   : evalRes.status === 'unchanged'
-                  ? 'bg-amber-500/12 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                  ? 'bg-amber-500/12 text-amber-800 dark:text-amber-300 border-amber-500/30'
                   : 'bg-muted text-muted-foreground-1 border-line-2';
 
               return (
@@ -398,7 +406,7 @@ export const EpisodeProblemListGoalsPanel: React.FC<EpisodeProblemListGoalsPanel
                         type="button"
                         aria-label={bi('حذف الهدف', 'Delete goal')}
                         onClick={() => handleRemoveGoal(goal.id)}
-                        className="p-1 text-rose-600 hover:bg-rose-500/10 rounded cursor-pointer"
+                        className="min-w-[36px] min-h-[36px] flex items-center justify-center p-1.5 text-rose-600 hover:bg-rose-500/10 rounded cursor-pointer"
                       >
                         <Trash2 className="size-3.5" />
                       </button>

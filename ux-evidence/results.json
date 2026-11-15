@@ -1,0 +1,3374 @@
+{
+  "generatedAt": "2026-11-15T14:51:24.674Z",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "deviceScaleFactor": 2,
+    "isMobile": true,
+    "hasTouch": true
+  },
+  "language": "ar",
+  "beforeRefLabel": "skipped",
+  "afterRefLabel": "working-tree",
+  "beforeUnavailableReason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided).",
+  "entries": [
+    {
+      "spec": {
+        "id": "lock-setup__clinical-default__light",
+        "title": "LockScreen (First-Run Vault Setup) · clinical-default · light",
+        "screen": "LockScreenSetup",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "lock-setup__clinical-default__light",
+          "title": "LockScreen (First-Run Vault Setup) · clinical-default · light",
+          "screen": "LockScreenSetup",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "lock-setup__clinical-default__light",
+          "title": "LockScreen (First-Run Vault Setup) · clinical-default · light",
+          "screen": "LockScreenSetup",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "captured",
+        "screenshotPath": "/app/applet/ux-evidence/screenshots/after/lock-setup__clinical-default__light.png",
+        "axe": {
+          "violationCount": 0,
+          "totalAffectedNodes": 0,
+          "byImpact": {
+            "critical": 0,
+            "serious": 0,
+            "moderate": 0,
+            "minor": 0,
+            "unknown": 0
+          },
+          "rules": []
+        },
+        "horizontalOverflowPx": 0
+      }
+    },
+    {
+      "spec": {
+        "id": "lock-recovery__clinical-default__light",
+        "title": "LockScreen (Recovery Key Challenge) · clinical-default · light",
+        "screen": "LockScreenRecovery",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "lock-recovery__clinical-default__light",
+          "title": "LockScreen (Recovery Key Challenge) · clinical-default · light",
+          "screen": "LockScreenRecovery",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "lock-recovery__clinical-default__light",
+          "title": "LockScreen (Recovery Key Challenge) · clinical-default · light",
+          "screen": "LockScreenRecovery",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "captured",
+        "screenshotPath": "/app/applet/ux-evidence/screenshots/after/lock-recovery__clinical-default__light.png",
+        "axe": {
+          "violationCount": 0,
+          "totalAffectedNodes": 0,
+          "byImpact": {
+            "critical": 0,
+            "serious": 0,
+            "moderate": 0,
+            "minor": 0,
+            "unknown": 0
+          },
+          "rules": []
+        },
+        "horizontalOverflowPx": 0
+      }
+    },
+    {
+      "spec": {
+        "id": "lock-unlock__clinical-default__light",
+        "title": "LockScreen (Before Unlock) · clinical-default · light",
+        "screen": "LockScreen",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "lock-unlock__clinical-default__light",
+          "title": "LockScreen (Before Unlock) · clinical-default · light",
+          "screen": "LockScreen",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "lock-unlock__clinical-default__light",
+          "title": "LockScreen (Before Unlock) · clinical-default · light",
+          "screen": "LockScreen",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "lock-unlock__clinical-default__dark",
+        "title": "LockScreen (Before Unlock) · clinical-default · dark",
+        "screen": "LockScreen",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "lock-unlock__clinical-default__dark",
+          "title": "LockScreen (Before Unlock) · clinical-default · dark",
+          "screen": "LockScreen",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "lock-unlock__clinical-default__dark",
+          "title": "LockScreen (Before Unlock) · clinical-default · dark",
+          "screen": "LockScreen",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "lock-unlock__ocean-blue__light",
+        "title": "LockScreen (Before Unlock) · ocean-blue · light",
+        "screen": "LockScreen",
+        "theme": "theme-ocean-blue",
+        "mode": "light",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "lock-unlock__ocean-blue__light",
+          "title": "LockScreen (Before Unlock) · ocean-blue · light",
+          "screen": "LockScreen",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "lock-unlock__ocean-blue__light",
+          "title": "LockScreen (Before Unlock) · ocean-blue · light",
+          "screen": "LockScreen",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "lock-unlock__ocean-blue__dark",
+        "title": "LockScreen (Before Unlock) · ocean-blue · dark",
+        "screen": "LockScreen",
+        "theme": "theme-ocean-blue",
+        "mode": "dark",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "lock-unlock__ocean-blue__dark",
+          "title": "LockScreen (Before Unlock) · ocean-blue · dark",
+          "screen": "LockScreen",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "lock-unlock__ocean-blue__dark",
+          "title": "LockScreen (Before Unlock) · ocean-blue · dark",
+          "screen": "LockScreen",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "today-main__clinical-default__light",
+        "title": "TodayCommandView (Today Queue) · clinical-default · light",
+        "screen": "TodayCommandView",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "today-main__clinical-default__light",
+          "title": "TodayCommandView (Today Queue) · clinical-default · light",
+          "screen": "TodayCommandView",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "today-main__clinical-default__light",
+          "title": "TodayCommandView (Today Queue) · clinical-default · light",
+          "screen": "TodayCommandView",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "today-main__clinical-default__dark",
+        "title": "TodayCommandView (Today Queue) · clinical-default · dark",
+        "screen": "TodayCommandView",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "today-main__clinical-default__dark",
+          "title": "TodayCommandView (Today Queue) · clinical-default · dark",
+          "screen": "TodayCommandView",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "today-main__clinical-default__dark",
+          "title": "TodayCommandView (Today Queue) · clinical-default · dark",
+          "screen": "TodayCommandView",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "today-main__ocean-blue__light",
+        "title": "TodayCommandView (Today Queue) · ocean-blue · light",
+        "screen": "TodayCommandView",
+        "theme": "theme-ocean-blue",
+        "mode": "light",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "today-main__ocean-blue__light",
+          "title": "TodayCommandView (Today Queue) · ocean-blue · light",
+          "screen": "TodayCommandView",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "today-main__ocean-blue__light",
+          "title": "TodayCommandView (Today Queue) · ocean-blue · light",
+          "screen": "TodayCommandView",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "today-main__ocean-blue__dark",
+        "title": "TodayCommandView (Today Queue) · ocean-blue · dark",
+        "screen": "TodayCommandView",
+        "theme": "theme-ocean-blue",
+        "mode": "dark",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "today-main__ocean-blue__dark",
+          "title": "TodayCommandView (Today Queue) · ocean-blue · dark",
+          "screen": "TodayCommandView",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "today-main__ocean-blue__dark",
+          "title": "TodayCommandView (Today Queue) · ocean-blue · dark",
+          "screen": "TodayCommandView",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "today-eod__clinical-default__light",
+        "title": "TodayCommandView (End of Day) · clinical-default · light",
+        "screen": "TodayCommandView:eod",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "today-eod__clinical-default__light",
+          "title": "TodayCommandView (End of Day) · clinical-default · light",
+          "screen": "TodayCommandView:eod",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "today-eod__clinical-default__light",
+          "title": "TodayCommandView (End of Day) · clinical-default · light",
+          "screen": "TodayCommandView:eod",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "today-eod__clinical-default__dark",
+        "title": "TodayCommandView (End of Day) · clinical-default · dark",
+        "screen": "TodayCommandView:eod",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "today-eod__clinical-default__dark",
+          "title": "TodayCommandView (End of Day) · clinical-default · dark",
+          "screen": "TodayCommandView:eod",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "today-eod__clinical-default__dark",
+          "title": "TodayCommandView (End of Day) · clinical-default · dark",
+          "screen": "TodayCommandView:eod",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-walkin__clinical-default__light",
+        "title": "WalkInQuickAddModal · clinical-default · light",
+        "screen": "WalkInQuickAddModal",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-walkin__clinical-default__light",
+          "title": "WalkInQuickAddModal · clinical-default · light",
+          "screen": "WalkInQuickAddModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-walkin__clinical-default__light",
+          "title": "WalkInQuickAddModal · clinical-default · light",
+          "screen": "WalkInQuickAddModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-walkin__clinical-default__dark",
+        "title": "WalkInQuickAddModal · clinical-default · dark",
+        "screen": "WalkInQuickAddModal",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-walkin__clinical-default__dark",
+          "title": "WalkInQuickAddModal · clinical-default · dark",
+          "screen": "WalkInQuickAddModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-walkin__clinical-default__dark",
+          "title": "WalkInQuickAddModal · clinical-default · dark",
+          "screen": "WalkInQuickAddModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "schedule-view__clinical-default__light",
+        "title": "AppointmentScheduleView · clinical-default · light",
+        "screen": "AppointmentScheduleView",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "schedule-view__clinical-default__light",
+          "title": "AppointmentScheduleView · clinical-default · light",
+          "screen": "AppointmentScheduleView",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "schedule-view__clinical-default__light",
+          "title": "AppointmentScheduleView · clinical-default · light",
+          "screen": "AppointmentScheduleView",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "schedule-view__clinical-default__dark",
+        "title": "AppointmentScheduleView · clinical-default · dark",
+        "screen": "AppointmentScheduleView",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "schedule-view__clinical-default__dark",
+          "title": "AppointmentScheduleView · clinical-default · dark",
+          "screen": "AppointmentScheduleView",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "schedule-view__clinical-default__dark",
+          "title": "AppointmentScheduleView · clinical-default · dark",
+          "screen": "AppointmentScheduleView",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "schedule-view__ocean-blue__light",
+        "title": "AppointmentScheduleView · ocean-blue · light",
+        "screen": "AppointmentScheduleView",
+        "theme": "theme-ocean-blue",
+        "mode": "light",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "schedule-view__ocean-blue__light",
+          "title": "AppointmentScheduleView · ocean-blue · light",
+          "screen": "AppointmentScheduleView",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "schedule-view__ocean-blue__light",
+          "title": "AppointmentScheduleView · ocean-blue · light",
+          "screen": "AppointmentScheduleView",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "schedule-view__ocean-blue__dark",
+        "title": "AppointmentScheduleView · ocean-blue · dark",
+        "screen": "AppointmentScheduleView",
+        "theme": "theme-ocean-blue",
+        "mode": "dark",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "schedule-view__ocean-blue__dark",
+          "title": "AppointmentScheduleView · ocean-blue · dark",
+          "screen": "AppointmentScheduleView",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "schedule-view__ocean-blue__dark",
+          "title": "AppointmentScheduleView · ocean-blue · dark",
+          "screen": "AppointmentScheduleView",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "patient-directory__clinical-default__light",
+        "title": "PatientDirectory · clinical-default · light",
+        "screen": "PatientDirectory",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "patient-directory__clinical-default__light",
+          "title": "PatientDirectory · clinical-default · light",
+          "screen": "PatientDirectory",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "patient-directory__clinical-default__light",
+          "title": "PatientDirectory · clinical-default · light",
+          "screen": "PatientDirectory",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "patient-directory__clinical-default__dark",
+        "title": "PatientDirectory · clinical-default · dark",
+        "screen": "PatientDirectory",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "patient-directory__clinical-default__dark",
+          "title": "PatientDirectory · clinical-default · dark",
+          "screen": "PatientDirectory",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "patient-directory__clinical-default__dark",
+          "title": "PatientDirectory · clinical-default · dark",
+          "screen": "PatientDirectory",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "patient-directory__ocean-blue__light",
+        "title": "PatientDirectory · ocean-blue · light",
+        "screen": "PatientDirectory",
+        "theme": "theme-ocean-blue",
+        "mode": "light",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "patient-directory__ocean-blue__light",
+          "title": "PatientDirectory · ocean-blue · light",
+          "screen": "PatientDirectory",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "patient-directory__ocean-blue__light",
+          "title": "PatientDirectory · ocean-blue · light",
+          "screen": "PatientDirectory",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "patient-directory__ocean-blue__dark",
+        "title": "PatientDirectory · ocean-blue · dark",
+        "screen": "PatientDirectory",
+        "theme": "theme-ocean-blue",
+        "mode": "dark",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "patient-directory__ocean-blue__dark",
+          "title": "PatientDirectory · ocean-blue · dark",
+          "screen": "PatientDirectory",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "patient-directory__ocean-blue__dark",
+          "title": "PatientDirectory · ocean-blue · dark",
+          "screen": "PatientDirectory",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-quick-view__clinical-default__light",
+        "title": "PatientQuickViewModal · clinical-default · light",
+        "screen": "PatientQuickViewModal",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-quick-view__clinical-default__light",
+          "title": "PatientQuickViewModal · clinical-default · light",
+          "screen": "PatientQuickViewModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-quick-view__clinical-default__light",
+          "title": "PatientQuickViewModal · clinical-default · light",
+          "screen": "PatientQuickViewModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-quick-view__clinical-default__dark",
+        "title": "PatientQuickViewModal · clinical-default · dark",
+        "screen": "PatientQuickViewModal",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-quick-view__clinical-default__dark",
+          "title": "PatientQuickViewModal · clinical-default · dark",
+          "screen": "PatientQuickViewModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-quick-view__clinical-default__dark",
+          "title": "PatientQuickViewModal · clinical-default · dark",
+          "screen": "PatientQuickViewModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-patient-new__clinical-default__light",
+        "title": "PatientModal (New Patient) · clinical-default · light",
+        "screen": "PatientModal",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-patient-new__clinical-default__light",
+          "title": "PatientModal (New Patient) · clinical-default · light",
+          "screen": "PatientModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-patient-new__clinical-default__light",
+          "title": "PatientModal (New Patient) · clinical-default · light",
+          "screen": "PatientModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-patient-new__clinical-default__dark",
+        "title": "PatientModal (New Patient) · clinical-default · dark",
+        "screen": "PatientModal",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-patient-new__clinical-default__dark",
+          "title": "PatientModal (New Patient) · clinical-default · dark",
+          "screen": "PatientModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-patient-new__clinical-default__dark",
+          "title": "PatientModal (New Patient) · clinical-default · dark",
+          "screen": "PatientModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-evaluation__clinical-default__light",
+        "title": "MasterPatientChart (Tab 1: Assessment & Exam Widgets) · clinical-default · light",
+        "screen": "MasterPatientChart:evaluation",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "chart-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-evaluation__clinical-default__light",
+          "title": "MasterPatientChart (Tab 1: Assessment & Exam Widgets) · clinical-default · light",
+          "screen": "MasterPatientChart:evaluation",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-evaluation__clinical-default__light",
+          "title": "MasterPatientChart (Tab 1: Assessment & Exam Widgets) · clinical-default · light",
+          "screen": "MasterPatientChart:evaluation",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-evaluation__clinical-default__dark",
+        "title": "MasterPatientChart (Tab 1: Assessment & Exam Widgets) · clinical-default · dark",
+        "screen": "MasterPatientChart:evaluation",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "chart-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-evaluation__clinical-default__dark",
+          "title": "MasterPatientChart (Tab 1: Assessment & Exam Widgets) · clinical-default · dark",
+          "screen": "MasterPatientChart:evaluation",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-evaluation__clinical-default__dark",
+          "title": "MasterPatientChart (Tab 1: Assessment & Exam Widgets) · clinical-default · dark",
+          "screen": "MasterPatientChart:evaluation",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-evaluation__ocean-blue__light",
+        "title": "MasterPatientChart (Tab 1: Assessment & Exam Widgets) · ocean-blue · light",
+        "screen": "MasterPatientChart:evaluation",
+        "theme": "theme-ocean-blue",
+        "mode": "light",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-evaluation__ocean-blue__light",
+          "title": "MasterPatientChart (Tab 1: Assessment & Exam Widgets) · ocean-blue · light",
+          "screen": "MasterPatientChart:evaluation",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-evaluation__ocean-blue__light",
+          "title": "MasterPatientChart (Tab 1: Assessment & Exam Widgets) · ocean-blue · light",
+          "screen": "MasterPatientChart:evaluation",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-evaluation__ocean-blue__dark",
+        "title": "MasterPatientChart (Tab 1: Assessment & Exam Widgets) · ocean-blue · dark",
+        "screen": "MasterPatientChart:evaluation",
+        "theme": "theme-ocean-blue",
+        "mode": "dark",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-evaluation__ocean-blue__dark",
+          "title": "MasterPatientChart (Tab 1: Assessment & Exam Widgets) · ocean-blue · dark",
+          "screen": "MasterPatientChart:evaluation",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-evaluation__ocean-blue__dark",
+          "title": "MasterPatientChart (Tab 1: Assessment & Exam Widgets) · ocean-blue · dark",
+          "screen": "MasterPatientChart:evaluation",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-widgets-detail__clinical-default__light",
+        "title": "MasterPatientChart (ROM / MMT / Special Tests / Functional Scales) · clinical-default · light",
+        "screen": "MasterPatientChart:widgets",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "chart-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-widgets-detail__clinical-default__light",
+          "title": "MasterPatientChart (ROM / MMT / Special Tests / Functional Scales) · clinical-default · light",
+          "screen": "MasterPatientChart:widgets",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-widgets-detail__clinical-default__light",
+          "title": "MasterPatientChart (ROM / MMT / Special Tests / Functional Scales) · clinical-default · light",
+          "screen": "MasterPatientChart:widgets",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-widgets-detail__clinical-default__dark",
+        "title": "MasterPatientChart (ROM / MMT / Special Tests / Functional Scales) · clinical-default · dark",
+        "screen": "MasterPatientChart:widgets",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "chart-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-widgets-detail__clinical-default__dark",
+          "title": "MasterPatientChart (ROM / MMT / Special Tests / Functional Scales) · clinical-default · dark",
+          "screen": "MasterPatientChart:widgets",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-widgets-detail__clinical-default__dark",
+          "title": "MasterPatientChart (ROM / MMT / Special Tests / Functional Scales) · clinical-default · dark",
+          "screen": "MasterPatientChart:widgets",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-widgets-detail__ocean-blue__light",
+        "title": "MasterPatientChart (ROM / MMT / Special Tests / Functional Scales) · ocean-blue · light",
+        "screen": "MasterPatientChart:widgets",
+        "theme": "theme-ocean-blue",
+        "mode": "light",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-widgets-detail__ocean-blue__light",
+          "title": "MasterPatientChart (ROM / MMT / Special Tests / Functional Scales) · ocean-blue · light",
+          "screen": "MasterPatientChart:widgets",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-widgets-detail__ocean-blue__light",
+          "title": "MasterPatientChart (ROM / MMT / Special Tests / Functional Scales) · ocean-blue · light",
+          "screen": "MasterPatientChart:widgets",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-widgets-detail__ocean-blue__dark",
+        "title": "MasterPatientChart (ROM / MMT / Special Tests / Functional Scales) · ocean-blue · dark",
+        "screen": "MasterPatientChart:widgets",
+        "theme": "theme-ocean-blue",
+        "mode": "dark",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-widgets-detail__ocean-blue__dark",
+          "title": "MasterPatientChart (ROM / MMT / Special Tests / Functional Scales) · ocean-blue · dark",
+          "screen": "MasterPatientChart:widgets",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-widgets-detail__ocean-blue__dark",
+          "title": "MasterPatientChart (ROM / MMT / Special Tests / Functional Scales) · ocean-blue · dark",
+          "screen": "MasterPatientChart:widgets",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-exam-shelf__clinical-default__light",
+        "title": "ExamWidgetShelf Modal · clinical-default · light",
+        "screen": "ExamWidgetShelf",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-exam-shelf__clinical-default__light",
+          "title": "ExamWidgetShelf Modal · clinical-default · light",
+          "screen": "ExamWidgetShelf",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-exam-shelf__clinical-default__light",
+          "title": "ExamWidgetShelf Modal · clinical-default · light",
+          "screen": "ExamWidgetShelf",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-exam-shelf__clinical-default__dark",
+        "title": "ExamWidgetShelf Modal · clinical-default · dark",
+        "screen": "ExamWidgetShelf",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-exam-shelf__clinical-default__dark",
+          "title": "ExamWidgetShelf Modal · clinical-default · dark",
+          "screen": "ExamWidgetShelf",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-exam-shelf__clinical-default__dark",
+          "title": "ExamWidgetShelf Modal · clinical-default · dark",
+          "screen": "ExamWidgetShelf",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-sessions__clinical-default__light",
+        "title": "MasterPatientChart (Tab 2: Sessions) · clinical-default · light",
+        "screen": "MasterPatientChart:sessions",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "chart-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-sessions__clinical-default__light",
+          "title": "MasterPatientChart (Tab 2: Sessions) · clinical-default · light",
+          "screen": "MasterPatientChart:sessions",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-sessions__clinical-default__light",
+          "title": "MasterPatientChart (Tab 2: Sessions) · clinical-default · light",
+          "screen": "MasterPatientChart:sessions",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-sessions__clinical-default__dark",
+        "title": "MasterPatientChart (Tab 2: Sessions) · clinical-default · dark",
+        "screen": "MasterPatientChart:sessions",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "chart-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-sessions__clinical-default__dark",
+          "title": "MasterPatientChart (Tab 2: Sessions) · clinical-default · dark",
+          "screen": "MasterPatientChart:sessions",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-sessions__clinical-default__dark",
+          "title": "MasterPatientChart (Tab 2: Sessions) · clinical-default · dark",
+          "screen": "MasterPatientChart:sessions",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-episode-new__clinical-default__light",
+        "title": "EpisodeModal (New Episode) · clinical-default · light",
+        "screen": "EpisodeModal",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-episode-new__clinical-default__light",
+          "title": "EpisodeModal (New Episode) · clinical-default · light",
+          "screen": "EpisodeModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-episode-new__clinical-default__light",
+          "title": "EpisodeModal (New Episode) · clinical-default · light",
+          "screen": "EpisodeModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-episode-new__clinical-default__dark",
+        "title": "EpisodeModal (New Episode) · clinical-default · dark",
+        "screen": "EpisodeModal",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-episode-new__clinical-default__dark",
+          "title": "EpisodeModal (New Episode) · clinical-default · dark",
+          "screen": "EpisodeModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-episode-new__clinical-default__dark",
+          "title": "EpisodeModal (New Episode) · clinical-default · dark",
+          "screen": "EpisodeModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-session-new__clinical-default__light",
+        "title": "SessionModal (New Session) · clinical-default · light",
+        "screen": "SessionModal",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-session-new__clinical-default__light",
+          "title": "SessionModal (New Session) · clinical-default · light",
+          "screen": "SessionModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-session-new__clinical-default__light",
+          "title": "SessionModal (New Session) · clinical-default · light",
+          "screen": "SessionModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-session-new__clinical-default__dark",
+        "title": "SessionModal (New Session) · clinical-default · dark",
+        "screen": "SessionModal",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-session-new__clinical-default__dark",
+          "title": "SessionModal (New Session) · clinical-default · dark",
+          "screen": "SessionModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-session-new__clinical-default__dark",
+          "title": "SessionModal (New Session) · clinical-default · dark",
+          "screen": "SessionModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-comparison__clinical-default__light",
+        "title": "MasterPatientChart (Tab 3: Progress & Comparison) · clinical-default · light",
+        "screen": "MasterPatientChart:comparison",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "chart-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-comparison__clinical-default__light",
+          "title": "MasterPatientChart (Tab 3: Progress & Comparison) · clinical-default · light",
+          "screen": "MasterPatientChart:comparison",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-comparison__clinical-default__light",
+          "title": "MasterPatientChart (Tab 3: Progress & Comparison) · clinical-default · light",
+          "screen": "MasterPatientChart:comparison",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-comparison__clinical-default__dark",
+        "title": "MasterPatientChart (Tab 3: Progress & Comparison) · clinical-default · dark",
+        "screen": "MasterPatientChart:comparison",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "chart-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-comparison__clinical-default__dark",
+          "title": "MasterPatientChart (Tab 3: Progress & Comparison) · clinical-default · dark",
+          "screen": "MasterPatientChart:comparison",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-comparison__clinical-default__dark",
+          "title": "MasterPatientChart (Tab 3: Progress & Comparison) · clinical-default · dark",
+          "screen": "MasterPatientChart:comparison",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-hep__clinical-default__light",
+        "title": "MasterPatientChart (Tab 4: Plan, Goals & HEP) · clinical-default · light",
+        "screen": "MasterPatientChart:hep",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "chart-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-hep__clinical-default__light",
+          "title": "MasterPatientChart (Tab 4: Plan, Goals & HEP) · clinical-default · light",
+          "screen": "MasterPatientChart:hep",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-hep__clinical-default__light",
+          "title": "MasterPatientChart (Tab 4: Plan, Goals & HEP) · clinical-default · light",
+          "screen": "MasterPatientChart:hep",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-hep__clinical-default__dark",
+        "title": "MasterPatientChart (Tab 4: Plan, Goals & HEP) · clinical-default · dark",
+        "screen": "MasterPatientChart:hep",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "chart-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-hep__clinical-default__dark",
+          "title": "MasterPatientChart (Tab 4: Plan, Goals & HEP) · clinical-default · dark",
+          "screen": "MasterPatientChart:hep",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-hep__clinical-default__dark",
+          "title": "MasterPatientChart (Tab 4: Plan, Goals & HEP) · clinical-default · dark",
+          "screen": "MasterPatientChart:hep",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-profile__clinical-default__light",
+        "title": "MasterPatientChart (Tab 5: Patient Profile & Finance Summary) · clinical-default · light",
+        "screen": "MasterPatientChart:profile",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "chart-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-profile__clinical-default__light",
+          "title": "MasterPatientChart (Tab 5: Patient Profile & Finance Summary) · clinical-default · light",
+          "screen": "MasterPatientChart:profile",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-profile__clinical-default__light",
+          "title": "MasterPatientChart (Tab 5: Patient Profile & Finance Summary) · clinical-default · light",
+          "screen": "MasterPatientChart:profile",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "chart-profile__clinical-default__dark",
+        "title": "MasterPatientChart (Tab 5: Patient Profile & Finance Summary) · clinical-default · dark",
+        "screen": "MasterPatientChart:profile",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "chart-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "chart-profile__clinical-default__dark",
+          "title": "MasterPatientChart (Tab 5: Patient Profile & Finance Summary) · clinical-default · dark",
+          "screen": "MasterPatientChart:profile",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "chart-profile__clinical-default__dark",
+          "title": "MasterPatientChart (Tab 5: Patient Profile & Finance Summary) · clinical-default · dark",
+          "screen": "MasterPatientChart:profile",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "chart-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "treatment-session-top__clinical-default__light",
+        "title": "TreatmentSessionView (Header & Subjective/SOAP) · clinical-default · light",
+        "screen": "TreatmentSessionView:top",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "treatment-session-top__clinical-default__light",
+          "title": "TreatmentSessionView (Header & Subjective/SOAP) · clinical-default · light",
+          "screen": "TreatmentSessionView:top",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "treatment-session-top__clinical-default__light",
+          "title": "TreatmentSessionView (Header & Subjective/SOAP) · clinical-default · light",
+          "screen": "TreatmentSessionView:top",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "treatment-session-top__clinical-default__dark",
+        "title": "TreatmentSessionView (Header & Subjective/SOAP) · clinical-default · dark",
+        "screen": "TreatmentSessionView:top",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "treatment-session-top__clinical-default__dark",
+          "title": "TreatmentSessionView (Header & Subjective/SOAP) · clinical-default · dark",
+          "screen": "TreatmentSessionView:top",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "treatment-session-top__clinical-default__dark",
+          "title": "TreatmentSessionView (Header & Subjective/SOAP) · clinical-default · dark",
+          "screen": "TreatmentSessionView:top",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "treatment-session-top__ocean-blue__light",
+        "title": "TreatmentSessionView (Header & Subjective/SOAP) · ocean-blue · light",
+        "screen": "TreatmentSessionView:top",
+        "theme": "theme-ocean-blue",
+        "mode": "light",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "treatment-session-top__ocean-blue__light",
+          "title": "TreatmentSessionView (Header & Subjective/SOAP) · ocean-blue · light",
+          "screen": "TreatmentSessionView:top",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "treatment-session-top__ocean-blue__light",
+          "title": "TreatmentSessionView (Header & Subjective/SOAP) · ocean-blue · light",
+          "screen": "TreatmentSessionView:top",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "treatment-session-top__ocean-blue__dark",
+        "title": "TreatmentSessionView (Header & Subjective/SOAP) · ocean-blue · dark",
+        "screen": "TreatmentSessionView:top",
+        "theme": "theme-ocean-blue",
+        "mode": "dark",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "treatment-session-top__ocean-blue__dark",
+          "title": "TreatmentSessionView (Header & Subjective/SOAP) · ocean-blue · dark",
+          "screen": "TreatmentSessionView:top",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "treatment-session-top__ocean-blue__dark",
+          "title": "TreatmentSessionView (Header & Subjective/SOAP) · ocean-blue · dark",
+          "screen": "TreatmentSessionView:top",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "treatment-session-body__clinical-default__light",
+        "title": "TreatmentSessionView (Interventions, Manual Therapy & Plan) · clinical-default · light",
+        "screen": "TreatmentSessionView:body",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "treatment-session-body__clinical-default__light",
+          "title": "TreatmentSessionView (Interventions, Manual Therapy & Plan) · clinical-default · light",
+          "screen": "TreatmentSessionView:body",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "treatment-session-body__clinical-default__light",
+          "title": "TreatmentSessionView (Interventions, Manual Therapy & Plan) · clinical-default · light",
+          "screen": "TreatmentSessionView:body",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "treatment-session-body__clinical-default__dark",
+        "title": "TreatmentSessionView (Interventions, Manual Therapy & Plan) · clinical-default · dark",
+        "screen": "TreatmentSessionView:body",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "treatment-session-body__clinical-default__dark",
+          "title": "TreatmentSessionView (Interventions, Manual Therapy & Plan) · clinical-default · dark",
+          "screen": "TreatmentSessionView:body",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "treatment-session-body__clinical-default__dark",
+          "title": "TreatmentSessionView (Interventions, Manual Therapy & Plan) · clinical-default · dark",
+          "screen": "TreatmentSessionView:body",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "finance-invoices__clinical-default__light",
+        "title": "IraqiFinancialLedgerView (Invoices) · clinical-default · light",
+        "screen": "IraqiFinancialLedgerView:invoices",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "finance-invoices__clinical-default__light",
+          "title": "IraqiFinancialLedgerView (Invoices) · clinical-default · light",
+          "screen": "IraqiFinancialLedgerView:invoices",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "finance-invoices__clinical-default__light",
+          "title": "IraqiFinancialLedgerView (Invoices) · clinical-default · light",
+          "screen": "IraqiFinancialLedgerView:invoices",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "finance-invoices__clinical-default__dark",
+        "title": "IraqiFinancialLedgerView (Invoices) · clinical-default · dark",
+        "screen": "IraqiFinancialLedgerView:invoices",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "finance-invoices__clinical-default__dark",
+          "title": "IraqiFinancialLedgerView (Invoices) · clinical-default · dark",
+          "screen": "IraqiFinancialLedgerView:invoices",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "finance-invoices__clinical-default__dark",
+          "title": "IraqiFinancialLedgerView (Invoices) · clinical-default · dark",
+          "screen": "IraqiFinancialLedgerView:invoices",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "finance-invoices__ocean-blue__light",
+        "title": "IraqiFinancialLedgerView (Invoices) · ocean-blue · light",
+        "screen": "IraqiFinancialLedgerView:invoices",
+        "theme": "theme-ocean-blue",
+        "mode": "light",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "finance-invoices__ocean-blue__light",
+          "title": "IraqiFinancialLedgerView (Invoices) · ocean-blue · light",
+          "screen": "IraqiFinancialLedgerView:invoices",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "finance-invoices__ocean-blue__light",
+          "title": "IraqiFinancialLedgerView (Invoices) · ocean-blue · light",
+          "screen": "IraqiFinancialLedgerView:invoices",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "finance-invoices__ocean-blue__dark",
+        "title": "IraqiFinancialLedgerView (Invoices) · ocean-blue · dark",
+        "screen": "IraqiFinancialLedgerView:invoices",
+        "theme": "theme-ocean-blue",
+        "mode": "dark",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "finance-invoices__ocean-blue__dark",
+          "title": "IraqiFinancialLedgerView (Invoices) · ocean-blue · dark",
+          "screen": "IraqiFinancialLedgerView:invoices",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "finance-invoices__ocean-blue__dark",
+          "title": "IraqiFinancialLedgerView (Invoices) · ocean-blue · dark",
+          "screen": "IraqiFinancialLedgerView:invoices",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "finance-installments__clinical-default__light",
+        "title": "IraqiFinancialLedgerView (Installments & Aging) · clinical-default · light",
+        "screen": "IraqiFinancialLedgerView:installments",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "finance-installments__clinical-default__light",
+          "title": "IraqiFinancialLedgerView (Installments & Aging) · clinical-default · light",
+          "screen": "IraqiFinancialLedgerView:installments",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "finance-installments__clinical-default__light",
+          "title": "IraqiFinancialLedgerView (Installments & Aging) · clinical-default · light",
+          "screen": "IraqiFinancialLedgerView:installments",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "finance-installments__clinical-default__dark",
+        "title": "IraqiFinancialLedgerView (Installments & Aging) · clinical-default · dark",
+        "screen": "IraqiFinancialLedgerView:installments",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "finance-installments__clinical-default__dark",
+          "title": "IraqiFinancialLedgerView (Installments & Aging) · clinical-default · dark",
+          "screen": "IraqiFinancialLedgerView:installments",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "finance-installments__clinical-default__dark",
+          "title": "IraqiFinancialLedgerView (Installments & Aging) · clinical-default · dark",
+          "screen": "IraqiFinancialLedgerView:installments",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "finance-expenses__clinical-default__light",
+        "title": "IraqiFinancialLedgerView (Expenses) · clinical-default · light",
+        "screen": "IraqiFinancialLedgerView:expenses",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "finance-expenses__clinical-default__light",
+          "title": "IraqiFinancialLedgerView (Expenses) · clinical-default · light",
+          "screen": "IraqiFinancialLedgerView:expenses",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "finance-expenses__clinical-default__light",
+          "title": "IraqiFinancialLedgerView (Expenses) · clinical-default · light",
+          "screen": "IraqiFinancialLedgerView:expenses",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "finance-expenses__clinical-default__dark",
+        "title": "IraqiFinancialLedgerView (Expenses) · clinical-default · dark",
+        "screen": "IraqiFinancialLedgerView:expenses",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "finance-expenses__clinical-default__dark",
+          "title": "IraqiFinancialLedgerView (Expenses) · clinical-default · dark",
+          "screen": "IraqiFinancialLedgerView:expenses",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "finance-expenses__clinical-default__dark",
+          "title": "IraqiFinancialLedgerView (Expenses) · clinical-default · dark",
+          "screen": "IraqiFinancialLedgerView:expenses",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "finance-zreport__clinical-default__light",
+        "title": "IraqiFinancialLedgerView (Daily Cash Close / Z-Report) · clinical-default · light",
+        "screen": "IraqiFinancialLedgerView:z_report",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "finance-zreport__clinical-default__light",
+          "title": "IraqiFinancialLedgerView (Daily Cash Close / Z-Report) · clinical-default · light",
+          "screen": "IraqiFinancialLedgerView:z_report",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "finance-zreport__clinical-default__light",
+          "title": "IraqiFinancialLedgerView (Daily Cash Close / Z-Report) · clinical-default · light",
+          "screen": "IraqiFinancialLedgerView:z_report",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "finance-zreport__clinical-default__dark",
+        "title": "IraqiFinancialLedgerView (Daily Cash Close / Z-Report) · clinical-default · dark",
+        "screen": "IraqiFinancialLedgerView:z_report",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "finance-zreport__clinical-default__dark",
+          "title": "IraqiFinancialLedgerView (Daily Cash Close / Z-Report) · clinical-default · dark",
+          "screen": "IraqiFinancialLedgerView:z_report",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "finance-zreport__clinical-default__dark",
+          "title": "IraqiFinancialLedgerView (Daily Cash Close / Z-Report) · clinical-default · dark",
+          "screen": "IraqiFinancialLedgerView:z_report",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "finance-monthly__clinical-default__light",
+        "title": "IraqiFinancialLedgerView (Monthly & CSV) · clinical-default · light",
+        "screen": "IraqiFinancialLedgerView:monthly",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "finance-monthly__clinical-default__light",
+          "title": "IraqiFinancialLedgerView (Monthly & CSV) · clinical-default · light",
+          "screen": "IraqiFinancialLedgerView:monthly",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "finance-monthly__clinical-default__light",
+          "title": "IraqiFinancialLedgerView (Monthly & CSV) · clinical-default · light",
+          "screen": "IraqiFinancialLedgerView:monthly",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "finance-monthly__clinical-default__dark",
+        "title": "IraqiFinancialLedgerView (Monthly & CSV) · clinical-default · dark",
+        "screen": "IraqiFinancialLedgerView:monthly",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "core"
+      },
+      "before": {
+        "spec": {
+          "id": "finance-monthly__clinical-default__dark",
+          "title": "IraqiFinancialLedgerView (Monthly & CSV) · clinical-default · dark",
+          "screen": "IraqiFinancialLedgerView:monthly",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "finance-monthly__clinical-default__dark",
+          "title": "IraqiFinancialLedgerView (Monthly & CSV) · clinical-default · dark",
+          "screen": "IraqiFinancialLedgerView:monthly",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "core"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-currency__clinical-default__light",
+        "title": "SettingsModal (Tab: Currency) · clinical-default · light",
+        "screen": "SettingsModal:currency",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "settings-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-currency__clinical-default__light",
+          "title": "SettingsModal (Tab: Currency) · clinical-default · light",
+          "screen": "SettingsModal:currency",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-currency__clinical-default__light",
+          "title": "SettingsModal (Tab: Currency) · clinical-default · light",
+          "screen": "SettingsModal:currency",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-currency__clinical-default__dark",
+        "title": "SettingsModal (Tab: Currency) · clinical-default · dark",
+        "screen": "SettingsModal:currency",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "settings-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-currency__clinical-default__dark",
+          "title": "SettingsModal (Tab: Currency) · clinical-default · dark",
+          "screen": "SettingsModal:currency",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-currency__clinical-default__dark",
+          "title": "SettingsModal (Tab: Currency) · clinical-default · dark",
+          "screen": "SettingsModal:currency",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-currency__ocean-blue__light",
+        "title": "SettingsModal (Tab: Currency) · ocean-blue · light",
+        "screen": "SettingsModal:currency",
+        "theme": "theme-ocean-blue",
+        "mode": "light",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-currency__ocean-blue__light",
+          "title": "SettingsModal (Tab: Currency) · ocean-blue · light",
+          "screen": "SettingsModal:currency",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-currency__ocean-blue__light",
+          "title": "SettingsModal (Tab: Currency) · ocean-blue · light",
+          "screen": "SettingsModal:currency",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-currency__ocean-blue__dark",
+        "title": "SettingsModal (Tab: Currency) · ocean-blue · dark",
+        "screen": "SettingsModal:currency",
+        "theme": "theme-ocean-blue",
+        "mode": "dark",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-currency__ocean-blue__dark",
+          "title": "SettingsModal (Tab: Currency) · ocean-blue · dark",
+          "screen": "SettingsModal:currency",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-currency__ocean-blue__dark",
+          "title": "SettingsModal (Tab: Currency) · ocean-blue · dark",
+          "screen": "SettingsModal:currency",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-clinic__clinical-default__light",
+        "title": "SettingsModal (Tab: Clinic) · clinical-default · light",
+        "screen": "SettingsModal:clinic",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "settings-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-clinic__clinical-default__light",
+          "title": "SettingsModal (Tab: Clinic) · clinical-default · light",
+          "screen": "SettingsModal:clinic",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-clinic__clinical-default__light",
+          "title": "SettingsModal (Tab: Clinic) · clinical-default · light",
+          "screen": "SettingsModal:clinic",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-clinic__clinical-default__dark",
+        "title": "SettingsModal (Tab: Clinic) · clinical-default · dark",
+        "screen": "SettingsModal:clinic",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "settings-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-clinic__clinical-default__dark",
+          "title": "SettingsModal (Tab: Clinic) · clinical-default · dark",
+          "screen": "SettingsModal:clinic",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-clinic__clinical-default__dark",
+          "title": "SettingsModal (Tab: Clinic) · clinical-default · dark",
+          "screen": "SettingsModal:clinic",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-display__clinical-default__light",
+        "title": "SettingsModal (Tab: Display & Theme) · clinical-default · light",
+        "screen": "SettingsModal:display",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "settings-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-display__clinical-default__light",
+          "title": "SettingsModal (Tab: Display & Theme) · clinical-default · light",
+          "screen": "SettingsModal:display",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-display__clinical-default__light",
+          "title": "SettingsModal (Tab: Display & Theme) · clinical-default · light",
+          "screen": "SettingsModal:display",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-display__clinical-default__dark",
+        "title": "SettingsModal (Tab: Display & Theme) · clinical-default · dark",
+        "screen": "SettingsModal:display",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "settings-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-display__clinical-default__dark",
+          "title": "SettingsModal (Tab: Display & Theme) · clinical-default · dark",
+          "screen": "SettingsModal:display",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-display__clinical-default__dark",
+          "title": "SettingsModal (Tab: Display & Theme) · clinical-default · dark",
+          "screen": "SettingsModal:display",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-display__ocean-blue__light",
+        "title": "SettingsModal (Tab: Display & Theme) · ocean-blue · light",
+        "screen": "SettingsModal:display",
+        "theme": "theme-ocean-blue",
+        "mode": "light",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-display__ocean-blue__light",
+          "title": "SettingsModal (Tab: Display & Theme) · ocean-blue · light",
+          "screen": "SettingsModal:display",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-display__ocean-blue__light",
+          "title": "SettingsModal (Tab: Display & Theme) · ocean-blue · light",
+          "screen": "SettingsModal:display",
+          "theme": "theme-ocean-blue",
+          "mode": "light",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-display__ocean-blue__dark",
+        "title": "SettingsModal (Tab: Display & Theme) · ocean-blue · dark",
+        "screen": "SettingsModal:display",
+        "theme": "theme-ocean-blue",
+        "mode": "dark",
+        "category": "contrast"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-display__ocean-blue__dark",
+          "title": "SettingsModal (Tab: Display & Theme) · ocean-blue · dark",
+          "screen": "SettingsModal:display",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-display__ocean-blue__dark",
+          "title": "SettingsModal (Tab: Display & Theme) · ocean-blue · dark",
+          "screen": "SettingsModal:display",
+          "theme": "theme-ocean-blue",
+          "mode": "dark",
+          "category": "contrast"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-security__clinical-default__light",
+        "title": "SettingsModal (Tab: Security) · clinical-default · light",
+        "screen": "SettingsModal:security",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "settings-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-security__clinical-default__light",
+          "title": "SettingsModal (Tab: Security) · clinical-default · light",
+          "screen": "SettingsModal:security",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-security__clinical-default__light",
+          "title": "SettingsModal (Tab: Security) · clinical-default · light",
+          "screen": "SettingsModal:security",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-security__clinical-default__dark",
+        "title": "SettingsModal (Tab: Security) · clinical-default · dark",
+        "screen": "SettingsModal:security",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "settings-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-security__clinical-default__dark",
+          "title": "SettingsModal (Tab: Security) · clinical-default · dark",
+          "screen": "SettingsModal:security",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-security__clinical-default__dark",
+          "title": "SettingsModal (Tab: Security) · clinical-default · dark",
+          "screen": "SettingsModal:security",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-modules__clinical-default__light",
+        "title": "SettingsModal (Tab: Modules) · clinical-default · light",
+        "screen": "SettingsModal:modules",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "settings-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-modules__clinical-default__light",
+          "title": "SettingsModal (Tab: Modules) · clinical-default · light",
+          "screen": "SettingsModal:modules",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-modules__clinical-default__light",
+          "title": "SettingsModal (Tab: Modules) · clinical-default · light",
+          "screen": "SettingsModal:modules",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-modules__clinical-default__dark",
+        "title": "SettingsModal (Tab: Modules) · clinical-default · dark",
+        "screen": "SettingsModal:modules",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "settings-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-modules__clinical-default__dark",
+          "title": "SettingsModal (Tab: Modules) · clinical-default · dark",
+          "screen": "SettingsModal:modules",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-modules__clinical-default__dark",
+          "title": "SettingsModal (Tab: Modules) · clinical-default · dark",
+          "screen": "SettingsModal:modules",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-developer__clinical-default__light",
+        "title": "SettingsModal (Tab: Developer) · clinical-default · light",
+        "screen": "SettingsModal:developer",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "settings-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-developer__clinical-default__light",
+          "title": "SettingsModal (Tab: Developer) · clinical-default · light",
+          "screen": "SettingsModal:developer",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-developer__clinical-default__light",
+          "title": "SettingsModal (Tab: Developer) · clinical-default · light",
+          "screen": "SettingsModal:developer",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-developer__clinical-default__dark",
+        "title": "SettingsModal (Tab: Developer) · clinical-default · dark",
+        "screen": "SettingsModal:developer",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "settings-tab"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-developer__clinical-default__dark",
+          "title": "SettingsModal (Tab: Developer) · clinical-default · dark",
+          "screen": "SettingsModal:developer",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-developer__clinical-default__dark",
+          "title": "SettingsModal (Tab: Developer) · clinical-default · dark",
+          "screen": "SettingsModal:developer",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "settings-tab"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-synthetic-data__clinical-default__light",
+        "title": "SyntheticDataModal · clinical-default · light",
+        "screen": "SyntheticDataModal",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-synthetic-data__clinical-default__light",
+          "title": "SyntheticDataModal · clinical-default · light",
+          "screen": "SyntheticDataModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-synthetic-data__clinical-default__light",
+          "title": "SyntheticDataModal · clinical-default · light",
+          "screen": "SyntheticDataModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-synthetic-data__clinical-default__dark",
+        "title": "SyntheticDataModal · clinical-default · dark",
+        "screen": "SyntheticDataModal",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-synthetic-data__clinical-default__dark",
+          "title": "SyntheticDataModal · clinical-default · dark",
+          "screen": "SyntheticDataModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-synthetic-data__clinical-default__dark",
+          "title": "SyntheticDataModal · clinical-default · dark",
+          "screen": "SyntheticDataModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-whats-new__clinical-default__light",
+        "title": "WhatsNewModal · clinical-default · light",
+        "screen": "WhatsNewModal",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-whats-new__clinical-default__light",
+          "title": "WhatsNewModal · clinical-default · light",
+          "screen": "WhatsNewModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-whats-new__clinical-default__light",
+          "title": "WhatsNewModal · clinical-default · light",
+          "screen": "WhatsNewModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-whats-new__clinical-default__dark",
+        "title": "WhatsNewModal · clinical-default · dark",
+        "screen": "WhatsNewModal",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-whats-new__clinical-default__dark",
+          "title": "WhatsNewModal · clinical-default · dark",
+          "screen": "WhatsNewModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-whats-new__clinical-default__dark",
+          "title": "WhatsNewModal · clinical-default · dark",
+          "screen": "WhatsNewModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-backup-restore__clinical-default__light",
+        "title": "BackupRestoreModal · clinical-default · light",
+        "screen": "BackupRestoreModal",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-backup-restore__clinical-default__light",
+          "title": "BackupRestoreModal · clinical-default · light",
+          "screen": "BackupRestoreModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-backup-restore__clinical-default__light",
+          "title": "BackupRestoreModal · clinical-default · light",
+          "screen": "BackupRestoreModal",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "modal-backup-restore__clinical-default__dark",
+        "title": "BackupRestoreModal · clinical-default · dark",
+        "screen": "BackupRestoreModal",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "modal-backup-restore__clinical-default__dark",
+          "title": "BackupRestoreModal · clinical-default · dark",
+          "screen": "BackupRestoreModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "modal-backup-restore__clinical-default__dark",
+          "title": "BackupRestoreModal · clinical-default · dark",
+          "screen": "BackupRestoreModal",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "app-user-menu__clinical-default__light",
+        "title": "AppLayout (User Menu) · clinical-default · light",
+        "screen": "AppLayout:userMenu",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "app-user-menu__clinical-default__light",
+          "title": "AppLayout (User Menu) · clinical-default · light",
+          "screen": "AppLayout:userMenu",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "app-user-menu__clinical-default__light",
+          "title": "AppLayout (User Menu) · clinical-default · light",
+          "screen": "AppLayout:userMenu",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "app-user-menu__clinical-default__dark",
+        "title": "AppLayout (User Menu) · clinical-default · dark",
+        "screen": "AppLayout:userMenu",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "modal"
+      },
+      "before": {
+        "spec": {
+          "id": "app-user-menu__clinical-default__dark",
+          "title": "AppLayout (User Menu) · clinical-default · dark",
+          "screen": "AppLayout:userMenu",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "app-user-menu__clinical-default__dark",
+          "title": "AppLayout (User Menu) · clinical-default · dark",
+          "screen": "AppLayout:userMenu",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "modal"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-staff__clinical-default__light",
+        "title": "SettingsModal (Tab: Staff Roster - Team Mode) · clinical-default · light",
+        "screen": "SettingsModal:staff",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "team"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-staff__clinical-default__light",
+          "title": "SettingsModal (Tab: Staff Roster - Team Mode) · clinical-default · light",
+          "screen": "SettingsModal:staff",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-staff__clinical-default__light",
+          "title": "SettingsModal (Tab: Staff Roster - Team Mode) · clinical-default · light",
+          "screen": "SettingsModal:staff",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "settings-staff__clinical-default__dark",
+        "title": "SettingsModal (Tab: Staff Roster - Team Mode) · clinical-default · dark",
+        "screen": "SettingsModal:staff",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "team"
+      },
+      "before": {
+        "spec": {
+          "id": "settings-staff__clinical-default__dark",
+          "title": "SettingsModal (Tab: Staff Roster - Team Mode) · clinical-default · dark",
+          "screen": "SettingsModal:staff",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "settings-staff__clinical-default__dark",
+          "title": "SettingsModal (Tab: Staff Roster - Team Mode) · clinical-default · dark",
+          "screen": "SettingsModal:staff",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "team-reception__clinical-default__light",
+        "title": "ReceptionCommandCenterView (Team Mode) · clinical-default · light",
+        "screen": "ReceptionCommandCenterView",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "team"
+      },
+      "before": {
+        "spec": {
+          "id": "team-reception__clinical-default__light",
+          "title": "ReceptionCommandCenterView (Team Mode) · clinical-default · light",
+          "screen": "ReceptionCommandCenterView",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "team-reception__clinical-default__light",
+          "title": "ReceptionCommandCenterView (Team Mode) · clinical-default · light",
+          "screen": "ReceptionCommandCenterView",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "team-reception__clinical-default__dark",
+        "title": "ReceptionCommandCenterView (Team Mode) · clinical-default · dark",
+        "screen": "ReceptionCommandCenterView",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "team"
+      },
+      "before": {
+        "spec": {
+          "id": "team-reception__clinical-default__dark",
+          "title": "ReceptionCommandCenterView (Team Mode) · clinical-default · dark",
+          "screen": "ReceptionCommandCenterView",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "team-reception__clinical-default__dark",
+          "title": "ReceptionCommandCenterView (Team Mode) · clinical-default · dark",
+          "screen": "ReceptionCommandCenterView",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "team-mobile-more__clinical-default__light",
+        "title": "AppLayout (Mobile More Drawer - Team Mode) · clinical-default · light",
+        "screen": "AppLayout:mobileMore",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "team"
+      },
+      "before": {
+        "spec": {
+          "id": "team-mobile-more__clinical-default__light",
+          "title": "AppLayout (Mobile More Drawer - Team Mode) · clinical-default · light",
+          "screen": "AppLayout:mobileMore",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "team-mobile-more__clinical-default__light",
+          "title": "AppLayout (Mobile More Drawer - Team Mode) · clinical-default · light",
+          "screen": "AppLayout:mobileMore",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "team-mobile-more__clinical-default__dark",
+        "title": "AppLayout (Mobile More Drawer - Team Mode) · clinical-default · dark",
+        "screen": "AppLayout:mobileMore",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "team"
+      },
+      "before": {
+        "spec": {
+          "id": "team-mobile-more__clinical-default__dark",
+          "title": "AppLayout (Mobile More Drawer - Team Mode) · clinical-default · dark",
+          "screen": "AppLayout:mobileMore",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "team-mobile-more__clinical-default__dark",
+          "title": "AppLayout (Mobile More Drawer - Team Mode) · clinical-default · dark",
+          "screen": "AppLayout:mobileMore",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "team-activity-log__clinical-default__light",
+        "title": "ActivityLogView (Team Mode) · clinical-default · light",
+        "screen": "ActivityLogView",
+        "theme": "theme-clinical-default",
+        "mode": "light",
+        "category": "team"
+      },
+      "before": {
+        "spec": {
+          "id": "team-activity-log__clinical-default__light",
+          "title": "ActivityLogView (Team Mode) · clinical-default · light",
+          "screen": "ActivityLogView",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "team-activity-log__clinical-default__light",
+          "title": "ActivityLogView (Team Mode) · clinical-default · light",
+          "screen": "ActivityLogView",
+          "theme": "theme-clinical-default",
+          "mode": "light",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    },
+    {
+      "spec": {
+        "id": "team-activity-log__clinical-default__dark",
+        "title": "ActivityLogView (Team Mode) · clinical-default · dark",
+        "screen": "ActivityLogView",
+        "theme": "theme-clinical-default",
+        "mode": "dark",
+        "category": "team"
+      },
+      "before": {
+        "spec": {
+          "id": "team-activity-log__clinical-default__dark",
+          "title": "ActivityLogView (Team Mode) · clinical-default · dark",
+          "screen": "ActivityLogView",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: BEFORE skipped (--after-only flag provided)."
+      },
+      "after": {
+        "spec": {
+          "id": "team-activity-log__clinical-default__dark",
+          "title": "ActivityLogView (Team Mode) · clinical-default · dark",
+          "screen": "ActivityLogView",
+          "theme": "theme-clinical-default",
+          "mode": "dark",
+          "category": "team"
+        },
+        "status": "not_captured",
+        "reason": "NOT CAPTURED: Capture step did not execute."
+      }
+    }
+  ]
+}

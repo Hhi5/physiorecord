@@ -74,17 +74,17 @@ export const ModalDialog: React.FC<ModalDialogProps> = ({
     >
       <Modal
         dir={dir}
-        className={`w-full ${SIZE_CLASSES[size]} max-h-[92vh] bg-layer border border-layer-line text-foreground rounded-2xl shadow-2xl overflow-hidden flex flex-col outline-none ${className}`.trim()}
+        className={`w-full ${SIZE_CLASSES[size]} max-h-[88dvh] bg-layer border border-layer-line text-foreground rounded-2xl shadow-2xl overflow-hidden flex flex-col outline-none ${className}`.trim()}
       >
         <AriaDialog
           role={role}
           aria-label={title ? undefined : ariaLabel || closeLabel}
-          className="flex flex-col max-h-[92vh] outline-none"
+          className="flex flex-col max-h-[88dvh] min-h-0 outline-none"
         >
           {({ close }) => (
             <>
               {(title || !hideCloseButton || headerActions) && (
-                <div className="px-5 py-4 border-b border-card-divider bg-surface/60 flex items-start justify-between gap-3 flex-shrink-0">
+                <div className="px-4 sm:px-5 py-3.5 border-b border-card-divider bg-surface/60 flex items-start justify-between gap-3 shrink-0">
                   <div className="min-w-0">
                     {title && (
                       <Heading
@@ -100,14 +100,14 @@ export const ModalDialog: React.FC<ModalDialogProps> = ({
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     {headerActions}
                     {!hideCloseButton && (
                       <button
                         type="button"
                         onClick={close}
                         aria-label={closeLabel}
-                        className="p-2 rounded-xl text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover transition-colors cursor-pointer"
+                        className="min-w-[36px] min-h-[36px] p-2 rounded-xl text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover flex items-center justify-center transition-colors cursor-pointer"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -116,10 +116,10 @@ export const ModalDialog: React.FC<ModalDialogProps> = ({
                 </div>
               )}
 
-              <div className={bodyClassName ?? 'flex-1 overflow-y-auto p-4 sm:p-6'}>{children}</div>
+              <div tabIndex={0} className={bodyClassName ?? 'flex-1 overflow-y-auto min-h-0 p-4 sm:p-6'}>{children}</div>
 
               {footer && (
-                <div className="px-5 py-3.5 border-t border-card-divider bg-muted/40 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
+                <div className="px-4 sm:px-5 py-3 border-t border-card-divider bg-muted/40 flex flex-wrap items-center justify-between gap-3 shrink-0">
                   {footer}
                 </div>
               )}
@@ -207,14 +207,16 @@ export const DrawerDialog: React.FC<DrawerDialogProps> = ({
                     type="button"
                     onClick={close}
                     aria-label={closeLabel}
-                    className="p-2 rounded-xl text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover transition-colors cursor-pointer"
+                    className="min-w-[36px] min-h-[36px] inline-flex items-center justify-center p-2 rounded-xl text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover transition-colors cursor-pointer shrink-0"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
               )}
 
-              <div className={bodyClassName ?? 'flex-1 overflow-y-auto p-5'}>{children}</div>
+              <div tabIndex={0} className={bodyClassName ?? 'flex-1 overflow-y-auto p-5 focus:outline-none'}>
+                {children}
+              </div>
 
               {footer && (
                 <div className="px-5 py-3.5 border-t border-card-divider bg-muted/40 flex items-center justify-end gap-2.5 flex-shrink-0">

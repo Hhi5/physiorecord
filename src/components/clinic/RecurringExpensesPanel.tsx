@@ -244,12 +244,12 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
             <Repeat className="size-4" />
           </div>
           <div>
-            <h3 className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-2">
+            <h2 className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-2">
               <span>{bi('مستحق هذا الشهر', 'Due this month', 'شایستەی ئەم مانگە')}</span>
               <span className="px-2 py-0.5 rounded-full bg-primary/15 text-primary font-bold text-xs tabular-nums">
                 <Num value={dueSuggestions.length} />
               </span>
-            </h3>
+            </h2>
             <p className="text-xs text-muted-foreground-1">
               {bi(
                 'تسجيل سريع للمصاريف الشهرية المتكررة (أدخل المبلغ الفعلي عند الدفع)',
@@ -263,7 +263,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
         <button
           type="button"
           onClick={() => setShowManager((v) => !v)}
-          className="px-3 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+          className="px-3 py-1.5 min-h-[36px] rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
         >
           <Settings2 className="size-3.5 text-primary" />
           <span>
@@ -288,7 +288,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
           <button
             type="button"
             onClick={() => setFormNotice(null)}
-            className="p-1 rounded-lg hover:bg-black/5 cursor-pointer"
+            className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg hover:bg-black/5 cursor-pointer"
             aria-label={bi('إغلاق', 'Dismiss', 'داخستن')}
           >
             <X className="size-3.5" />
@@ -347,10 +347,12 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
                 <div className="space-y-2 pt-1">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block font-semibold text-muted-foreground-1 mb-1">
+                      <label htmlFor={`rec-amt-${tpl.id}`} className="block font-semibold text-muted-foreground-1 mb-1">
                         {bi('المبلغ:', 'Amount:', 'بڕ:')}
                       </label>
                       <MoneyInput
+                        id={`rec-amt-${tpl.id}`}
+                        ariaLabel={`${bi('المبلغ', 'Amount', 'بڕ')} — ${bi(tpl.titleAr, tpl.titleEn)}`}
                         value={draft.amountIQD}
                         onChange={(val) =>
                           patchDraft(tpl.id, { amountIQD: val })
@@ -358,10 +360,12 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="block font-semibold text-muted-foreground-1 mb-1">
+                      <label htmlFor={`rec-date-${tpl.id}`} className="block font-semibold text-muted-foreground-1 mb-1">
                         {bi('التاريخ:', 'Date:', 'ڕێکەوت:')}
                       </label>
                       <DatePickerInput
+                        id={`rec-date-${tpl.id}`}
+                        ariaLabel={`${bi('التاريخ', 'Date', 'ڕێکەوت')} — ${bi(tpl.titleAr, tpl.titleEn)}`}
                         value={draft.date}
                         onChange={(val) => patchDraft(tpl.id, { date: val })}
                       />
@@ -374,6 +378,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
                     onChange={(e) =>
                       patchDraft(tpl.id, { notes: e.target.value })
                     }
+                    aria-label={bi('ملاحظات المصروف المتكرر', 'Recurring expense notes', 'تێبینی خەرجیی دووبارەبووەوە')}
                     placeholder={
                       bi('ملاحظات (اختياري)...', 'Notes (optional)...', 'تێبینی (بژاردەیی)...')
                     }
@@ -384,7 +389,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
                     type="button"
                     disabled={draft.amountIQD <= 0}
                     onClick={() => handleLogDueExpense(tpl.id)}
-                    className="w-full py-2 px-3 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed"
+                    className="w-full py-2 px-3 min-h-[36px] rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed"
                   >
                     <Plus className="size-3.5" />
                     <span>{bi('تسجيل المصروف', 'Log Expense', 'تۆمارکردنی خەرجی')}</span>
@@ -400,18 +405,18 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
       {showManager && (
         <div className="p-4 rounded-2xl bg-card border border-card-line space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h4 className="text-xs sm:text-sm font-bold text-foreground">
+            <h3 className="text-xs sm:text-sm font-bold text-foreground">
               {bi(
                 'قوالب المصاريف المتكررة والفئات المخصصة',
                 'Recurring Expense Templates & Custom Categories',
                 'قاڵبەکانی خەرجیی دووبارەبووەوە و پۆلە تایبەتەکان'
               )}
-            </h4>
+            </h3>
             {editingTemplateId && (
               <button
                 type="button"
                 onClick={resetTemplateForm}
-                className="text-xs font-semibold text-primary hover:underline cursor-pointer"
+                className="text-xs font-semibold text-primary hover:underline min-h-[36px] inline-flex items-center cursor-pointer"
               >
                 {bi('+ إضافة قالب جديد', '+ Add New Template', '+ زیادکردنی قاڵبێکی نوێ')}
               </button>
@@ -423,10 +428,11 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
             className="p-3.5 rounded-xl bg-surface border border-line-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end"
           >
             <div>
-              <label className="block font-semibold text-foreground mb-1">
+              <label htmlFor="rec-tpl-cat" className="block font-semibold text-foreground mb-1">
                 {bi('الفئة الأساسية:', 'Category:', 'پۆلی سەرەکی:')}
               </label>
               <select
+                id="rec-tpl-cat"
                 value={tplCategory}
                 onChange={(e) =>
                   setTplCategory(e.target.value as ExpenseCategoryIQD)
@@ -446,7 +452,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
             </div>
 
             <div>
-              <label className="block font-semibold text-foreground mb-1">
+              <label htmlFor="rec-tpl-custom-cat" className="block font-semibold text-foreground mb-1">
                 {bi(
                   'تسمية فئة مخصصة (اختياري):',
                   'Custom Category Label:',
@@ -454,6 +460,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
                 )}
               </label>
               <input
+                id="rec-tpl-custom-cat"
                 type="text"
                 value={tplCustomCategoryLabel}
                 onChange={(e) => setTplCustomCategoryLabel(e.target.value)}
@@ -469,7 +476,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
             </div>
 
             <div>
-              <label className="block font-semibold text-foreground mb-1">
+              <label htmlFor="rec-tpl-title-ar" className="block font-semibold text-foreground mb-1">
                 {bi(
                   'عنوان القالب (عربي) *:',
                   'Title (Arabic / Primary) *:',
@@ -477,6 +484,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
                 )}
               </label>
               <input
+                id="rec-tpl-title-ar"
                 type="text"
                 required
                 value={tplTitleAr}
@@ -489,7 +497,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
             </div>
 
             <div>
-              <label className="block font-semibold text-foreground mb-1">
+              <label htmlFor="rec-tpl-title-en" className="block font-semibold text-foreground mb-1">
                 {bi(
                   'العنوان (EN اختياري) ويوم الشهر:',
                   'English Title & Day:',
@@ -498,10 +506,12 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
               </label>
               <div className="flex gap-1.5">
                 <input
+                  id="rec-tpl-title-en"
                   type="text"
                   dir="ltr"
                   value={tplTitleEn}
                   onChange={(e) => setTplTitleEn(e.target.value)}
+                  aria-label={bi('عنوان القالب بالإنجليزية', 'English template title', 'ناونیشانی قاڵب بە ئینگلیزی')}
                   placeholder="English title"
                   className="flex-1 min-w-0 px-2.5 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground"
                 />
@@ -516,6 +526,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
                       Math.max(1, Math.min(28, Number(e.target.value) || 1))
                     )
                   }
+                  aria-label={bi('يوم الاستحقاق بالشهر (1–28)', 'Day of month (1–28)', 'ڕۆژی شایستەبوون لە مانگدا (١–٢٨)')}
                   title={bi(
                     'يوم الاستحقاق بالشهر (1–28)',
                     'Day of month (1–28)',
@@ -528,7 +539,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
 
             <button
               type="submit"
-              className="py-2 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+              className="py-2 px-4 min-h-[36px] rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Plus className="size-3.5" />
               <span>
@@ -581,7 +592,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
                       <button
                         type="button"
                         onClick={() => handleToggleActive(tpl.id)}
-                        className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold inline-flex items-center gap-1 cursor-pointer ${
+                        className={`px-2.5 py-1.5 min-h-[36px] rounded-lg border text-xs font-semibold inline-flex items-center gap-1 cursor-pointer ${
                           tpl.isActive
                             ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
                             : 'border-layer-line bg-layer text-muted-foreground-1'
@@ -603,7 +614,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
                       <button
                         type="button"
                         onClick={() => startEditTemplate(tpl)}
-                        className="p-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground cursor-pointer"
+                        className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground cursor-pointer"
                         title={bi('تعديل القالب', 'Edit Template', 'دەستکاریکردنی قاڵب')}
                         aria-label={bi('تعديل القالب', 'Edit Template', 'دەستکاریکردنی قاڵب')}
                       >
@@ -613,7 +624,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
                       <button
                         type="button"
                         onClick={() => handleDeleteTemplate(tpl.id)}
-                        className="p-1.5 rounded-lg border border-layer-line bg-layer hover:bg-rose-500/10 text-muted-foreground-1 hover:text-rose-600 cursor-pointer"
+                        className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg border border-layer-line bg-layer hover:bg-rose-500/10 text-muted-foreground-1 hover:text-rose-700 cursor-pointer"
                         title={bi('حذف القالب', 'Delete Template', 'سڕینەوەی قاڵب')}
                         aria-label={bi('حذف القالب', 'Delete Template', 'سڕینەوەی قاڵب')}
                       >

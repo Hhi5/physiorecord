@@ -369,7 +369,8 @@ export const PatientModal: React.FC<PatientModalProps> = ({
         </div>
 
         {/* Sheet Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div tabIndex={0} className="flex-1 overflow-y-auto p-5 space-y-4">
           {error && (
             <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 flex-shrink-0" />
@@ -380,10 +381,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
           {/* Minimal First Step: Arabic Name, Phone, Sex, Age or DOB */}
           <div className="space-y-3.5">
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1">
+              <label htmlFor="patient-fullname-ar" className="block text-xs font-semibold text-foreground mb-1">
                 {bi('اسم المريض الثلاثي بالعربية', 'Patient Arabic Full Name')} <span className="text-rose-500">*</span>
               </label>
               <input
+                id="patient-fullname-ar"
                 ref={arabicNameInputRef}
                 type="text"
                 value={formData.fullNameAr || ''}
@@ -412,10 +414,12 @@ export const PatientModal: React.FC<PatientModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
+                <label htmlFor="patient-phone-input" className="block text-xs font-semibold text-foreground mb-1">
                   {bi('رقم الهاتف العراقي', 'Iraqi Phone Number')}
                 </label>
                 <PhoneInput
+                  id="patient-phone-input"
+                  ariaLabel={bi('رقم الهاتف العراقي', 'Iraqi Phone Number')}
                   value={formData.phoneNumber || ''}
                   onChange={(val) => setFormData({ ...formData, phoneNumber: val })}
                   placeholder="0770 123 4567"
@@ -423,10 +427,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
+                <label htmlFor="patient-gender-select" className="block text-xs font-semibold text-foreground mb-1">
                   {bi('الجنس', 'Gender')}
                 </label>
                 <select
+                  id="patient-gender-select"
                   value={formData.gender}
                   onChange={(e) => setFormData({ ...formData, gender: e.target.value as Gender })}
                   className="w-full px-3.5 py-2 rounded-xl bg-surface border border-layer-line text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -526,10 +531,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
+                <label htmlFor="patient-age-input" className="block text-xs font-semibold text-foreground mb-1">
                   {bi('العمر (سنوات)', 'Age (Years)')}
                 </label>
                 <input
+                  id="patient-age-input"
                   type="number"
                   min="0"
                   max="125"
@@ -542,10 +548,12 @@ export const PatientModal: React.FC<PatientModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
+                <label htmlFor="patient-dob-input" className="block text-xs font-semibold text-foreground mb-1">
                   {bi('أو تاريخ الميلاد', 'Or Date of Birth')}
                 </label>
                 <DatePickerInput
+                  id="patient-dob-input"
+                  ariaLabel={bi('تاريخ الميلاد', 'Date of Birth')}
                   value={formData.dateOfBirth || ''}
                   onChange={(dob) => handleDobChange(dob)}
                 />
@@ -569,10 +577,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block text-xs font-semibold text-foreground mb-1">
+                    <label htmlFor="patient-guardian-name" className="block text-xs font-semibold text-foreground mb-1">
                       {bi('اسم ولي الأمر الكامل *', 'Guardian Full Name *')}
                     </label>
                     <input
+                      id="patient-guardian-name"
                       type="text"
                       data-testid="pediatric-guardian-name-input"
                       value={formData.guardianName || ''}
@@ -582,10 +591,12 @@ export const PatientModal: React.FC<PatientModalProps> = ({
                     />
                   </div>
                   <div data-testid="pediatric-guardian-phone-wrap">
-                    <label className="block text-xs font-semibold text-foreground mb-1">
+                    <label htmlFor="patient-guardian-phone" className="block text-xs font-semibold text-foreground mb-1">
                       {bi('هاتف ولي الأمر *', 'Guardian Phone *')}
                     </label>
                     <PhoneInput
+                      id="patient-guardian-phone"
+                      ariaLabel={bi('هاتف ولي الأمر', 'Guardian Phone')}
                       value={formData.guardianPhone || ''}
                       onChange={(val) => setFormData({ ...formData, guardianPhone: val })}
                     />
@@ -594,10 +605,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-center">
                   <div>
-                    <label className="block text-xs font-semibold text-foreground mb-1">
+                    <label htmlFor="patient-guardian-relation" className="block text-xs font-semibold text-foreground mb-1">
                       {bi('صلة القرابة', 'Guardian Relation')}
                     </label>
                     <select
+                      id="patient-guardian-relation"
                       value={formData.guardianRelation || 'parent'}
                       onChange={(e) =>
                         setFormData({
@@ -696,10 +708,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
 
               <div className="space-y-2">
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground-1 mb-1">
+                  <label htmlFor="patient-ref-doc-select" className="block text-xs font-medium text-muted-foreground-1 mb-1">
                     {bi('اختيار طبيب محيل من الدليل', 'Select Referring Doctor from Directory')}
                   </label>
                   <select
+                    id="patient-ref-doc-select"
                     value={formData.referringDoctorId || ''}
                     onChange={(e) => {
                       const nextId = e.target.value;
@@ -758,10 +771,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
                   Boolean(formData.referringClinic)) && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block text-xs font-medium text-muted-foreground-1 mb-1">
+                      <label htmlFor="patient-ref-physician" className="block text-xs font-medium text-muted-foreground-1 mb-1">
                         {bi('اسم الطبيب المحيل', 'Referring Physician Name')}
                       </label>
                       <input
+                        id="patient-ref-physician"
                         type="text"
                         value={formData.referringPhysician || ''}
                         onChange={(e) =>
@@ -775,10 +789,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-muted-foreground-1 mb-1">
+                      <label htmlFor="patient-ref-clinic" className="block text-xs font-medium text-muted-foreground-1 mb-1">
                         {bi('المستشفى / المركز المحيل', 'Referring Hospital / Clinic')}
                       </label>
                       <input
+                        id="patient-ref-clinic"
                         type="text"
                         value={formData.referringClinic || ''}
                         onChange={(e) =>
@@ -795,10 +810,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
                 )}
 
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground-1 mb-1">
+                  <label htmlFor="patient-ref-notes" className="block text-xs font-medium text-muted-foreground-1 mb-1">
                     {bi('ملاحظات الإحالة', 'Referral Notes')}
                   </label>
                   <input
+                    id="patient-ref-notes"
                     type="text"
                     value={formData.referralNotes || ''}
                     onChange={(e) =>
@@ -826,10 +842,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
             </summary>
             <div className="p-4 pt-2 border-t border-card-divider space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
+                <label htmlFor="patient-fullname-en" className="block text-xs font-semibold text-foreground mb-1">
                   {bi('الاسم بالإنجليزية (اختياري)', 'Full Name in English (Optional)')}
                 </label>
                 <input
+                  id="patient-fullname-en"
                   type="text"
                   value={formData.fullName || ''}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
@@ -841,10 +858,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1">
+                  <label htmlFor="patient-occupation" className="block text-xs font-semibold text-foreground mb-1">
                     {bi('المهنة ونمط العمل', 'Occupation')}
                   </label>
                   <input
+                    id="patient-occupation"
                     type="text"
                     value={formData.occupation || ''}
                     onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
@@ -854,10 +872,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1">
+                  <label htmlFor="patient-dominant-hand" className="block text-xs font-semibold text-foreground mb-1">
                     {bi('اليد المهيمنة', 'Dominant Hand')}
                   </label>
                   <select
+                    id="patient-dominant-hand"
                     value={formData.dominantHand}
                     onChange={(e) => setFormData({ ...formData, dominantHand: e.target.value as DominantHand })}
                     className="w-full px-3.5 py-2 rounded-lg bg-surface border border-layer-line text-foreground text-sm focus:outline-none focus:border-primary"
@@ -870,10 +889,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
+                <label htmlFor="patient-address" className="block text-xs font-semibold text-foreground mb-1">
                   {bi('عنوان السكن (المحافظة والمنطقة)', 'Residential Address')}
                 </label>
                 <input
+                  id="patient-address"
                   type="text"
                   value={formData.address || ''}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -968,10 +988,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
             </summary>
             <div className="p-4 pt-2 border-t border-card-divider space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
+                <label htmlFor="patient-medical-history" className="block text-xs font-semibold text-foreground mb-1">
                   {bi('التاريخ المرضي العام وطبيعة الشكوى الحالية', 'General Medical History & Chief Complaint')}
                 </label>
                 <AutoResizeTextarea
+                  id="patient-medical-history"
                   minRows={2}
                   value={formData.medicalHistory || ''}
                   onChange={(e) => setFormData({ ...formData, medicalHistory: e.target.value })}
@@ -982,10 +1003,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1">
+                  <label htmlFor="patient-prev-surgeries" className="block text-xs font-semibold text-foreground mb-1">
                     {bi('العمليات الجراحية السابقة', 'Previous Surgeries')}
                   </label>
                   <AutoResizeTextarea
+                    id="patient-prev-surgeries"
                     minRows={2}
                     value={formData.previousSurgeries || ''}
                     onChange={(e) => setFormData({ ...formData, previousSurgeries: e.target.value })}
@@ -995,10 +1017,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1">
+                  <label htmlFor="patient-curr-meds" className="block text-xs font-semibold text-foreground mb-1">
                     {bi('الأدوية الحالية المستمرة', 'Current Medications')}
                   </label>
                   <AutoResizeTextarea
+                    id="patient-curr-meds"
                     minRows={2}
                     value={formData.currentMedications || ''}
                     onChange={(e) => setFormData({ ...formData, currentMedications: e.target.value })}
@@ -1010,10 +1033,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1">
+                  <label htmlFor="patient-allergies" className="block text-xs font-semibold text-foreground mb-1">
                     {bi('الحساسية المعروفة', 'Known Allergies')}
                   </label>
                   <input
+                    id="patient-allergies"
                     type="text"
                     value={formData.allergies || ''}
                     onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
@@ -1023,10 +1047,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1">
+                  <label htmlFor="patient-comorbidities" className="block text-xs font-semibold text-foreground mb-1">
                     {bi('الأمراض المصاحبة', 'Comorbidities')}
                   </label>
                   <input
+                    id="patient-comorbidities"
                     type="text"
                     value={formData.comorbidities || ''}
                     onChange={(e) => setFormData({ ...formData, comorbidities: e.target.value })}
@@ -1059,10 +1084,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
               />
 
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
+                <label htmlFor="patient-precautions" className="block text-xs font-semibold text-foreground mb-1">
                   {bi('المحاذير وموانع العلاج أثناء التأهيل', 'Clinical Precautions & Contraindications')}
                 </label>
                 <AutoResizeTextarea
+                  id="patient-precautions"
                   minRows={2}
                   value={formData.precautions || ''}
                   onChange={(e) => setFormData({ ...formData, precautions: e.target.value })}
@@ -1110,10 +1136,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
+                <label htmlFor="patient-psychosocial" className="block text-xs font-semibold text-foreground mb-1">
                   {bi('العوامل النفسية الاجتماعية والبيئية', 'Psychosocial Factors & Yellow Flags')}
                 </label>
                 <AutoResizeTextarea
+                  id="patient-psychosocial"
                   minRows={2}
                   value={formData.psychosocialFactors || ''}
                   onChange={(e) => setFormData({ ...formData, psychosocialFactors: e.target.value })}
@@ -1123,10 +1150,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
+                <label htmlFor="patient-general-notes" className="block text-xs font-semibold text-foreground mb-1">
                   {bi('ملاحظات عامة للمعالج', 'General Clinical Notes')}
                 </label>
                 <AutoResizeTextarea
+                  id="patient-general-notes"
                   minRows={2}
                   value={formData.generalNotes || ''}
                   onChange={(e) => setFormData({ ...formData, generalNotes: e.target.value })}
@@ -1136,9 +1164,10 @@ export const PatientModal: React.FC<PatientModalProps> = ({
               </div>
             </div>
           </details>
+          </div>
 
-          {/* Sheet Footer Controls */}
-          <div className="pt-4 border-t border-card-divider flex items-center justify-between">
+          {/* Sticky Sheet Footer Controls */}
+          <div className="px-5 py-3.5 border-t border-card-divider bg-muted/40 flex items-center justify-between shrink-0">
             <button
               type="button"
               onClick={onClose}
