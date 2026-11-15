@@ -1,10 +1,10 @@
 appId: org.physiorecord.app
 productName: PhysioRecord
 copyright: Copyright (c) 2026 PhysioRecord Contributors (GPL-3.0-or-later)
+electronVersion: 34.3.0
 
 directories:
   output: release
-  buildResources: public/icons
 
 files:
   - dist/**/*
@@ -14,8 +14,10 @@ files:
   - THIRD_PARTY_NOTICES.md
   - CONTENT_LICENSES.md
   - package.json
+  - "!node_modules/**/*"
 
 asar: true
+npmRebuild: false
 
 win:
   target:

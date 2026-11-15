@@ -2,7 +2,6 @@
   "appId": "org.physiorecord.app",
   "appName": "PhysioRecord",
   "webDir": "dist",
-  "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https",
     "hostname": "localhost",

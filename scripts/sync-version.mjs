@@ -23,7 +23,7 @@ export function computeAndroidVersionCode(semverStr) {
   return major * 10000 + minor * 100 + patch;
 }
 
-function main() {
+export function syncAndroidVersion() {
   if (!fs.existsSync(PKG_PATH)) {
     console.error('❌ package.json not found');
     process.exit(1);
@@ -50,5 +50,5 @@ function main() {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
+  syncAndroidVersion();
 }
