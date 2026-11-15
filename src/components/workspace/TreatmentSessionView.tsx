@@ -1659,69 +1659,65 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden transition-colors">
-      {/* Top Session Bar */}
-      <div className="px-4 sm:px-6 py-3.5 bg-card border-b border-card-line flex flex-wrap items-center justify-between gap-3 sm:gap-4 shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
+      {/* Top Session Bar (Compact single-row layout) */}
+      <div className="px-3 sm:px-5 py-1.5 bg-card border-b border-card-line flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
           <button
             type="button"
             onClick={() => handleSafeNavigation('back')}
             aria-label={bi('العودة', 'Go back', 'گەڕانەوە')}
             title={bi('العودة', 'Go back', 'گەڕانەوە')}
-            className="size-9 rounded-xl bg-layer border border-layer-line text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+            className="size-7 sm:size-8 rounded-lg bg-layer border border-layer-line text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
           >
             {isRtl ? <ArrowRight className="size-4" /> : <ArrowLeft className="size-4" />}
           </button>
 
-          <div>
-            <div className="flex flex-wrap items-center gap-2 text-xs tabular-nums">
-              <span className="py-0.5 px-2.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-bold font-mono">
-                {bi(
-                  `جلسة علاجية #${session.data.sessionNumber}`,
-                  `Session #${session.data.sessionNumber}`,
-                  `دانیشتنی چارەسەر #${session.data.sessionNumber}`
-                )}
-              </span>
-              <span className="text-muted-foreground-1">·</span>
-              <span className="text-foreground font-bold">{patientName}</span>
-              <span className="text-muted-foreground-1">·</span>
-              <span className="text-muted-foreground-1 tabular-nums">
-                <bdi dir="ltr">{formatDateDDMMYYYY(session.data.sessionDate)}</bdi>
-              </span>
-              {isLocked && (
-                <>
-                  <span className="text-muted-foreground-1">·</span>
-                  <span className="py-0.5 px-2.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold inline-flex items-center gap-1">
-                    <Lock className="size-3" />
-                    {bi('معتمدة ومغلقة', 'Signed & Locked', 'پەسەندکراو و داخراو')}
-                  </span>
-                </>
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs tabular-nums min-w-0">
+            <span className="py-0.5 px-2 rounded-md bg-primary/10 text-primary border border-primary/20 font-bold font-mono shrink-0">
+              {bi(
+                `جلسة علاجية #${session.data.sessionNumber}`,
+                `Session #${session.data.sessionNumber}`,
+                `دانیشتنی چارەسەر #${session.data.sessionNumber}`
               )}
-              {!isLocked && autosaveStatus === 'saving' && (
-                <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                  {bi('جاري الحفظ...', 'Saving...', 'پاشەکەوتکردن...')}
-                </span>
-              )}
-              {!isLocked && lastSavedAt && !isDirty && (
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
-                  <CheckCircle2 className="size-3.5" />
-                  <span>
-                    {bi('تم الحفظ ', 'Saved ', 'پاشەکەوت کرا ')}
-                    <bdi dir="ltr" className="font-mono tabular-nums">{lastSavedAt}</bdi>
-                  </span>
-                </span>
-              )}
-            </div>
-            <h2 className="text-sm font-bold text-foreground mt-0.5">
+            </span>
+            <span className="hidden md:inline text-muted-foreground-1">·</span>
+            <span className="hidden md:inline text-foreground font-bold truncate max-w-[160px]">{patientName}</span>
+            <span className="text-muted-foreground-1">·</span>
+            <span className="text-muted-foreground-1 tabular-nums shrink-0">
+              <bdi dir="ltr">{formatDateDDMMYYYY(session.data.sessionDate)}</bdi>
+            </span>
+            <span className="hidden sm:inline text-muted-foreground-1">·</span>
+            <h2 className="hidden sm:inline text-xs font-bold text-foreground truncate max-w-[240px]">
               {episodeTitle}
             </h2>
+            {isLocked && (
+              <span className="py-0.5 px-2 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold inline-flex items-center gap-1 shrink-0">
+                <Lock className="size-3" />
+                {bi('معتمدة ومغلقة', 'Signed & Locked', 'پەسەندکراو و داخراو')}
+              </span>
+            )}
+            {!isLocked && autosaveStatus === 'saving' && (
+              <span className="text-xs text-amber-600 dark:text-amber-400 font-medium shrink-0">
+                {bi('جاري الحفظ...', 'Saving...', 'پاشەکەوتکردن...')}
+              </span>
+            )}
+            {!isLocked && lastSavedAt && !isDirty && (
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium inline-flex items-center gap-1 shrink-0">
+                <CheckCircle2 className="size-3.5" />
+                <span className="hidden sm:inline">
+                  {bi('تم الحفظ ', 'Saved ', 'پاشەکەوت کرا ')}
+                </span>
+                <bdi dir="ltr" className="font-mono tabular-nums">{lastSavedAt}</bdi>
+              </span>
+            )}
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {!isLocked && (
             <div
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-surface border border-line-2 text-xs font-mono tabular-nums"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface border border-line-2 text-xs font-mono tabular-nums"
               title={bi('مؤقت الجلسة', 'Session Timer', 'کاتژمێری دانیشتن')}
             >
               <Timer className="size-3.5 text-primary" />
@@ -1731,7 +1727,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
               <button
                 type="button"
                 onClick={() => setTimerRunning((r) => !r)}
-                className="p-1 rounded-lg hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                className="p-0.5 rounded hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer"
                 aria-label={
                   timerRunning
                     ? bi('إيقاف مؤقت', 'Pause timer', 'وەستاندنی کاتژمێر')
@@ -1743,7 +1739,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
               <button
                 type="button"
                 onClick={() => setElapsedSeconds(0)}
-                className="p-1 rounded-lg hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                className="p-0.5 rounded hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer"
                 aria-label={bi('تصفير المؤقت', 'Reset timer', 'سفرکردنەوەی کاتژمێر')}
               >
                 <RotateCcw className="size-3.5" />
@@ -1754,7 +1750,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
           <button
             type="button"
             onClick={() => setShowShortcutsModal(true)}
-            className="min-h-[36px] py-1.5 px-2.5 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-muted-foreground-1 hover:text-foreground text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+            className="hidden sm:inline-flex min-h-[32px] py-1 px-2 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-muted-foreground-1 hover:text-foreground text-xs font-semibold items-center gap-1 cursor-pointer"
             title={bi('اختصارات لوحة المفاتيح (?)', 'Keyboard Shortcuts (?)', 'قەدبڕەکانی کیبۆرد (؟)')}
           >
             <Keyboard className="size-3.5" />
@@ -1764,7 +1760,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
           <button
             type="button"
             onClick={() => handleSafeNavigation('chart')}
-            className="min-h-[36px] py-1.5 px-3 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-layer-foreground text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
+            className="min-h-[32px] py-1 px-2.5 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-layer-foreground text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
           >
             <Layers className="size-3.5 text-primary" />
             <span>{bi('السجل العام', 'Episode Chart', 'تۆماری گشتیی بارودۆخ')}</span>
@@ -1776,7 +1772,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 type="button"
                 onClick={() => void persistDraftSoap(false)}
                 disabled={isSaving}
-                className={`min-h-[36px] py-1.5 px-3.5 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap ${
+                className={`min-h-[32px] py-1 px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap ${
                   saveSuccess
                     ? 'bg-emerald-600 text-white'
                     : 'bg-primary hover:bg-primary-hover text-primary-foreground'
@@ -1791,7 +1787,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                   type="button"
                   onClick={handleRequestSignAndLock}
                   disabled={isSaving}
-                  className="min-h-[36px] py-1.5 px-3.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap border border-amber-500/40"
+                  className="min-h-[32px] py-1 px-3 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap border border-amber-500/40"
                 >
                   <Lock className="size-3.5" />
                   <span>{bi('إنهاء واعتماد', 'Finish & Sign', 'تەواوکردن و پەسەندکردن')}</span>

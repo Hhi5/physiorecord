@@ -655,7 +655,7 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
               )}
             </span>
           </div>
-          <div className="grid grid-cols-11 gap-1.5">
+          <div className="grid grid-cols-6 sm:grid-cols-11 gap-1.5" dir="ltr">
             {Array.from({ length: 11 }, (_, n) => {
               const selected = activeCurrentRaw === n;
               return (

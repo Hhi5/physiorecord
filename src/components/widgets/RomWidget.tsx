@@ -119,6 +119,17 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
               }`}
             >
               <span>{bi(joint.nameAr.split('(')[0], joint.nameEn)}</span>
+              {jointEntriesCount > 0 && (
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-xs font-mono tabular-nums ${
+                    isSelected
+                      ? 'bg-white/20 text-white'
+                      : 'bg-teal-500/15 text-teal-700 dark:text-teal-300'
+                  }`}
+                >
+                  <bdi dir="ltr">{jointEntriesCount}</bdi>
+                </span>
+              )}
             </button>
           );
         })}
@@ -131,34 +142,49 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
           const leftVal = getEntryValue(currentJointConfig.jointId, mov.movementId, 'left');
           const rightVal = getEntryValue(currentJointConfig.jointId, mov.movementId, 'right');
           const midlineVal = getEntryValue(currentJointConfig.jointId, mov.movementId, 'midline');
+          const bilateralDiff =
+            !isMidline && rightVal !== null && leftVal !== null
+              ? Math.abs(rightVal - leftVal)
+              : null;
 
           return (
             <div
               key={mov.movementId}
-              className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-600 transition-colors space-y-2.5"
+              className="p-3 sm:p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-600 transition-colors space-y-2.5"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                    {bi(mov.nameAr, mov.nameEn)}
-                  </h4>
-                </div>
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                  {bi(mov.nameAr, mov.nameEn)}
+                </h4>
+                {bilateralDiff !== null && (
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold tabular-nums shrink-0 ${
+                      bilateralDiff >= 15
+                        ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                        : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
+                    }`}
+                    title={bi('الفرق بين اليمين واليسار', 'Side-to-side difference', 'جیاوازی نێوان ڕاست و چەپ')}
+                  >
+                    <bdi dir="ltr">Δ {bilateralDiff}°</bdi>
+                  </span>
+                )}
               </div>
 
               {/* Bilateral or Midline Stepper Inputs */}
               {isMidline ? (
-                <div className="flex items-center justify-between gap-3 pt-1 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between gap-3 pt-1.5 border-t border-slate-100 dark:border-slate-800">
                   <span className="text-xs text-slate-500 font-medium">
                     {bi('الزاوية المقاسة:', 'Angle:', 'گۆشەی پێوراو:')}
                   </span>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5" dir="ltr">
                     <input
                       type="number"
+                      inputMode="numeric"
                       min="0"
                       max="180"
                       disabled={readOnly}
                       value={midlineVal ?? ''}
-                      placeholder="°"
+                      placeholder="0–180"
                       onChange={(e) =>
                         handleUpdateEntry(
                           currentJointConfig.jointId,
@@ -167,21 +193,22 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                           e.target.value === '' ? null : Number(e.target.value)
                         )
                       }
-                      className="w-16 px-2 py-1 text-center font-bold font-mono text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500"
+                      className="w-20 min-h-[34px] px-2 py-1 text-center font-bold font-mono text-xs tabular-nums rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500"
                     />
                     <span className="text-xs font-bold text-slate-400">°</span>
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3 pt-1 border-t border-slate-100 dark:border-slate-800">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-1.5 border-t border-slate-100 dark:border-slate-800">
                   {/* Right Side */}
-                  <div className="flex items-center justify-between gap-2 p-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+                  <div className="flex items-center justify-between gap-1.5 p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
                     <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                      {bi('الأيمن (R):', 'Right:', 'لای ڕاست (R):')}
+                      {bi('يمين (R):', 'Right (R):', 'ڕاست (R):')}
                     </span>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1" dir="ltr">
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="0"
                         max="180"
                         disabled={readOnly}
@@ -195,20 +222,21 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                             e.target.value === '' ? null : Number(e.target.value)
                           )
                         }
-                        className="w-14 px-1.5 py-0.5 text-center font-bold font-mono text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500"
+                        className="w-16 sm:w-20 min-h-[34px] px-2 py-1 text-center font-bold font-mono text-xs tabular-nums rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500"
                       />
                       <span className="text-xs font-bold text-slate-400">°</span>
                     </div>
                   </div>
 
                   {/* Left Side */}
-                  <div className="flex items-center justify-between gap-2 p-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+                  <div className="flex items-center justify-between gap-1.5 p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
                     <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                      {bi('الأيسر (L):', 'Left:', 'لای چەپ (L):')}
+                      {bi('يسار (L):', 'Left (L):', 'چەپ (L):')}
                     </span>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1" dir="ltr">
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="0"
                         max="180"
                         disabled={readOnly}
@@ -222,7 +250,7 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                             e.target.value === '' ? null : Number(e.target.value)
                           )
                         }
-                        className="w-14 px-1.5 py-0.5 text-center font-bold font-mono text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500"
+                        className="w-16 sm:w-20 min-h-[34px] px-2 py-1 text-center font-bold font-mono text-xs tabular-nums rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500"
                       />
                       <span className="text-xs font-bold text-slate-400">°</span>
                     </div>

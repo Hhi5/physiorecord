@@ -77,14 +77,21 @@ export async function detectSpeechDictationSupport(
 
   // Standard Chrome / Web Speech on-device check requires static `available({ langs, processLocally: true })`
   // or explicit prototype property `processLocally`. Without this API, browsers send audio to cloud servers.
+  // CRITICAL: In Chromium 130+ / Android System WebView / Electron, the native C++ Blink binding
+  // `webkitSpeechRecognition.available()` segfaults the renderer process (SIGSEGV) when SODA Mojo is unbound.
+  // Only invoke `ctor.available` when it is a non-native JS implementation/mock or explicitly safe.
   let onDeviceState: 'available' | 'downloading' | 'downloadable' | 'unavailable' = 'unavailable';
+  const hasAvailableFn = typeof ctor.available === 'function';
+  const isNativeBlinkStub =
+    hasAvailableFn &&
+    Function.prototype.toString.call(ctor.available).includes('[native code]');
   const hasProcessLocallyProp =
     'processLocally' in (ctor.prototype || {}) ||
-    typeof ctor.available === 'function';
+    (hasAvailableFn && !isNativeBlinkStub);
 
-  if (typeof ctor.available === 'function') {
+  if (hasAvailableFn && !isNativeBlinkStub) {
     try {
-      onDeviceState = await ctor.available({
+      onDeviceState = await ctor.available!({
         langs: [langTag],
         processLocally: true,
       });

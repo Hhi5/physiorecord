@@ -513,10 +513,41 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   }, [isOpen, activeTab]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || activeTab !== 'modules') return;
     const tag = language === 'en' ? 'en-US' : language === 'ckb' ? 'ckb-IQ' : 'ar-IQ';
-    void detectSpeechDictationSupport(tag, allowCloudSpeechOptIn).then(setSpeechCheckStatus);
-  }, [isOpen, language, allowCloudSpeechOptIn]);
+    void detectSpeechDictationSupport(tag, allowCloudSpeechOptIn)
+      .then(setSpeechCheckStatus)
+      .catch(() => {});
+  }, [isOpen, activeTab, language, allowCloudSpeechOptIn]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (
+          isWidgetStudioOpen ||
+          isCsvOnboardingOpen ||
+          isFullExportOpen ||
+          isRecoveryDrillOpen ||
+          isWhatsNewOpen
+        ) {
+          return;
+        }
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [
+    isOpen,
+    isWidgetStudioOpen,
+    isCsvOnboardingOpen,
+    isFullExportOpen,
+    isRecoveryDrillOpen,
+    isWhatsNewOpen,
+    onClose,
+  ]);
 
   const handleSwitchWorkspaceMode = async (mode: 'solo' | 'team') => {
     setSwitchingMode(true);

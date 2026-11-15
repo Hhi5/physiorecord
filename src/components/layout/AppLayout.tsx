@@ -357,6 +357,113 @@ export const AppLayout: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [isGlobalSearchOpen, isPrivacyCoverOpen, lock]);
 
+  // Android Hardware Back Button / Gesture Handler (Closes open modals/menus or steps back in navigation)
+  useEffect(() => {
+    const handleHardwareBack = (e: Event) => {
+      if (isPrivacyCoverOpen) {
+        e.preventDefault();
+        setIsPrivacyCoverOpen(false);
+        return;
+      }
+      if (isUserMenuOpen) {
+        e.preventDefault();
+        setIsUserMenuOpen(false);
+        return;
+      }
+      if (isMobileMoreOpen) {
+        e.preventDefault();
+        setIsMobileMoreOpen(false);
+        return;
+      }
+      if (isGlobalSearchOpen) {
+        e.preventDefault();
+        setIsGlobalSearchOpen(false);
+        return;
+      }
+      if (isSettingsModalOpen) {
+        e.preventDefault();
+        setIsSettingsModalOpen(false);
+        return;
+      }
+      if (isBackupModalOpen) {
+        e.preventDefault();
+        setIsBackupModalOpen(false);
+        return;
+      }
+      if (isSeedModalOpen) {
+        e.preventDefault();
+        setIsSeedModalOpen(false);
+        return;
+      }
+      if (isPatientModalOpen) {
+        e.preventDefault();
+        setIsPatientModalOpen(false);
+        return;
+      }
+      if (isToolkitOpen) {
+        e.preventDefault();
+        setIsToolkitOpen(false);
+        return;
+      }
+      if (isTourOpen) {
+        e.preventDefault();
+        setIsTourOpen(false);
+        return;
+      }
+      if (isRecoveryDrillOpen) {
+        e.preventDefault();
+        setIsRecoveryDrillOpen(false);
+        return;
+      }
+      if (isMigrationModalOpen) {
+        e.preventDefault();
+        setIsMigrationModalOpen(false);
+        return;
+      }
+      if (isKioskModalOpen) {
+        e.preventDefault();
+        setIsKioskModalOpen(false);
+        return;
+      }
+      const openDialog = document.querySelector(ACTIVE_MODAL_DIALOG_SELECTOR);
+      if (openDialog) {
+        e.preventDefault();
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        return;
+      }
+      if (selectedPatientId !== null) {
+        e.preventDefault();
+        const patientBackEvent = new CustomEvent('physiorecord-patient-back', { cancelable: true });
+        window.dispatchEvent(patientBackEvent);
+        return;
+      }
+      const defaultHomeNav = isSoloMode ? 'today' : 'reception';
+      if (activeNav !== defaultHomeNav) {
+        e.preventDefault();
+        setActiveNav(defaultHomeNav);
+      }
+    };
+    window.addEventListener('physiorecord-hardware-back', handleHardwareBack);
+    return () => window.removeEventListener('physiorecord-hardware-back', handleHardwareBack);
+  }, [
+    isPrivacyCoverOpen,
+    isUserMenuOpen,
+    isMobileMoreOpen,
+    isGlobalSearchOpen,
+    isSettingsModalOpen,
+    isBackupModalOpen,
+    isSeedModalOpen,
+    isPatientModalOpen,
+    isToolkitOpen,
+    isTourOpen,
+    isRecoveryDrillOpen,
+    isMigrationModalOpen,
+    isKioskModalOpen,
+    selectedPatientId,
+    isSoloMode,
+    activeNav,
+  ]);
+
   const handleRestoreRecoveredDraft = (draft: DecryptedDraftRecord) => {
     if (draft.draftType === 'soap' || draft.draftType === 'flowsheet') {
       if (draft.patientId) {
@@ -815,7 +922,7 @@ export const AppLayout: React.FC = () => {
         )}
 
         {/* Global Top Header (Desktop & Mobile) */}
-        <header className="h-14 px-3 sm:px-5 lg:px-6 bg-navbar border-b border-navbar-line flex items-center justify-between gap-2 sm:gap-3 shrink-0 z-40 min-w-0">
+        <header className="h-11 sm:h-12 px-3 sm:px-5 lg:px-6 bg-navbar border-b border-navbar-line flex items-center justify-between gap-2 sm:gap-3 shrink-0 z-40 min-w-0">
           {/* Start: Short Page Title (never clipped or squished by search bar) */}
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 md:flex-none md:max-w-[38%] lg:max-w-none">
             <div className="flex items-center gap-1.5 text-xs min-w-0">
@@ -1169,8 +1276,8 @@ export const AppLayout: React.FC = () => {
           onDiscardAll={() => void clearAllRecoveredDrafts()}
         />
 
-        {/* Phase A4: Quarterly Dismissible Recovery Drill Banner */}
-        {isRecoveryDrillDue && (
+        {/* Phase A4: Quarterly Dismissible Recovery Drill Banner (Shown on main clinic views, hidden inside active patient chart) */}
+        {isRecoveryDrillDue && !selectedPatient && (
           <div
             data-testid="recovery-drill-banner"
             className="px-3 sm:px-4 py-1.5 bg-primary/10 border-b border-primary/25 flex flex-wrap items-center justify-between gap-2 text-xs text-foreground shrink-0"
@@ -1251,9 +1358,9 @@ export const AppLayout: React.FC = () => {
           </div>
         )}
 
-        {/* 7-Day Overdue Backup Reminder Banner */}
-        {isBackupOverdue && (
-          <div className="px-3 sm:px-4 py-1.5 bg-amber-500/15 border-b border-amber-500/30 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 text-xs text-amber-950 dark:text-amber-200 shrink-0">
+        {/* 7-Day Overdue Backup Reminder Banner (Shown on main clinic views, hidden inside active patient chart) */}
+        {isBackupOverdue && !selectedPatient && (
+          <div className="px-3 sm:px-4 py-1 bg-amber-500/15 border-b border-amber-500/30 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 text-xs text-amber-950 dark:text-amber-200 shrink-0">
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
               <Database className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
               <span className="font-semibold leading-tight break-words">
@@ -1296,8 +1403,8 @@ export const AppLayout: React.FC = () => {
           </div>
         )}
 
-        {/* Active Demo Mode Strip with Confirmed Delete All Demo Data */}
-        {hasDemoRecords && (
+        {/* Active Demo Mode Strip with Confirmed Delete All Demo Data (Shown on main clinic views, hidden inside active patient chart since PatientBanner already has DEMO badge) */}
+        {hasDemoRecords && !selectedPatient && (
           <div className="px-3 sm:px-4 py-1 sm:py-1.5 bg-amber-500/10 border-b border-amber-500/25 flex items-center justify-between gap-2 text-xs shrink-0">
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
               <DemoBadge />

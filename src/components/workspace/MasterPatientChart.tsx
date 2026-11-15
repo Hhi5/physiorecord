@@ -188,7 +188,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
   const [activePrintDoc, setActivePrintDoc] = useState<PrintableDocumentType | null>(null);
   const [isCustomStudioOpen, setIsCustomStudioOpen] = useState(false);
   const [isExamShelfModalOpen, setIsExamShelfModalOpen] = useState(false);
-  const [clinicalSummaryExpanded, setClinicalSummaryExpanded] = useState(true);
+  const [clinicalSummaryExpanded, setClinicalSummaryExpanded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
@@ -807,131 +807,9 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden transition-colors">
-      {/* Episode Selector & Action Strip (Clear, non-clipped, no duplicate patient banner) */}
-      <div className="px-4 sm:px-6 py-2 bg-card border-b border-card-line flex flex-wrap items-center justify-between gap-2 shrink-0">
-        <div className="flex flex-wrap items-center gap-2 min-w-0">
-          <span className="text-xs font-semibold text-primary whitespace-nowrap">
-            {bi('حلقة الرعاية:', 'Episode:', 'قۆناغی چاودێری:')}
-          </span>
-          {episodes.length > 0 ? (
-            <select
-              value={activeEpisode?.id || ''}
-              onChange={(e) => onSelectEpisode(e.target.value)}
-              className="py-1.5 px-3 rounded-xl text-xs font-semibold bg-primary/10 border border-primary/20 text-foreground focus:outline-none flex-1 min-w-[160px] sm:flex-none max-w-full"
-            >
-              {episodes.map((ep) => (
-                <option key={ep.id} value={ep.id}>
-                  {ep.data.title || ep.data.medicalDiagnosis} ({formatDateDDMMYYYY(ep.data.startDate || ep.startDate)})
-                </option>
-              ))}
-            </select>
-          ) : (
-            <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold">
-              {bi('لا توجد حلقة رعاية مسجلة بعد', 'No Episode Created Yet', 'هێشتا هیچ قۆناغێکی چاودێری تۆمار نەکراوە')}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={onOpenNewEpisode}
-            className="py-1 px-2.5 rounded-lg bg-layer border border-layer-line text-xs font-semibold text-primary hover:bg-layer-hover cursor-pointer whitespace-nowrap"
-          >
-            {bi('+ حلقة جديدة', '+ New Episode', '+ قۆناغی نوێ')}
-          </button>
-
-          {financialSummary.totalDebtIQD > 0 && (
-            <span className="py-0.5 px-2.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-xs tabular-nums font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">
-              {bi('ذمة متبقية: ', 'Balance Due: ', 'بڕی ماوە: ')}
-              <Money amount={financialSummary.totalDebtIQD} />
-            </span>
-          )}
-
-          {enableReferralsModule && hasReferralAttribution && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span
-                data-testid="patient-referral-pill"
-                className="inline-flex items-center gap-1 py-0.5 px-2.5 rounded-full bg-primary/10 border border-primary/25 text-xs font-semibold text-primary whitespace-nowrap"
-              >
-                <Stethoscope className="size-3.5 shrink-0" />
-                <span>{bi('إحالة:', 'Referral:', 'ڕەوانەکردن:')}</span>
-                <span className="truncate max-w-[200px]">{referralPillText}</span>
-              </span>
-              <button
-                type="button"
-                data-testid="open-report-back-btn"
-                onClick={() => setIsReportBackModalOpen(true)}
-                className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold cursor-pointer whitespace-nowrap"
-              >
-                <Send className="size-3.5 shrink-0" />
-                <span>{bi('إعداد تقرير للطبيب المحيل', 'Report Back to Doctor', 'ئامادەکردنی ڕاپۆرت بۆ پزیشکی ڕەوانەکەر')}</span>
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Action Controls: Saved indicator, Assessment Tools, New Session & Save */}
-        <div className="flex items-center gap-2">
-          {lastSavedAt && (
-            <span className="text-xs font-medium text-muted-foreground-1 whitespace-nowrap">
-              {bi('تم الحفظ ', 'Saved ', 'پاشەکەوتکرا ')}
-              <bdi dir="ltr" className="font-mono tabular-nums">{lastSavedAt}</bdi>
-            </span>
-          )}
-
-          <button
-            type="button"
-            data-testid="open-exam-shelf-btn"
-            onClick={() => setIsExamShelfModalOpen(true)}
-            className="py-1.5 px-3 rounded-xl bg-layer hover:bg-layer-hover text-primary font-semibold text-xs border border-layer-line inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
-          >
-            <Layers className="size-3.5" />
-            <span>{bi('أدوات الفحص', 'Assessment Tools', 'ئامرازەکانی پشکنین')}</span>
-            <span className="py-0.5 px-1.5 rounded-full text-xs tabular-nums bg-primary/10 text-primary">
-              <Num value={episodeStore.activeWidgetIds.length} />
-            </span>
-          </button>
-
-          {activeEpisode && (
-            <button
-              type="button"
-              onClick={onOpenNewSession}
-              className="py-1.5 px-3 rounded-xl bg-layer hover:bg-layer-hover text-primary font-semibold text-xs border border-layer-line inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
-            >
-              <Plus className="size-3.5" />
-              <span>{bi('جلسة جديدة', 'New Session', 'دانیشتنی نوێ')}</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={handleSaveMasterAndEpisode}
-            disabled={isSaving}
-            className={`py-1.5 px-3.5 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-all cursor-pointer whitespace-nowrap ${
-              saveSuccess
-                ? 'bg-emerald-600 text-white'
-                : 'bg-primary hover:bg-primary-hover text-primary-foreground'
-            }`}
-          >
-            {isSaving ? (
-              <div className="size-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : saveSuccess ? (
-              <CheckCircle2 className="size-3.5" />
-            ) : (
-              <Save className="size-3.5" />
-            )}
-            <span>
-              {isSaving
-                ? bi('جاري الحفظ...', 'Saving...', 'پاشەکەوت دەکرێت...')
-                : saveSuccess
-                ? bi('تم الحفظ', 'Saved', 'پاشەکەوتکرا')
-                : bi('حفظ', 'Save', 'پاشەکەوتکردن')}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Scrollable Tabs Navigation with Fade Edges (Never Clips) */}
+      {/* Scrollable Single-Line Tabs Navigation (Never wraps into multiple rows on mobile) */}
       <div className="relative border-b border-card-line bg-card shrink-0">
-        <div className="px-3 sm:px-6 flex flex-wrap sm:flex-nowrap items-center gap-1 sm:overflow-x-auto scrollbar-none">
+        <div className="px-3 sm:px-5 flex flex-nowrap items-center gap-1 overflow-x-auto scrollbar-none">
           {(
             [
               {
@@ -977,13 +855,13 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 onClick={() => setActiveTab(tab.id)}
                 title={tab.label}
                 aria-label={tab.label}
-                className={`px-2.5 sm:px-3.5 py-2 sm:py-3 text-xs font-semibold border-b-2 inline-flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                className={`px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-semibold border-b-2 inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   isSelected
                     ? 'text-primary border-primary bg-primary/5'
                     : 'text-muted-foreground-1 border-transparent hover:text-foreground'
                 }`}
               >
-                <Icon className="size-4 shrink-0" />
+                <Icon className="size-3.5 sm:size-4 shrink-0" />
                 <span>{tab.label}</span>
                 {'count' in tab && tab.count !== undefined && (
                   <span className="py-0.5 px-1.5 rounded-full text-xs tabular-nums bg-primary/10 text-primary">
@@ -994,15 +872,136 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
             );
           })}
         </div>
-        <div className="hidden" />
       </div>
 
-      {/* Main Tab Content Canvas */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
+      {/* Main Tab Content Canvas (Episode Selector & Actions scroll naturally with content to maximize viewport) */}
+      <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 sm:space-y-4">
+        {/* Episode Selector & Action Strip */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 rounded-xl bg-card border border-card-line flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
+            <span className="text-xs font-semibold text-primary whitespace-nowrap">
+              {bi('حلقة الرعاية:', 'Episode:', 'قۆناغی چاودێری:')}
+            </span>
+            {episodes.length > 0 ? (
+              <select
+                value={activeEpisode?.id || ''}
+                onChange={(e) => onSelectEpisode(e.target.value)}
+                className="py-1 px-2.5 rounded-lg text-xs font-semibold bg-primary/10 border border-primary/20 text-foreground focus:outline-none flex-1 min-w-[140px] sm:flex-none max-w-full"
+              >
+                {episodes.map((ep) => (
+                  <option key={ep.id} value={ep.id}>
+                    {ep.data.title || ep.data.medicalDiagnosis} ({formatDateDDMMYYYY(ep.data.startDate || ep.startDate)})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold">
+                {bi('لا توجد حلقة رعاية مسجلة بعد', 'No Episode Created Yet', 'هێشتا هیچ قۆناغێکی چاودێری تۆمار نەکراوە')}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={onOpenNewEpisode}
+              className="py-1 px-2.5 rounded-lg bg-layer border border-layer-line text-xs font-semibold text-primary hover:bg-layer-hover cursor-pointer whitespace-nowrap"
+            >
+              {bi('+ حلقة جديدة', '+ New Episode', '+ قۆناغی نوێ')}
+            </button>
+
+            {financialSummary.totalDebtIQD > 0 && (
+              <span className="py-0.5 px-2.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-xs tabular-nums font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                {bi('ذمة متبقية: ', 'Balance Due: ', 'بڕی ماوە: ')}
+                <Money amount={financialSummary.totalDebtIQD} />
+              </span>
+            )}
+
+            {enableReferralsModule && hasReferralAttribution && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span
+                  data-testid="patient-referral-pill"
+                  className="inline-flex items-center gap-1 py-0.5 px-2.5 rounded-full bg-primary/10 border border-primary/25 text-xs font-semibold text-primary whitespace-nowrap"
+                >
+                  <Stethoscope className="size-3.5 shrink-0" />
+                  <span>{bi('إحالة:', 'Referral:', 'ڕەوانەکردن:')}</span>
+                  <span className="truncate max-w-[180px]">{referralPillText}</span>
+                </span>
+                <button
+                  type="button"
+                  data-testid="open-report-back-btn"
+                  onClick={() => setIsReportBackModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold cursor-pointer whitespace-nowrap"
+                >
+                  <Send className="size-3.5 shrink-0" />
+                  <span>{bi('إعداد تقرير للطبيب المحيل', 'Report Back to Doctor', 'ئامادەکردنی ڕاپۆرت بۆ پزیشکی ڕەوانەکەر')}</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Action Controls: Saved indicator, Assessment Tools, New Session & Save */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            {lastSavedAt && (
+              <span className="text-xs font-medium text-muted-foreground-1 whitespace-nowrap">
+                {bi('تم الحفظ ', 'Saved ', 'پاشەکەوتکرا ')}
+                <bdi dir="ltr" className="font-mono tabular-nums">{lastSavedAt}</bdi>
+              </span>
+            )}
+
+            <button
+              type="button"
+              data-testid="open-exam-shelf-btn"
+              onClick={() => setIsExamShelfModalOpen(true)}
+              className="py-1 px-2.5 rounded-lg bg-layer hover:bg-layer-hover text-primary font-semibold text-xs border border-layer-line inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+            >
+              <Layers className="size-3.5" />
+              <span>{bi('أدوات الفحص', 'Assessment Tools', 'ئامرازەکانی پشکنین')}</span>
+              <span className="py-0.5 px-1.5 rounded-full text-xs tabular-nums bg-primary/10 text-primary">
+                <Num value={episodeStore.activeWidgetIds.length} />
+              </span>
+            </button>
+
+            {activeEpisode && (
+              <button
+                type="button"
+                onClick={onOpenNewSession}
+                className="py-1 px-2.5 rounded-lg bg-layer hover:bg-layer-hover text-primary font-semibold text-xs border border-layer-line inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+              >
+                <Plus className="size-3.5" />
+                <span>{bi('جلسة جديدة', 'New Session', 'دانیشتنی نوێ')}</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handleSaveMasterAndEpisode}
+              disabled={isSaving}
+              className={`py-1 px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-all cursor-pointer whitespace-nowrap ${
+                saveSuccess
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-primary hover:bg-primary-hover text-primary-foreground'
+              }`}
+            >
+              {isSaving ? (
+                <div className="size-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : saveSuccess ? (
+                <CheckCircle2 className="size-3.5" />
+              ) : (
+                <Save className="size-3.5" />
+              )}
+              <span>
+                {isSaving
+                  ? bi('جاري الحفظ...', 'Saving...', 'پاشەکەوت دەکرێت...')
+                  : saveSuccess
+                  ? bi('تم الحفظ', 'Saved', 'پاشەکەوتکرا')
+                  : bi('حفظ', 'Save', 'پاشەکەوتکردن')}
+              </span>
+            </button>
+          </div>
+        </div>
+
         {/* Collapsible Plain-Text Clinical Summary (Zero colored boxes/badges/pills) */}
         <section
           data-testid="clinical-summary-collapsible"
-          className="max-w-7xl mx-auto border-b border-card-line pb-2.5 text-xs text-foreground"
+          className="max-w-7xl mx-auto border-b border-card-line pb-2 text-xs text-foreground"
         >
           <button
             type="button"

@@ -71,6 +71,19 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({
     ClinicOperationsService.recordPatientVisitMemory(patient.id);
   }, [patient.id]);
 
+  useEffect(() => {
+    const handleHardwarePatientBack = () => {
+      if (selectedSessionId) {
+        setAutoOpenFinish(false);
+        setSelectedSessionId(null);
+      } else {
+        onBackToDirectory();
+      }
+    };
+    window.addEventListener('physiorecord-patient-back', handleHardwarePatientBack);
+    return () => window.removeEventListener('physiorecord-patient-back', handleHardwarePatientBack);
+  }, [selectedSessionId, onBackToDirectory]);
+
   // Drawers
   const [isEpisodeDrawerOpen, setIsEpisodeDrawerOpen] = useState(false);
   const [isSessionDrawerOpen, setIsSessionDrawerOpen] = useState(false);

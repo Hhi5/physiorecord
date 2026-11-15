@@ -86,7 +86,8 @@ jobs:
       - name: Install project dependencies & Capacitor Android CLI
         run: |
           npm ci
-          npm install --no-save @capacitor/core@6.2.3 @capacitor/cli@6.2.3 @capacitor/android@6.2.3
+          npm install --save-exact @capacitor/core@6.2.3 @capacitor/android@6.2.3
+          npm install --save-dev --save-exact @capacitor/cli@6.2.3
 
       - name: Build Android web assets, hydrate Gradle wrapper & sync Capacitor
         run: |
@@ -153,12 +154,12 @@ jobs:
       - name: Install project dependencies & Electron packaging tools
         run: |
           npm ci
-          npm install --no-save electron@34.3.0 electron-builder@25.1.8
+          npm install --save-dev --save-exact electron@34.3.0 electron-builder@25.1.8
 
       - name: Build Desktop web assets & package Windows NSIS .exe installer
         run: |
           npm run build:desktop:web
-          npx electron-builder --win nsis --publish never
+          npx electron-builder --win nsis --publish never -c.electronVersion=34.3.0
 
       - name: Upload Windows Installer artifacts
         uses: actions/upload-artifact@v4

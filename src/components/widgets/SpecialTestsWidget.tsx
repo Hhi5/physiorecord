@@ -674,7 +674,7 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
                 'Add unlisted special test (type name or click +)...',
                 'زیادکردنی تاقیکردنەوەی تایبەتی نوێ (ناو بنووسە یان کرتە لە + بکە)...'
               )}
-              className="flex-1 px-3 py-1.5 text-xs bg-layer border border-layer-line rounded-xl text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="flex-1 min-w-0 px-3 py-1.5 text-xs bg-layer border border-layer-line rounded-xl text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             <button
               type="button"

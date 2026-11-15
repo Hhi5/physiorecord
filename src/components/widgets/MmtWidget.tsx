@@ -204,6 +204,20 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
     setRows((prev) => [...prev, createBlankRow()]);
   };
 
+  const handleToggleMidline = (rowKey: string) => {
+    if (readOnly) return;
+    const targetRow = rows.find((r) => r.key === rowKey);
+    const nextIsMidline = !targetRow?.isMidline;
+    setRows((prev) =>
+      prev.map((r) => (r.key === rowKey ? { ...r, isMidline: nextIsMidline } : r))
+    );
+    // Clear previous laterality entries for this row when switching between bilateral and midline
+    const filteredEntries = entries.filter((e) => e.muscleGroupId !== rowKey);
+    if (filteredEntries.length !== entries.length) {
+      emitEntries(filteredEntries);
+    }
+  };
+
   const handleRemoveRow = (rowKey: string) => {
     if (readOnly) return;
     const filteredEntries = entries.filter((e) => e.muscleGroupId !== rowKey);
@@ -291,10 +305,10 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
           return (
             <div
               key={row.key}
-              className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-600 transition-colors space-y-3"
+              className="p-3 sm:p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-600 transition-colors space-y-3"
             >
-              {/* Manual Muscle / Movement Name Input + Remove Button */}
-              <div className="flex items-center gap-2">
+              {/* Manual Muscle / Movement Name Input + Bilateral/Midline Toggle + Remove Button */}
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <span className="size-6 rounded-lg bg-teal-500/10 text-teal-700 dark:text-teal-300 text-xs font-mono font-bold flex items-center justify-center shrink-0">
                   {idx + 1}
                 </span>
@@ -311,6 +325,21 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                   )}
                   className="flex-1 min-w-0 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-teal-500"
                 />
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={() => handleToggleMidline(row.key)}
+                    style={{ minHeight: 'unset' }}
+                    className="compact-btn px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                    title={bi(
+                      'التبديل بين فحص يمين/يسار (R/L) أو فحص محوري للجذع/الرقبة',
+                      'Toggle between Bilateral (R/L) and Midline/Trunk',
+                      'گۆڕین لە نێوان ڕاست/چەپ (R/L) و تەوەرەیی'
+                    )}
+                  >
+                    {row.isMidline ? bi('محوري', 'Midline', 'تەوەرەیی') : 'R/L'}
+                  </button>
+                )}
                 {!readOnly && (rows.length > 1 || hasContent) && (
                   <button
                     type="button"
@@ -326,10 +355,10 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
               </div>
 
               {row.isMidline ? (
-                <div className="space-y-1 pt-1 border-t border-slate-100 dark:border-slate-800">
+                <div className="space-y-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-semibold text-slate-600 dark:text-slate-300">
-                      {bi('درجة القوة:', 'Strength Grade:', 'پلەی هێز:')}
+                      {bi('درجة القوة (محوري):', 'Midline Strength Grade:', 'پلەی هێز (تەوەرەیی):')}
                     </span>
                     <span className="font-bold text-xs text-teal-600 dark:text-teal-400">
                       {midlineGrade
@@ -347,7 +376,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                           handleSetGrade(row, 'midline', midlineGrade === g ? null : g)
                         }
                         style={{ minHeight: 'unset' }}
-                        className={`compact-btn flex-1 py-1.5 rounded-md text-xs font-bold font-mono transition-all border cursor-pointer ${
+                        className={`compact-btn flex-1 min-h-[34px] py-1.5 rounded-md text-xs font-bold font-mono transition-all border cursor-pointer ${
                           midlineGrade === g
                             ? getGradeBadgeStyle(g) + ' border-transparent'
                             : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100'
@@ -370,7 +399,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                         {rightGrade ? `G${rightGrade}` : '-'}
                       </span>
                     </div>
-                    <div className="flex items-center gap-0.5" dir="ltr">
+                    <div className="flex items-center gap-1" dir="ltr">
                       {PRIMARY_GRADES.map((g) => (
                         <button
                           key={g}
@@ -380,7 +409,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                             handleSetGrade(row, 'right', rightGrade === g ? null : g)
                           }
                           style={{ minHeight: 'unset' }}
-                          className={`compact-btn flex-1 py-1.5 text-xs font-bold font-mono rounded transition-all cursor-pointer ${
+                          className={`compact-btn flex-1 min-h-[34px] py-1.5 text-xs font-bold font-mono rounded transition-all cursor-pointer ${
                             rightGrade === g
                               ? getGradeBadgeStyle(g)
                               : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
@@ -402,7 +431,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                         {leftGrade ? `G${leftGrade}` : '-'}
                       </span>
                     </div>
-                    <div className="flex items-center gap-0.5" dir="ltr">
+                    <div className="flex items-center gap-1" dir="ltr">
                       {PRIMARY_GRADES.map((g) => (
                         <button
                           key={g}
@@ -412,7 +441,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
                             handleSetGrade(row, 'left', leftGrade === g ? null : g)
                           }
                           style={{ minHeight: 'unset' }}
-                          className={`compact-btn flex-1 py-1.5 text-xs font-bold font-mono rounded transition-all cursor-pointer ${
+                          className={`compact-btn flex-1 min-h-[34px] py-1.5 text-xs font-bold font-mono rounded transition-all cursor-pointer ${
                             leftGrade === g
                               ? getGradeBadgeStyle(g)
                               : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
