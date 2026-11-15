@@ -23,6 +23,7 @@ import { SoapService } from '../../services/soapService';
 import { downloadCsvFile } from '../../utils/csvExport';
 import { buildFullVaultCsvFiles } from '../../utils/patientPortability';
 import { localDate } from '../../utils/date';
+import { saveTextFilePortable } from '../../platform/nativeBridge';
 import { ModalDialog } from '../ui/Dialog';
 
 interface FullVaultExportModalProps {
@@ -171,17 +172,13 @@ export const FullVaultExportModal: React.FC<FullVaultExportModalProps> = ({
         noteTemplates: ClinicOperationsService.getAllNoteTemplates(),
       };
 
-      const blob = new Blob([JSON.stringify(payload, null, 2)], {
-        type: 'application/json;charset=utf-8',
+      await saveTextFilePortable({
+        filename: `physiorecord-full-export-${localDate()}.json`,
+        content: JSON.stringify(payload, null, 2),
+        mimeType: 'application/json;charset=utf-8',
+        description: 'PhysioRecord Plaintext Clinical Archive (.json)',
+        extensions: ['json'],
       });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `physiorecord-full-export-${localDate()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
 
       await ClinicOperationsService.appendAuditLogAsync({
         actionType: 'backup_exported',

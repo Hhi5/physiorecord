@@ -46,6 +46,7 @@ import {
   decompressBytesGzip,
   deriveBackupKeysWithWorker,
   deriveKEKWithWorker,
+  isCompressionStreamSupported,
 } from './cryptoWorkerClient';
 
 export const BACKUP_WARNING_THRESHOLD_BYTES = 20 * 1024 * 1024;
@@ -477,8 +478,13 @@ export const exportBackupPackage = async (
   const uncompressedBytes = new TextEncoder().encode(payloadJson);
   onProgress?.(20);
 
-  // Gzip compression before chunked AEAD encryption removes legacy 25MB limit safely
-  const compressedBytes = await compressBytesGzip(uncompressedBytes);
+  // Gzip compression before chunked AEAD encryption removes legacy 25MB limit safely;
+  // falls back to 'none' on older Android WebViews where CompressionStream is unavailable.
+  const canCompressGzip = isCompressionStreamSupported();
+  const compressedBytes = canCompressGzip
+    ? await compressBytesGzip(uncompressedBytes)
+    : uncompressedBytes;
+  const compressionMode: 'gzip' | 'none' = canCompressGzip ? 'gzip' : 'none';
   const chunkSizeBytes = DEFAULT_CHUNK_SIZE_BYTES;
   const totalChunks = Math.max(1, Math.ceil(compressedBytes.byteLength / chunkSizeBytes));
   onProgress?.(35);
@@ -530,7 +536,7 @@ export const exportBackupPackage = async (
     encryptionInvocationCount: vaultMeta.encryptionInvocationCount || 0,
     maxBackupSizeBytes: Math.max(MAX_BACKUP_SIZE_BYTES, uncompressedBytes.byteLength),
     payloadLength: uncompressedBytes.byteLength,
-    compression: 'gzip',
+    compression: compressionMode,
     compressedLength: compressedBytes.byteLength,
     chunkSizeBytes,
     totalChunks,

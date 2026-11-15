@@ -22,6 +22,7 @@ import {
   buildIcsCalendarContent,
   findNextUpcomingAppointment,
 } from '../../utils/sharingInteropPhaseE';
+import { saveTextFilePortable } from '../../platform/nativeBridge';
 import { ModalDialog } from '../ui/Dialog';
 import { Num, TimeDisplay } from '../ui/Primitives';
 
@@ -146,16 +147,15 @@ export const IcsExportModal: React.FC<IcsExportModalProps> = ({
         ? `physiorecord-schedule-${safeDate}-appt.ics`
         : `physiorecord-schedule-${safeDate}.ics`;
 
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setDownloadedFileName(filename);
+    void saveTextFilePortable({
+      filename,
+      content: icsContent,
+      mimeType: 'text/calendar;charset=utf-8',
+      description: 'iCalendar Schedule (.ics)',
+      extensions: ['ics'],
+    }).then(() => {
+      setDownloadedFileName(filename);
+    });
   };
 
   const toggleField = (

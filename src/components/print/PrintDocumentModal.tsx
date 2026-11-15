@@ -53,6 +53,13 @@ import {
 import { formatPaymentCurrencySnapshot } from '../../utils/csvExport';
 import { isValidEncryptedImageDataUrl } from '../../utils/imageUtils';
 import { getCurrencyConfig } from '../../utils/currencies';
+import {
+  exportPlatformPdfDirect,
+  getElectronDesktopBridge,
+  openSafeExternalUrl,
+  saveTextFilePortable,
+  triggerPlatformPrint,
+} from '../../platform/nativeBridge';
 import type {
   EpisodeRecord,
   PatientRecord,
@@ -502,7 +509,7 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
     triggerShareFeedback('copied', bi('تم نسخ الملخص', 'Summary copied', 'پوختە کۆپی کرا'));
   };
 
-  const handleDownloadShareFile = () => {
+  const handleDownloadShareFile = async () => {
     const file = buildShareableDocumentHtmlFile({
       title: docTitle,
       docType: documentType,
@@ -511,22 +518,40 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
       lang: docLang,
       fileNameBase: shareFileNameBase,
     });
-    const url = URL.createObjectURL(file);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = file.name;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    triggerShareFeedback(
-      'downloaded',
-      bi('تم تنزيل ملف المشاركة (.html)', 'Share HTML file downloaded', 'پەڕگەی هاوبەشکردن (.html) داگیرا')
-    );
+    const htmlText =
+      typeof file.text === 'function'
+        ? await file.text()
+        : sheetRef.current?.innerHTML || '';
+    try {
+      await saveTextFilePortable({
+        filename: file.name,
+        content: htmlText,
+        mimeType: 'text/html;charset=utf-8',
+        description: 'HTML Printable Document (.html)',
+        extensions: ['html'],
+      });
+      triggerShareFeedback(
+        'downloaded',
+        bi('تم تنزيل ملف المشاركة (.html)', 'Share HTML file downloaded', 'پەڕگەی هاوبەشکردن (.html) داگیرا')
+      );
+    } catch {
+      // User cancelled native dialog
+    }
   };
 
   const handlePrint = () => {
-    window.print();
+    void triggerPlatformPrint(shareFileNameBase || 'PhysioRecord_Document');
+  };
+
+  const canDirectExportPdf = Boolean(getElectronDesktopBridge()?.exportCurrentPageToPdf);
+  const handleDirectExportPdf = async () => {
+    const ok = await exportPlatformPdfDirect(`${shareFileNameBase || 'physiorecord-document'}.pdf`);
+    if (ok) {
+      triggerShareFeedback(
+        'downloaded',
+        bi('تم حفظ ملف PDF بنجاح', 'PDF file saved successfully', 'پەڕگەی PDF بە سەرکەوتوویی پاشەکەوت کرا')
+      );
+    }
   };
 
   const isClinicalLetter =
@@ -583,6 +608,19 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
               <span>{bi('طباعة / حفظ PDF', 'Print / Save PDF', 'چاپکردن / پاشەکەوتکردنی PDF')}</span>
             </button>
 
+            {canDirectExportPdf && (
+              <button
+                type="button"
+                onClick={() => {
+                  void handleDirectExportPdf();
+                }}
+                className="px-3.5 py-1.5 rounded-xl border border-primary/35 bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <Download className="size-3.5" />
+                <span>{bi('تصدير PDF مباشر', 'Direct Save PDF', 'پاشەکەوتکردنی ڕاستەوخۆی PDF')}</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={onClose}
@@ -631,6 +669,12 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                 href={whatsappFallbackUrl || '#'}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (whatsappFallbackUrl && getElectronDesktopBridge()?.openExternalUrl) {
+                    e.preventDefault();
+                    void openSafeExternalUrl(whatsappFallbackUrl);
+                  }
+                }}
                 className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs"
               >
                 <MessageCircle className="size-3.5" />
@@ -640,7 +684,9 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
               <button
                 type="button"
                 data-testid="print-download-share-file-btn"
-                onClick={handleDownloadShareFile}
+                onClick={() => {
+                  void handleDownloadShareFile();
+                }}
                 className="px-3 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <Download className="size-3.5 text-primary" />

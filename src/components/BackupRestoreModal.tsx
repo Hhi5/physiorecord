@@ -31,6 +31,11 @@ import {
 import { ClinicOperationsService } from '../services/clinicOperationsService';
 import type { BackupRestoreMode } from '../types/clinicManagement';
 import { localDate, formatClinicalDate } from '../utils/date';
+import {
+  isNativeAndroid,
+  saveTextFilePortable,
+  shareGeneratedFileOnAndroid,
+} from '../platform/nativeBridge';
 import { DrawerDialog } from './ui/Dialog';
 import {
   X,
@@ -47,6 +52,7 @@ import {
   HardDrive,
   Trash2,
   GitMerge,
+  Share2,
 } from 'lucide-react';
 
 const CONFLICT_REASON_CKB: Record<string, string> = {
@@ -87,6 +93,10 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportVerification, setExportVerification] = useState<BackupVerificationResult | null>(null);
   const [exportSaveMethod, setExportSaveMethod] = useState<string | null>(null);
+  const [lastExportedBackupPkg, setLastExportedBackupPkg] = useState<{
+    filename: string;
+    content: string;
+  } | null>(null);
 
   // Restore State
   const [restoreFileContent, setRestoreFileContent] = useState<string | null>(null);
@@ -228,6 +238,10 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
       });
 
       setExportVerification(verification);
+      setLastExportedBackupPkg({
+        filename,
+        content: backupPackageStr,
+      });
       setExportSaveMethod(
         saveResult.method === 'fs-picker'
           ? bi(
@@ -670,6 +684,31 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                           {exportSaveMethod}
                         </p>
                       )}
+                      {isNativeAndroid() && lastExportedBackupPkg && (
+                        <div className="pt-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void shareGeneratedFileOnAndroid({
+                                filename: lastExportedBackupPkg.filename,
+                                content: lastExportedBackupPkg.content,
+                                mimeType: 'application/json',
+                                title: lastExportedBackupPkg.filename,
+                              });
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Share2 className="w-3.5 h-3.5" />
+                            <span>
+                              {bi(
+                                'مشاركة ملف النسخة الاحتياطية (واتساب / تيليجرام / درايف)',
+                                'Share Backup File (WhatsApp / Telegram / Drive)',
+                                'هاوبەشکردنی فایلی کۆپی یەدەگ (واتساپ / تێلیگرام / درایڤ)'
+                              )}
+                            </span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                   <p>
@@ -990,15 +1029,13 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                         <button
                           type="button"
                           onClick={() => {
-                            const blob = new Blob([emergencyRecoveryPackage], { type: 'application/json' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `physiorecord_emergency_backup_${emergencyRecoverySnapshotId}.ptbackup`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url);
+                            void saveTextFilePortable({
+                              filename: `physiorecord_emergency_backup_${emergencyRecoverySnapshotId}.ptbackup`,
+                              content: emergencyRecoveryPackage,
+                              mimeType: 'application/json',
+                              description: 'PhysioRecord Emergency Backup (.ptbackup)',
+                              extensions: ['ptbackup', 'json'],
+                            });
                           }}
                           className="mt-2 text-primary hover:underline font-bold flex items-center gap-1 cursor-pointer"
                         >
@@ -1059,7 +1096,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                     </label>
                     <input
                       type="file"
-                      accept=".ptbackup,.json"
+                      accept=".ptbackup,.json,application/json,application/octet-stream,*/*"
                       onChange={handleFileChange}
                       className="w-full text-xs text-muted-foreground-1 file:mr-0 file:ml-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
                     />

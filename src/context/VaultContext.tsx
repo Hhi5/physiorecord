@@ -36,6 +36,11 @@ import { SessionService } from '../services/sessionService';
 import { ClinicOperationsService } from '../services/clinicOperationsService';
 import { DraftRecoveryService } from '../services/draftRecoveryService';
 import { LocalStorageMigrationService, type LocalStorageMigrationResult } from '../services/localStorageMigrationService';
+import {
+  detectDexieSchemaDowngradeError,
+  isNativeAppShell,
+  type DexieSchemaDowngradeInfo,
+} from '../platform/nativeBridge';
 import type { DecryptedDraftRecord } from '../types/clinical';
 
 export interface VaultRepairSummary {
@@ -71,6 +76,7 @@ interface VaultContextType {
   isPrfSupported: boolean;
   isPrfEnrolled: boolean;
   keyUsageStatus: EncryptionKeyUsageStatus | null;
+  schemaDowngradeError: DexieSchemaDowngradeInfo | null;
   lastRepairSummary: VaultRepairSummary | null;
   repairError: string | null;
   lastMigrationResult: LocalStorageMigrationResult | null;
@@ -124,6 +130,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isPrfSupported, setIsPrfSupported] = useState<boolean>(false);
   const [isPrfEnrolled, setIsPrfEnrolled] = useState<boolean>(false);
   const [keyUsageStatus, setKeyUsageStatus] = useState<EncryptionKeyUsageStatus | null>(null);
+  const [schemaDowngradeError, setSchemaDowngradeError] = useState<DexieSchemaDowngradeInfo | null>(null);
   const [secondsUntilAutoLock, setSecondsUntilAutoLock] = useState<number | null>(null);
   const [recoveredDrafts, setRecoveredDrafts] = useState<DecryptedDraftRecord[]>([]);
   const [lastRecoveryDrillAt, setLastRecoveryDrillAt] = useState<string | null>(null);
@@ -344,13 +351,20 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const initCheck = async () => {
       try {
         const meta = await db.vaultMeta.get('auth');
+        setSchemaDowngradeError(null);
         setIsInitialized(!!meta);
         setIsPrfEnrolled(Boolean(meta?.prfCredentialId && meta?.prfWrappedDek));
         const prfSupported = await isWebAuthnPrfSupported();
         setIsPrfSupported(prfSupported);
         const persistent = await requestPersistentStorage();
-        setPersistenceGranted(persistent);
+        setPersistenceGranted(persistent || isNativeAppShell());
       } catch (err) {
+        const downgrade = detectDexieSchemaDowngradeError(err);
+        if (downgrade) {
+          setSchemaDowngradeError(downgrade);
+          // Mark as initialized so LockScreen never offers to overwrite a newer database
+          setIsInitialized(true);
+        }
         console.error('Failed to read vault metadata:', err);
       } finally {
         setReady(true);
@@ -793,6 +807,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isPrfSupported,
         isPrfEnrolled,
         keyUsageStatus,
+        schemaDowngradeError,
         lastRepairSummary,
         repairError,
         lastMigrationResult,

@@ -4,6 +4,7 @@
 // =======================================================================
 
 import { useEffect, useState } from 'react';
+import { isNativeAppShell } from '../platform/nativeBridge';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -20,6 +21,7 @@ export interface PwaClientState {
 
 function detectStandalone(): boolean {
   if (typeof window === 'undefined') return false;
+  if (isNativeAppShell()) return true;
   const nav = window.navigator as Navigator & { standalone?: boolean };
   return (
     window.matchMedia?.('(display-mode: standalone)')?.matches === true ||
@@ -45,7 +47,7 @@ const state: PwaClientState = {
   canInstallPrompt: false,
   isIosSafariInstallEligible: !detectStandalone() && detectIosSafari(),
   updateReady: false,
-  offlineReady: false,
+  offlineReady: isNativeAppShell(),
 };
 
 function notify(): void {
@@ -57,6 +59,15 @@ let initialized = false;
 export function initPwaClient(): void {
   if (initialized || typeof window === 'undefined') return;
   initialized = true;
+
+  if (isNativeAppShell()) {
+    state.isStandalone = true;
+    state.canInstallPrompt = false;
+    state.isIosSafariInstallEligible = false;
+    state.offlineReady = true;
+    notify();
+    return;
+  }
 
   window.addEventListener('beforeinstallprompt', (e: Event) => {
     e.preventDefault();

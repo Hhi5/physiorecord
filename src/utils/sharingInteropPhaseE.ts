@@ -32,6 +32,7 @@ import {
   estimateDataUrlBytes,
 } from './attachmentMedia';
 import { formatHomeVisitAddressDisplay } from './iraqScheduleLocationsC1C3';
+import { shareGeneratedFileOnAndroid } from '../platform/nativeBridge';
 
 // -----------------------------------------------------------------------
 // E1: Web Share API (file + text) with +964 WhatsApp & Copy Fallbacks
@@ -231,6 +232,31 @@ export async function shareDocumentViaWebShareOrFallback(params: {
       : params.navigatorObj;
   const phoneSpecificWa = buildWhatsAppReminderUrl(params.patientPhone, params.text);
   const whatsappUrl = buildDocumentWhatsAppFallbackUrl(params.patientPhone, params.text);
+
+  if (params.file && params.navigatorObj === undefined) {
+    try {
+      const fileContent =
+        typeof params.file.text === 'function' ? await params.file.text() : '';
+      if (fileContent) {
+        const sharedNatively = await shareGeneratedFileOnAndroid({
+          filename: params.file.name || 'physiorecord-document.html',
+          content: fileContent,
+          mimeType: params.file.type || 'text/html',
+          title: params.title,
+          text: params.text,
+        });
+        if (sharedNatively) {
+          return {
+            method: 'web_share_file',
+            whatsappUrl,
+            copiedText: params.text,
+          };
+        }
+      }
+    } catch {
+      // Fall through to standard Web Share API
+    }
+  }
 
   if (params.file && canShareFilesWithWebShare(params.file, nav) && nav?.share) {
     try {

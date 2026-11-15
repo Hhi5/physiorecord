@@ -65,6 +65,12 @@ import { DemoBadge, Money, MoneyInput, TimePickerInput } from './ui/Primitives';
 import { processClinicImageUpload, isValidEncryptedImageDataUrl } from '../utils/imageUtils';
 import { copySecretWithAutoClear } from '../utils/clipboardPrivacy';
 import {
+  getAppRuntimeTarget,
+  getElectronDesktopBridge,
+  isElectronDesktop,
+  type ElectronDesktopUpdateStatus,
+} from '../platform/nativeBridge';
+import {
   X,
   Settings,
   Shield,
@@ -279,6 +285,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   );
   const [settingsSearchQuery, setSettingsSearchQuery] = useState('');
   const [isWhatsNewOpen, setIsWhatsNewOpen] = useState(false);
+  const [desktopUpdateStatus, setDesktopUpdateStatus] = useState<ElectronDesktopUpdateStatus | null>(null);
+  const [checkingDesktopUpdate, setCheckingDesktopUpdate] = useState(false);
 
   const handleSwitchSettingsMode = (mode: SettingsViewMode) => {
     setSettingsViewMode(mode);
@@ -4654,6 +4662,112 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         'هەموو تۆمارە تاقیکارییەکان بە سەرکەوتوویی لە داتابەیس سڕانەوە.'
                       )}
                     </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Multi-Platform Runtime Identity & Manual Desktop Update Check */}
+              <div
+                data-testid="settings-platform-runtime-card"
+                className="p-4 rounded-xl bg-surface border border-line-2 space-y-3"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                    <TabletSmartphone className="size-4 text-primary" />
+                    <span>
+                      {bi(
+                        'بيئة التشغيل وهوية التطبيق (Web / Android / Windows)',
+                        'Platform Runtime & App Identity (Web / Android / Windows)',
+                        'ژینگەی کارپێکردن و ناسنامەی بەرنامە'
+                      )}
+                    </span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary border border-primary/20 font-mono text-xs font-bold">
+                    org.physiorecord.app • v{APP_SEMVER_VERSION}
+                  </span>
+                </div>
+
+                <p className="text-xs text-muted-foreground-1 leading-relaxed">
+                  {bi(
+                    `بيئة التشغيل الحالية: ${
+                      getAppRuntimeTarget() === 'desktop'
+                        ? 'تطبيق سطح المكتب (Windows Electron)'
+                        : getAppRuntimeTarget() === 'android'
+                          ? 'تطبيق أندرويد (Capacitor APK)'
+                          : 'تطبيق الويب التقدمي (Web / PWA)'
+                    }. واجهة المستخدم معزولة تماماً عن الشبكة (connect-src 'none').`,
+                    `Active runtime target: ${
+                      getAppRuntimeTarget() === 'desktop'
+                        ? 'Windows Desktop (Electron)'
+                        : getAppRuntimeTarget() === 'android'
+                          ? 'Android Native (Capacitor APK)'
+                          : 'Web / PWA Browser'
+                    }. The UI renderer enforces strict zero-network isolation (connect-src 'none').`,
+                    'ڕووکاری بەکارهێنەر بە تەواوی لە تۆڕ دابڕاوە.'
+                  )}
+                </p>
+
+                {isElectronDesktop() && (
+                  <div className="pt-1 space-y-2">
+                    <button
+                      type="button"
+                      data-testid="desktop-check-updates-btn"
+                      disabled={checkingDesktopUpdate}
+                      onClick={async () => {
+                        const bridge = getElectronDesktopBridge();
+                        if (!bridge?.checkForUpdates) return;
+                        setCheckingDesktopUpdate(true);
+                        try {
+                          const res = await bridge.checkForUpdates();
+                          setDesktopUpdateStatus(res);
+                        } finally {
+                          setCheckingDesktopUpdate(false);
+                        }
+                      }}
+                      className="py-2 px-4 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      <RefreshCw className={`size-3.5 ${checkingDesktopUpdate ? 'animate-spin' : ''}`} />
+                      <span>
+                        {checkingDesktopUpdate
+                          ? bi('جاري التحقق من الإصدارات...', 'Checking GitHub Releases...', 'پشکنینی وەشانەکان...')
+                          : bi(
+                              'التحقق اليدوي من التحديثات (Electron Main Process)',
+                              'Check for Updates Manually (Main Process Opt-In)',
+                              'پشکنینی دەستی بۆ نوێکردنەوەکان'
+                            )}
+                      </span>
+                    </button>
+
+                    {desktopUpdateStatus && (
+                      <div
+                        data-testid="desktop-update-status-banner"
+                        className={`p-3 rounded-xl border text-xs font-semibold flex flex-wrap items-center justify-between gap-2 ${
+                          desktopUpdateStatus.status === 'update-available'
+                            ? 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200'
+                            : desktopUpdateStatus.status === 'up-to-date'
+                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                              : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'
+                        }`}
+                      >
+                        <span>
+                          {bi(desktopUpdateStatus.messageAr, desktopUpdateStatus.messageEn)}
+                        </span>
+                        {desktopUpdateStatus.status === 'update-available' &&
+                          desktopUpdateStatus.releaseUrl && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void getElectronDesktopBridge()?.openExternalUrl?.({
+                                  url: desktopUpdateStatus.releaseUrl!,
+                                });
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold cursor-pointer"
+                            >
+                              {bi('فتح صفحة التحميل', 'Open Release Page', 'کردنەوەی پەڕەی داگرتن')}
+                            </button>
+                          )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

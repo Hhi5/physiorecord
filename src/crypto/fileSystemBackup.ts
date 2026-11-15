@@ -1,10 +1,17 @@
 // =======================================================================
-// PhysioRecord — File System Access API Backup Persistence (Phase 1.9)
-// Supports choosing a local backup folder (stored as FileSystemDirectoryHandle in db.fsHandles)
-// plus native Save File picker with download fallback for cross-browser compatibility.
+// PhysioRecord — File System Access & Multi-Platform Native Backup Persistence (Phase 1.9)
+// Supports choosing a local backup folder (stored as FileSystemDirectoryHandle in db.fsHandles
+// or persisted path in Windows Electron) plus native Save File picker (Windows Electron IPC,
+// Android SAF ACTION_CREATE_DOCUMENT / Share Sheet, or Web File System Access API)
+// with browser download fallback.
 // =======================================================================
 
 import { db } from '../db/db';
+import {
+  getAndroidNativePlugin,
+  getElectronDesktopBridge,
+  saveTextFilePortable,
+} from '../platform/nativeBridge';
 
 const AUTO_BACKUP_DIR_HANDLE_ID = 'auto_backup_dir';
 
@@ -26,6 +33,23 @@ export function isFileSystemAccessSupported(): {
   if (typeof window === 'undefined') {
     return { savePicker: false, directoryPicker: false };
   }
+
+  const electronBridge = getElectronDesktopBridge();
+  if (electronBridge) {
+    return {
+      savePicker: Boolean(electronBridge.saveFile),
+      directoryPicker: Boolean(electronBridge.pickBackupDirectory),
+    };
+  }
+
+  const androidPlugin = getAndroidNativePlugin();
+  if (androidPlugin) {
+    return {
+      savePicker: Boolean(androidPlugin.saveFileToDevice || androidPlugin.shareFile),
+      directoryPicker: false,
+    };
+  }
+
   const w = window as PickerWindow;
   return {
     savePicker: typeof w.showSaveFilePicker === 'function',
@@ -34,9 +58,17 @@ export function isFileSystemAccessSupported(): {
 }
 
 /**
- * Prompts the user to select a local folder for automatic/one-click backups and saves handle in IndexedDB.
+ * Prompts the user to select a local folder for automatic/one-click backups and saves handle in IndexedDB
+ * (or in Electron main process settings on Windows).
  */
 export async function pickAndPersistBackupFolder(): Promise<{ name: string } | null> {
+  const electronBridge = getElectronDesktopBridge();
+  if (electronBridge?.pickBackupDirectory) {
+    const res = await electronBridge.pickBackupDirectory();
+    if (res.cancelled || !res.configured) return null;
+    return { name: res.folderName || res.folderPath || 'Backup Folder' };
+  }
+
   const w = typeof window !== 'undefined' ? (window as PickerWindow) : null;
   if (!w?.showDirectoryPicker) {
     throw new Error('ميزة اختيار مجلد النسخ التلقائي غير مدعومة في هذا المتصفح.');
@@ -61,6 +93,19 @@ export async function getConfiguredBackupFolder(): Promise<{
   configured: boolean;
   folderName?: string;
 }> {
+  const electronBridge = getElectronDesktopBridge();
+  if (electronBridge?.getConfiguredBackupDirectory) {
+    try {
+      const res = await electronBridge.getConfiguredBackupDirectory();
+      if (res.configured) {
+        return { configured: true, folderName: res.folderName || res.folderPath || 'Backup Folder' };
+      }
+      return { configured: false };
+    } catch {
+      return { configured: false };
+    }
+  }
+
   try {
     const rec = await db.fsHandles.get(AUTO_BACKUP_DIR_HANDLE_ID);
     if (!rec || !rec.handle) return { configured: false };
@@ -71,6 +116,10 @@ export async function getConfiguredBackupFolder(): Promise<{
 }
 
 export async function clearConfiguredBackupFolder(): Promise<void> {
+  const electronBridge = getElectronDesktopBridge();
+  if (electronBridge?.clearConfiguredBackupDirectory) {
+    await electronBridge.clearConfiguredBackupDirectory();
+  }
   await db.fsHandles.delete(AUTO_BACKUP_DIR_HANDLE_ID);
 }
 
@@ -81,6 +130,18 @@ export async function writeBackupToConfiguredFolder(
   content: string,
   filename: string
 ): Promise<{ written: boolean; folderName?: string }> {
+  const electronBridge = getElectronDesktopBridge();
+  if (electronBridge?.writeToConfiguredBackupDirectory) {
+    try {
+      const res = await electronBridge.writeToConfiguredBackupDirectory({ filename, content });
+      if (res.written) {
+        return { written: true, folderName: res.folderName || 'Backup Folder' };
+      }
+    } catch {
+      // Fall through
+    }
+  }
+
   const rec = await db.fsHandles.get(AUTO_BACKUP_DIR_HANDLE_ID);
   if (!rec?.handle) {
     return { written: false };
@@ -110,7 +171,7 @@ export async function writeBackupToConfiguredFolder(
 }
 
 /**
- * Save backup file using configured folder, File System Save Picker, or browser download fallback.
+ * Save backup file using configured folder, Native OS/Android SAF Save Picker, Web File System Save Picker, or browser download fallback.
  */
 export async function saveBackupPackageToDevice(
   content: string,
@@ -122,7 +183,44 @@ export async function saveBackupPackageToDevice(
   filename: string;
   folderName?: string;
 }> {
-  // 1. Try File System Save Picker first if requested and supported
+  // 1. If a configured backup directory is set and user didn't explicitly force picker over directory
+  if (!preferPicker) {
+    try {
+      const folderResult = await writeBackupToConfiguredFolder(content, filename);
+      if (folderResult.written) {
+        return {
+          method: 'directory-handle',
+          confirmedSaved: true,
+          filename,
+          folderName: folderResult.folderName,
+        };
+      }
+    } catch {
+      // Fall through
+    }
+  }
+
+  // 2. Native Electron or Android SAF / Share bridge
+  const electronBridge = getElectronDesktopBridge();
+  const androidPlugin = getAndroidNativePlugin();
+  if (electronBridge?.saveFile || androidPlugin?.saveFileToDevice || androidPlugin?.shareFile) {
+    const portableRes = await saveTextFilePortable({
+      filename,
+      content,
+      mimeType: 'application/json',
+      description: 'PhysioRecord Encrypted Backup (.ptbackup)',
+      extensions: ['ptbackup', 'json'],
+    });
+    if (portableRes.confirmedSaved) {
+      return {
+        method: 'fs-picker',
+        confirmedSaved: true,
+        filename: portableRes.filename,
+      };
+    }
+  }
+
+  // 3. Try Web File System Save Picker if requested and supported
   const w = typeof window !== 'undefined' ? (window as PickerWindow) : null;
   if (preferPicker && w?.showSaveFilePicker) {
     try {
@@ -153,7 +251,7 @@ export async function saveBackupPackageToDevice(
     }
   }
 
-  // 2. Try configured directory handle if present
+  // 4. Try configured directory handle if present
   try {
     const folderResult = await writeBackupToConfiguredFolder(content, filename);
     if (folderResult.written) {
@@ -168,7 +266,7 @@ export async function saveBackupPackageToDevice(
     // Fall through to download fallback
   }
 
-  // 3. Browser download fallback
+  // 5. Browser download fallback
   if (typeof document !== 'undefined') {
     const blob = new Blob([content], { type: 'application/json' });
     const url = URL.createObjectURL(blob);

@@ -27,6 +27,11 @@ import {
   CURRENT_DEK_VERSION,
   LEGACY_RECORD_CRYPTO_VERSION_V1,
 } from './vault';
+import {
+  getAndroidNativePlugin,
+  getElectronDesktopBridge,
+  saveTextFilePortable,
+} from '../platform/nativeBridge';
 
 export interface EmergencyRecoverySnapshotEntity {
   id: string; // Primary key: e.g. 'pre_restore_2026-11-06T14-30-00Z'
@@ -249,6 +254,30 @@ export const saveExternalRecoveryBackupFile = async (
   suggestedDateStr: string = new Date().toISOString().replace(/[:.]/g, '-')
 ): Promise<ExternalSaveResult> => {
   const fileName = `physiorecord_pre_restore_emergency_${suggestedDateStr}.ptbackup`;
+
+  // 0. Native Windows Electron or Android SAF/Share bridge
+  if (getElectronDesktopBridge()?.saveFile || getAndroidNativePlugin()?.saveFileToDevice || getAndroidNativePlugin()?.shareFile) {
+    try {
+      const nativeRes = await saveTextFilePortable({
+        filename: fileName,
+        content: backupPackageStr,
+        mimeType: 'application/json',
+        description: 'PhysioRecord Encrypted Backup (.ptbackup)',
+        extensions: ['ptbackup', 'json'],
+      });
+      if (nativeRes.confirmedSaved) {
+        return {
+          method: 'fs-access',
+          confirmedSaved: true,
+          fileName: nativeRes.filename,
+        };
+      }
+    } catch (nativeErr: unknown) {
+      if (nativeErr instanceof Error && nativeErr.name === 'AbortError') {
+        throw new Error('تم إلغاء حفظ ملف التعافي الخارجي من قبل المستخدم.');
+      }
+    }
+  }
 
   // 1. Attempt File System Access API (Chromium Desktop native save dialog)
   interface SaveFilePickerWindow extends Window {

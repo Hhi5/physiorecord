@@ -57,6 +57,13 @@ export function physioRecordPwaPlugin() {
     },
 
     generateBundle(_options, bundle) {
+      const appTarget = (process.env.VITE_APP_TARGET || 'web').toLowerCase();
+      if (appTarget === 'android' || appTarget === 'desktop') {
+        // Native Capacitor (Android) and Electron (Windows) bundle local assets directly;
+        // skip Service Worker & Web App Manifest emission while keeping strict CSP <meta>.
+        return;
+      }
+
       const precacheUrls = new Set(['/', '/index.html', '/manifest.webmanifest']);
 
       for (const fileName of Object.keys(bundle)) {

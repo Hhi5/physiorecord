@@ -9,6 +9,7 @@ import type {
   MonthlyFinanceSummary,
   PaymentTransactionIQD,
 } from '../types/clinicManagement';
+import { saveTextFilePortable } from '../platform/nativeBridge';
 
 const PURE_NUMERIC_RE = /^-?\d+(?:\.\d+)?$/;
 
@@ -233,16 +234,14 @@ export function buildMonthlySummaryCsv(
 }
 
 export function downloadCsvFile(filename: string, csvContent: string): void {
-  if (typeof document === 'undefined' || typeof Blob === 'undefined') return;
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', filename.endsWith('.csv') ? filename : `${filename}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const safeName = filename.endsWith('.csv') ? filename : `${filename}.csv`;
+  void saveTextFilePortable({
+    filename: safeName,
+    content: csvContent,
+    mimeType: 'text/csv;charset=utf-8;',
+    description: 'CSV Spreadsheet (.csv)',
+    extensions: ['csv'],
+  });
 }
 
 export function formatPaymentCurrencySnapshot(pay: PaymentTransactionIQD, primaryCode = 'IQD'): string {

@@ -1,0 +1,217 @@
+name: Release Multi-Platform (Web PWA + Universal Android APK + Windows Installer)
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-build-web:
+    name: Verify Quality Gates & Build Web PWA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Security audit (high/critical)
+        run: npm audit --audit-level=high
+
+      - name: License compliance gate (GPL-3.0-or-later & allowlist)
+        run: npm run check:licenses
+
+      - name: Content license registry gate
+        run: npm run check:content
+
+      - name: TypeScript typecheck
+        run: npm run lint
+
+      - name: Unit & clinical verification tests
+        run: npm test
+
+      - name: Build Web PWA bundle
+        run: npm run build:web
+
+      - name: Performance budget check
+        run: npm run check:perf
+
+      - name: Generate CycloneDX SBOM
+        run: npm run sbom
+
+      - name: Package Web PWA archive with GPL notices
+        run: |
+          cp LICENSE NOTICE THIRD_PARTY_NOTICES.md CONTENT_LICENSES.md dist/
+          cd dist && zip -r ../PhysioRecord-Web-PWA-${GITHUB_REF_NAME:-v1.0.0}.zip .
+
+      - name: Upload Web PWA & SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-pwa-bundle
+          path: |
+            PhysioRecord-Web-PWA-*.zip
+            sbom.cdx.json
+
+  build-android-apk:
+    name: Build Universal Android APK (Capacitor)
+    needs: verify-and-build-web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install project dependencies & Capacitor Android CLI
+        run: |
+          npm ci
+          npm install --no-save @capacitor/core@^6.2.0 @capacitor/cli@^6.2.0 @capacitor/android@^6.2.0
+
+      - name: Build Android web assets & sync Capacitor
+        run: |
+          npm run build:android:web
+          npx cap sync android
+
+      - name: Decode Release Keystore (if configured in GitHub Secrets)
+        id: keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/physiorecord-release.jks"
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/physiorecord-release.jks" >> "$GITHUB_ENV"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Assemble Universal Android APK (arm64-v8a, armeabi-v7a, x86_64)
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -x ./gradlew ]; then
+            chmod +x ./gradlew
+            if [ "${{ steps.keystore.outputs.signed }}" = "true" ]; then
+              ./gradlew assembleRelease --no-daemon
+            else
+              ./gradlew assembleDebug --no-daemon
+            fi
+          else
+            gradle wrapper --gradle-version 8.9
+            chmod +x ./gradlew
+            if [ "${{ steps.keystore.outputs.signed }}" = "true" ]; then
+              ./gradlew assembleRelease --no-daemon
+            else
+              ./gradlew assembleDebug --no-daemon
+            fi
+          fi
+
+      - name: Rename Universal APK artifact
+        run: |
+          VERSION_TAG="${GITHUB_REF_NAME:-v1.0.0}"
+          if [ "${{ steps.keystore.outputs.signed }}" = "true" ]; then
+            cp android/app/build/outputs/apk/release/*.apk "PhysioRecord-Android-Universal-${VERSION_TAG}.apk"
+          else
+            cp android/app/build/outputs/apk/debug/*.apk "PhysioRecord-Android-Universal-${VERSION_TAG}-debug.apk"
+          fi
+
+      - name: Upload Android APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-universal-apk
+          path: PhysioRecord-Android-Universal-*.apk
+
+  build-windows-installer:
+    name: Build Windows NSIS Installer (Electron)
+    needs: verify-and-build-web
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install project dependencies & Electron packaging tools
+        run: |
+          npm ci
+          npm install --no-save electron@^34.3.0 electron-builder@^25.1.8
+
+      - name: Build Desktop web assets & package Windows NSIS .exe installer
+        run: |
+          npm run build:desktop:web
+          npx electron-builder --win nsis --publish never
+
+      - name: Upload Windows Installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-nsis-installer
+          path: |
+            release/*.exe
+            release/*.blockmap
+            release/latest.yml
+
+  publish-github-release:
+    name: Publish Artifacts & SHA256SUMS to GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - verify-and-build-web
+      - build-android-apk
+      - build-windows-installer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all platform artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Generate SHA256SUMS.txt
+        working-directory: release-assets
+        run: |
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            release-assets/*
+            LICENSE
+            NOTICE
+            THIRD_PARTY_NOTICES.md
+            CONTENT_LICENSES.md

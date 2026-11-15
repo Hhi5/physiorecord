@@ -29,6 +29,7 @@ import {
   buildUserInitiatedWhatsAppHref,
 } from '../../utils/whatsappTemplates';
 import { getPatientMrn, isDemoPatient, getPatientDisplayName } from '../../utils/mrn';
+import { openSafeExternalUrl } from '../../platform/nativeBridge';
 import { Num, DemoBadge, DatePickerInput, TimePickerInput, TimeDisplay } from '../ui/Primitives';
 import { ModalDialog, DrawerDialog } from '../ui/Dialog';
 import {
@@ -3374,7 +3375,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                 onClick={() => {
                   const targetUrl = mapsConfirmTarget.url;
                   setMapsConfirmTarget(null);
-                  window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                  void openSafeExternalUrl(targetUrl);
                 }}
                 className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
               >

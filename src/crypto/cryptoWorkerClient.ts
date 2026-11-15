@@ -192,6 +192,13 @@ const readAllStreamBytes = async (stream: ReadableStream<Uint8Array>): Promise<U
 };
 
 /**
+ * Check whether standard Web Streams CompressionStream('gzip') is supported in the current WebView/browser.
+ */
+export const isCompressionStreamSupported = (): boolean => {
+  return typeof CompressionStream !== 'undefined' && typeof DecompressionStream !== 'undefined';
+};
+
+/**
  * Compress bytes using standard Web Streams CompressionStream('gzip').
  */
 export const compressBytesGzip = async (input: Uint8Array): Promise<Uint8Array> => {

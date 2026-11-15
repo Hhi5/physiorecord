@@ -11,6 +11,10 @@ import { LanguageSwitcher } from './ui/LanguageSwitcher';
 import { ModalDialog } from './ui/Dialog';
 import { copySecretWithAutoClear } from '../utils/clipboardPrivacy';
 import {
+  saveTextFilePortable,
+  triggerPlatformPrint,
+} from '../platform/nativeBridge';
+import {
   Lock,
   ShieldCheck,
   KeyRound,
@@ -40,6 +44,7 @@ export const LockScreen: React.FC = () => {
     kdfProgress,
     isPrfSupported,
     isPrfEnrolled,
+    schemaDowngradeError,
     resetPasswordWithRecovery,
     wipeDatabase,
   } = useVault();
@@ -196,17 +201,17 @@ export const LockScreen: React.FC = () => {
       '',
       'Keep this file in a secure offline location. It is the only way to recover your encrypted database if you forget your master password.',
     ].join('\n');
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'physiorecord-recovery-key.txt';
-    a.click();
-    URL.revokeObjectURL(url);
+    void saveTextFilePortable({
+      filename: 'physiorecord-recovery-key.txt',
+      content,
+      mimeType: 'text/plain;charset=utf-8',
+      description: 'PhysioRecord Emergency Recovery Key (.txt)',
+      extensions: ['txt'],
+    });
   };
 
   const handlePrintRecoveryKey = () => {
-    window.print();
+    void triggerPlatformPrint('PhysioRecord_Recovery_Key');
   };
 
   const handleRecoverySubmit = async (e: React.FormEvent) => {
@@ -546,6 +551,33 @@ export const LockScreen: React.FC = () => {
               </div>
             )}
 
+            {schemaDowngradeError ? (
+              <div
+                data-testid="schema-downgrade-blocked-card"
+                className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/35 text-xs space-y-2.5 text-foreground"
+              >
+                <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <span>
+                    {bi(
+                      'حماية البيانات: قاعدة البيانات أحدث من إصدار التطبيق الحالي',
+                      'Data Safety Guard: Database Is Newer Than This App Version',
+                      'پاراستنی داتا: داتابەیسەکە نوێترە لەم وەشانەی بەرنامەکە'
+                    )}
+                  </span>
+                </div>
+                <p className="leading-relaxed text-muted-foreground-1">
+                  {bi(
+                    'تم ترقية قاعدة البيانات المحلية على هذا الجهاز بواسطة إصدار أحدث من PhysioRecord. لحماية سجلات المرضى من التلف أو الاستبدال، تم إيقاف فتح القاعدة بهذا الإصدار القديم. يرجى تثبيت أحدث إصدار من التطبيق للمتابعة بأمان.',
+                    'The local database on this device was upgraded by a newer version of PhysioRecord. To protect patient records from corruption or accidental overwrite, opening with this older version is blocked. Please install the latest PhysioRecord release to continue safely.',
+                    'داتابەیسی ناوخۆیی لەسەر ئەم ئامێرە لەلایەن وەشانێکی نوێتری PhysioRecord نوێکراوەتەوە. بۆ پاراستنی تۆمارەکانی نەخۆش، تکایە نوێترین وەشانی بەرنامەکە دابەزێنە.'
+                  )}
+                </p>
+                <p className="font-mono text-2xs text-muted-foreground-2 break-all" dir="ltr">
+                  {schemaDowngradeError.message}
+                </p>
+              </div>
+            ) : (
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div>
                 <label
@@ -831,9 +863,10 @@ export const LockScreen: React.FC = () => {
                 )}
               </div>
             </form>
+            )}
 
             {/* Recovery & Reset Options when Locked */}
-            {!isSetup && (
+            {!isSetup && !schemaDowngradeError && (
               <div className="mt-5 pt-4 border-t border-card-divider flex flex-wrap items-center justify-center gap-2 text-xs">
                 <button
                   type="button"
