@@ -1,8 +1,8 @@
 // =======================================================================
-// PhysioRecord — Clinical Sidebar Navigation (Batch 3 Simplification)
-// - Navigation only: Reception, Patients, Schedule, Exercise/HEP, Finance, Audit
-// - Auto-collapses to an icon rail on patient pages
-// - Utility stack & quick patient list moved to Global Search (Ctrl/Cmd+K) & User Menu
+// PhysioRecord — Clinical Sidebar Navigation (Modern App Shell v2)
+// - Calm glass surface, grouped navigation, pill-shaped active state.
+// - Collapses to a slim icon rail on patient pages, tablets and small laptops.
+// - Navigation only; utilities live in the global search (Ctrl/Cmd+K) and user menu.
 // =======================================================================
 
 import React, { useState, useEffect } from 'react';
@@ -23,6 +23,7 @@ import {
   ShieldAlert,
   Settings,
   BarChart3,
+  ShieldCheck,
 } from 'lucide-react';
 
 export type ClinicNavTab =
@@ -48,6 +49,15 @@ interface SidebarProps {
   onOpenToolkit?: () => void;
   onOpenBackup?: () => void;
   onOpenSeedData?: () => void;
+}
+
+interface NavItem {
+  id: ClinicNavTab;
+  icon: React.FC<{ className?: string }>;
+  labelAr: string;
+  labelEn: string;
+  labelCkb?: string;
+  badge?: number;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -76,20 +86,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const activePatients = patients.filter((p) => !p.isArchived);
 
-  // Auto-collapse sidebar on patient pages and on compact tablet/small-laptop viewports (< 1100px)
+  // Auto-collapse on patient pages and on compact tablet / small-laptop viewports (< 1100px)
   const isCollapsed =
     selectedPatient !== null || isNarrowScreen
       ? manualCollapsed ?? true
       : manualCollapsed ?? false;
 
-  const soloNavItems: {
-    id: ClinicNavTab;
-    icon: React.FC<{ className?: string }>;
-    labelAr: string;
-    labelEn: string;
-    labelCkb?: string;
-    badge?: number;
-  }[] = [
+  const soloNavItems: NavItem[] = [
     {
       id: 'today',
       icon: CalendarClock,
@@ -135,14 +138,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
   ];
 
-  const teamNavItems: {
-    id: ClinicNavTab;
-    icon: React.FC<{ className?: string }>;
-    labelAr: string;
-    labelEn: string;
-    labelCkb?: string;
-    badge?: number;
-  }[] = [
+  const teamNavItems: NavItem[] = [
     {
       id: 'reception',
       icon: MonitorCheck,
@@ -195,140 +191,176 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
   ];
 
-  const navItems = isSoloMode ? soloNavItems : teamNavItems;
+  const navItems = (isSoloMode ? soloNavItems : teamNavItems).filter(
+    (item) =>
+      (item.id !== 'exercises' || showExerciseLibrary) &&
+      (item.id !== 'analytics' || showAnalyticsModule)
+  );
+
+  const clinicalGroupIds: ClinicNavTab[] = ['today', 'reception', 'schedule', 'directory'];
+  const operationsGroupIds: ClinicNavTab[] = ['exercises', 'finance', 'analytics', 'activity_log'];
+
+  const groups: { labelAr: string; labelEn: string; ids: ClinicNavTab[] }[] = [
+    { labelAr: 'العمل اليومي', labelEn: 'Daily work', ids: clinicalGroupIds },
+    { labelAr: 'الإدارة', labelEn: 'Operations', ids: operationsGroupIds },
+  ];
+
+  const renderItem = (item: NavItem) => {
+    const Icon = item.icon;
+    const isActive =
+      selectedPatient !== null ? item.id === 'directory' : activeNav === item.id;
+    const label = bi(item.labelAr, item.labelEn, item.labelCkb);
+
+    return (
+      <button
+        key={item.id}
+        type="button"
+        onClick={() => {
+          onSelectPatient(null);
+          onSelectNav(item.id);
+        }}
+        data-active={isActive}
+        data-nav-id={item.id}
+        aria-label={isCollapsed || item.badge === undefined ? label : undefined}
+        aria-current={isActive ? 'page' : undefined}
+        title={isCollapsed ? label : undefined}
+        className={`pr-nav-item ${isCollapsed ? 'justify-center px-0' : ''} ${
+          isActive ? '' : 'text-sidebar-nav-foreground'
+        }`}
+      >
+        <Icon
+          className={`size-[1.125rem] shrink-0 ${
+            isActive ? 'text-primary' : 'text-muted-foreground-1'
+          }`}
+        />
+        {!isCollapsed && (
+          <>
+            <span className="truncate flex-1 text-start">{label}</span>
+            {item.badge !== undefined && (
+              <span
+                className={`min-w-[1.375rem] px-1.5 py-0.5 text-xs rounded-full font-bold text-center ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-surface text-muted-foreground-2 border border-line-2/50'
+                }`}
+              >
+                <Num value={item.badge} />
+              </span>
+            )}
+          </>
+        )}
+      </button>
+    );
+  };
 
   return (
     <aside
       aria-label={bi('القائمة الجانبية الرئيسية', 'Main Sidebar Navigation')}
       className={`${
-        isCollapsed ? 'w-[68px]' : 'w-56 xl:w-60'
-      } transition-all duration-200 bg-sidebar border-e border-sidebar-line flex flex-col h-screen sticky top-0 z-30 select-none shrink-0`}
+        isCollapsed ? 'w-[76px]' : 'w-[248px] xl:w-[264px]'
+      } pr-sidebar transition-[width] duration-200 ease-out flex flex-col h-screen sticky top-0 z-30 select-none shrink-0`}
     >
-      {/* Brand Header & Collapse Toggle */}
-      <div className="h-14 px-3 flex items-center justify-between border-b border-sidebar-divider shrink-0">
-        {!isCollapsed && (
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-xs shrink-0">
-              <Activity className="w-4 h-4" />
-            </div>
-            <span className="font-extrabold text-sm tracking-tight text-foreground truncate">
-              PhysioRecord
-            </span>
+      {/* Brand block */}
+      <div
+        className={`h-16 shrink-0 flex items-center border-b border-sidebar-divider ${
+          isCollapsed ? 'justify-center px-2' : 'justify-between px-3.5'
+        }`}
+      >
+        <div className={`flex items-center gap-2.5 min-w-0 ${isCollapsed ? '' : ''}`}>
+          <div className="pr-brand-mark">
+            <Activity className="size-[1.15rem]" strokeWidth={2.4} />
           </div>
-        )}
-
-        <button
-          type="button"
-          onClick={() => setManualCollapsed(!isCollapsed)}
-          aria-label={
-            isCollapsed
-              ? bi('توسيع القائمة الجانبية', 'Expand Sidebar')
-              : bi('طي القائمة الجانبية', 'Collapse Sidebar')
-          }
-          title={
-            isCollapsed
-              ? bi('توسيع القائمة الجانبية', 'Expand Sidebar')
-              : bi('طي القائمة الجانبية', 'Collapse Sidebar')
-          }
-          className={`p-2 rounded-lg text-muted-foreground-1 hover:text-foreground hover:bg-sidebar-nav-hover transition-colors cursor-pointer ${
-            isCollapsed ? 'mx-auto' : ''
-          }`}
-        >
-          {isCollapsed ? (
-            isRtl ? (
-              <PanelLeftOpen className="w-4 h-4 -scale-x-100" />
-            ) : (
-              <PanelLeftOpen className="w-4 h-4" />
-            )
-          ) : isRtl ? (
-            <PanelLeftClose className="w-4 h-4 -scale-x-100" />
-          ) : (
-            <PanelLeftClose className="w-4 h-4" />
+          {!isCollapsed && (
+            <div className="min-w-0">
+              <div className="text-sm font-extrabold tracking-tight text-foreground truncate leading-tight">
+                PhysioRecord
+              </div>
+              <div className="text-xs text-muted-foreground-1 font-semibold truncate">
+                {bi('نظام العيادة السريري', 'Clinical workspace')}
+              </div>
+            </div>
           )}
-        </button>
+        </div>
+
+        {!isCollapsed && (
+          <button
+            type="button"
+            onClick={() => setManualCollapsed(true)}
+            aria-label={bi('طي القائمة الجانبية', 'Collapse Sidebar')}
+            title={bi('طي القائمة الجانبية', 'Collapse Sidebar')}
+            className="size-8 rounded-lg text-muted-foreground-1 hover:text-foreground hover:bg-sidebar-nav-hover inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+          >
+            {isRtl ? (
+              <PanelLeftClose className="size-4 -scale-x-100" />
+            ) : (
+              <PanelLeftClose className="size-4" />
+            )}
+          </button>
+        )}
       </div>
 
-      {/* Navigation Only (Reception, Patients, Schedule, Exercise/HEP, Finance, Audit) */}
-      <nav className="p-2.5 space-y-1 flex-1 overflow-y-auto">
-        {navItems
-          .filter(
-            (item) =>
-              (item.id !== 'exercises' || showExerciseLibrary) &&
-              (item.id !== 'analytics' || showAnalyticsModule)
-          )
-          .map((item) => {
-          const Icon = item.icon;
-          const isActive =
-            selectedPatient !== null
-              ? item.id === 'directory'
-              : activeNav === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                onSelectPatient(null);
-                onSelectNav(item.id);
-              }}
-              aria-label={
-                isCollapsed || item.badge === undefined
-                  ? bi(item.labelAr, item.labelEn, item.labelCkb)
-                  : undefined
-              }
-              title={isCollapsed ? bi(item.labelAr, item.labelEn, item.labelCkb) : undefined}
-              className={`w-full flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                isActive
-                  ? 'bg-sidebar-nav-active text-primary font-bold shadow-2xs'
-                  : 'text-sidebar-nav-foreground hover:bg-sidebar-nav-hover'
-              } ${isCollapsed ? 'justify-center px-0' : ''}`}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <Icon
-                  className={`w-4 h-4 shrink-0 ${
-                    isActive ? 'text-primary' : 'text-muted-foreground-1'
-                  }`}
-                />
-                {!isCollapsed && (
-                  <span className="truncate">
-                    {bi(item.labelAr, item.labelEn, item.labelCkb)}
-                  </span>
-                )}
-              </div>
+      {/* Navigation */}
+      <nav className="flex-1 min-h-0 overflow-y-auto px-2.5 py-3 space-y-4">
+        {isCollapsed && (
+          <button
+            type="button"
+            onClick={() => setManualCollapsed(false)}
+            aria-label={bi('توسيع القائمة الجانبية', 'Expand Sidebar')}
+            title={bi('توسيع القائمة الجانبية', 'Expand Sidebar')}
+            className="mx-auto size-9 rounded-lg text-muted-foreground-1 hover:text-foreground hover:bg-sidebar-nav-hover inline-flex items-center justify-center transition-colors cursor-pointer"
+          >
+            {isRtl ? (
+              <PanelLeftOpen className="size-4 -scale-x-100" />
+            ) : (
+              <PanelLeftOpen className="size-4" />
+            )}
+          </button>
+        )}
 
-              {!isCollapsed && item.badge !== undefined && (
-                <span
-                  className={`px-2 py-0.5 text-xs rounded-full font-mono font-bold ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-surface text-surface-foreground'
-                  }`}
-                >
-                  <Num value={item.badge} />
-                </span>
+        {groups.map((group) => {
+          const groupItems = navItems.filter((item) => group.ids.includes(item.id));
+          if (groupItems.length === 0) return null;
+          return (
+            <div key={group.labelEn} className="space-y-1">
+              {!isCollapsed && (
+                <div className="pr-nav-label pb-1">
+                  {bi(group.labelAr, group.labelEn)}
+                </div>
               )}
-            </button>
+              {groupItems.map(renderItem)}
+            </div>
           );
         })}
       </nav>
 
-      {onOpenSettings && (
-        <div className="p-2.5 border-t border-sidebar-divider shrink-0">
+      {/* Footer: settings + local-encryption reassurance */}
+      <div className="shrink-0 border-t border-sidebar-divider p-2.5 space-y-2">
+        {onOpenSettings && (
           <button
             type="button"
             onClick={onOpenSettings}
             aria-label={bi('الإعدادات', 'Settings', t('navSettings'))}
             title={isCollapsed ? bi('الإعدادات', 'Settings', t('navSettings')) : undefined}
-            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-sidebar-nav-foreground hover:bg-sidebar-nav-hover transition-all cursor-pointer ${
-              isCollapsed ? 'justify-center px-0' : ''
-            }`}
+            className={`pr-nav-item ${isCollapsed ? 'justify-center px-0' : ''}`}
           >
-            <Settings className="w-4 h-4 shrink-0 text-muted-foreground-1" />
+            <Settings className="size-[1.125rem] shrink-0 text-muted-foreground-1" />
             {!isCollapsed && (
-              <span className="truncate">{bi('الإعدادات', 'Settings', t('navSettings'))}</span>
+              <span className="truncate flex-1 text-start">
+                {bi('الإعدادات', 'Settings', t('navSettings'))}
+              </span>
             )}
           </button>
-        </div>
-      )}
+        )}
+
+        {!isCollapsed && (
+          <div className="flex items-center gap-2 rounded-xl bg-[var(--pr-accent-softer)] border border-[var(--pr-hairline)] px-2.5 py-2">
+            <ShieldCheck className="size-4 text-primary shrink-0" />
+            <span className="text-xs font-semibold text-muted-foreground-1 leading-snug">
+              {bi('مشفَّر على هذا الجهاز فقط', 'Encrypted on this device')}
+            </span>
+          </div>
+        )}
+      </div>
     </aside>
   );
 };

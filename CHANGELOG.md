@@ -4,6 +4,15 @@ All notable changes to **PhysioRecord** are documented in this file.
 
 ## [Unreleased]
 
+### UI — Modern App Shell v2 (Desktop + Mobile Redesign)
+- **Design tokens v2**: Soft ambient canvas, layered elevation (`--pr-shadow-1..3`), hairline borders, glass surfaces, and a 10/12/14/16/24px radius scale (still driven by the user's corner-radius preference in `appearancePrefs.ts`).
+- **Unified components (`src/index.css`)**: `pr-page-header`, `pr-hero`, `pr-kpi`, `pr-seg`, `pr-btn`, `pr-icon-btn`, `pr-chip`, `pr-field`, `pr-search`, `pr-surface`, `pr-topbar`, `pr-sidebar`, `pr-nav-item`, `pr-tabbar`, `pr-tab`, `pr-sheet-panel`, `pr-avatar` — all inside `@layer components` so Tailwind responsiveness keeps priority.
+- **Desktop shell**: Grouped glass sidebar with pill active state and collapsed icon rail, 64px glass top bar with breadcrumb + page title + capsule search + single gradient primary CTA + account avatar.
+- **Mobile shell**: Airier 64px top bar (brand + title + search/new-patient/account), 5-tab capsule bottom bar with safe-area padding, and all `ModalDialog` surfaces now open as rounded bottom sheets with a drag handle on phones.
+- **Screens modernized**: Today command center, Patient directory (header, toolbar, cards), Reception queue, Finance ledger KPI grid, and the lock/first-run cards.
+- **Accessibility**: `axe-core` WCAG 2.0/2.1 A+AA now reports **0 violations** on Today, Patients, and Finance at 1440×900 and 390×844 in light and dark mode (including bottom sheets); fixed a pre-existing sky-badge contrast issue and a patient card accessible-name mismatch.
+- **Docs**: Added [`docs/UI_DESIGN_SYSTEM_V2.md`](docs/UI_DESIGN_SYSTEM_V2.md) with the token/component reference, RTL rules, verification steps, reference screenshots, and a copy-paste prompt template for AI tools.
+
 ## [1.1.0] - 2026-11-14
 
 Clinical & Iraqi Operations Addendum (**Phases A–F**) plus Clinic Owner Enhancements.

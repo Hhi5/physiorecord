@@ -147,6 +147,7 @@ import {
   PlayCircle,
   Command,
   EyeOff,
+  Activity,
 } from 'lucide-react';
 
 const ROLE_LABEL_CKB: Record<ClinicRoleId, string> = {
@@ -845,7 +846,7 @@ export const AppLayout: React.FC = () => {
 
   return (
     <div
-      className="flex h-screen w-screen overflow-hidden bg-background-1 text-foreground transition-colors"
+      className="flex h-screen w-screen overflow-hidden bg-transparent text-foreground transition-colors"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Desktop Sidebar Navigation (Auto-collapses to icon rail on patient pages) */}
@@ -866,7 +867,7 @@ export const AppLayout: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      <main className={`flex-1 flex flex-col min-w-0 h-screen overflow-hidden pb-14 md:pb-0 transition-all duration-200 ${isPrivacyCoverOpen ? 'filter blur-md pointer-events-none select-none' : ''}`}>
+      <main className={`flex-1 flex flex-col min-w-0 h-screen overflow-hidden pb-[5.4rem] md:pb-0 transition-all duration-200 ${isPrivacyCoverOpen ? 'filter blur-md pointer-events-none select-none' : ''}`}>
         {/* Phase F4: Compact Public Demo Mode Banner */}
         {isPublicDemoActive && (
           <div
@@ -911,65 +912,80 @@ export const AppLayout: React.FC = () => {
         )}
 
         {/* Global Top Header (Desktop & Mobile) */}
-        <header className="h-11 sm:h-12 px-3 sm:px-5 lg:px-6 bg-navbar border-b border-navbar-line flex items-center justify-between gap-2 sm:gap-3 shrink-0 z-40 min-w-0">
-          {/* Start: Short Page Title (never clipped or squished by search bar) */}
-          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 md:flex-none md:max-w-[38%] lg:max-w-none">
-            <div className="flex items-center gap-1.5 text-xs min-w-0">
-              <button
-                type="button"
-                onClick={() => handleSelectPatient(null)}
-                className={`font-extrabold transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
-                  selectedPatient
-                    ? 'text-muted-foreground-1 hover:text-primary text-xs sm:text-sm'
-                    : 'text-foreground text-sm sm:text-base'
-                }`}
-              >
-                {bi(currentNavMeta.ar, currentNavMeta.en, currentNavMeta.ckb)}
-              </button>
+        <header className="pr-topbar h-16 px-3 sm:px-5 lg:px-7 flex items-center justify-between gap-2 sm:gap-4 shrink-0 z-40 min-w-0">
+          {/* Start: Brand (mobile) + module / patient breadcrumb */}
+          <div className="flex items-center gap-2.5 min-w-0 flex-1 md:flex-none md:max-w-[40%] lg:max-w-[46%]">
+            <div className="md:hidden pr-brand-mark size-9" aria-hidden="true">
+              <Activity className="size-[1.05rem]" strokeWidth={2.4} />
+            </div>
+            <div className="min-w-0">
+              <div className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-muted-foreground-1 min-w-0">
+                <span className="shrink-0">{bi('مساحة العمل', 'Workspace')}</span>
+                {isRtl ? (
+                  <ChevronLeft className="size-3 shrink-0 opacity-60" />
+                ) : (
+                  <ChevronRight className="size-3 shrink-0 opacity-60" />
+                )}
+                <span className="truncate">
+                  {bi(currentNavMeta.ar, currentNavMeta.en, currentNavMeta.ckb)}
+                </span>
+              </div>
 
-              {selectedPatient && (
-                <>
-                  {isRtl ? (
-                    <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground-1 shrink-0" />
-                  ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground-1 shrink-0" />
-                  )}
-                  <span className="font-bold text-xs sm:text-sm text-primary truncate">
-                    {getPatientDisplayName(selectedPatient.data, language)}
-                  </span>
-                </>
-              )}
+              <div className="flex items-center gap-1.5 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => handleSelectPatient(null)}
+                  className={`transition-colors cursor-pointer truncate text-start ${
+                    selectedPatient
+                      ? 'text-xs sm:text-sm font-bold text-muted-foreground-1 hover:text-primary'
+                      : 'text-base sm:text-lg font-extrabold tracking-tight text-foreground'
+                  }`}
+                >
+                  {bi(currentNavMeta.ar, currentNavMeta.en, currentNavMeta.ckb)}
+                </button>
+
+                {selectedPatient && (
+                  <>
+                    {isRtl ? (
+                      <ChevronLeft className="size-4 text-muted-foreground-1 shrink-0" />
+                    ) : (
+                      <ChevronRight className="size-4 text-muted-foreground-1 shrink-0" />
+                    )}
+                    <span className="font-extrabold text-sm sm:text-base text-primary truncate">
+                      {getPatientDisplayName(selectedPatient.data, language)}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Center (Desktop & Tablet): Global Search Trigger (Ctrl/Cmd+K) */}
-          <div className="hidden md:flex flex-1 min-w-0 max-w-xs lg:max-w-md mx-2 lg:mx-4">
+          <div className="hidden md:flex flex-1 min-w-0 max-w-md mx-2 lg:mx-4">
             <button
               type="button"
               onClick={() => setIsGlobalSearchOpen(true)}
-              className="w-full min-w-0 px-3 py-1.5 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-muted-foreground-1 text-xs flex items-center justify-between gap-2 transition-colors cursor-pointer shadow-2xs"
+              className="pr-search"
             >
-              <span className="flex items-center gap-2 min-w-0 flex-1">
-                <Search className="w-3.5 h-3.5 text-primary shrink-0" />
-                <span className="truncate">
-                  {bi(
-                    'بحث سريع عن مريض بالاسم، الرقم الطبي، أو الهاتف...',
-                    'Search patients by name, MRN, or phone...'
-                  )}
-                </span>
+              <Search className="size-4 text-muted-foreground-1 shrink-0" />
+              <span className="truncate flex-1 text-start">
+                {bi(
+                  'ابحث عن مريض، رقم طبي، أو هاتف…',
+                  'Search patients, MRN, or phone…'
+                )}
               </span>
               <kbd
                 dir="ltr"
-                className="hidden lg:inline-block px-1.5 py-0.5 text-xs font-mono font-semibold bg-surface border border-line-2 rounded text-muted-foreground-1 shrink-0"
+                className="hidden lg:inline-block px-1.5 py-0.5 text-xs font-mono font-semibold bg-card border border-line-2 rounded-md text-muted-foreground-1 shrink-0"
               >
-                Ctrl+K
+                Ctrl K
               </kbd>
             </button>
           </div>
 
-          {/* End: Mobile max 2 icon buttons + overflow menu | Desktop ONE primary "New Patient" button + User Menu */}
+          {/* End: quick actions + primary CTA + account menu */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Privacy Cover Quick Shield Button (Phase A5) */}
+            {/* Privacy Cover Quick Shield Button (Phase A5) — desktop/tablet; also in the mobile More sheet */}
             <button
               type="button"
               onClick={() => setIsPrivacyCoverOpen(true)}
@@ -980,29 +996,29 @@ export const AppLayout: React.FC = () => {
                 'داپۆشەری نهێنی (دوو جار Esc)'
               )}
               aria-label={bi('ستار الخصوصية', 'Privacy cover', 'داپۆشەری نهێنی')}
-              className="size-9 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-foreground flex items-center justify-center cursor-pointer shrink-0"
+              className="pr-icon-btn hidden sm:inline-flex"
             >
-              <EyeOff className="w-4 h-4 text-primary" />
+              <EyeOff className="size-4 text-primary" />
             </button>
 
-            {/* Mobile Icon Button 1: Global Search */}
+            {/* Mobile: Global Search */}
             <button
               type="button"
               onClick={() => setIsGlobalSearchOpen(true)}
               aria-label={bi('بحث شامل عن مريض', 'Search patients')}
-              className="md:hidden size-9 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-foreground flex items-center justify-center cursor-pointer"
+              className="pr-icon-btn md:hidden"
             >
-              <Search className="w-4 h-4 text-primary" />
+              <Search className="size-4 text-primary" />
             </button>
 
-            {/* Primary "New Patient" Button (Icon on mobile with aria-label, Full button on desktop) */}
+            {/* Primary "New Patient" Button (icon-only on mobile, labelled on desktop) */}
             <button
               type="button"
               onClick={handleOpenNewPatient}
               aria-label={bi('مريض جديد', 'New Patient')}
-              className="size-9 sm:w-auto sm:h-auto sm:px-3.5 sm:py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer shrink-0"
+              className="pr-btn pr-btn-primary h-9 sm:h-10 px-0 sm:px-4 w-9 sm:w-auto inline-flex shrink-0"
             >
-              <UserPlus className="w-4 h-4 shrink-0" />
+              <UserPlus className="size-4 shrink-0" />
               <span className="hidden sm:inline">
                 {bi('مريض جديد', 'New Patient')}
               </span>
@@ -1020,13 +1036,19 @@ export const AppLayout: React.FC = () => {
                 )}
                 aria-expanded={isUserMenuOpen}
                 aria-haspopup="dialog"
-                className="h-9 px-2.5 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                className="h-10 ps-1 pe-1.5 sm:pe-2.5 rounded-full bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-semibold inline-flex items-center gap-1.5 sm:gap-2 cursor-pointer transition-colors"
               >
-                <UserCheck className="w-4 h-4 text-primary shrink-0" />
+                <span className="pr-avatar size-8" aria-hidden="true">
+                  {userMenuRoleLabel.trim().charAt(0)}
+                </span>
                 <span className="hidden lg:inline text-xs font-bold">
                   {userMenuRoleLabel}
                 </span>
-                <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground-1" />
+                <ChevronLeft
+                  className={`hidden lg:inline size-3.5 text-muted-foreground-1 transition-transform ${
+                    isUserMenuOpen ? 'rotate-90' : ''
+                  } ${isRtl ? '' : '-rotate-180'}`}
+                />
               </button>
 
               {isUserMenuOpen && (
@@ -1608,7 +1630,7 @@ export const AppLayout: React.FC = () => {
           isSoloMode ? 'Solo Mobile Bottom Navigation' : 'Mobile Bottom Navigation',
           isSoloMode ? 'گەڕانی خوارەوەی چارەسەرکاری تاک' : 'گەڕانی خوارەوەی مۆبایل'
         )}
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 h-14 bg-navbar border-t border-navbar-line grid grid-cols-5 px-1"
+        className="pr-tabbar md:hidden"
       >
         {(isSoloMode
           ? [
@@ -1641,14 +1663,12 @@ export const AppLayout: React.FC = () => {
                 setSelectedPatientId(null);
                 setActiveNav(item.id);
               }}
-              className={`flex flex-col items-center justify-center gap-0.5 text-xs font-bold transition-colors cursor-pointer relative min-h-[44px] ${
-                isActive ? 'text-primary' : 'text-muted-foreground-1'
-              }`}
+              data-active={isActive}
+              className="pr-tab"
             >
-              {isActive && (
-                <span className="absolute top-0 inset-x-3 h-0.5 rounded-full bg-primary" />
-              )}
-              <Icon className="w-4 h-4" />
+              <span className="pr-tab-icon">
+                <Icon className={isActive ? 'size-[1.15rem]' : 'size-5'} />
+              </span>
               <span className="truncate max-w-full px-0.5">
                 {bi(item.ar, item.en, item.ckb)}
               </span>
@@ -1662,14 +1682,12 @@ export const AppLayout: React.FC = () => {
           aria-label={bi('المزيد', 'More', 'زیاتر')}
           aria-expanded={isMobileMoreOpen}
           onClick={() => setIsMobileMoreOpen((prev) => !prev)}
-          className={`flex flex-col items-center justify-center gap-0.5 text-xs font-bold transition-colors cursor-pointer relative min-h-[44px] ${
-            isMoreTabActive || isMobileMoreOpen ? 'text-primary' : 'text-muted-foreground-1'
-          }`}
+          data-active={isMoreTabActive || isMobileMoreOpen}
+          className="pr-tab"
         >
-          {isMoreTabActive && (
-            <span className="absolute top-0 inset-x-3 h-0.5 rounded-full bg-primary" />
-          )}
-          <MoreHorizontal className="w-4 h-4" />
+          <span className="pr-tab-icon">
+            <MoreHorizontal className="size-5" />
+          </span>
           <span className="truncate max-w-full px-0.5">
             {bi('المزيد', 'More', 'زیاتر')}
           </span>
@@ -1679,7 +1697,7 @@ export const AppLayout: React.FC = () => {
       {/* Mobile "More" Popover Sheet (HEP, Analytics, Audit, Settings) */}
       {isMobileMoreOpen && (
         <div
-          className="md:hidden fixed inset-0 z-40"
+          className="md:hidden fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-xs"
           onClick={() => setIsMobileMoreOpen(false)}
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
@@ -1694,8 +1712,9 @@ export const AppLayout: React.FC = () => {
             aria-label={bi('المزيد من الأقسام', 'More sections')}
             onClick={(e) => e.stopPropagation()}
             dir={isRtl ? 'rtl' : 'ltr'}
-            className="fixed bottom-16 inset-x-3 bg-card border border-card-line rounded-2xl shadow-2xl p-2 space-y-1"
+            className="fixed bottom-0 inset-x-0 pr-surface-2 rounded-b-none rounded-t-3xl p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] space-y-1"
           >
+            <div className="pr-sheet-handle mb-1.5" />
             {showExerciseLibrary && (
               <button
                 type="button"
@@ -1752,6 +1771,18 @@ export const AppLayout: React.FC = () => {
                 <span>{bi('سجل النشاط والكادر', 'Audit & Staff Roles', 'تۆماری چالاکی و ستاف')}</span>
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsMobileMoreOpen(false);
+                setIsPrivacyCoverOpen(true);
+              }}
+              className="min-h-[44px] w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 text-foreground hover:bg-layer-hover cursor-pointer"
+            >
+              <EyeOff className="w-4 h-4 text-primary" />
+              <span>{bi('ستار الخصوصية الفوري', 'Privacy Cover', 'داپۆشەری نهێنی')}</span>
+            </button>
 
             <button
               type="button"

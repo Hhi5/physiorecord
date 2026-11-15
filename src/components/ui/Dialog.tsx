@@ -70,19 +70,20 @@ export const ModalDialog: React.FC<ModalDialogProps> = ({
       onOpenChange={onOpenChange}
       isDismissable={isDismissable}
       isKeyboardDismissDisabled={isKeyboardDismissDisabled ?? !isDismissable}
-      className={`fixed inset-0 z-50 flex ${overlayClassName || 'items-center justify-center p-3 sm:p-6'} bg-slate-950/60 backdrop-blur-xs entering:animate-in entering:fade-in exiting:animate-out exiting:fade-out`.trim()}
+      className={`fixed inset-0 z-50 flex ${overlayClassName || 'items-end sm:items-center justify-center p-0 sm:p-6'} bg-slate-950/60 backdrop-blur-xs entering:animate-in entering:fade-in exiting:animate-out exiting:fade-out`.trim()}
     >
       <Modal
         dir={dir}
-        className={`w-full ${SIZE_CLASSES[size]} max-h-[88dvh] bg-layer border border-layer-line text-foreground rounded-2xl shadow-2xl overflow-hidden flex flex-col outline-none ${className}`.trim()}
+        className={`w-full ${SIZE_CLASSES[size]} max-h-[92dvh] sm:max-h-[88dvh] pr-sheet-panel sm:pr-sheet-panel bg-layer border border-layer-line text-foreground shadow-2xl overflow-hidden flex flex-col outline-none ${className}`.trim()}
       >
         <AriaDialog
           role={role}
           aria-label={title ? undefined : ariaLabel || closeLabel}
-          className="flex flex-col max-h-[88dvh] min-h-0 outline-none"
+          className="flex flex-col max-h-[92dvh] sm:max-h-[88dvh] min-h-0 outline-none"
         >
           {({ close }) => (
             <>
+              <div className="pr-sheet-handle" aria-hidden="true" />
               {(title || !hideCloseButton || headerActions) && (
                 <div className="px-4 sm:px-5 py-3.5 border-b border-card-divider bg-surface/60 flex items-start justify-between gap-3 shrink-0">
                   <div className="min-w-0">

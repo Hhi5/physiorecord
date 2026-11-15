@@ -76,6 +76,7 @@ import {
   FileText,
   CalendarClock,
   MapPin,
+  Wallet,
 } from 'lucide-react';
 
 const InstallmentPlansAgingPanel = lazy(() =>
@@ -741,14 +742,27 @@ export const IraqiFinancialLedgerView: React.FC = () => {
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Page Header: Title + max 2 actions */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg sm:text-xl font-bold text-foreground">
-          {bi(
-            `السجل المالي وحسابات العيادة (${currency.symbolAr})`,
-            `Clinic Financial Ledger (${currency.code})`,
-            `تۆماری دارایی و هەژمارەکانی کلینیک (${currency.symbolAr})`
-          )}
-        </h1>
+      <div className="pr-page-header">
+        <div className="space-y-1 min-w-0">
+          <span className="pr-eyebrow">
+            <Wallet className="size-3.5" />
+            {bi('الإدارة المالية', 'Finance', 'کارگێڕی دارایی')}
+          </span>
+          <h1 className="pr-page-title">
+            {bi(
+              `السجل المالي وحسابات العيادة (${currency.symbolAr})`,
+              `Clinic Financial Ledger (${currency.code})`,
+              `تۆماری دارایی و هەژمارەکانی کلینیک (${currency.symbolAr})`
+            )}
+          </h1>
+          <p className="pr-page-subtitle">
+            {bi(
+              'الفواتير، الكورسات، الديون والتحصيل — كله محسوب على هذا الجهاز.',
+              'Invoices, packages, debt and collection — calculated on this device.',
+              'پسوولە، کۆرس، قەرز و وەرگرتن — هەمووی لەم ئامێرەدا هەژمار دەکرێت.'
+            )}
+          </p>
+        </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -763,7 +777,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               setShowNewExpenseForm(true);
               setShowNewInvoiceForm(false);
             }}
-            className="min-h-[36px] py-2 px-3 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-layer-foreground text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+            className="pr-btn pr-btn-ghost"
           >
             <TrendingDown className="size-3.5 text-rose-700 dark:text-rose-400" />
             <span>{bi('+ تسجيل مصروف', '+ Log Expense', '+ تۆمارکردنی خەرجی')}</span>
@@ -776,7 +790,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               setShowNewInvoiceForm(true);
               setShowNewExpenseForm(false);
             }}
-            className="min-h-[36px] py-2 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-all cursor-pointer whitespace-nowrap"
+            className="pr-btn pr-btn-primary"
           >
             <Plus className="size-4" />
             <span>
@@ -813,16 +827,16 @@ export const IraqiFinancialLedgerView: React.FC = () => {
 
       {/* 4-Column Iraqi Dinar Financial KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-card p-4 sm:p-5 rounded-2xl border border-card-line shadow-2xs flex items-start justify-between gap-3">
+        <div className="pr-kpi p-4 sm:p-5">
           <div className="min-w-0">
-            <span className="text-xs font-semibold text-muted-foreground-1 block leading-snug">
+            <span className="pr-kpi-label block">
               {bi(
                 'إجمالي الفواتير الصادرة (الصافي)',
                 `Total Net Billed (${currency.code})`,
                 'کۆی پسوولە دەرچووەکان (سافی)'
               )}
             </span>
-            <p className="text-lg sm:text-xl xl:text-2xl font-bold text-foreground tabular-nums mt-1 break-words">
+            <p className="pr-kpi-value mt-1 break-words">
               <Money amount={totalBilledIQD} />
             </p>
             <p className="text-xs text-muted-foreground-1 mt-1 tabular-nums">
@@ -835,16 +849,16 @@ export const IraqiFinancialLedgerView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-card p-4 sm:p-5 rounded-2xl border border-card-line shadow-2xs flex items-start justify-between gap-3">
+        <div className="pr-kpi p-4 sm:p-5">
           <div className="min-w-0">
-            <span className="text-xs font-semibold text-muted-foreground-1 block leading-snug">
+            <span className="pr-kpi-label block">
               {bi(
                 'المقبوضات الفعلية بالصندوق',
                 `Total Cash Collected (${currency.code})`,
                 'کۆی پارەی وەرگیراو لە سندووق'
               )}
             </span>
-            <p className="text-lg sm:text-xl xl:text-2xl font-bold text-emerald-700 dark:text-emerald-300 tabular-nums mt-1 break-words">
+            <p className="pr-kpi-value mt-1 break-words text-emerald-700 dark:text-emerald-300">
               <Money amount={totalCollectedIQD} colorize={false} />
             </p>
             <p className="text-xs text-muted-foreground-1 mt-1 leading-snug">
@@ -860,9 +874,9 @@ export const IraqiFinancialLedgerView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-card p-4 sm:p-5 rounded-2xl border border-card-line shadow-2xs flex items-start justify-between gap-3">
+        <div className="pr-kpi p-4 sm:p-5">
           <div className="min-w-0">
-            <span className="text-xs font-semibold text-muted-foreground-1 block leading-snug">
+            <span className="pr-kpi-label block">
               {bi(
                 'إجمالي ديون المرضى المتبقية',
                 `Outstanding Debt (${currency.code})`,
@@ -870,7 +884,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               )}
             </span>
             <p
-              className={`text-lg sm:text-xl xl:text-2xl font-bold tabular-nums mt-1 break-words ${
+              className={`pr-kpi-value mt-1 break-words ${
                 totalDebtIQD > 0 ? 'text-amber-700 dark:text-amber-300' : 'text-foreground'
               }`}
             >
@@ -890,9 +904,9 @@ export const IraqiFinancialLedgerView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-card p-4 sm:p-5 rounded-2xl border border-card-line shadow-2xs flex items-start justify-between gap-3">
+        <div className="pr-kpi p-4 sm:p-5">
           <div className="min-w-0">
-            <span className="text-xs font-semibold text-muted-foreground-1 block leading-snug">
+            <span className="pr-kpi-label block">
               {bi(
                 'صافي التدفق النقدي (بعد المصاريف)',
                 `Net Cash Flow (${currency.code})`,
@@ -900,7 +914,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               )}
             </span>
             <p
-              className={`text-lg sm:text-xl xl:text-2xl font-bold tabular-nums mt-1 break-words ${
+              className={`pr-kpi-value mt-1 break-words ${
                 netCashFlowIQD < 0
                   ? 'text-rose-700 dark:text-rose-300'
                   : 'text-foreground'

@@ -506,7 +506,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
   const ArrowOpenIcon = isRtl ? ArrowUpLeft : ArrowUpRight;
 
   return (
-    <div className="space-y-3 sm:space-y-4 pb-6">
+    <div className="max-w-[85rem] w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-3 sm:space-y-4 pb-6">
       {/* Contextual Onboarding Tip (2.8) */}
       <ContextualTipBanner
         tipId="today_welcome_tip"
@@ -520,11 +520,15 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
       />
 
       {/* Top Mode Switcher Header: Today | End of Day | Full Schedule */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-2xl bg-card border border-card-line shadow-2xs">
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-2">
+      <div className="pr-page-header">
+        <div className="space-y-1 min-w-0">
+          <span className="pr-eyebrow">
+            <Sparkles className="size-3.5" />
+            {bi('مركز قيادة العيادة', 'Clinic command center', 'ناوەندی فەرماندەیی کلینیک')}
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
             {subTab === 'schedule' ? (
-              <h2 className="text-base sm:text-lg font-extrabold text-foreground">
+              <h2 className="pr-page-title">
                 {bi(
                   'جدول المواعيد الأسبوعي وقائمة الانتظار',
                   'Schedule & Recurring Calendar',
@@ -532,7 +536,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                 )}
               </h2>
             ) : (
-              <h1 className="text-base sm:text-lg font-extrabold text-foreground">
+              <h1 className="pr-page-title">
                 {subTab === 'eod'
                   ? bi('إغلاق نهاية اليوم', 'End of Day Closing', 'داخستنی کۆتایی ڕۆژ')
                   : subTab === 'referrals_retention'
@@ -556,15 +560,15 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
               </span>
             )}
           </div>
-          <p className="text-xs text-muted-foreground-1 font-medium">
+          <p className="pr-page-subtitle">
             {formatClinicalDate(today, language)} ·{' '}
             <Num value={queueCounts.total} /> {bi('موعد اليوم', 'visits today', 'سەردانی ئەمڕۆ')}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto min-w-0">
           {/* Sub-navigation pills */}
-          <div className="inline-flex items-center p-1 rounded-xl bg-surface border border-line-2 gap-1">
+          <div className="pr-seg pr-today-tabs min-w-0 flex-1 md:flex-none">
             {(
               [
                 { id: 'today', ar: 'اليوم', en: 'Today', ckb: 'ئەمڕۆ', icon: Clock },
@@ -602,11 +606,8 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                   type="button"
                   data-testid={`today-subtab-${tab.id}`}
                   onClick={() => setSubTab(tab.id)}
-                  className={`min-h-[36px] sm:min-h-[38px] px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
-                    active
-                      ? 'bg-primary text-primary-foreground shadow-xs'
-                      : 'text-muted-foreground-1 hover:text-foreground'
-                  }`}
+                  data-active={active}
+                  className="pr-seg-item"
                 >
                   <Icon className="size-3.5" />
                   <span>{bi(tab.ar, tab.en, tab.ckb)}</span>
@@ -618,7 +619,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
           <button
             type="button"
             onClick={togglePrivacyBlur}
-            className="min-h-[36px] sm:min-h-[38px] px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-xs font-bold text-foreground inline-flex items-center gap-1.5 cursor-pointer"
+            className="pr-btn pr-btn-ghost min-h-[2.25rem] px-3"
             aria-label={bi('إخفاء أو إظهار أسماء المرضى', 'Privacy blur patient names', 'شاردنەوە یان پیشاندانی ناوی نەخۆشان')}
             title={bi('إخفاء أو إظهار أسماء المرضى عن المراجعين', 'Privacy blur patient names', 'لێڵکردنی ناوی نەخۆشان لە سەردانیکەران')}
           >
@@ -645,7 +646,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
         <div className="space-y-3 sm:space-y-4">
           {/* Primary CTA Row: Compact strip on mobile so queue stays above the fold; split cards on desktop */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 sm:gap-3">
-            <div className="md:col-span-7 p-2.5 sm:p-4 rounded-2xl bg-gradient-to-br from-primary/12 via-primary/5 to-card border border-primary/25 flex items-center justify-between gap-2.5 sm:gap-3">
+            <div className="md:col-span-7 pr-hero p-3 sm:p-5 flex items-center justify-between gap-2.5 sm:gap-4">
               <div className="space-y-0.5 min-w-0">
                 <span className="hidden sm:inline-flex text-xs font-bold text-primary items-center gap-1">
                   <Sparkles className="size-3.5" />
@@ -698,7 +699,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                     setShowWalkInModal(true);
                   }
                 }}
-                className="min-h-[40px] sm:min-h-[46px] px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs sm:text-sm font-extrabold inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-sm cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed shrink-0"
+                className="pr-btn pr-btn-primary min-h-[2.5rem] sm:min-h-[2.875rem] px-3.5 sm:px-5 shrink-0"
               >
                 <Play className="size-3.5 sm:size-4 fill-current" />
                 <span>
@@ -709,7 +710,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
               </button>
             </div>
 
-            <div className="md:col-span-5 p-2.5 sm:p-4 rounded-2xl bg-card border border-card-line flex flex-col justify-between gap-2 sm:gap-3">
+            <div className="md:col-span-5 pr-surface p-3 sm:p-5 flex flex-col justify-between gap-2 sm:gap-3">
               <div className="hidden sm:flex items-start justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-extrabold text-foreground">
@@ -730,7 +731,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                   type="button"
                   data-testid="today-walkin-btn"
                   onClick={() => setShowWalkInModal(true)}
-                  className="flex-1 min-h-[40px] sm:min-h-[44px] px-3.5 sm:px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold inline-flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer shadow-xs"
+                  className="pr-btn pr-btn-primary flex-1 min-h-[2.5rem] sm:min-h-[2.75rem] px-3.5 sm:px-4"
                 >
                   <UserPlus className="size-4" />
                   <span>{bi('+ مراجع سريع (10 ثوانٍ)', '+ Walk-In Patient (10s)', '+ سەردانیکەری خێرا (١٠ چرکە)')}</span>
@@ -749,7 +750,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
 
           {/* Pinned & Recent Patients Quick Access Bar (2.6) */}
           {(pinnedPatients.length > 0 || recentPatients.length > 0) && (
-            <div className="p-2.5 sm:p-3.5 rounded-2xl bg-card border border-card-line space-y-2">
+            <div className="p-2.5 sm:p-3.5 pr-surface space-y-2">
               <div className="flex flex-wrap items-center gap-3 text-xs">
                 {pinnedPatients.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -802,7 +803,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
 
           {/* Filter Strip */}
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="inline-flex flex-wrap items-center gap-1.5">
+            <div className="pr-seg pr-seg-wrap">
               {(
                 [
                   { id: 'all', ar: 'الكل', en: 'All', ckb: 'هەموو', count: queueCounts.total },
@@ -815,14 +816,11 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                   key={f.id}
                   type="button"
                   onClick={() => setStatusFilter(f.id)}
-                  className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
-                    statusFilter === f.id
-                      ? 'bg-foreground text-background border-foreground'
-                      : 'bg-card text-foreground border-card-line hover:bg-muted'
-                  }`}
+                  data-active={statusFilter === f.id}
+                  className="pr-seg-item"
                 >
                   <span>{bi(f.ar, f.en, f.ckb)}</span>
-                  <span className="px-1.5 py-0.5 rounded-md bg-muted/50 text-xs font-mono tabular-nums">
+                  <span className="px-1.5 py-0.5 rounded-full bg-surface text-xs font-bold tabular-nums">
                     <Num value={f.count} />
                   </span>
                 </button>
@@ -834,7 +832,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
           {filteredAppointments.length === 0 ? (
             <div
               data-testid="today-empty-state"
-              className="p-8 rounded-2xl bg-card border border-card-line text-center space-y-3"
+              className="pr-surface p-8 text-center space-y-3"
             >
               <Clock className="size-8 text-muted-foreground-2 mx-auto" />
               <div>
@@ -877,11 +875,11 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                   <div
                     key={appt.id}
                     data-testid={`today-row-${appt.id}`}
-                    className="p-4 rounded-2xl bg-card border border-card-line shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-3 hover:border-primary/40 transition-colors"
+                    className="pr-surface pr-surface-interactive p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3"
                   >
                     <div className="flex items-start gap-3 min-w-0">
                       {/* Time Column */}
-                      <div className="px-3 py-2 rounded-xl bg-surface border border-line-2 text-center shrink-0 min-w-[82px]">
+                      <div className="px-3 py-2 rounded-xl bg-[var(--pr-accent-softer)] border border-[var(--pr-accent-line)] text-center shrink-0 min-w-[82px]">
                         <TimeDisplay
                           time={appt.startTime}
                           className="text-sm font-extrabold text-primary justify-center"
@@ -1000,7 +998,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
           {!onboardingSummary.isDismissed ? (
             <div
               data-testid="onboarding-checklist-card"
-              className="p-3.5 sm:p-4 rounded-2xl bg-card border border-primary/30 shadow-2xs space-y-3"
+              className="p-3.5 sm:p-4 pr-surface border-[var(--pr-accent-line)] space-y-3"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -1131,7 +1129,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
         <div className="space-y-4">
           {/* 1. Cash & Collections Summary + 10s Backup Trigger */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-8 p-4 rounded-2xl bg-card border border-card-line space-y-3">
+            <div className="lg:col-span-8 p-4 pr-surface space-y-3">
               <div className="flex items-center justify-between gap-2 border-b border-card-divider pb-2.5">
                 <h2 className="flex items-center gap-2 text-sm font-extrabold text-foreground">
                   <Banknote className="size-4 text-emerald-700 dark:text-emerald-400" />
@@ -1217,7 +1215,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
           </div>
 
           {/* 2. Unsigned / Draft Notes Checklist */}
-          <div className="p-4 rounded-2xl bg-card border border-card-line space-y-3">
+          <div className="p-4 pr-surface space-y-3">
             <div className="flex items-center justify-between gap-2 border-b border-card-divider pb-2.5">
               <h2 className="flex items-center gap-2 text-sm font-extrabold text-foreground">
                 <FileWarning className="size-4 text-amber-700 dark:text-amber-400" />
@@ -1281,7 +1279,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
           </div>
 
           {/* 3. Tomorrow's Schedule + WhatsApp Reminders */}
-          <div className="p-4 rounded-2xl bg-card border border-card-line space-y-3">
+          <div className="p-4 pr-surface space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-card-divider pb-2.5">
               <h2 className="flex items-center gap-2 text-sm font-extrabold text-foreground">
                 <MessageCircle className="size-4 text-emerald-700 dark:text-emerald-400" />

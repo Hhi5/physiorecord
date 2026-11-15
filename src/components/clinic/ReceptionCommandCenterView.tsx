@@ -39,6 +39,7 @@ import {
   ChevronDown,
   Repeat,
   Stethoscope,
+  MonitorCheck,
 } from 'lucide-react';
 
 interface ReceptionCommandCenterViewProps {
@@ -271,14 +272,27 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
       )}
 
       {/* Batch 3 Item 3: Page Header = Title + Max 2 Actions (No repeated hero card or New Patient button) */}
-      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-        <div className="flex items-center gap-2">
-          <h1 className="text-base sm:text-lg font-extrabold text-foreground">
-            {bi('طابور الاستقبال اليومي', "Today's Reception Queue", 'ڕیزی پێشوازیی ئەمڕۆ')}
-          </h1>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold tabular-nums bg-primary/10 text-primary border border-primary/20">
-            <bdi dir="ltr">{formatDateDDMMYYYY(todayDate)}</bdi>
+      <div className="pr-page-header">
+        <div className="space-y-1 min-w-0">
+          <span className="pr-eyebrow">
+            <MonitorCheck className="size-3.5" />
+            {bi('الاستقبال', 'Front desk', 'پێشوازی')}
           </span>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="pr-page-title">
+              {bi('طابور الاستقبال اليومي', "Today's Reception Queue", 'ڕیزی پێشوازیی ئەمڕۆ')}
+            </h1>
+            <span className="pr-chip">
+              <bdi dir="ltr">{formatDateDDMMYYYY(todayDate)}</bdi>
+            </span>
+          </div>
+          <p className="pr-page-subtitle">
+            {bi(
+              'حرّك المرضى بين الانتظار والغرفة والتحصيل بضغطة واحدة.',
+              'Move patients between waiting, room and payment in one tap.',
+              'نەخۆشەکان بە یەک کلیک لە نێوان چاوەڕوانی، ژوور و وەرگرتندا بجووڵێنە.'
+            )}
+          </p>
         </div>
 
         {/* Max 2 Actions */}
@@ -286,10 +300,10 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           <button
             type="button"
             onClick={togglePrivacyBlur}
-            className={`min-h-[36px] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`pr-btn ${
               privacyBlur
                 ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30'
-                : 'bg-layer hover:bg-layer-hover text-foreground border-layer-line'
+                : 'pr-btn-ghost'
             }`}
           >
             {privacyBlur ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -299,7 +313,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           <button
             type="button"
             onClick={() => onNavigateTab('schedule')}
-            className="min-h-[36px] px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-layer hover:bg-layer-hover text-foreground border border-layer-line text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="pr-btn pr-btn-ghost"
           >
             <Calendar className="w-3.5 h-3.5 text-primary" />
             <span>{bi('حجز موعد', 'Book Slot', 'نۆرەگرتن')}</span>
@@ -309,7 +323,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
 
       {/* Batch 3 Item 4: Compact 4-Stat Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 tabular-nums">
-        <div className="bg-card border border-card-line rounded-xl p-2.5 sm:p-3 flex flex-col justify-between gap-1 shadow-2xs">
+        <div className="pr-kpi p-2.5 sm:p-3 flex-col justify-between gap-1">
           <span className="text-xs font-semibold text-muted-foreground-1 leading-snug">
             {bi('مواعيد اليوم', "Today's Queue", 'نۆرەکانی ئەمڕۆ')}
           </span>
@@ -323,7 +337,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           </div>
         </div>
 
-        <div className="bg-card border border-card-line rounded-xl p-2.5 sm:p-3 flex flex-col justify-between gap-1 shadow-2xs">
+        <div className="pr-kpi p-2.5 sm:p-3 flex-col justify-between gap-1">
           <span className="text-xs font-semibold text-muted-foreground-1 leading-snug">
             {bi('الانتظار / الجلسات', 'Waiting / In Room', 'چاوەڕوانی / دانیشتن')}
           </span>
@@ -338,7 +352,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           </div>
         </div>
 
-        <div className="bg-card border border-card-line rounded-xl p-2.5 sm:p-3 flex flex-col justify-between gap-1 shadow-2xs">
+        <div className="pr-kpi p-2.5 sm:p-3 flex-col justify-between gap-1">
           <span className="text-xs font-semibold text-muted-foreground-1 leading-snug">
             {bi('مقبوضات اليوم', 'Collected Today', 'داهاتی ئەمڕۆ')}
           </span>
@@ -353,7 +367,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           </div>
         </div>
 
-        <div className="bg-card border border-card-line rounded-xl p-2.5 sm:p-3 flex flex-col justify-between gap-1 shadow-2xs">
+        <div className="pr-kpi p-2.5 sm:p-3 flex-col justify-between gap-1">
           <span className="text-xs font-semibold text-muted-foreground-1 leading-snug">
             {bi('ذمم متبقية', 'Receivables', 'قەرزە ماوەکان')}
           </span>

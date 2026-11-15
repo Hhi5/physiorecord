@@ -303,9 +303,9 @@ export function getDisplayCssVariables(
       : '80rem';
 
   const radiusSmall =
-    prefs.cornerRadius === 'sharp' ? '0.25rem' : prefs.cornerRadius === 'rounded' ? '0.75rem' : '0.5rem';
+    prefs.cornerRadius === 'sharp' ? '0.25rem' : prefs.cornerRadius === 'rounded' ? '0.875rem' : '0.625rem';
   const radiusLarge =
-    prefs.cornerRadius === 'sharp' ? '0.375rem' : prefs.cornerRadius === 'rounded' ? '1.125rem' : '0.75rem';
+    prefs.cornerRadius === 'sharp' ? '0.5rem' : prefs.cornerRadius === 'rounded' ? '1.375rem' : '1rem';
 
   const densityPadScale =
     prefs.density === 'compact' ? '0.82' : prefs.density === 'comfortable' ? '1.18' : '1';

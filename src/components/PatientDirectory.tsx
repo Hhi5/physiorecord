@@ -39,6 +39,7 @@ import {
   List,
   GitMerge,
   X,
+  Users,
 } from 'lucide-react';
 
 const PatientMergeModal = lazy(() => import('./clinic/PatientMergeModal'));
@@ -206,20 +207,33 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Batch 3 Item 3: Page Header = Title + Max 2 Actions (No repeated hero card or duplicate New Patient button) */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <h1 className="text-base sm:text-lg font-extrabold text-foreground">
-            {bi('سجل المرضى', 'Patient Directory')}
-          </h1>
-          <span className="py-0.5 px-2.5 rounded-full text-xs font-mono font-bold tabular-nums bg-primary/10 text-primary">
-            <Num value={activePatients.length} />
+      <div className="pr-page-header">
+        <div className="space-y-1 min-w-0">
+          <span className="pr-eyebrow">
+            <Users className="size-3.5" />
+            {bi('سجل العيادة', 'Clinic registry', 'تۆمارگەی کلینیک')}
           </span>
-          {redFlagCount > 0 && (
-            <span className="py-0.5 px-2.5 rounded-full text-xs font-bold tabular-nums bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 inline-flex items-center gap-1">
-              <AlertCircle className="size-3.5" />
-              <Num value={redFlagCount} /> {bi('علامات حمراء', 'red flags')}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="pr-page-title">
+              {bi('سجل المرضى', 'Patient Directory')}
+            </h1>
+            <span className="pr-chip">
+              <Num value={activePatients.length} />{' '}
+              {bi('ملف نشط', 'active', 'چالاک')}
             </span>
-          )}
+            {redFlagCount > 0 && (
+              <span className="py-0.5 px-2.5 rounded-full text-xs font-bold tabular-nums bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 inline-flex items-center gap-1">
+                <AlertCircle className="size-3.5" />
+                <Num value={redFlagCount} /> {bi('علامات حمراء', 'red flags')}
+              </span>
+            )}
+          </div>
+          <p className="pr-page-subtitle">
+            {bi(
+              'ابحث، صنّف، وافتح الملف السريري بضغطة واحدة.',
+              'Search, sort, and open a clinical chart in one tap.'
+            )}
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -284,20 +298,17 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
       )}
 
       {/* Unified Toolbar Card: Tabs, View Mode, Search & Filters */}
-      <div className="bg-card border border-card-line rounded-2xl shadow-2xs overflow-hidden">
+      <div className="pr-surface overflow-hidden">
         {/* Top Row: Segmented Tabs & View Switcher */}
-        <div className="px-4 sm:px-5 py-3.5 border-b border-card-divider flex flex-wrap items-center justify-between gap-3 bg-muted/30">
-          <div role="tablist" aria-label={bi('حالة سجلات المرضى', 'Patient Record Status')} className="inline-flex bg-surface border border-line-2 rounded-xl p-1 gap-1">
+        <div className="px-4 sm:px-5 py-3 border-b border-card-divider flex flex-wrap items-center justify-between gap-3 bg-surface/40">
+          <div role="tablist" aria-label={bi('حالة سجلات المرضى', 'Patient Record Status')} className="pr-seg">
             <button
               type="button"
               role="tab"
               aria-selected={activeTab === 'active'}
               onClick={() => setActiveTab('active')}
-              className={`py-1.5 px-3 min-h-[36px] inline-flex items-center gap-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                activeTab === 'active'
-                  ? 'bg-layer text-primary shadow-2xs border border-layer-line'
-                  : 'text-muted-foreground-1 hover:text-foreground'
-              }`}
+              data-active={activeTab === 'active'}
+              className="pr-seg-item"
             >
               <span>{bi('المرضى النشطون', 'Active Patients')}</span>
               <span className="py-0.5 px-2 rounded-full text-xs font-mono tabular-nums bg-primary/10 text-primary">
@@ -310,11 +321,8 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
               role="tab"
               aria-selected={activeTab === 'archived'}
               onClick={() => setActiveTab('archived')}
-              className={`py-1.5 px-3 min-h-[36px] inline-flex items-center gap-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                activeTab === 'archived'
-                  ? 'bg-layer text-amber-700 dark:text-amber-400 shadow-2xs border border-layer-line'
-                  : 'text-muted-foreground-1 hover:text-foreground'
-              }`}
+              data-active={activeTab === 'archived'}
+              className="pr-seg-item"
             >
               <Archive className="size-3.5" />
               <span>{bi('سجل الأرشيف', 'Archived Records')}</span>
@@ -325,15 +333,12 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
           </div>
 
           {/* Grid vs Table Toggle */}
-          <div className="inline-flex items-center gap-1 bg-surface p-1 rounded-xl border border-line-2">
+          <div className="pr-seg">
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`py-1.5 px-2.5 min-h-[36px] rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
-                viewMode === 'grid'
-                  ? 'bg-layer text-primary shadow-2xs border border-layer-line'
-                  : 'text-muted-foreground-1 hover:text-foreground'
-              }`}
+              data-active={viewMode === 'grid'}
+              className="pr-seg-item"
             >
               <LayoutGrid className="size-3.5" />
               <span>{bi('بطاقات', 'Cards')}</span>
@@ -341,11 +346,8 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`py-1.5 px-2.5 min-h-[36px] rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
-                viewMode === 'table'
-                  ? 'bg-layer text-primary shadow-2xs border border-layer-line'
-                  : 'text-muted-foreground-1 hover:text-foreground'
-              }`}
+              data-active={viewMode === 'table'}
+              className="pr-seg-item"
             >
               <List className="size-3.5" />
               <span>{bi('جدول سريري', 'Clinical Table')}</span>
@@ -370,7 +372,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                 'بحث فوري باسم المريض، رقم الهاتف، التشخيص، أو التاريخ الطبي...',
                 'Instant search by name, phone, diagnosis, or clinical history...'
               )}
-              className="py-2.5 ps-10 pe-16 block w-full bg-layer border border-layer-line rounded-xl text-xs sm:text-sm text-foreground placeholder:text-muted-foreground-1 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
+              className="pr-field ps-10 pe-16 rounded-full"
             />
             <Search
               className="size-4 text-muted-foreground-1 absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -393,7 +395,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
               value={filterGender}
               onChange={(e) => setFilterGender(e.target.value as 'all' | 'male' | 'female')}
               aria-label={bi('تصفية حسب الجنس', 'Filter by gender')}
-              className="py-2.5 px-3 rounded-xl border border-layer-line text-xs sm:text-sm font-medium text-foreground bg-layer focus:outline-none focus:border-primary"
+              className="pr-field w-auto rounded-full"
             >
               <option value="all">{bi('كافة الفئات', 'All Genders')}</option>
               <option value="male">{bi('ذكور', 'Male')}</option>
@@ -422,7 +424,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
 
       {/* Pinned & Recent Patients Quick Access (Phase 2.6 Smart Memory) */}
       {activeTab === 'active' && (pinnedPatients.length > 0 || recentPatients.length > 0) && (
-        <div className="p-3.5 rounded-2xl bg-card border border-card-line shadow-2xs flex flex-wrap items-center gap-2 text-xs">
+        <div className="pr-surface p-3 flex flex-wrap items-center gap-2 text-xs">
           {pinnedPatients.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300 font-bold me-1">
@@ -467,7 +469,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
 
       {/* Directory Content */}
       {loading ? (
-        <div className="p-12 text-center text-muted-foreground-1 bg-card rounded-2xl border border-card-line shadow-2xs">
+        <div className="pr-surface p-12 text-center text-muted-foreground-1">
           <p className="text-sm font-medium">
             {bi(
               'جاري فك تشفير وتحميل السجلات السريرية المعتمدة...',
@@ -478,7 +480,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
       ) : filteredPatients.length > 0 ? (
         viewMode === 'table' ? (
           /* Enterprise Clinical Table View */
-          <div className="bg-card rounded-2xl border border-card-line overflow-hidden shadow-2xs">
+          <div className="pr-surface overflow-hidden">
             <div
               ref={patientVirtualWindow.containerRef}
               onScroll={patientVirtualWindow.onScroll}
@@ -492,7 +494,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
               }
             >
               <table className="min-w-full divide-y divide-card-divider text-start text-xs">
-                <thead className="bg-muted/50 sticky top-0 z-10">
+                <thead className="bg-surface/70 sticky top-0 z-10 backdrop-blur-sm">
                   <tr className="text-muted-foreground-1 font-semibold text-xs">
                     <th scope="col" className="py-3.5 px-4 text-start">{bi('المريض', 'Patient')}</th>
                     <th scope="col" className="py-3.5 px-4 text-start">{bi('الجنس / العمر', 'Demographics')}</th>
@@ -528,7 +530,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                       >
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <span className="size-9 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-xs shrink-0">
+                            <span className="pr-avatar size-9 text-xs">
                               {(primaryName || 'P').charAt(0)}
                             </span>
                             <div>
@@ -673,13 +675,12 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
               return (
                 <div
                   key={patient.id}
-                  className="bg-card rounded-2xl p-5 border border-card-line hover:border-primary/60 hover:shadow-md transition-all flex flex-col justify-between group"
+                  className="pr-surface pr-surface-interactive p-5 flex flex-col justify-between group"
                 >
                   <div
                     onClick={() => setQuickViewEntry({ patient, index: idx })}
                     role="button"
                     tabIndex={0}
-                    aria-label={primaryName}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
@@ -691,7 +692,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                     {/* Card Header */}
                     <div className="flex items-center justify-between gap-3 mb-3.5">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="size-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-sm shrink-0">
+                        <div className="pr-avatar size-10 text-sm">
                           {(primaryName || 'P').charAt(0)}
                         </div>
                         <div className="min-w-0">
