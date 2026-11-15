@@ -23,14 +23,14 @@
   --text-2xl: 1.5rem;      /* 24px */
   --text-3xl: 1.875rem;    /* 30px */
 
-  /* Strict Radius Tokens (8px / 12px) */
-  --radius-xs: 0.375rem;
-  --radius-sm: 0.5rem;     /* 8px */
-  --radius-md: 0.5rem;     /* 8px */
-  --radius-lg: 0.5rem;     /* 8px */
-  --radius-xl: 0.75rem;    /* 12px */
-  --radius-2xl: 0.75rem;   /* 12px */
-  --radius-3xl: 0.75rem;   /* 12px */
+  /* Modern Radius Scale (10 / 12 / 16 / 20px) */
+  --radius-xs: 0.375rem;   /* 6px  */
+  --radius-sm: 0.625rem;   /* 10px */
+  --radius-md: 0.75rem;    /* 12px */
+  --radius-lg: 1rem;       /* 16px */
+  --radius-xl: 1rem;       /* 16px */
+  --radius-2xl: 1.25rem;   /* 20px */
+  --radius-3xl: 1.5rem;    /* 24px */
 }
 
 /* Batch 4 Item 1 & 2: Design Tokens (Spacing, 8 Neutral Grays, 4 Text Roles, 5 Single-Meaning Semantic Colors) */
@@ -53,15 +53,15 @@
   --space-24: 1.5rem;
   --space-32: 2rem;
 
-  /* Radius tokens (8px / 12px) */
-  --radius-sm: var(--app-radius-sm, 0.5rem);
-  --radius-md: var(--app-radius-sm, 0.5rem);
-  --radius-lg: var(--app-radius-sm, 0.5rem);
-  --radius-xl: var(--app-radius-lg, 0.75rem);
-  --radius-2xl: var(--app-radius-lg, 0.75rem);
-  --radius-3xl: var(--app-radius-lg, 0.75rem);
-  --radius-8: var(--app-radius-sm, 0.5rem);
-  --radius-12: var(--app-radius-lg, 0.75rem);
+  /* Radius tokens (10px control / 16px surface) */
+  --radius-sm: var(--app-radius-sm, 0.625rem);
+  --radius-md: var(--app-radius-sm, 0.625rem);
+  --radius-lg: calc(var(--app-radius-lg, 1rem) * 0.75);
+  --radius-xl: calc(var(--app-radius-lg, 1rem) * 0.875);
+  --radius-2xl: var(--app-radius-lg, 1rem);
+  --radius-3xl: calc(var(--app-radius-lg, 1rem) * 1.5);
+  --radius-8: var(--app-radius-sm, 0.625rem);
+  --radius-12: var(--app-radius-lg, 1rem);
 
   /* <= 8 Neutral Grays */
   --neutral-50: var(--color-clinical-default-gray-50);
@@ -206,9 +206,9 @@
   summary:focus-visible,
   [role="button"]:focus-visible,
   [tabindex]:not([tabindex="-1"]):focus-visible {
-    outline: 2px solid var(--primary) !important;
-    outline-offset: 2px !important;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--background) 85%, transparent) !important;
+    outline: 2px solid color-mix(in oklab, var(--primary-500) 85%, var(--background)) !important;
+    outline-offset: 1px !important;
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary-500) 16%, transparent) !important;
   }
 
   /* Desktop and Mobile Responsive Interactive Targets (WCAG 2.2 AA) */
@@ -423,7 +423,7 @@ html:not(.dark) .text-emerald-700 {
 }
 html:not(.dark) .text-sky-600,
 html:not(.dark) .text-sky-700 {
-  color: #0369a1 !important;
+  color: #075985 !important;
 }
 
 html.high-contrast {
@@ -530,4 +530,712 @@ html.content-width-narrow .app-content-shell .max-w-7xl {
     break-inside: avoid;
     page-break-inside: avoid;
   }
+}
+
+/* ============================================================================
+   PhysioRecord — Modern App Shell (Design System v2)
+   A calm, layered, product-grade surface language:
+   soft canvas → white cards → hairline borders → one clear accent per screen.
+   All values derive from existing semantic theme tokens so every theme
+   (Clinical / Ocean / Royal / Emerald) and dark mode stay in sync.
+   ============================================================================ */
+
+:root {
+  /* Elevation (light) */
+  --pr-shadow-1: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.03);
+  --pr-shadow-2: 0 2px 6px -1px rgba(15, 23, 42, 0.06), 0 8px 24px -8px rgba(15, 23, 42, 0.08);
+  --pr-shadow-3: 0 12px 32px -12px rgba(15, 23, 42, 0.22), 0 4px 10px -4px rgba(15, 23, 42, 0.08);
+  --pr-shadow-primary: 0 8px 22px -10px color-mix(in oklab, var(--primary-600) 65%, transparent);
+
+  /* Hairlines & glass */
+  --pr-hairline: color-mix(in oklab, var(--border) 62%, transparent);
+  --pr-hairline-strong: color-mix(in oklab, var(--border) 100%, transparent);
+  --pr-glass: color-mix(in oklab, var(--background-plain) 78%, transparent);
+  --pr-glass-strong: color-mix(in oklab, var(--background-plain) 92%, transparent);
+
+  /* Radii aliases (respect the user's corner-radius preference) */
+  --pr-radius-control: var(--radius-sm);
+  --pr-radius-card: var(--radius-lg);
+  --pr-radius-hero: var(--radius-2xl);
+
+  /* Accent tints used by chips, icons and active navigation */
+  --pr-accent-soft: color-mix(in oklab, var(--primary-500) 12%, var(--background-plain));
+  --pr-accent-softer: color-mix(in oklab, var(--primary-500) 7%, var(--background-plain));
+  --pr-accent-line: color-mix(in oklab, var(--primary-500) 26%, transparent);
+}
+
+.dark,
+[data-theme].dark {
+  --pr-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --pr-shadow-2: 0 2px 8px -2px rgba(0, 0, 0, 0.55), 0 10px 28px -12px rgba(0, 0, 0, 0.7);
+  --pr-shadow-3: 0 16px 40px -16px rgba(0, 0, 0, 0.85), 0 4px 12px -4px rgba(0, 0, 0, 0.5);
+  --pr-hairline: color-mix(in oklab, var(--border) 72%, transparent);
+  --pr-glass: color-mix(in oklab, var(--background) 72%, transparent);
+  --pr-glass-strong: color-mix(in oklab, var(--background) 90%, transparent);
+  --pr-accent-soft: color-mix(in oklab, var(--primary-400) 18%, var(--background));
+  --pr-accent-softer: color-mix(in oklab, var(--primary-400) 10%, var(--background));
+}
+
+/* ---------- Canvas: soft ambient gradient instead of a flat gray page ---------- */
+body {
+  background-image:
+    radial-gradient(
+      1100px 620px at 100% -8%,
+      color-mix(in oklab, var(--primary-400) 13%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      900px 520px at -10% 4%,
+      color-mix(in oklab, var(--primary-500) 8%, transparent),
+      transparent 58%
+    );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+.dark body,
+[data-theme].dark body {
+  background-image:
+    radial-gradient(
+      1100px 620px at 100% -8%,
+      color-mix(in oklab, var(--primary-400) 16%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      900px 520px at -10% 4%,
+      color-mix(in oklab, var(--primary-600) 10%, transparent),
+      transparent 58%
+    );
+}
+
+@layer components {
+/* ---------- Surfaces ---------- */
+.pr-surface {
+  background-color: var(--card);
+  border: 1px solid var(--pr-hairline);
+  border-radius: var(--pr-radius-card);
+  box-shadow: var(--pr-shadow-1);
+}
+.pr-surface-2 {
+  background-color: var(--card);
+  border: 1px solid var(--pr-hairline);
+  border-radius: var(--pr-radius-card);
+  box-shadow: var(--pr-shadow-2);
+}
+.pr-surface-flat {
+  background-color: var(--card);
+  border: 1px solid var(--pr-hairline);
+  border-radius: var(--pr-radius-card);
+}
+.pr-surface-interactive {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease;
+}
+.pr-surface-interactive:hover {
+  border-color: var(--pr-accent-line);
+  box-shadow: var(--pr-shadow-2);
+  transform: translateY(-1px);
+}
+.pr-inset {
+  background-color: var(--pr-accent-softer);
+  border: 1px solid var(--pr-hairline);
+  border-radius: var(--radius-md);
+}
+
+/* ---------- Typography rhythm ---------- */
+.pr-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: var(--font-size-12);
+  font-weight: 700;
+  color: var(--primary-700);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.dark .pr-eyebrow,
+[data-theme].dark .pr-eyebrow {
+  color: var(--primary-300);
+}
+.pr-page-title {
+  font-size: clamp(1.25rem, 1.55vw + 0.7rem, 1.625rem);
+  line-height: 1.3;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--foreground);
+}
+.pr-page-subtitle {
+  font-size: var(--font-size-14);
+  line-height: 1.5;
+  color: var(--muted-foreground-1);
+  font-weight: 500;
+}
+.pr-section-title {
+  font-size: var(--font-size-14);
+  font-weight: 800;
+  color: var(--foreground);
+  letter-spacing: -0.005em;
+}
+
+/* ---------- Page header block ---------- */
+.pr-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.875rem;
+  padding: 1rem 1.125rem;
+  background-color: var(--card);
+  border: 1px solid var(--pr-hairline);
+  border-radius: var(--pr-radius-hero);
+  box-shadow: var(--pr-shadow-1);
+  position: relative;
+  overflow: hidden;
+}
+.pr-page-header::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block: 0;
+  width: 3px;
+  background: linear-gradient(
+    to bottom,
+    var(--primary-400),
+    color-mix(in oklab, var(--primary-600) 80%, transparent)
+  );
+  opacity: 0.9;
+}
+.pr-hero {
+  position: relative;
+  border-radius: var(--pr-radius-hero);
+  border: 1px solid var(--pr-accent-line);
+  background:
+    radial-gradient(
+      120% 140% at 100% 0%,
+      color-mix(in oklab, var(--primary-400) 26%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--primary-500) 10%, var(--card)),
+      var(--card) 62%
+    );
+  box-shadow: var(--pr-shadow-1);
+}
+
+/* ---------- Icon chips / KPI tiles ---------- */
+.pr-icon-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    145deg,
+    color-mix(in oklab, var(--primary-500) 16%, var(--card)),
+    color-mix(in oklab, var(--primary-500) 6%, var(--card))
+  );
+  color: var(--primary-700);
+  border: 1px solid color-mix(in oklab, var(--primary-500) 18%, transparent);
+}
+.dark .pr-icon-chip,
+[data-theme].dark .pr-icon-chip {
+  color: var(--primary-200);
+}
+.pr-kpi {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--pr-hairline);
+  border-radius: var(--pr-radius-card);
+  box-shadow: var(--pr-shadow-1);
+  transition: box-shadow 0.18s ease, border-color 0.18s ease;
+  min-width: 0;
+}
+.pr-kpi:hover {
+  box-shadow: var(--pr-shadow-2);
+  border-color: var(--pr-accent-line);
+}
+.pr-kpi-label {
+  font-size: var(--font-size-12);
+  font-weight: 600;
+  color: var(--muted-foreground-1);
+  line-height: 1.4;
+}
+.pr-kpi-value {
+  font-size: clamp(1.0625rem, 0.5vw + 0.95rem, 1.375rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+.pr-kpi-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: var(--font-size-12);
+  font-weight: 700;
+}
+
+/* ---------- Buttons ---------- */
+.pr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--pr-radius-control);
+  font-size: var(--font-size-12);
+  font-weight: 700;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.18s ease, background-color 0.18s ease,
+    border-color 0.18s ease, color 0.18s ease;
+  white-space: nowrap;
+}
+.pr-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.995);
+}
+.pr-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none;
+}
+.pr-btn-primary {
+  color: var(--primary-foreground);
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--primary-500) 92%, var(--background-plain)),
+    var(--primary-700)
+  );
+  border-color: color-mix(in oklab, var(--primary-700) 70%, transparent);
+  box-shadow: var(--pr-shadow-primary);
+}
+.pr-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 12px 26px -12px color-mix(in oklab, var(--primary-700) 85%, transparent);
+  filter: saturate(1.05) brightness(1.02);
+}
+.pr-btn-soft {
+  color: var(--primary-800);
+  background-color: var(--pr-accent-soft);
+  border-color: var(--pr-accent-line);
+}
+.pr-btn-soft:hover:not(:disabled) {
+  background-color: color-mix(in oklab, var(--primary-500) 18%, var(--card));
+}
+.dark .pr-btn-soft,
+[data-theme].dark .pr-btn-soft {
+  color: var(--primary-100);
+}
+.pr-btn-ghost {
+  color: var(--foreground);
+  background-color: var(--layer);
+  border-color: var(--pr-hairline);
+  box-shadow: var(--pr-shadow-1);
+}
+.pr-btn-ghost:hover:not(:disabled) {
+  background-color: var(--layer-hover);
+  border-color: var(--pr-hairline-strong);
+}
+.pr-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--pr-hairline);
+  background-color: var(--layer);
+  color: var(--foreground);
+  box-shadow: var(--pr-shadow-1);
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+.pr-icon-btn:hover {
+  background-color: var(--layer-hover);
+  color: var(--primary-700);
+  border-color: var(--pr-accent-line);
+}
+
+/* ---------- Chips, pills, segmented controls ---------- */
+.pr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.25rem 0.5625rem;
+  border-radius: 9999px;
+  font-size: var(--font-size-12);
+  font-weight: 700;
+  line-height: 1.35;
+  background-color: var(--pr-accent-softer);
+  color: var(--primary-800);
+  border: 1px solid var(--pr-accent-line);
+  white-space: nowrap;
+}
+.dark .pr-chip,
+[data-theme].dark .pr-chip {
+  color: var(--primary-100);
+}
+.pr-chip-neutral {
+  background-color: var(--surface);
+  color: var(--muted-foreground-2);
+  border-color: var(--pr-hairline);
+}
+.pr-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 9999px;
+  background-color: var(--surface);
+  border: 1px solid var(--pr-hairline);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pr-seg::-webkit-scrollbar {
+  display: none;
+}
+.pr-seg-wrap {
+  flex-wrap: wrap;
+  border-radius: var(--radius-lg);
+  align-content: center;
+}
+.pr-seg-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 0.375rem;
+  min-height: 2rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  font-size: var(--font-size-12);
+  font-weight: 700;
+  color: var(--muted-foreground-1);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+.pr-seg-item:hover {
+  color: var(--foreground);
+  background-color: var(--layer-hover);
+}
+.pr-seg-item[data-active="true"],
+.pr-seg-item[aria-selected="true"] {
+  background-color: var(--card);
+  color: var(--primary-800);
+  border-color: var(--pr-hairline);
+  box-shadow: var(--pr-shadow-1);
+}
+.dark .pr-seg-item[data-active="true"],
+[data-theme].dark .pr-seg-item[data-active="true"] {
+  color: var(--primary-100);
+}
+
+/* ---------- Inputs ---------- */
+.pr-field {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--pr-radius-control);
+  border: 1px solid var(--pr-hairline-strong);
+  background-color: var(--layer);
+  color: var(--foreground);
+  font-size: var(--font-size-14);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+.pr-field:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary-500) 18%, transparent);
+}
+.pr-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid var(--pr-hairline);
+  background-color: var(--surface);
+  color: var(--muted-foreground-1);
+  font-size: var(--font-size-12);
+  cursor: pointer;
+  transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+}
+.pr-search:hover {
+  background-color: var(--card);
+  border-color: var(--pr-accent-line);
+  box-shadow: var(--pr-shadow-1);
+}
+
+/* ---------- Top bar ---------- */
+.pr-topbar {
+  background-color: var(--pr-glass);
+  border-bottom: 1px solid var(--pr-hairline);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+}
+.pr-topbar .pr-icon-btn,
+.pr-topbar .pr-search {
+  box-shadow: none;
+}
+
+/* ---------- Sidebar ---------- */
+.pr-sidebar {
+  background-color: var(--pr-glass-strong);
+  border-inline-end: 1px solid var(--pr-hairline);
+  -webkit-backdrop-filter: saturate(160%) blur(18px);
+  backdrop-filter: saturate(160%) blur(18px);
+}
+.pr-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-md);
+  color: var(--primary-foreground);
+  background-image: linear-gradient(
+    140deg,
+    color-mix(in oklab, var(--primary-400) 96%, white),
+    var(--primary-700)
+  );
+  box-shadow: var(--pr-shadow-primary);
+  flex: 0 0 auto;
+}
+.pr-nav-label {
+  padding: 0 0.75rem;
+  font-size: var(--font-size-12);
+  font-weight: 700;
+  color: var(--muted-foreground-2);
+  opacity: 0.85;
+  letter-spacing: 0.04em;
+}
+.pr-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: 2.625rem;
+  padding: 0.5rem 0.6875rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-14);
+  font-weight: 600;
+  color: var(--sidebar-nav-foreground);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.pr-nav-item:hover {
+  background-color: var(--pr-accent-softer);
+  color: var(--foreground);
+}
+.pr-nav-item[data-active="true"] {
+  background-color: var(--pr-accent-soft);
+  border-color: var(--pr-accent-line);
+  color: var(--primary-800);
+  font-weight: 800;
+  box-shadow: var(--pr-shadow-1);
+}
+.dark .pr-nav-item[data-active="true"],
+[data-theme].dark .pr-nav-item[data-active="true"] {
+  color: var(--primary-100);
+}
+.pr-nav-item[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: -0.0625rem;
+  top: 22%;
+  bottom: 22%;
+  width: 3px;
+  border-radius: 9999px;
+  background-color: var(--primary-600);
+}
+
+/* ---------- Mobile bottom tab bar ---------- */
+.pr-tabbar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding: 0.375rem 0.5rem calc(0.375rem + env(safe-area-inset-bottom, 0px));
+  background-color: color-mix(in oklab, var(--background-plain) 97%, transparent);
+  border-top: 1px solid var(--pr-hairline);
+  border-start-start-radius: var(--radius-2xl);
+  border-start-end-radius: var(--radius-2xl);
+  box-shadow: 0 -8px 30px -18px rgba(15, 23, 42, 0.35);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  backdrop-filter: saturate(180%) blur(18px);
+}
+.pr-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1875rem;
+  min-height: 3rem;
+  border-radius: var(--radius-md);
+  color: var(--muted-foreground-1);
+  font-size: var(--font-size-12);
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.16s ease, background-color 0.16s ease;
+}
+.pr-tab[data-active="true"] {
+  color: var(--primary-800);
+  background-color: var(--pr-accent-soft);
+}
+.dark .pr-tab[data-active="true"],
+[data-theme].dark .pr-tab[data-active="true"] {
+  color: var(--primary-100);
+}
+.pr-tab-icon {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* ---------- Mobile bottom sheet (modals on phones) ---------- */
+.pr-sheet-panel {
+  width: 100%;
+  max-height: 92dvh;
+  border-start-start-radius: var(--radius-2xl);
+  border-start-end-radius: var(--radius-2xl);
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+  border-bottom: none;
+  box-shadow: 0 -18px 50px -20px rgba(15, 23, 42, 0.4);
+}
+.pr-sheet-handle {
+  width: 2.5rem;
+  height: 0.25rem;
+  border-radius: 9999px;
+  background-color: var(--pr-hairline-strong);
+  margin: 0.5rem auto 0;
+  flex: 0 0 auto;
+}
+@media (min-width: 640px) {
+  .pr-sheet-panel {
+    border-radius: var(--pr-radius-hero);
+    border-bottom: 1px solid var(--layer-line);
+  }
+  .pr-sheet-handle {
+    display: none;
+  }
+}
+
+/* ---------- Avatars ---------- */
+.pr-avatar {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  border-radius: 9999px;
+  font-size: var(--font-size-12);
+  font-weight: 800;
+  color: var(--primary-foreground);
+  background-image: linear-gradient(
+    140deg,
+    color-mix(in oklab, var(--primary-500) 85%, white),
+    var(--primary-800)
+  );
+  border: 2px solid var(--card);
+  box-shadow: var(--pr-shadow-1);
+  letter-spacing: 0;
+}
+
+/* ---------- Lists & rows ---------- */
+.pr-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  transition: background-color 0.16s ease;
+}
+.pr-row:hover {
+  background-color: var(--pr-accent-softer);
+}
+.pr-divider {
+  height: 1px;
+  background-color: var(--pr-hairline);
+  border: 0;
+}
+
+/* ---------- Utilities ---------- */
+.pr-glass {
+  background-color: var(--pr-glass);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  backdrop-filter: saturate(160%) blur(14px);
+}
+.pr-gradient-text {
+  background-image: linear-gradient(135deg, var(--primary-600), var(--primary-400));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.pr-grid-auto {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+.pr-hide-scrollbar {
+  scrollbar-width: none;
+}
+.pr-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Respect the device / accessibility preference for reduced effects */
+html.reduce-transparency .pr-topbar,
+html.reduce-transparency .pr-sidebar,
+html.reduce-transparency .pr-tabbar,
+html.reduce-transparency .pr-glass {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background-color: var(--background-plain) !important;
+}
+html.low-end-device .pr-surface,
+html.low-end-device .pr-kpi {
+  box-shadow: none;
+}
+
+/* Compact phones: keep the daily-mode tab strip on ONE row by showing
+   labels only for the active tab (icon-only for the rest), and turn
+   wrapping filter strips into a tidy 2x2 grid. */
+@media (max-width: 439px) {
+  .pr-today-tabs .pr-seg-item > span {
+    display: none;
+  }
+  .pr-today-tabs .pr-seg-item[data-active="true"] > span {
+    display: inline;
+  }
+  .pr-today-tabs .pr-seg-item {
+    padding-inline: 0.625rem;
+  }
+  .pr-seg-wrap {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .pr-seg-wrap .pr-seg-item {
+    justify-content: center;
+  }
+}
 }

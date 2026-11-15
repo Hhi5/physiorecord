@@ -314,11 +314,11 @@ export const LockScreen: React.FC = () => {
   if (generatedRecoveryKey) {
     return (
       <main
-        className="min-h-screen bg-background-1 flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8"
+        className="min-h-screen bg-transparent flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8"
         dir={isRtl ? 'rtl' : 'ltr'}
       >
         <div className="sm:mx-auto sm:w-full sm:max-w-lg">
-          <div className="bg-card py-6 px-6 shadow-xl rounded-2xl border border-card-line space-y-5">
+          <div className="pr-surface-2 py-6 px-6 space-y-5">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                 <Key className="w-5 h-5" />
@@ -461,13 +461,13 @@ export const LockScreen: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen bg-background-1 text-foreground flex flex-col justify-between relative overflow-hidden transition-colors"
+      className="min-h-screen bg-transparent text-foreground flex flex-col justify-between relative overflow-hidden transition-colors"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Top Minimal Utility Bar */}
       <header className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between z-10">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
+          <div className="pr-brand-mark">
             <Activity className="w-5 h-5" />
           </div>
           <div>
@@ -514,7 +514,7 @@ export const LockScreen: React.FC = () => {
       {/* Minimal Centered Card */}
       <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-6">
         <div className="w-full max-w-md">
-          <div className="bg-card py-7 px-6 sm:px-8 shadow-lg rounded-2xl border border-card-line">
+          <div className="pr-surface-2 py-7 px-6 sm:px-8">
             <div className="flex items-center gap-3 pb-5 mb-5 border-b border-card-divider">
               <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-xs shrink-0">
                 {isSetup ? <ShieldCheck className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
