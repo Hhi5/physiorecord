@@ -63,12 +63,12 @@ export const PatientSummarySidebar: React.FC<PatientSummarySidebarProps> = ({
     : sessions;
 
   return (
-    <div className="w-80 sm:w-88 bg-card border-e border-card-line flex flex-col h-full shrink-0 overflow-hidden select-none transition-colors">
+    <div className="w-80 sm:w-88 bg-card border-e border-card-divider/60 flex flex-col h-full shrink-0 overflow-hidden select-none transition-colors">
       {/* Patient Header Card */}
-      <div className="p-4 border-b border-card-divider bg-muted/40 space-y-3">
+      <div className="p-4 border-b border-card-divider/60 bg-muted/40 space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-11 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-base shrink-0">
+            <div className="size-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-base shrink-0">
               {d.fullName ? d.fullName.charAt(0) : 'P'}
             </div>
             <div className="min-w-0">
@@ -90,7 +90,14 @@ export const PatientSummarySidebar: React.FC<PatientSummarySidebarProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            <span className="py-0.5 px-2 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+            <span
+              className={`inline-flex items-center gap-1 text-xs font-bold ${
+                patient.isArchived
+                  ? 'text-muted-foreground-1'
+                  : 'text-emerald-700 dark:text-emerald-300'
+              }`}
+            >
+              <span className="size-1.5 rounded-full bg-current shrink-0" />
               {patient.isArchived
                 ? bi('مؤرشف', 'Archived', 'ئەرشیفکراو')
                 : bi('نشط', 'Active', 'چالاک')}
@@ -99,7 +106,7 @@ export const PatientSummarySidebar: React.FC<PatientSummarySidebarProps> = ({
               <button
                 type="button"
                 onClick={onCloseMobileDrawer}
-                className="xl:hidden min-h-[36px] min-w-[36px] flex items-center justify-center rounded-xl bg-layer border border-layer-line text-layer-foreground cursor-pointer"
+                className="xl:hidden min-h-[36px] min-w-[36px] flex items-center justify-center rounded-xl bg-surface/75 hover:bg-layer-hover text-layer-foreground cursor-pointer"
                 aria-label={bi('إغلاق القائمة', 'Close drawer', 'داخستنی لیست')}
               >
                 <X className="size-4" />
@@ -111,7 +118,7 @@ export const PatientSummarySidebar: React.FC<PatientSummarySidebarProps> = ({
         {/* Quick demographics row */}
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground-1 font-medium tabular-nums">
           {d.gender && (
-            <span className="py-0.5 px-2 rounded-md bg-surface border border-line-2 text-foreground">
+            <span className="font-semibold text-foreground">
               {d.gender === 'male'
                 ? bi('ذكر', 'Male', 'نێر')
                 : bi('أنثى', 'Female', 'مێ')}
@@ -146,18 +153,20 @@ export const PatientSummarySidebar: React.FC<PatientSummarySidebarProps> = ({
 
         {/* Medical Alerts / Red Flags Banner (Only when truly flagged) */}
         {hasPatientRedFlagsOrContraindications(d) && (
-          <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-2 text-xs">
+          <div className="p-2.5 rounded-xl bg-surface/65 flex items-start gap-2 text-xs">
             <ShieldAlert className="size-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-            <div className="text-xs text-rose-900 dark:text-rose-200 leading-snug">
-              <span className="font-bold">{bi('علامة حمراء / تنبيه: ', 'Red Flag: ', 'ئاڵای سوور / ئاگاداری: ')}</span>
-              <span>{d.redFlags || d.contraindications || d.precautions}</span>
+            <div className="text-xs leading-snug">
+              <span className="font-bold text-rose-700 dark:text-rose-400">
+                {bi('علامة حمراء / تنبيه: ', 'Red Flag: ', 'ئاڵای سوور / ئاگاداری: ')}
+              </span>
+              <span className="text-foreground">{d.redFlags || d.contraindications || d.precautions}</span>
             </div>
           </div>
         )}
       </div>
 
       {/* Episodes of Care Section */}
-      <div className="p-3.5 border-b border-card-divider space-y-2">
+      <div className="p-3.5 border-b border-card-divider/60 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground-1">
             <FolderOpen className="size-3.5 text-primary" />
@@ -183,10 +192,10 @@ export const PatientSummarySidebar: React.FC<PatientSummarySidebarProps> = ({
                 key={ep.id}
                 type="button"
                 onClick={() => onSelectEpisode(ep.id)}
-                className={`w-full min-h-[44px] text-start p-2.5 rounded-xl text-xs font-medium transition-all flex items-center justify-between gap-2 cursor-pointer border ${
+                className={`w-full min-h-[44px] text-start p-2.5 rounded-xl text-xs font-medium transition-all flex items-center justify-between gap-2 cursor-pointer ${
                   isSelected
-                    ? 'bg-primary/10 border-primary text-foreground shadow-2xs'
-                    : 'bg-surface/60 border-line-2 text-muted-foreground-1 hover:bg-surface hover:text-foreground'
+                    ? 'bg-primary/10 text-foreground shadow-2xs'
+                    : 'bg-surface/60 text-muted-foreground-1 hover:bg-surface hover:text-foreground'
                 }`}
               >
                 <div className="min-w-0">
@@ -218,7 +227,7 @@ export const PatientSummarySidebar: React.FC<PatientSummarySidebarProps> = ({
             className={`min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer ${
               selectedEpisodeId
                 ? 'bg-primary hover:bg-primary-hover text-primary-foreground shadow-2xs'
-                : 'cursor-not-allowed bg-surface text-muted-foreground-2 border border-line-2'
+                : 'cursor-not-allowed bg-surface/60 text-muted-foreground-2'
             }`}
           >
             <Plus className="size-3.5" />
@@ -227,7 +236,7 @@ export const PatientSummarySidebar: React.FC<PatientSummarySidebarProps> = ({
         </div>
 
         {activeSessions.length === 0 ? (
-          <div className="p-6 text-center text-xs text-muted-foreground-1 italic bg-surface/50 rounded-xl border border-dashed border-line-2">
+          <div className="p-6 text-center text-xs text-muted-foreground-1 italic bg-surface/50 rounded-xl">
             {bi(
               'لا توجد جلسات موثقة في هذه الحالة بعد. انقر على "+ جلسة جديدة".',
               'No sessions recorded yet. Click "+ New".',
@@ -255,10 +264,10 @@ export const PatientSummarySidebar: React.FC<PatientSummarySidebarProps> = ({
                       onSelectSession(session.id);
                     }
                   }}
-                  className={`p-3 rounded-xl border transition-all cursor-pointer space-y-1.5 focus:outline-none focus:ring-2 focus:ring-primary/25 ${
+                  className={`p-3 rounded-xl transition-all cursor-pointer space-y-1.5 focus:outline-none focus:ring-2 focus:ring-primary/25 ${
                     isSelected
-                      ? 'bg-primary/10 border-primary ring-1 ring-primary/30 text-foreground'
-                      : 'bg-surface/40 border-line-2 hover:bg-surface text-muted-foreground-2'
+                      ? 'bg-primary/10 text-foreground shadow-2xs'
+                      : 'bg-surface/45 hover:bg-surface text-muted-foreground-2'
                   }`}
                 >
                   <div className="flex items-center justify-between text-xs tabular-nums">
@@ -270,12 +279,15 @@ export const PatientSummarySidebar: React.FC<PatientSummarySidebarProps> = ({
                     </span>
 
                     <span
-                      className={`py-0.5 px-2 rounded-full text-xs font-semibold border ${
+                      className={`inline-flex items-center gap-1 text-xs font-bold ${
                         sStatus === 'finalized'
-                          ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
-                          : 'bg-surface text-muted-foreground-1 border-line-2'
+                          ? 'text-emerald-700 dark:text-emerald-300'
+                          : sStatus === 'cancelled'
+                          ? 'text-rose-700 dark:text-rose-400'
+                          : 'text-muted-foreground-1 font-semibold'
                       }`}
                     >
+                      <span className="size-1.5 rounded-full bg-current shrink-0" />
                       {sStatus === 'finalized'
                         ? bi('معتمدة', 'Finalized', 'پەسەندکراو')
                         : sStatus === 'cancelled'

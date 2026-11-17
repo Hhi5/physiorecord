@@ -9,12 +9,12 @@ import { usePatients } from '../../context/PatientContext';
 import { useCurrency } from '../../context/CurrencyContext';
 import { useVault } from '../../context/VaultContext';
 import { DraftRecoveryService } from '../../services/draftRecoveryService';
-import { useVirtualWindow } from '../../hooks/useVirtualWindow';
 import {
   ClinicOperationsService,
   ROLE_PERMISSIONS,
 } from '../../services/clinicOperationsService';
 import { localDate, formatDateDDMMYYYY } from '../../utils/date';
+import { DrawerDialog, ModalDialog } from '../ui/Dialog';
 import { getPatientMrn, isDemoPatient } from '../../utils/mrn';
 import {
   Num,
@@ -77,6 +77,9 @@ import {
   CalendarClock,
   MapPin,
   Wallet,
+  ChevronLeft,
+  ChevronRight,
+  User,
 } from 'lucide-react';
 
 const InstallmentPlansAgingPanel = lazy(() =>
@@ -212,6 +215,9 @@ export const IraqiFinancialLedgerView: React.FC = () => {
   const [pkgAdjustDelta, setPkgAdjustDelta] = useState<1 | -1>(1);
   const [pkgAdjustReason, setPkgAdjustReason] = useState('');
   const [pkgAdjustError, setPkgAdjustError] = useState<string | null>(null);
+
+  // Selected Patient Card -> Details Modal
+  const [selectedPatientLedgerKey, setSelectedPatientLedgerKey] = useState<string | null>(null);
 
   const [activeStaff, setActiveStaff] = useState(() => ClinicOperationsService.getActiveStaff());
   const perms = ROLE_PERMISSIONS[activeStaff.role];
@@ -616,16 +622,70 @@ export const IraqiFinancialLedgerView: React.FC = () => {
     [activeTab, invoices]
   );
 
-  const invoiceVirtual = useVirtualWindow({
-    totalCount: displayedInvoices.length,
-    estimatedRowHeightPx: 72,
-    columns: 1,
-    overscanRows: 5,
-  });
+  const patientInvoiceGroups = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        key: string;
+        patientId: string;
+        patientName: string;
+        isDemo: boolean;
+        invoices: FinancialInvoiceIQD[];
+        totalNetIQD: number;
+        totalPaidIQD: number;
+        totalDueIQD: number;
+        activeCount: number;
+        voidCount: number;
+        latestDate: string;
+        activePackage: FinancialInvoiceIQD | null;
+      }
+    >();
 
-  const visibleInvoicesSlice = useMemo(
-    () => displayedInvoices.slice(invoiceVirtual.startIndex, invoiceVirtual.endIndex),
-    [displayedInvoices, invoiceVirtual.startIndex, invoiceVirtual.endIndex]
+    for (const inv of displayedInvoices) {
+      const key = inv.patientId || inv.patientName;
+      let g = groups.get(key);
+      if (!g) {
+        g = {
+          key,
+          patientId: inv.patientId,
+          patientName: inv.patientName,
+          isDemo: Boolean(inv.isDemo),
+          invoices: [],
+          totalNetIQD: 0,
+          totalPaidIQD: 0,
+          totalDueIQD: 0,
+          activeCount: 0,
+          voidCount: 0,
+          latestDate: inv.date,
+          activePackage: null,
+        };
+        groups.set(key, g);
+      }
+      g.invoices.push(inv);
+      if (inv.isDemo) g.isDemo = true;
+      if (inv.date > g.latestDate) g.latestDate = inv.date;
+      if (inv.status === 'void') {
+        g.voidCount += 1;
+      } else {
+        g.activeCount += 1;
+        g.totalNetIQD += inv.netAmountIQD;
+        g.totalPaidIQD += inv.paidAmountIQD;
+        g.totalDueIQD += inv.balanceDueIQD;
+        if (!g.activePackage && inv.packageTotalSessions && inv.packageTotalSessions > 0) {
+          g.activePackage = inv;
+        }
+      }
+    }
+
+    return Array.from(groups.values());
+  }, [displayedInvoices]);
+
+  const selectedPatientGroup = useMemo(
+    () =>
+      selectedPatientLedgerKey
+        ? patientInvoiceGroups.find((g) => g.key === selectedPatientLedgerKey) || null
+        : null,
+    [patientInvoiceGroups, selectedPatientLedgerKey]
   );
   const totalExpensesIQD = expenses.reduce((s, e) => s + e.amountIQD, 0);
   const netCashFlowIQD = totalCollectedIQD - totalExpensesIQD;
@@ -844,7 +904,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               {bi('فاتورة سارية', 'active invoices', 'پسوولەی کارا')}
             </p>
           </div>
-          <div className="size-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
+          <div className="size-10 rounded-xl bg-surface/65 text-primary flex items-center justify-center shrink-0">
             <Receipt className="size-5" />
           </div>
         </div>
@@ -869,7 +929,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               )}
             </p>
           </div>
-          <div className="size-10 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 flex items-center justify-center shrink-0">
+          <div className="size-10 rounded-xl bg-surface/65 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
             <CheckCircle2 className="size-5" />
           </div>
         </div>
@@ -899,7 +959,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               )}
             </p>
           </div>
-          <div className="size-10 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 flex items-center justify-center shrink-0">
+          <div className="size-10 rounded-xl bg-surface/65 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
             <AlertCircle className="size-5" />
           </div>
         </div>
@@ -916,63 +976,69 @@ export const IraqiFinancialLedgerView: React.FC = () => {
             <p
               className={`pr-kpi-value mt-1 break-words ${
                 netCashFlowIQD < 0
-                  ? 'text-rose-700 dark:text-rose-300'
+                  ? 'text-rose-700 dark:text-rose-400'
                   : 'text-foreground'
               }`}
             >
               <Money amount={netCashFlowIQD} />
             </p>
-            <p className="text-xs text-rose-700 dark:text-rose-300 mt-1 tabular-nums leading-snug">
+            <p className="text-xs text-rose-700 dark:text-rose-400 mt-1 tabular-nums leading-snug">
               {bi('المصاريف: ', 'Expenses: ', 'خەرجییەکان: ')}
               <Money amount={totalExpensesIQD} colorize={false} />
             </p>
           </div>
-          <div className="size-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
+          <div className="size-10 rounded-xl bg-surface/65 text-primary flex items-center justify-center shrink-0">
             <TrendingUp className="size-5" />
           </div>
         </div>
       </div>
 
       {/* Right-Side Sheet: New Invoice / Rehab Package Form */}
-      {showNewInvoiceForm && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex justify-end"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowNewInvoiceForm(false);
-          }}
+      <DrawerDialog
+        isOpen={showNewInvoiceForm}
+        onOpenChange={(open) => {
+          if (!open) setShowNewInvoiceForm(false);
+        }}
+        side="end"
+        dir={isRtl ? 'rtl' : 'ltr'}
+        maxWidthClassName="max-w-md"
+        className="bg-card"
+        ariaLabel={bi(
+          'إصدار فاتورة علاج طبيعي أو باقة (IQD)',
+          'Create IQD Invoice or Package',
+          'دەرکردنی پسوولەی چارەسەری سروشتی یان پاکێج (IQD)'
+        )}
+        closeLabel={bi('إغلاق', 'Close', 'داخستن')}
+        bodyClassName="flex-1 min-h-0 flex flex-col overflow-hidden"
+      >
+        <form
+          onSubmit={handleCreateInvoice}
+          className="flex-1 min-h-0 flex flex-col overflow-hidden"
         >
-          <form
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="fin-new-inv-title"
-            onSubmit={handleCreateInvoice}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md bg-card h-full border-s border-card-line shadow-2xl flex flex-col overflow-hidden"
-          >
-            <div className="px-5 py-4 border-b border-card-divider flex items-center justify-between bg-muted/40">
-              <h2 id="fin-new-inv-title" className="text-sm font-bold text-foreground">
-                {bi(
-                  'إصدار فاتورة علاج طبيعي أو باقة (IQD)',
-                  'Create IQD Invoice or Package',
-                  'دەرکردنی پسوولەی چارەسەری سروشتی یان پاکێج (IQD)'
-                )}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setShowNewInvoiceForm(false)}
-                className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer"
-                aria-label={bi('إغلاق', 'Close', 'داخستن')}
-              >
-                <X className="size-4" />
-              </button>
-            </div>
+          <div className="px-5 py-4 border-b border-card-divider flex items-center justify-between bg-muted/40 shrink-0">
+            <h2 className="text-sm font-bold text-foreground">
+              {bi(
+                'إصدار فاتورة علاج طبيعي أو باقة (IQD)',
+                'Create IQD Invoice or Package',
+                'دەرکردنی پسوولەی چارەسەری سروشتی یان پاکێج (IQD)'
+              )}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setShowNewInvoiceForm(false)}
+              className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer"
+              aria-label={bi('إغلاق', 'Close', 'داخستن')}
+            >
+              <X className="size-4" />
+            </button>
+          </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              <div>
-                <span className="text-xs font-semibold text-foreground block mb-1.5">
-                  {bi('نوع الفاتورة:', 'Invoice Type:', 'جۆری پسوولە:')}
-                </span>
-                <div className="grid grid-cols-3 gap-2">
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            <div>
+              <span className="text-xs font-semibold text-foreground block mb-1.5">
+                {bi('نوع الفاتورة:', 'Invoice Type:', 'جۆری پسوولە:')}
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {(
                     [
                       { id: 'single_session', ar: 'جلسة مفردة', en: 'Single Session', ckb: 'دانیشتنی تاک' },
@@ -987,7 +1053,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                       className={`min-h-[36px] py-2 px-3 rounded-xl text-xs font-semibold text-center transition-all cursor-pointer ${
                         invType === preset.id
                           ? 'bg-primary text-primary-foreground shadow-2xs font-bold'
-                          : 'bg-surface border border-line-2 text-muted-foreground-1 hover:text-foreground'
+                          : 'bg-surface/65 text-muted-foreground-1 hover:text-foreground hover:bg-surface'
                       }`}
                     >
                       {bi(preset.ar, preset.en, preset.ckb)}
@@ -1511,44 +1577,49 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               </button>
             </div>
           </form>
-        </div>
-      )}
+      </DrawerDialog>
 
       {/* Right-Side Sheet: New Clinic Expense Form */}
-      {showNewExpenseForm && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex justify-end"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowNewExpenseForm(false);
-          }}
+      <DrawerDialog
+        isOpen={showNewExpenseForm}
+        onOpenChange={(open) => {
+          if (!open) setShowNewExpenseForm(false);
+        }}
+        side="end"
+        dir={isRtl ? 'rtl' : 'ltr'}
+        maxWidthClassName="max-w-md"
+        className="bg-card"
+        ariaLabel={bi(
+          'تسجيل مصروف تشغيلي للعيادة (IQD)',
+          'Log Clinic Operating Expense (IQD)',
+          'تۆمارکردنی خەرجیی کارپێکردنی کلینیک (IQD)'
+        )}
+        closeLabel={bi('إغلاق', 'Close', 'داخستن')}
+        bodyClassName="flex-1 min-h-0 flex flex-col overflow-hidden"
+      >
+        <form
+          onSubmit={handleAddExpense}
+          className="flex-1 min-h-0 flex flex-col overflow-hidden"
         >
-          <form
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="fin-new-exp-title"
-            onSubmit={handleAddExpense}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md bg-card h-full border-s border-card-line shadow-2xl flex flex-col overflow-hidden"
-          >
-            <div className="px-5 py-4 border-b border-card-divider flex items-center justify-between bg-muted/40">
-              <h2 id="fin-new-exp-title" className="text-sm font-bold text-foreground">
-                {bi(
-                  'تسجيل مصروف تشغيلي للعيادة (IQD)',
-                  'Log Clinic Operating Expense (IQD)',
-                  'تۆمارکردنی خەرجیی کارپێکردنی کلینیک (IQD)'
-                )}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setShowNewExpenseForm(false)}
-                className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer"
-                aria-label={bi('إغلاق', 'Close', 'داخستن')}
-              >
-                <X className="size-4" />
-              </button>
-            </div>
+          <div className="px-5 py-4 border-b border-card-divider flex items-center justify-between bg-muted/40 shrink-0">
+            <h2 className="text-sm font-bold text-foreground">
+              {bi(
+                'تسجيل مصروف تشغيلي للعيادة (IQD)',
+                'Log Clinic Operating Expense (IQD)',
+                'تۆمارکردنی خەرجیی کارپێکردنی کلینیک (IQD)'
+              )}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setShowNewExpenseForm(false)}
+              className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer"
+              aria-label={bi('إغلاق', 'Close', 'داخستن')}
+            >
+              <X className="size-4" />
+            </button>
+          </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
               <div>
                 <label htmlFor="fin-exp-cat" className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi('تبويب المصروف:', 'Category:', 'پۆلی خەرجی:')}
@@ -1694,283 +1765,84 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                 type="submit"
                 className="min-h-[36px] py-2 px-5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold cursor-pointer"
               >
-                {bi('حفظ المصروف', 'Save Expense', 'پاشەکەوتکردنی خەرجی')}
+                <span>{bi('حفظ المصروف', 'Save Expense', 'پاشەکەوتکردنی خەرجی')}</span>
               </button>
             </div>
           </form>
-        </div>
-      )}
-
-      {/* Partial Payment Collection Inline Box */}
-      {selectedInvoiceForPayment && (
-        <form
-          onSubmit={handleCollectPartialPayment}
-          className="bg-primary/5 p-5 sm:p-6 rounded-xl border-2 border-primary/30 space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-foreground">
-                {bi(
-                  `استلام دفعة مالية من المريض: ${selectedInvoiceForPayment.patientName}`,
-                  `Collect Payment from: ${selectedInvoiceForPayment.patientName}`,
-                  `وەرگرتنی پارە لە نەخۆش: ${selectedInvoiceForPayment.patientName}`
-                )}
-              </h2>
-              <p className="text-xs text-muted-foreground-1 font-mono mt-0.5">
-                {selectedInvoiceForPayment.invoiceNumber} ·{' '}
-                {bi('المتبقي بالذمة: ', 'Balance Due: ', 'بڕی ماوە لەسەر نەخۆش: ')}
-                <Money amount={selectedInvoiceForPayment.balanceDueIQD} />
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSelectedInvoiceForPayment(null)}
-              aria-label={bi('إغلاق نموذج استلام الدفعة', 'Close payment collection form', 'داخستنی فۆرمی وەرگرتنی پارە')}
-              className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer"
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label htmlFor="fin-pay-currency" className="text-xs font-semibold text-foreground block mb-1.5">
-                {bi('عملة الدفع:', 'Currency:', 'دراوی پارەدان:')}
-              </label>
-              <select
-                id="fin-pay-currency"
-                value={paymentCurrency}
-                onChange={(e) => {
-                  setPaymentCurrency(e.target.value);
-                  setPaymentFxRate('');
-                  setPaymentError(null);
-                }}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-card border border-card-line text-foreground"
-              >
-                <option value={currency.code}>
-                  {currency.code} ({bi(currency.symbolAr, currency.symbolEn)})
-                </option>
-                {WORLD_CURRENCIES.filter((c) => c.code !== currency.code).map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.code} ({bi(c.symbolAr, c.symbolEn)})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {paymentCurrency === currency.code ? (
-              <div>
-                <label htmlFor="fin-pay-amt" className="text-xs font-semibold text-foreground block mb-1.5">
-                  {bi(
-                    `المبلغ المستلم اليوم (${currency.symbolAr}):`,
-                    `Payment Amount (${currency.code}):`,
-                    `بڕی وەرگیراوی ئەمڕۆ (${currency.symbolAr}):`
-                  )}
-                </label>
-                <MoneyInput
-                  id="fin-pay-amt"
-                  ariaLabel={bi('المبلغ المستلم اليوم', 'Payment Amount', 'بڕی وەرگیراوی ئەمڕۆ')}
-                  value={paymentAmountIQD}
-                  onChange={(val) =>
-                    setPaymentAmountIQD(
-                      Math.min(val, selectedInvoiceForPayment.balanceDueIQD)
-                    )
-                  }
-                  className="w-full py-2 text-xs rounded-xl bg-card border border-card-line tabular-nums font-bold text-foreground"
-                />
-              </div>
-            ) : (
-              <>
-                <div>
-                  <label htmlFor="fin-pay-fx-amt" className="text-xs font-semibold text-foreground block mb-1.5">
-                    {bi(
-                      `المبلغ بعملة (${paymentCurrency}):`,
-                      `Amount (${paymentCurrency}):`,
-                      `بڕ بە دراوی (${paymentCurrency}):`
-                    )}
-                  </label>
-                  <input
-                    id="fin-pay-fx-amt"
-                    type="number"
-                    step="any"
-                    min={0}
-                    value={paymentOrigAmount}
-                    onChange={(e) => setPaymentOrigAmount(e.target.value)}
-                    placeholder="0"
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-card border border-card-line tabular-nums font-mono font-bold text-foreground"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="fin-pay-fx-rate" className="text-xs font-semibold text-foreground block mb-1.5">
-                    {bi(
-                      `سعر الصرف (1 ${paymentCurrency} = ? ${currency.code}):`,
-                      `FX Rate (1 ${paymentCurrency} = ? ${currency.code}):`,
-                      `نرخی گۆڕینەوە (1 ${paymentCurrency} = ? ${currency.code}):`
-                    )}
-                  </label>
-                  <input
-                    id="fin-pay-fx-rate"
-                    type="number"
-                    step="any"
-                    min={0}
-                    value={paymentFxRate}
-                    onChange={(e) => setPaymentFxRate(e.target.value)}
-                    placeholder={paymentCurrency === 'USD' && currency.code === 'IQD' ? '1500' : '1'}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-card border border-card-line tabular-nums font-mono font-bold text-foreground"
-                  />
-                </div>
-              </>
-            )}
-
-            <div>
-              <label htmlFor="fin-pay-method" className="text-xs font-semibold text-foreground block mb-1.5">
-                {bi('وسيلة الدفع:', 'Payment Method:', 'شێوازی پارەدان:')}
-              </label>
-              <select
-                id="fin-pay-method"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as IraqiPaymentMethod)}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-card border border-card-line text-foreground"
-              >
-                {Object.entries(paymentMethodLabels).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {bi(v.ar, v.en, v.ckb)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {paymentMethod === 'other' && (
-              <div>
-                <label htmlFor="fin-pay-custom-method" className="text-xs font-semibold text-foreground block mb-1.5">
-                  {bi('حدد وسيلة الدفع الأخرى:', 'Specify Custom Method:', 'شێوازی پارەدانی تر دیاری بکە:')}
-                </label>
-                <input
-                  id="fin-pay-custom-method"
-                  type="text"
-                  value={paymentCustomMethod}
-                  onChange={(e) => setPaymentCustomMethod(e.target.value)}
-                  placeholder={bi('مثال: شيك، حوالة خاصة...', 'e.g. Check, custom transfer...', 'نموونە: چەک، حەواڵەی تایبەت...')}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-card border border-card-line text-foreground"
-                />
-              </div>
-            )}
-
-            <div className="sm:col-span-2 lg:col-span-4">
-              <label htmlFor="fin-pay-note" className="text-xs font-semibold text-foreground block mb-1.5">
-                {bi('ملاحظات الوصل:', 'Receipt Notes:', 'تێبینیی وەسڵ:')}
-              </label>
-              <input
-                id="fin-pay-note"
-                type="text"
-                value={paymentNote}
-                onChange={(e) => setPaymentNote(e.target.value)}
-                placeholder={bi('مثال: الدفعة الثانية من الكورس...', 'Second installment...', 'نموونە: قیستی دووەمی کۆرس...')}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-card border border-card-line text-foreground"
-              />
-            </div>
-          </div>
-
-          {paymentCurrency !== currency.code && Number(paymentOrigAmount) > 0 && Number(paymentFxRate) > 0 && (
-            <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
-              {bi('المعادل المسجل بالعيادة: ', 'Converted Ledger Equivalent: ', 'هاوتای تۆمارکراو لە کلینیک: ')}
-              <Money
-                amount={Math.min(
-                  selectedInvoiceForPayment.balanceDueIQD,
-                  Math.round(Number(paymentOrigAmount) * Number(paymentFxRate))
-                )}
-              />
-            </div>
-          )}
-
-          {paymentError && (
-            <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-700 dark:text-rose-300">
-              {paymentError}
-            </div>
-          )}
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="min-h-[36px] py-2 px-5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold shadow-xs cursor-pointer"
-            >
-              {bi(
-                'تأكيد استلام الدفعة وإصدار وصل قبض',
-                'Confirm Payment & Issue Receipt',
-                'دڵنیاکردنەوەی وەرگرتنی پارە و دەرکردنی وەسڵ'
-              )}
-            </button>
-          </div>
-        </form>
-      )}
+      </DrawerDialog>
 
       {/* Segmented Navigation & Table Container */}
       <div className="bg-card rounded-2xl border border-card-line shadow-2xs overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-card-divider bg-muted/30 flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex flex-wrap bg-surface border border-line-2 rounded-xl p-1 gap-1">
-            {(
-              [
-                {
-                  id: 'invoices',
-                  ar: 'سجل الفواتير وباقات الجلسات',
-                  en: 'Invoices & Packages',
-                  ckb: 'تۆماری پسوولە و پاکێجەکان',
-                },
-                {
-                  id: 'debts',
-                  ar: 'دفتر ديون وذمم المرضى',
-                  en: 'Patient Debts',
-                  ckb: 'دەفتەری قەرزی نەخۆشەکان',
-                },
-                ...(installmentPlansEnabled
-                  ? [
-                      {
-                        id: 'installments' as const,
-                        ar: 'الأقساط وتقادم الديون',
-                        en: 'Installments & Aging',
-                        ckb: 'قیستەکان و دواکەوتنی قەرز',
-                      },
-                    ]
-                  : []),
-                {
-                  id: 'expenses',
-                  ar: 'مصاريف العيادة',
-                  en: 'Expenses',
-                  ckb: 'خەرجییەکانی کلینیک',
-                },
-                {
-                  id: 'z_report',
-                  ar: 'الإغلاق اليومي (Z-Report)',
-                  en: 'Daily Cash Close',
-                  ckb: 'داخستنی ڕۆژانە (Z-Report)',
-                },
-                {
-                  id: 'monthly',
-                  ar: 'الملخص الشهري والتصدير',
-                  en: 'Monthly & CSV',
-                  ckb: 'پوختەی مانگانە و هەناردەکردن',
-                },
-              ] as Array<{ id: typeof activeTab; ar: string; en: string; ckb: string }>
-            ).map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                aria-pressed={activeTab === tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`min-h-[36px] py-1.5 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap inline-flex items-center gap-1.5 ${
-                  activeTab === tab.id
-                    ? 'bg-layer text-primary shadow-2xs border border-layer-line'
-                    : 'text-muted-foreground-1 hover:text-foreground'
-                }`}
-              >
-                <span>{bi(tab.ar, tab.en, tab.ckb)}</span>
-                {tab.id === 'installments' && agingSummary.totalOverdueCount > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 text-xs font-bold tabular-nums">
-                    <Num value={agingSummary.totalOverdueCount} />
-                  </span>
-                )}
-              </button>
-            ))}
+        <div className="px-3 sm:px-5 py-2.5 sm:py-3 border-b border-card-divider bg-muted/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="rounded-2xl border border-line-2 bg-surface p-1 overflow-hidden w-full sm:w-auto min-w-0">
+            <div className="pr-hscroll overflow-x-auto flex items-center gap-1 whitespace-nowrap pb-1 pt-0.5 px-0.5">
+              {(
+                [
+                  {
+                    id: 'invoices',
+                    ar: 'سجل الفواتير وباقات الجلسات',
+                    en: 'Invoices & Packages',
+                    ckb: 'تۆماری پسوولە و پاکێجەکان',
+                  },
+                  {
+                    id: 'debts',
+                    ar: 'دفتر ديون وذمم المرضى',
+                    en: 'Patient Debts',
+                    ckb: 'دەفتەری قەرزی نەخۆشەکان',
+                  },
+                  ...(installmentPlansEnabled
+                    ? [
+                        {
+                          id: 'installments' as const,
+                          ar: 'الأقساط وتقادم الديون',
+                          en: 'Installments & Aging',
+                          ckb: 'قیستەکان و دواکەوتنی قەرز',
+                        },
+                      ]
+                    : []),
+                  {
+                    id: 'expenses',
+                    ar: 'مصاريف العيادة',
+                    en: 'Expenses',
+                    ckb: 'خەرجییەکانی کلینیک',
+                  },
+                  {
+                    id: 'z_report',
+                    ar: 'الإغلاق اليومي (Z-Report)',
+                    en: 'Daily Cash Close',
+                    ckb: 'داخستنی ڕۆژانە (Z-Report)',
+                  },
+                  {
+                    id: 'monthly',
+                    ar: 'الملخص الشهري والتصدير',
+                    en: 'Monthly & CSV',
+                    ckb: 'پوختەی مانگانە و هەناردەکردن',
+                  },
+                ] as Array<{ id: typeof activeTab; ar: string; en: string; ckb: string }>
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  aria-pressed={activeTab === tab.id}
+                  onClick={(e) => {
+                    setActiveTab(tab.id);
+                    e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                  }}
+                  className={`min-h-[34px] py-1.5 px-3 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 ${
+                    activeTab === tab.id
+                      ? 'bg-primary text-primary-foreground shadow-2xs'
+                      : 'text-muted-foreground-1 hover:text-foreground hover:bg-card/70'
+                  }`}
+                >
+                  <span>{bi(tab.ar, tab.en, tab.ckb)}</span>
+                  {tab.id === 'installments' && agingSummary.totalOverdueCount > 0 && (
+                    <span className={`text-xs font-bold tabular-nums ${activeTab === tab.id ? 'text-primary-foreground' : 'text-rose-700 dark:text-rose-400'}`}>
+                      (<Num value={agingSummary.totalOverdueCount} />)
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
@@ -2409,7 +2281,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               aria-label={bi('جدول مصاريف العيادة', 'Clinic expenses table', 'خشتەی خەرجییەکانی کلینیک')}
               className="overflow-x-auto focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <table className="min-w-full divide-y divide-card-divider text-start text-xs">
+              <table className="pr-responsive-table min-w-full divide-y divide-card-divider text-start text-xs">
                 <thead className="bg-muted/50">
                   <tr className="text-muted-foreground-1 font-semibold text-xs">
                     <th className="py-3.5 px-4 text-start">{bi('التاريخ', 'Date', 'بەروار')}</th>
@@ -2421,7 +2293,7 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-card-divider">
                   {expenses.length === 0 ? (
-                    <tr>
+                    <tr className="pr-empty-row">
                       <td colSpan={5} className="py-8 px-4 text-center text-muted-foreground-1">
                         {bi('لا توجد مصاريف مسجلة (0 د.ع).', 'No clinic expenses recorded (0 IQD).', 'هیچ خەرجییەک تۆمار نەکراوە (0 د.ع).')}
                       </td>
@@ -2429,10 +2301,16 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                   ) : (
                     expenses.map((exp) => (
                       <tr key={exp.id} className="tabular-nums hover:bg-muted/30 transition-colors">
-                        <td className="py-3.5 px-4 tabular-nums text-muted-foreground-1">
+                        <td
+                          data-label={bi('التاريخ', 'Date', 'بەروار')}
+                          className="py-3.5 px-4 tabular-nums text-muted-foreground-1"
+                        >
                           <bdi dir="ltr">{formatDateDDMMYYYY(exp.date)}</bdi>
                         </td>
-                        <td className="py-3.5 px-4 font-bold text-foreground">
+                        <td
+                          data-label={bi('البيان', 'Description', 'وردەکاری')}
+                          className="py-3.5 px-4 font-bold text-foreground pr-cell-primary md:table-cell"
+                        >
                           <div className="flex flex-wrap items-center gap-1.5">
                             <span>{language === 'en' ? exp.titleEn : exp.titleAr}</span>
                             {exp.isDemo && <DemoBadge />}
@@ -2463,11 +2341,22 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                             </div>
                           )}
                         </td>
-                        <td className="py-3.5 px-4 text-muted-foreground-1">{exp.paidBy}</td>
-                        <td className="py-3.5 px-4 text-end font-bold text-rose-700 dark:text-rose-300 tabular-nums">
+                        <td
+                          data-label={bi('المسجل', 'Recorded By', 'تۆمارکراو لەلایەن')}
+                          className="py-3.5 px-4 text-muted-foreground-1"
+                        >
+                          {exp.paidBy}
+                        </td>
+                        <td
+                          data-label={bi('المبلغ (د.ع)', 'Amount (IQD)', 'بڕ (د.ع)')}
+                          className="py-3.5 px-4 text-end font-bold text-rose-700 dark:text-rose-300 tabular-nums"
+                        >
                           <Money amount={exp.amountIQD} colorize={false} />
                         </td>
-                        <td className="py-3.5 px-4 text-end">
+                        <td
+                          data-label={bi('إجراء', 'Action', 'کردار')}
+                          className="py-3.5 px-4 text-end"
+                        >
                           {perms.canDeleteFinancialRecords && (
                             <button
                               type="button"
@@ -2496,398 +2385,756 @@ export const IraqiFinancialLedgerView: React.FC = () => {
           </div>
         ) : (
           <div
-            ref={invoiceVirtual.containerRef}
-            onScroll={invoiceVirtual.onScroll}
             tabIndex={0}
             role="region"
-            aria-label={bi('جدول الفواتير والديون', 'Invoices and debts table', 'خشتەی پسوولە و قەرزەکان')}
+            aria-label={bi('بطاقات المرضى المالية', 'Patient financial cards', 'کارتە داراییەکانی نەخۆش')}
             data-testid="financial-invoices-list"
-            className={
-              invoiceVirtual.isVirtualized
-                ? 'overflow-auto max-h-[72vh] focus:outline-none focus:ring-2 focus:ring-primary'
-                : 'overflow-x-auto focus:outline-none focus:ring-2 focus:ring-primary'
-            }
+            className="p-3 sm:p-4 focus:outline-none"
           >
-            <table className="min-w-full divide-y divide-card-divider text-start text-xs">
-              <thead className="bg-muted/50 sticky top-0 z-10">
-                <tr className="text-muted-foreground-1 font-semibold text-xs">
-                  <th className="py-3.5 px-4 text-start">{bi('رقم الفاتورة', 'Invoice #', 'ژمارەی پسوولە')}</th>
-                  <th className="py-3.5 px-4 text-start">{bi('المريض والخدمة', 'Patient & Service', 'نەخۆش و خزمەتگوزاری')}</th>
-                  <th className="py-3.5 px-4 text-start">{bi('استهلاك الكورس', 'Package Visits', 'سەردانەکانی کۆرس')}</th>
-                  <th className="py-3.5 px-4 text-end">{bi('الصافي (د.ع)', 'Net (IQD)', 'پوختە (د.ع)')}</th>
-                  <th className="py-3.5 px-4 text-end">{bi('المدفوع (د.ع)', 'Paid (IQD)', 'پارەدراو (د.ع)')}</th>
-                  <th className="py-3.5 px-4 text-end">{bi('المتبقي / الدين', 'Balance Due', 'ماوە / قەرز')}</th>
-                  <th className="py-3.5 px-4 text-end">{bi('الإجراءات', 'Actions', 'کردارەکان')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-card-divider">
-                {displayedInvoices.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      data-testid="finance-invoices-empty-state"
-                      className="py-8 px-4 text-center text-muted-foreground-1 space-y-3"
-                    >
-                      <p className="text-xs font-semibold text-foreground">
-                        {bi(
-                          'لا توجد فواتير أو باقات علاجية مسجلة بعد — أنشئ أول فاتورة جلسة أو كورس علاجي لمتابعة المقبوضات والديون.',
-                          'No invoices or treatment packages recorded yet — issue your first session or course invoice to track collections and balances.',
-                          'هێشتا هیچ پسوولە یان پاکێجێکی چارەسەری تۆمار نەکراوە — یەکەم پسوولەی دانیشتن یان کۆرس دروست بکە بۆ بەدواداچوونی وەرگیراوەکان و قەرزەکان.'
-                        )}
-                      </p>
-                      <div className="mt-2">
-                        <button
-                          type="button"
-                          data-testid="finance-empty-primary-btn"
-                          onClick={() => {
-                            handleInvoicePresetChange('single_session');
-                            setShowNewInvoiceForm(true);
-                            setShowNewExpenseForm(false);
-                          }}
-                          className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
-                        >
-                          <span>{bi('+ إصدار فاتورة / كورس', '+ New Invoice / Package', '+ دەرکردنی پسوولە / کۆرس')}</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  <>
-                    {invoiceVirtual.topSpacerPx > 0 && (
-                      <tr aria-hidden="true">
-                        <td
-                          colSpan={7}
-                          style={{ height: invoiceVirtual.topSpacerPx }}
-                          className="p-0 border-0"
-                        />
-                      </tr>
-                    )}
-                    {visibleInvoicesSlice.map((inv) => {
-                    const used = inv.packageUsedSessions || 0;
-                    const total = inv.packageTotalSessions || 0;
-                    const pct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
-                    const isVoided = inv.status === 'void';
-                    const latestPostedPayment = [...(inv.payments || [])]
-                      .reverse()
-                      .find((p) => !p.isReversal && p.status !== 'reversed' && p.amountIQD > 0);
-                    const patientRecord = activePatients.find((p) => p.id === inv.patientId);
-                    const patientPhone = patientRecord?.data.phone || patientRecord?.data.phoneNumber;
-                    const rowLocation = inv.locationId ? locationNameById.get(inv.locationId) : undefined;
+            {patientInvoiceGroups.length === 0 ? (
+              <div
+                data-testid="finance-invoices-empty-state"
+                className="py-10 px-4 text-center text-muted-foreground-1 space-y-3"
+              >
+                <p className="text-xs font-semibold text-foreground">
+                  {bi(
+                    'لا توجد فواتير أو باقات علاجية مسجلة بعد — أنشئ أول فاتورة جلسة أو كورس علاجي لمتابعة المقبوضات والديون.',
+                    'No invoices or treatment packages recorded yet — issue your first session or course invoice to track collections and balances.',
+                    'هێشتا هیچ پسوولە یان پاکێجێکی چارەسەری تۆمار نەکراوە — یەکەم پسوولەی دانیشتن یان کۆرس دروست بکە بۆ بەدواداچوونی وەرگیراوەکان و قەرزەکان.'
+                  )}
+                </p>
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    data-testid="finance-empty-primary-btn"
+                    onClick={() => {
+                      handleInvoicePresetChange('single_session');
+                      setShowNewInvoiceForm(true);
+                      setShowNewExpenseForm(false);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <span>{bi('+ إصدار فاتورة / كورس', '+ New Invoice / Package', '+ دەرکردنی پسوولە / کۆرس')}</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {patientInvoiceGroups.map((group) => {
+                  const hasDebt = group.totalDueIQD > 0;
+                  const allVoided = group.activeCount === 0 && group.voidCount > 0;
+                  const pkg = group.activePackage;
+                  const pkgUsed = pkg?.packageUsedSessions || 0;
+                  const pkgTotal = pkg?.packageTotalSessions || 0;
+                  const pkgPct = pkgTotal > 0 ? Math.min(100, Math.round((pkgUsed / pkgTotal) * 100)) : 0;
 
-                    return (
-                      <tr
-                        key={inv.id}
-                        className={`tabular-nums transition-colors ${
-                          isVoided ? 'opacity-65 bg-rose-500/5' : 'hover:bg-muted/30'
-                        }`}
-                      >
-                        <td className="py-3.5 px-4 font-bold text-foreground">
-                          <div className="font-mono flex items-center gap-1.5 flex-wrap">
-                            <bdi dir="ltr">{inv.invoiceNumber}</bdi>
-                            {isVoided && (
-                              <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 text-xs font-sans font-bold">
+                  return (
+                    <button
+                      key={group.key}
+                      type="button"
+                      onClick={() => setSelectedPatientLedgerKey(group.key)}
+                      className={`w-full text-start p-3.5 rounded-2xl border transition-all cursor-pointer group flex flex-col justify-between gap-2.5 shadow-2xs hover:shadow-sm ${
+                        allVoided
+                          ? 'bg-rose-500/5 border-rose-500/20 opacity-75'
+                          : hasDebt
+                          ? 'bg-card border-card-line hover:border-primary/40'
+                          : 'bg-card border-card-line hover:border-emerald-500/40'
+                      }`}
+                    >
+                      {/* Top Row: Avatar + Name + Debt/Status Pill */}
+                      <div className="flex items-start justify-between gap-2 w-full">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="size-9 rounded-full bg-primary/10 border border-primary/20 text-primary font-black text-xs flex items-center justify-center shrink-0">
+                            {group.patientName.trim().slice(0, 1) || <User className="size-4" />}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs sm:text-sm font-bold text-foreground truncate max-w-[160px] sm:max-w-[190px]">
+                                {group.patientName}
+                              </span>
+                              {group.isDemo && <DemoBadge />}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground-1 flex items-center gap-1.5 tabular-nums mt-0.5">
+                              <span>
                                 {bi(
-                                  `ملغاة (${inv.creditNoteNumber || ''})`,
-                                  `Void (${inv.creditNoteNumber || ''})`,
-                                  `هەڵوەشاوە (${inv.creditNoteNumber || ''})`
+                                  `${group.invoices.length} ${group.invoices.length === 1 ? 'فاتورة' : 'فواتير'}`,
+                                  `${group.invoices.length} ${group.invoices.length === 1 ? 'invoice' : 'invoices'}`,
+                                  `${group.invoices.length} پسوولە`
                                 )}
                               </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground-1 tabular-nums">
-                            <bdi dir="ltr">{formatDateDDMMYYYY(inv.date)}</bdi>
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-1.5 font-bold text-foreground">
-                            <span>{inv.patientName}</span>
-                            {inv.isDemo && <DemoBadge />}
-                          </div>
-                          <div className="text-xs text-muted-foreground-1">
-                            {language === 'en' ? inv.titleEn : inv.titleAr}
-                          </div>
-                          {((practiceLocationsEnabled && rowLocation) ||
-                            (inv.travelFeeIQD && inv.travelFeeIQD > 0) ||
-                            (installmentPlansEnabled &&
-                              inv.installmentPlan &&
-                              inv.installmentPlan.length > 0)) && (
-                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                              {practiceLocationsEnabled && rowLocation && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface border border-line-2 text-xs text-muted-foreground-1">
-                                  <MapPin className="size-3" />
-                                  <span>
-                                    {language === 'en'
-                                      ? rowLocation.nameEn || rowLocation.nameAr
-                                      : rowLocation.nameAr}
-                                  </span>
-                                </span>
-                              )}
-                              {inv.travelFeeIQD && inv.travelFeeIQD > 0 ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface border border-line-2 text-xs text-muted-foreground-1 tabular-nums">
-                                  <span>{bi('تنقل:', 'Travel:', 'هاتوچۆ:')}</span>
-                                  <Money amount={inv.travelFeeIQD} colorize={false} />
-                                </span>
-                              ) : null}
-                              {installmentPlansEnabled &&
-                                inv.installmentPlan &&
-                                inv.installmentPlan.length > 0 && (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
-                                    <CalendarClock className="size-3" />
-                                    <span>
-                                      {bi(
-                                        `${inv.installmentPlan.length} أقساط`,
-                                        `${inv.installmentPlan.length} installments`,
-                                        `${inv.installmentPlan.length} قیست`
-                                      )}
-                                    </span>
-                                  </span>
-                                )}
+                              <span>·</span>
+                              <bdi dir="ltr">{formatDateDDMMYYYY(group.latestDate)}</bdi>
                             </div>
-                          )}
-                          {isVoided && inv.voidReason && (
-                            <div className="text-xs text-rose-700 dark:text-rose-300 mt-0.5">
-                              {bi('سبب الإلغاء: ', 'Void reason: ', 'هۆکاری هەڵوەشاندنەوە: ')}
-                              {inv.voidReason}
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-3.5 px-4">
-                          {inv.packageTotalSessions ? (
-                            <div className="space-y-1.5 min-w-[140px]">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="font-mono font-bold text-primary text-xs">
-                                  <Fraction value={used} total={total} />
-                                </span>
-                                {isAdmin && !isVoided ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setPkgAdjustInvoice(inv);
-                                      setPkgAdjustDelta(used < total ? 1 : -1);
-                                      setPkgAdjustReason('');
-                                      setPkgAdjustError(null);
-                                    }}
-                                    className="min-h-[36px] py-1 px-2.5 rounded-md bg-primary/10 hover:bg-primary hover:text-primary-foreground text-primary border border-primary/20 text-xs font-semibold transition-colors cursor-pointer"
-                                  >
-                                    {bi('تعديل إداري', 'Admin Adjust', 'دەستکاری کارگێڕی')}
-                                  </button>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground-1">
-                                    {bi('تلقائي عند الاعتماد', 'Auto on Finalize', 'خۆکار لە کاتی پەسەندکردندا')}
-                                  </span>
-                                )}
-                              </div>
-                              {/* Expense Share Progress Bar */}
-                              <div className="flex w-full h-1.5 bg-surface rounded-full overflow-hidden">
-                                <div
-                                  className="flex flex-col justify-center rounded-full overflow-hidden bg-primary transition-all duration-300"
-                                  style={{ width: `${pct}%` }}
-                                />
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground-1">—</span>
-                          )}
-                        </td>
-                        <td className="py-3.5 px-4 text-end font-mono font-bold text-foreground">
-                          <Money amount={inv.netAmountIQD} />
-                        </td>
-                        <td className="py-3.5 px-4 text-end font-mono font-bold text-emerald-700 dark:text-emerald-300">
-                          <Money amount={inv.paidAmountIQD} />
-                        </td>
-                        <td className="py-3.5 px-4 text-end font-mono font-bold">
-                          {isVoided ? (
-                            <span className="py-0.5 px-2 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20">
-                              {bi('إشعار دائن', 'Credit Note', 'ئاگاداری دائن')}
+                          </div>
+                        </div>
+
+                        <div className="shrink-0">
+                          {allVoided ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/12 text-rose-700 dark:text-rose-400 text-[11px] font-bold">
+                              {bi('ملغاة', 'Voided', 'هەڵوەشاوە')}
                             </span>
-                          ) : inv.balanceDueIQD > 0 ? (
-                            <span className="py-0.5 px-2 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20">
-                              <Money amount={inv.balanceDueIQD} />
+                          ) : hasDebt ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/12 text-rose-700 dark:text-rose-400 text-[11px] font-bold tabular-nums">
+                              <span className="size-1.5 rounded-full bg-current shrink-0" aria-hidden="true" />
+                              <Money amount={group.totalDueIQD} />
                             </span>
                           ) : (
-                            <span className="py-0.5 px-2 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-                              {bi('مسدد بالكامل', 'Paid in Full', 'بە تەواوی دراوە')}
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/12 text-emerald-700 dark:text-emerald-400 text-[11px] font-bold">
+                              <span className="size-1.5 rounded-full bg-current shrink-0" aria-hidden="true" />
+                              {bi('مسدد', 'Paid', 'دراوە')}
                             </span>
                           )}
-                        </td>
-                        <td className="py-3.5 px-4 text-end">
-                          <div className="inline-flex flex-wrap items-center justify-end gap-1">
-                            {!isVoided && inv.balanceDueIQD > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedInvoiceForPayment(inv);
-                                  setPaymentAmountIQD(inv.balanceDueIQD);
-                                  setPaymentCurrency(currency.code);
-                                  setPaymentOrigAmount('');
-                                  setPaymentFxRate('');
-                                  setPaymentError(null);
-                                }}
-                                className="min-h-[36px] py-1.5 px-2.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
-                              >
-                                {bi('قبض دفعة', 'Collect', 'وەرگرتنی پارە')}
-                              </button>
-                            )}
+                        </div>
+                      </div>
 
-                            {installmentPlansEnabled && !isVoided && inv.balanceDueIQD > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => setInstallmentBuilderInvoice(inv)}
-                                className="min-h-[36px] py-1.5 px-2.5 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap inline-flex items-center gap-1"
-                                title={
-                                  inv.installmentPlan && inv.installmentPlan.length > 0
-                                    ? bi('تعديل خطة الأقساط', 'Edit Installment Plan', 'دەستکاریکردنی پلانی قیستەکان')
-                                    : bi('إعداد خطة أقساط', 'Setup Installments', 'دانانی پلانی قیستەکان')
-                                }
-                              >
-                                <CalendarClock className="size-3.5" />
-                                <span>
-                                  {inv.installmentPlan && inv.installmentPlan.length > 0
-                                    ? bi('الأقساط', 'Plan', 'قیستەکان')
-                                    : bi('إعداد أقساط', 'Setup Installments', 'دانانی قیستەکان')}
-                                </span>
-                              </button>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() => setPrintDoc({ type: 'invoice', invoice: inv })}
-                              className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground inline-flex items-center justify-center cursor-pointer"
-                              title={bi('طباعة الفاتورة', 'Print Invoice', 'چاپکردنی پسوولە')}
-                              aria-label={bi(
-                                `طباعة الفاتورة ${inv.invoiceNumber}`,
-                                `Print invoice ${inv.invoiceNumber}`,
-                                `چاپکردنی پسوولە ${inv.invoiceNumber}`
-                              )}
-                            >
-                              <Printer className="size-3.5" />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setHistoryInvoice(inv);
-                                setReversingPayId(null);
-                                setReversePayReason('');
-                                setReversePayError(null);
-                              }}
-                              className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground inline-flex items-center justify-center cursor-pointer"
-                              title={bi('الدفعات / عكس دفعة / وصولات', 'Payments, Receipts & Reversals', 'پارەدانەکان / پێچەوانەکردنەوە / پسوولەکان')}
-                              aria-label={bi(
-                                `سجل دفعات الفاتورة ${inv.invoiceNumber}`,
-                                `Payments and receipts history for ${inv.invoiceNumber}`,
-                                `تۆماری پارەدانی پسوولە ${inv.invoiceNumber}`
-                              )}
-                            >
-                              <History className="size-3.5" />
-                            </button>
-
-                            {latestPostedPayment && patientPhone && (() => {
-                              const waTemplates = ClinicOperationsService.getWhatsAppTemplates();
-                              const clinicProf = ClinicOperationsService.getClinicProfile();
-                              const langKey = language === 'en' ? 'en' : 'ar';
-                              const waMsg = buildReceiptWhatsAppText({
-                                template: waTemplates.paymentReceipt[langKey],
-                                invoice: inv,
-                                payment: latestPostedPayment,
-                                clinicProfile: clinicProf,
-                                primaryCurrencyCode: currency.code,
-                                lang: langKey,
-                              });
-                              const waHref = buildUserInitiatedWhatsAppHref(patientPhone, waMsg);
-                              if (!waHref) return null;
-                              return (
-                                <a
-                                  href={waHref}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 inline-flex items-center justify-center"
-                                  title={bi('إرسال الوصل عبر واتساب', 'Send Receipt via WhatsApp', 'ناردنی پسوولە لە ڕێگەی WhatsApp')}
-                                  aria-label={bi(
-                                    `إرسال الوصل عبر واتساب للمريض ${inv.patientName}`,
-                                    `Send receipt via WhatsApp to ${inv.patientName}`,
-                                    `ناردنی پسوولە لە ڕێگەی WhatsApp بۆ ${inv.patientName}`
-                                  )}
-                                >
-                                  <MessageSquare className="size-3.5" />
-                                </a>
-                              );
-                            })()}
-
-                            {!isVoided && perms.canDeleteFinancialRecords && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setVoidTargetInvoice(inv);
-                                  setVoidReason('');
-                                  setVoidError(null);
-                                }}
-                                className="min-h-[36px] min-w-[36px] text-muted-foreground-1 hover:text-rose-700 dark:hover:text-rose-300 p-1.5 rounded-lg hover:bg-rose-500/10 inline-flex items-center justify-center cursor-pointer"
-                                title={bi('إلغاء فاتورة بإشعار دائن', 'Void with Credit Note', 'هەڵوەشاندنەوەی پسوولە بە ئاگاداری دائن')}
-                                aria-label={bi(
-                                  `إلغاء الفاتورة ${inv.invoiceNumber} بإشعار دائن`,
-                                  `Void invoice ${inv.invoiceNumber} with credit note`,
-                                  `هەڵوەشاندنەوەی پسوولە ${inv.invoiceNumber}`
-                                )}
-                              >
-                                <Ban className="size-3.5" />
-                              </button>
-                            )}
+                      {/* Middle Compact 3-Column Financial Totals */}
+                      <div className="grid grid-cols-3 gap-1.5 p-2 rounded-xl bg-surface border border-line-2/60 text-center tabular-nums w-full">
+                        <div className="min-w-0">
+                          <div className="text-[10px] text-muted-foreground-1 font-medium">
+                            {bi('الصافي', 'Net', 'پوختە')}
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                    {invoiceVirtual.bottomSpacerPx > 0 && (
-                      <tr aria-hidden="true">
-                        <td
-                          colSpan={7}
-                          style={{ height: invoiceVirtual.bottomSpacerPx }}
-                          className="p-0 border-0"
-                        />
-                      </tr>
-                    )}
-                  </>
-                )}
-              </tbody>
-            </table>
+                          <div className="text-xs font-bold text-foreground truncate">
+                            <Money amount={group.totalNetIQD} colorize={false} />
+                          </div>
+                        </div>
+                        <div className="min-w-0 border-x border-line-2/60 px-1">
+                          <div className="text-[10px] text-muted-foreground-1 font-medium">
+                            {bi('المدفوع', 'Paid', 'دراو')}
+                          </div>
+                          <div className="text-xs font-bold text-emerald-700 dark:text-emerald-400 truncate">
+                            <Money amount={group.totalPaidIQD} colorize={false} />
+                          </div>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-[10px] text-muted-foreground-1 font-medium">
+                            {bi('المتبقي', 'Due', 'ماوە')}
+                          </div>
+                          <div className={`text-xs font-bold truncate ${hasDebt ? 'text-rose-700 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
+                            <Money amount={group.totalDueIQD} colorize={false} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Optional Active Package Slim Progress + Tap Hint */}
+                      <div className="flex items-center justify-between gap-2 text-[11px] w-full pt-0.5">
+                        {pkgTotal > 0 ? (
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <span className="font-mono font-bold text-primary shrink-0">
+                              <Fraction value={pkgUsed} total={pkgTotal} />
+                            </span>
+                            <div className="flex-1 h-1.5 bg-surface rounded-full overflow-hidden max-w-[100px]">
+                              <div
+                                className="h-full rounded-full bg-primary transition-all duration-300"
+                                style={{ width: `${pkgPct}%` }}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground-2 truncate">
+                            {language === 'en' ? group.invoices[0]?.titleEn : group.invoices[0]?.titleAr}
+                          </span>
+                        )}
+
+                        <span className="inline-flex items-center gap-0.5 font-bold text-primary shrink-0 group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 transition-transform">
+                          <span>{bi('التفاصيل', 'Details', 'وردەکاری')}</span>
+                          {isRtl ? <ChevronLeft className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Admin-Only Manual Package Adjustment Modal (Phase 3.6) */}
-      {pkgAdjustInvoice && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center p-4"
-          onClick={() => setPkgAdjustInvoice(null)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="fin-pkg-adj-title"
-            className="w-full max-w-md rounded-2xl bg-card border border-card-line shadow-2xl p-5 space-y-4"
-            dir={isRtl ? 'rtl' : 'ltr'}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <h2 id="fin-pkg-adj-title" className="text-sm font-bold text-foreground">
-                {bi(
-                  'تعديل إداري لعدد جلسات الكورس',
-                  'Admin Manual Package Visit Adjustment',
-                  'دەستکاریکردنی کارگێڕی ژمارەی دانیشتنەکانی کۆرس'
-                )}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setPkgAdjustInvoice(null)}
-                aria-label={bi('إغلاق', 'Close', 'داخستن')}
-                className="min-h-[36px] min-w-[36px] p-1 text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center rounded-lg cursor-pointer"
-              >
-                <X className="size-4" />
-              </button>
+      {/* Patient Financial Details Modal (Bottom Sheet on Mobile, Centered on Tablet/Desktop) */}
+      <ModalDialog
+        isOpen={Boolean(selectedPatientGroup)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedPatientLedgerKey(null);
+        }}
+        title={
+          selectedPatientGroup ? (
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span>{selectedPatientGroup.patientName}</span>
+              {selectedPatientGroup.isDemo && <DemoBadge />}
+            </div>
+          ) : (
+            ''
+          )
+        }
+        subtitle={
+          selectedPatientGroup
+            ? bi(
+                `سجل الفواتير والمدفوعات (${selectedPatientGroup.invoices.length})`,
+                `Invoices & Payment Breakdown (${selectedPatientGroup.invoices.length})`,
+                `تۆماری پسوولە و پارەدانەکان (${selectedPatientGroup.invoices.length})`
+              )
+            : undefined
+        }
+        ariaLabel={bi('تفاصيل المريض المالية', 'Patient Financial Details', 'وردەکاری دارایی نەخۆش')}
+        closeLabel={bi('إغلاق', 'Close', 'داخستن')}
+        size="lg"
+        dir={isRtl ? 'rtl' : 'ltr'}
+      >
+        {selectedPatientGroup && (
+          <div className="space-y-4">
+            {/* Patient Overall Totals Strip */}
+            <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-surface border border-card-line text-center tabular-nums">
+              <div>
+                <div className="text-[11px] text-muted-foreground-1 font-medium">
+                  {bi('إجمالي الصافي', 'Total Net', 'کۆی پوختە')}
+                </div>
+                <div className="text-sm font-black text-foreground mt-0.5">
+                  <Money amount={selectedPatientGroup.totalNetIQD} colorize={false} />
+                </div>
+              </div>
+              <div className="border-x border-line-2/60 px-2">
+                <div className="text-[11px] text-muted-foreground-1 font-medium">
+                  {bi('إجمالي المدفوع', 'Total Paid', 'کۆی پارەدراو')}
+                </div>
+                <div className="text-sm font-black text-emerald-700 dark:text-emerald-400 mt-0.5">
+                  <Money amount={selectedPatientGroup.totalPaidIQD} colorize={false} />
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] text-muted-foreground-1 font-medium">
+                  {bi('المتبقي / الدين', 'Balance Due', 'ماوە / قەرز')}
+                </div>
+                <div className={`text-sm font-black mt-0.5 ${selectedPatientGroup.totalDueIQD > 0 ? 'text-rose-700 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
+                  <Money amount={selectedPatientGroup.totalDueIQD} colorize={false} />
+                </div>
+              </div>
             </div>
 
-            <div className="text-xs text-muted-foreground-1 space-y-1">
+            {/* Individual Invoices List */}
+            <div className="space-y-3">
+              {selectedPatientGroup.invoices.map((inv) => {
+                const used = inv.packageUsedSessions || 0;
+                const total = inv.packageTotalSessions || 0;
+                const pct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
+                const isVoided = inv.status === 'void';
+                const latestPostedPayment = [...(inv.payments || [])]
+                  .reverse()
+                  .find((p) => !p.isReversal && p.status !== 'reversed' && p.amountIQD > 0);
+                const patientRecord = activePatients.find((p) => p.id === inv.patientId);
+                const patientPhone = patientRecord?.data.phone || patientRecord?.data.phoneNumber;
+                const rowLocation = inv.locationId ? locationNameById.get(inv.locationId) : undefined;
+
+                return (
+                  <div
+                    key={inv.id}
+                    className={`p-3.5 sm:p-4 rounded-2xl border space-y-3 tabular-nums ${
+                      isVoided
+                        ? 'bg-rose-500/5 border-rose-500/25 opacity-80'
+                        : 'bg-surface border-line-2'
+                    }`}
+                  >
+                    {/* Invoice Header */}
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono font-bold text-xs text-foreground">
+                            <bdi dir="ltr">{inv.invoiceNumber}</bdi>
+                          </span>
+                          <span className="text-xs text-muted-foreground-1">
+                            <bdi dir="ltr">{formatDateDDMMYYYY(inv.date)}</bdi>
+                          </span>
+                          {isVoided && (
+                            <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-400 text-[11px] font-bold">
+                              {bi(
+                                `ملغاة (${inv.creditNoteNumber || ''})`,
+                                `Void (${inv.creditNoteNumber || ''})`,
+                                `هەڵوەشاوە (${inv.creditNoteNumber || ''})`
+                              )}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs font-bold text-foreground mt-1">
+                          {language === 'en' ? inv.titleEn : inv.titleAr}
+                        </div>
+                      </div>
+
+                      <div className="text-end shrink-0">
+                        {isVoided ? (
+                          <span className="text-rose-700 dark:text-rose-400 font-bold text-xs">
+                            {bi('إشعار دائن', 'Credit Note', 'ئاگاداری دائن')}
+                          </span>
+                        ) : inv.balanceDueIQD > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-500/12 text-rose-700 dark:text-rose-400 text-xs font-bold">
+                            <span className="size-1.5 rounded-full bg-current shrink-0" aria-hidden="true" />
+                            <span>{bi('متبقي: ', 'Due: ', 'ماوە: ')}</span>
+                            <Money amount={inv.balanceDueIQD} />
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/12 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
+                            <span className="size-1.5 rounded-full bg-current shrink-0" aria-hidden="true" />
+                            <span>{bi('مسدد بالكامل', 'Paid in Full', 'بە تەواوی دراوە')}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Metadata Tags (Location, Travel, Installments, Void Reason) */}
+                    {((practiceLocationsEnabled && rowLocation) ||
+                      (inv.travelFeeIQD && inv.travelFeeIQD > 0) ||
+                      (installmentPlansEnabled &&
+                        inv.installmentPlan &&
+                        inv.installmentPlan.length > 0) ||
+                      (isVoided && inv.voidReason)) && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {practiceLocationsEnabled && rowLocation && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-card border border-line-2 text-[11px] text-muted-foreground-1">
+                            <MapPin className="size-3" />
+                            <span>
+                              {language === 'en'
+                                ? rowLocation.nameEn || rowLocation.nameAr
+                                : rowLocation.nameAr}
+                            </span>
+                          </span>
+                        )}
+                        {inv.travelFeeIQD && inv.travelFeeIQD > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-card border border-line-2 text-[11px] text-muted-foreground-1">
+                            <span>{bi('تنقل:', 'Travel:', 'هاتوچۆ:')}</span>
+                            <Money amount={inv.travelFeeIQD} colorize={false} />
+                          </span>
+                        ) : null}
+                        {installmentPlansEnabled &&
+                          inv.installmentPlan &&
+                          inv.installmentPlan.length > 0 && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
+                              <CalendarClock className="size-3" />
+                              <span>
+                                {bi(
+                                  `${inv.installmentPlan.length} أقساط`,
+                                  `${inv.installmentPlan.length} installments`,
+                                  `${inv.installmentPlan.length} قیست`
+                                )}
+                              </span>
+                            </span>
+                          )}
+                        {isVoided && inv.voidReason && (
+                          <span className="text-xs text-rose-700 dark:text-rose-300">
+                            {bi('سبب الإلغاء: ', 'Void reason: ', 'هۆکاری هەڵوەشاندنەوە: ')}
+                            {inv.voidReason}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Amounts Row */}
+                    <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-card border border-card-line text-xs">
+                      <div>
+                        <span className="text-[11px] text-muted-foreground-1 block">
+                          {bi('الصافي', 'Net', 'پوختە')}
+                        </span>
+                        <span className="font-mono font-bold text-foreground">
+                          <Money amount={inv.netAmountIQD} />
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-muted-foreground-1 block">
+                          {bi('المدفوع', 'Paid', 'پارەدراو')}
+                        </span>
+                        <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300">
+                          <Money amount={inv.paidAmountIQD} />
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-muted-foreground-1 block">
+                          {bi('المتبقي', 'Balance Due', 'ماوە / قەرز')}
+                        </span>
+                        <span className={`font-mono font-bold ${inv.balanceDueIQD > 0 && !isVoided ? 'text-rose-700 dark:text-rose-400' : 'text-foreground'}`}>
+                          <Money amount={inv.balanceDueIQD} />
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Course Visits Progress */}
+                    {inv.packageTotalSessions ? (
+                      <div className="p-2.5 rounded-xl bg-card border border-card-line space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="text-muted-foreground-1 font-medium">
+                              {bi('استهلاك الكورس:', 'Package Visits:', 'سەردانەکانی کۆرس:')}
+                            </span>
+                            <span className="font-mono font-bold text-primary">
+                              <Fraction value={used} total={total} />
+                            </span>
+                          </div>
+                          {isAdmin && !isVoided ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPkgAdjustInvoice(inv);
+                                setPkgAdjustDelta(used < total ? 1 : -1);
+                                setPkgAdjustReason('');
+                                setPkgAdjustError(null);
+                              }}
+                              className="min-h-[32px] py-1 px-2.5 rounded-lg bg-primary/10 hover:bg-primary hover:text-primary-foreground text-primary border border-primary/20 text-xs font-semibold transition-colors cursor-pointer"
+                            >
+                              {bi('تعديل إداري', 'Admin Adjust', 'دەستکاری کارگێڕی')}
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-muted-foreground-1">
+                              {bi('تلقائي عند الاعتماد', 'Auto on Finalize', 'خۆکار لە کاتی پەسەندکردندا')}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex w-full h-1.5 bg-surface rounded-full overflow-hidden">
+                          <div
+                            className="flex flex-col justify-center rounded-full overflow-hidden bg-primary transition-all duration-300"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {/* Actions Toolbar */}
+                    <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1 border-t border-card-divider">
+                      {!isVoided && inv.balanceDueIQD > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedInvoiceForPayment(inv);
+                            setPaymentAmountIQD(inv.balanceDueIQD);
+                            setPaymentCurrency(currency.code);
+                            setPaymentOrigAmount('');
+                            setPaymentFxRate('');
+                            setPaymentError(null);
+                          }}
+                          className="min-h-[36px] py-1.5 px-3 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                          {bi('قبض دفعة', 'Collect', 'وەرگرتنی پارە')}
+                        </button>
+                      )}
+
+                      {installmentPlansEnabled && !isVoided && inv.balanceDueIQD > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setInstallmentBuilderInvoice(inv)}
+                          className="min-h-[36px] py-1.5 px-2.5 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap inline-flex items-center gap-1"
+                        >
+                          <CalendarClock className="size-3.5" />
+                          <span>
+                            {inv.installmentPlan && inv.installmentPlan.length > 0
+                              ? bi('الأقساط', 'Plan', 'قیستەکان')
+                              : bi('إعداد أقساط', 'Setup Installments', 'دانانی قیستەکان')}
+                          </span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setPrintDoc({ type: 'invoice', invoice: inv })}
+                        className="min-h-[36px] min-w-[36px] px-2.5 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center justify-center gap-1 cursor-pointer"
+                        title={bi('طباعة الفاتورة', 'Print Invoice', 'چاپکردنی پسوولە')}
+                      >
+                        <Printer className="size-3.5" />
+                        <span>{bi('طباعة', 'Print', 'چاپ')}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setHistoryInvoice(inv);
+                          setReversingPayId(null);
+                          setReversePayReason('');
+                          setReversePayError(null);
+                        }}
+                        className="min-h-[36px] min-w-[36px] px-2.5 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center justify-center gap-1 cursor-pointer"
+                        title={bi('الدفعات / عكس دفعة / وصولات', 'Payments, Receipts & Reversals', 'پارەدانەکان / پێچەوانەکردنەوە / پسوولەکان')}
+                      >
+                        <History className="size-3.5" />
+                        <span>{bi('الدفعات', 'History', 'تۆمار')}</span>
+                      </button>
+
+                      {latestPostedPayment && patientPhone && (() => {
+                        const waTemplates = ClinicOperationsService.getWhatsAppTemplates();
+                        const clinicProf = ClinicOperationsService.getClinicProfile();
+                        const langKey = language === 'en' ? 'en' : 'ar';
+                        const waMsg = buildReceiptWhatsAppText({
+                          template: waTemplates.paymentReceipt[langKey],
+                          invoice: inv,
+                          payment: latestPostedPayment,
+                          clinicProfile: clinicProf,
+                          primaryCurrencyCode: currency.code,
+                          lang: langKey,
+                        });
+                        const waHref = buildUserInitiatedWhatsAppHref(patientPhone, waMsg);
+                        if (!waHref) return null;
+                        return (
+                          <a
+                            href={waHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="min-h-[36px] min-w-[36px] p-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 inline-flex items-center justify-center"
+                            title={bi('إرسال الوصل عبر واتساب', 'Send Receipt via WhatsApp', 'ناردنی پسوولە لە ڕێگەی WhatsApp')}
+                          >
+                            <MessageSquare className="size-3.5" />
+                          </a>
+                        );
+                      })()}
+
+                      {!isVoided && perms.canDeleteFinancialRecords && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setVoidTargetInvoice(inv);
+                            setVoidReason('');
+                            setVoidError(null);
+                          }}
+                          className="min-h-[36px] min-w-[36px] text-muted-foreground-1 hover:text-rose-700 dark:hover:text-rose-300 p-1.5 rounded-xl hover:bg-rose-500/10 inline-flex items-center justify-center cursor-pointer"
+                          title={bi('إلغاء فاتورة بإشعار دائن', 'Void with Credit Note', 'هەڵوەشاندنەوەی پسوولە بە ئاگاداری دائن')}
+                        >
+                          <Ban className="size-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </ModalDialog>
+
+      {/* Collect Payment Modal (Bottom Sheet on Mobile, Centered on Tablet/Desktop) */}
+      <ModalDialog
+        isOpen={Boolean(selectedInvoiceForPayment)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedInvoiceForPayment(null);
+        }}
+        title={
+          selectedInvoiceForPayment
+            ? bi(
+                `استلام دفعة مالية: ${selectedInvoiceForPayment.patientName}`,
+                `Collect Payment: ${selectedInvoiceForPayment.patientName}`,
+                `وەرگرتنی پارە: ${selectedInvoiceForPayment.patientName}`
+              )
+            : ''
+        }
+        subtitle={
+          selectedInvoiceForPayment ? (
+            <span className="font-mono">
+              <bdi dir="ltr">{selectedInvoiceForPayment.invoiceNumber}</bdi> ·{' '}
+              {bi('المتبقي بالذمة: ', 'Balance Due: ', 'بڕی ماوە لەسەر نەخۆش: ')}
+              <Money amount={selectedInvoiceForPayment.balanceDueIQD} />
+            </span>
+          ) : undefined
+        }
+        ariaLabel={bi('استلام دفعة مالية', 'Collect Payment', 'وەرگرتنی پارە')}
+        closeLabel={bi('إغلاق', 'Close', 'داخستن')}
+        size="md"
+        dir={isRtl ? 'rtl' : 'ltr'}
+      >
+        {selectedInvoiceForPayment && (
+          <form onSubmit={handleCollectPartialPayment} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label htmlFor="fin-pay-currency" className="text-xs font-semibold text-foreground block mb-1.5">
+                  {bi('عملة الدفع:', 'Currency:', 'دراوی پارەدان:')}
+                </label>
+                <select
+                  id="fin-pay-currency"
+                  value={paymentCurrency}
+                  onChange={(e) => {
+                    setPaymentCurrency(e.target.value);
+                    setPaymentFxRate('');
+                    setPaymentError(null);
+                  }}
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-layer-line text-foreground"
+                >
+                  <option value={currency.code}>
+                    {currency.code} ({bi(currency.symbolAr, currency.symbolEn)})
+                  </option>
+                  {WORLD_CURRENCIES.filter((c) => c.code !== currency.code).map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code} ({bi(c.symbolAr, c.symbolEn)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {paymentCurrency === currency.code ? (
+                <div>
+                  <label htmlFor="fin-pay-amt" className="text-xs font-semibold text-foreground block mb-1.5">
+                    {bi(
+                      `المبلغ المستلم اليوم (${currency.symbolAr}):`,
+                      `Payment Amount (${currency.code}):`,
+                      `بڕی وەرگیراوی ئەمڕۆ (${currency.symbolAr}):`
+                    )}
+                  </label>
+                  <MoneyInput
+                    id="fin-pay-amt"
+                    ariaLabel={bi('المبلغ المستلم اليوم', 'Payment Amount', 'بڕی وەرگیراوی ئەمڕۆ')}
+                    value={paymentAmountIQD}
+                    onChange={(val) =>
+                      setPaymentAmountIQD(
+                        Math.min(val, selectedInvoiceForPayment.balanceDueIQD)
+                      )
+                    }
+                    className="w-full py-2 text-xs rounded-xl bg-surface border border-layer-line tabular-nums font-bold text-foreground"
+                  />
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label htmlFor="fin-pay-fx-amt" className="text-xs font-semibold text-foreground block mb-1.5">
+                      {bi(
+                        `المبلغ بعملة (${paymentCurrency}):`,
+                        `Amount (${paymentCurrency}):`,
+                        `بڕ بە دراوی (${paymentCurrency}):`
+                      )}
+                    </label>
+                    <input
+                      id="fin-pay-fx-amt"
+                      type="number"
+                      step="any"
+                      min={0}
+                      value={paymentOrigAmount}
+                      onChange={(e) => setPaymentOrigAmount(e.target.value)}
+                      placeholder="0"
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-layer-line tabular-nums font-mono font-bold text-foreground"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="fin-pay-fx-rate" className="text-xs font-semibold text-foreground block mb-1.5">
+                      {bi(
+                        `سعر الصرف (1 ${paymentCurrency} = ? ${currency.code}):`,
+                        `FX Rate (1 ${paymentCurrency} = ? ${currency.code}):`,
+                        `نرخی گۆڕینەوە (1 ${paymentCurrency} = ? ${currency.code}):`
+                      )}
+                    </label>
+                    <input
+                      id="fin-pay-fx-rate"
+                      type="number"
+                      step="any"
+                      min={0}
+                      value={paymentFxRate}
+                      onChange={(e) => setPaymentFxRate(e.target.value)}
+                      placeholder={paymentCurrency === 'USD' && currency.code === 'IQD' ? '1500' : '1'}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-layer-line tabular-nums font-mono font-bold text-foreground"
+                    />
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label htmlFor="fin-pay-method" className="text-xs font-semibold text-foreground block mb-1.5">
+                  {bi('وسيلة الدفع:', 'Payment Method:', 'شێوازی پارەدان:')}
+                </label>
+                <select
+                  id="fin-pay-method"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value as IraqiPaymentMethod)}
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-layer-line text-foreground"
+                >
+                  {Object.entries(paymentMethodLabels).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {bi(v.ar, v.en, v.ckb)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {paymentMethod === 'other' && (
+                <div>
+                  <label htmlFor="fin-pay-custom-method" className="text-xs font-semibold text-foreground block mb-1.5">
+                    {bi('حدد وسيلة الدفع الأخرى:', 'Specify Custom Method:', 'شێوازی پارەدانی تر دیاری بکە:')}
+                  </label>
+                  <input
+                    id="fin-pay-custom-method"
+                    type="text"
+                    value={paymentCustomMethod}
+                    onChange={(e) => setPaymentCustomMethod(e.target.value)}
+                    placeholder={bi('مثال: شيك، حوالة خاصة...', 'e.g. Check, custom transfer...', 'نموونە: چەک، حەواڵەی تایبەت...')}
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-layer-line text-foreground"
+                  />
+                </div>
+              )}
+
+              <div className="sm:col-span-2">
+                <label htmlFor="fin-pay-note" className="text-xs font-semibold text-foreground block mb-1.5">
+                  {bi('ملاحظات الوصل:', 'Receipt Notes:', 'تێبینیی وەسڵ:')}
+                </label>
+                <input
+                  id="fin-pay-note"
+                  type="text"
+                  value={paymentNote}
+                  onChange={(e) => setPaymentNote(e.target.value)}
+                  placeholder={bi('مثال: الدفعة الثانية من الكورس...', 'Second installment...', 'نموونە: قیستی دووەمی کۆرس...')}
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-layer-line text-foreground"
+                />
+              </div>
+            </div>
+
+            {paymentCurrency !== currency.code && Number(paymentOrigAmount) > 0 && Number(paymentFxRate) > 0 && (
+              <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
+                {bi('المعادل المسجل بالعيادة: ', 'Converted Ledger Equivalent: ', 'هاوتای تۆمارکراو لە کلینیک: ')}
+                <Money
+                  amount={Math.min(
+                    selectedInvoiceForPayment.balanceDueIQD,
+                    Math.round(Number(paymentOrigAmount) * Number(paymentFxRate))
+                  )}
+                />
+              </div>
+            )}
+
+            {paymentError && (
+              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-700 dark:text-rose-300">
+                {paymentError}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-card-divider">
+              <button
+                type="button"
+                onClick={() => setSelectedInvoiceForPayment(null)}
+                className="min-h-[38px] px-4 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground cursor-pointer"
+              >
+                {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
+              </button>
+              <button
+                type="submit"
+                className="min-h-[38px] py-2 px-5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold shadow-xs cursor-pointer"
+              >
+                {bi(
+                  'تأكيد استلام الدفعة وإصدار وصل قبض',
+                  'Confirm Payment & Issue Receipt',
+                  'دڵنیاکردنەوەی وەرگرتنی پارە و دەرکردنی وەسڵ'
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+      </ModalDialog>
+
+      {/* Admin-Only Manual Package Adjustment Modal (Phase 3.6) */}
+      <ModalDialog
+        isOpen={Boolean(pkgAdjustInvoice)}
+        onOpenChange={(open) => {
+          if (!open) setPkgAdjustInvoice(null);
+        }}
+        title={bi(
+          'تعديل إداري لعدد جلسات الكورس',
+          'Admin Manual Package Visit Adjustment',
+          'دەستکاریکردنی کارگێڕی ژمارەی دانیشتنەکانی کۆرس'
+        )}
+        ariaLabel={bi(
+          'تعديل إداري لعدد جلسات الكورس',
+          'Admin Manual Package Visit Adjustment',
+          'دەستکاریکردنی کارگێڕی ژمارەی دانیشتنەکانی کۆرس'
+        )}
+        closeLabel={bi('إغلاق', 'Close', 'داخستن')}
+        size="sm"
+        dir={isRtl ? 'rtl' : 'ltr'}
+      >
+        {pkgAdjustInvoice && (
+          <div className="space-y-4">
+            <div className="p-3 rounded-xl bg-surface border border-line-2 text-xs text-muted-foreground-1 space-y-1">
               <div>
                 <strong className="text-foreground">{pkgAdjustInvoice.patientName}</strong> —{' '}
                 <bdi dir="ltr">{pkgAdjustInvoice.invoiceNumber}</bdi>
@@ -2982,44 +3229,40 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </ModalDialog>
 
       {/* Void Invoice with Reason / Credit Note Modal (4.1) */}
-      {voidTargetInvoice && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center p-4"
-          onClick={() => setVoidTargetInvoice(null)}
-        >
-          <form
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="fin-void-title"
-            onSubmit={handleVoidInvoiceSubmit}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-2xl bg-card border border-card-line shadow-2xl p-5 space-y-4 text-xs"
-            dir={isRtl ? 'rtl' : 'ltr'}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <h2 id="fin-void-title" className="text-sm font-bold text-rose-700 dark:text-rose-300 flex items-center gap-2">
-                <Ban className="size-4" />
-                <span>
-                  {bi(
-                    'إلغاء فاتورة وإصدار إشعار دائن',
-                    'Void Invoice & Issue Credit Note',
-                    'هەڵوەشاندنەوەی پسوولە و دەرکردنی ئاگاداری دائن'
-                  )}
-                </span>
-              </h2>
-              <button
-                type="button"
-                onClick={() => setVoidTargetInvoice(null)}
-                aria-label={bi('إغلاق', 'Close', 'داخستن')}
-                className="min-h-[36px] min-w-[36px] p-1 text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center rounded-lg cursor-pointer"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
+      <ModalDialog
+        isOpen={Boolean(voidTargetInvoice)}
+        onOpenChange={(open) => {
+          if (!open) setVoidTargetInvoice(null);
+        }}
+        title={
+          <span className="flex items-center gap-2 text-sm sm:text-base font-bold text-primary-foreground">
+            <span className="size-7 rounded-lg bg-rose-500/25 border border-rose-200/40 flex items-center justify-center shrink-0">
+              <Ban className="size-4 text-primary-foreground" />
+            </span>
+            <span>
+              {bi(
+                'إلغاء فاتورة وإصدار إشعار دائن',
+                'Void Invoice & Issue Credit Note',
+                'هەڵوەشاندنەوەی پسوولە و دەرکردنی ئاگاداری دائن'
+              )}
+            </span>
+          </span>
+        }
+        ariaLabel={bi(
+          'إلغاء فاتورة وإصدار إشعار دائن',
+          'Void Invoice & Issue Credit Note',
+          'هەڵوەشاندنەوەی پسوولە و دەرکردنی ئاگاداری دائن'
+        )}
+        closeLabel={bi('إغلاق', 'Close', 'داخستن')}
+        size="sm"
+        dir={isRtl ? 'rtl' : 'ltr'}
+      >
+        {voidTargetInvoice && (
+          <form onSubmit={handleVoidInvoiceSubmit} className="space-y-4 text-xs">
 
             <div className="p-3 rounded-xl bg-surface border border-line-2 space-y-1">
               <div className="font-mono font-bold text-foreground">
@@ -3084,52 +3327,44 @@ export const IraqiFinancialLedgerView: React.FC = () => {
               </button>
             </div>
           </form>
-        </div>
-      )}
+        )}
+      </ModalDialog>
 
       {/* Invoice Payment History, Receipts, Reversals & WhatsApp Drawer (4.1 / 4.6 / 4.7) */}
-      {historyInvoice && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center p-4"
-          onClick={() => setHistoryInvoice(null)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="fin-history-title"
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-2xl rounded-2xl bg-card border border-card-line shadow-2xl p-5 space-y-4 text-xs max-h-[85vh] flex flex-col"
-            dir={isRtl ? 'rtl' : 'ltr'}
-          >
-            <div className="flex items-center justify-between gap-2 border-b border-card-divider pb-3">
-              <div>
-                <h2 id="fin-history-title" className="text-sm font-bold text-foreground">
-                  {bi(
-                    'سجل الدفعات والوصولات والعكوسات',
-                    'Payments, Receipts & Reversals',
-                    'تۆماری پارەدان و پسوولە و پێچەوانەکردنەوەکان'
-                  )}
-                </h2>
-                <p className="text-muted-foreground-1 font-mono mt-0.5">
-                  <bdi dir="ltr">{historyInvoice.invoiceNumber}</bdi> · {historyInvoice.patientName}
-                </p>
+      <ModalDialog
+        isOpen={Boolean(historyInvoice)}
+        onOpenChange={(open) => {
+          if (!open) setHistoryInvoice(null);
+        }}
+        title={
+          historyInvoice ? (
+            <div>
+              <div className="text-sm sm:text-base font-bold text-primary-foreground">
+                {bi(
+                  'سجل الدفعات والوصولات والعكوسات',
+                  'Payments, Receipts & Reversals',
+                  'تۆماری پارەدان و پسوولە و پێچەوانەکردنەوەکان'
+                )}
               </div>
-              <button
-                type="button"
-                onClick={() => setHistoryInvoice(null)}
-                aria-label={bi('إغلاق', 'Close', 'داخستن')}
-                className="min-h-[36px] min-w-[36px] p-1.5 rounded-lg text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer"
-              >
-                <X className="size-4" />
-              </button>
+              <p className="text-xs text-primary-foreground/85 font-mono font-normal mt-0.5">
+                <bdi dir="ltr">{historyInvoice.invoiceNumber}</bdi> · {historyInvoice.patientName}
+              </p>
             </div>
-
-            <div
-              tabIndex={0}
-              role="region"
-              aria-label={bi('قائمة الدفعات والوصولات', 'Payment entries list', 'لیستی پارەدان و پسوولەکان')}
-              className="overflow-y-auto space-y-2.5 flex-1 pe-1 focus:outline-none focus:ring-2 focus:ring-primary rounded-xl"
-            >
+          ) : (
+            ''
+          )
+        }
+        ariaLabel={bi(
+          'سجل الدفعات والوصولات والعكوسات',
+          'Payments, Receipts & Reversals',
+          'تۆماری پارەدان و پسوولە و پێچەوانەکردنەوەکان'
+        )}
+        closeLabel={bi('إغلاق', 'Close', 'داخستن')}
+        size="lg"
+        dir={isRtl ? 'rtl' : 'ltr'}
+      >
+        {historyInvoice && (
+          <div className="space-y-2.5 text-xs">
               {(historyInvoice.payments || []).length === 0 ? (
                 <p className="text-center text-muted-foreground-1 py-6">
                   {bi(
@@ -3165,13 +3400,13 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                           <div className="font-mono font-bold text-foreground flex items-center gap-2 flex-wrap">
                             <bdi dir="ltr">{pay.receiptNumber}</bdi>
                             {pay.status === 'reversed' && (
-                              <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 font-sans text-xs">
-                                {bi('تم عكسها', 'Reversed', 'پێچەوانەکرایەوە')}
+                              <span className="text-rose-700 dark:text-rose-400 font-sans font-bold text-xs">
+                                · {bi('تم عكسها', 'Reversed', 'پێچەوانەکرایەوە')}
                               </span>
                             )}
                             {pay.isReversal && (
-                              <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 font-sans text-xs">
-                                {bi('قيد عكس', 'Reversal Entry', 'تۆماری پێچەوانە')}
+                              <span className="text-amber-700 dark:text-amber-300 font-sans font-bold text-xs">
+                                · {bi('قيد عكس', 'Reversal Entry', 'تۆماری پێچەوانە')}
                               </span>
                             )}
                           </div>
@@ -3290,10 +3525,9 @@ export const IraqiFinancialLedgerView: React.FC = () => {
                   );
                 })
               )}
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </ModalDialog>
 
       {installmentPlansEnabled && installmentBuilderInvoice && (
         <Suspense fallback={null}>

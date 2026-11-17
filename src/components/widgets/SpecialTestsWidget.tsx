@@ -12,7 +12,8 @@ import {
   validateCustomSpecialTestDraft,
   type SpecialTestSide,
 } from '../../utils/specialTestsHelpers';
-import { Check, AlertTriangle, XCircle, Plus, Search, Trash2 } from 'lucide-react';
+import { Check, AlertTriangle, XCircle, Plus, Search, Trash2, StickyNote } from 'lucide-react';
+import { ModalDialog } from '../ui/Dialog';
 
 interface SpecialTestsWidgetProps {
   value: OrthopedicSpecialTestItem[] | undefined;
@@ -472,6 +473,13 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
   const [customSide, setCustomSide] = useState<SpecialTestSide>('right');
   const [customValidationError, setCustomValidationError] = useState<string | null>(null);
   const customNameInputRef = useRef<HTMLInputElement | null>(null);
+  const [activeNoteTest, setActiveNoteTest] = useState<{
+    id: string;
+    nameAr: string;
+    nameEn: string;
+    notes: string;
+    template: Omit<OrthopedicSpecialTestItem, 'outcome' | 'notes' | 'painScoreNrs'>;
+  } | null>(null);
 
   const outcomeMap = useMemo(() => {
     const map = new Map<string, OrthopedicSpecialTestItem>();
@@ -534,6 +542,42 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
       updated.push(newItem);
     }
 
+    onChange(updated);
+  };
+
+  const handleSaveNote = (
+    testId: string,
+    template: Omit<OrthopedicSpecialTestItem, 'outcome' | 'notes' | 'painScoreNrs'>,
+    noteText: string
+  ) => {
+    if (readOnly) return;
+    const existingIdx = value.findIndex((t) => t.id === testId);
+    const updated = [...value];
+    const trimmed = noteText.trim();
+
+    if (existingIdx >= 0) {
+      if (!trimmed && updated[existingIdx].outcome === 'not_tested') {
+        if (MASTER_SPECIAL_TESTS.some((m) => m.id === testId)) {
+          updated.splice(existingIdx, 1);
+        } else {
+          updated[existingIdx] = { ...updated[existingIdx], notes: undefined };
+        }
+      } else {
+        updated[existingIdx] = {
+          ...updated[existingIdx],
+          notes: trimmed || undefined,
+        };
+      }
+    } else if (trimmed) {
+      const resolved = resolveSpecialTestCanonical(template);
+      updated.push({
+        ...template,
+        canonicalKey: resolved.canonicalKey,
+        label: resolved.label,
+        outcome: 'not_tested',
+        notes: trimmed,
+      });
+    }
     onChange(updated);
   };
 
@@ -603,12 +647,12 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
             )}
           </span>
           {positiveCount > 0 && (
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20">
-              {bi(
+            <span className="text-xs font-bold text-rose-700 dark:text-rose-400">
+              ({bi(
                 `${positiveCount} إيجابي`,
                 `${positiveCount} Positive`,
                 `${positiveCount} پۆزەتیڤ`
-              )}
+              )})
             </span>
           )}
         </div>
@@ -630,25 +674,30 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
         </div>
       </div>
 
-      {/* Joint Filter Pills */}
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {JOINT_LABELS.map((j) => {
-          const isActive = selectedJoint === j.id;
-          return (
-            <button
-              key={j.id}
-              type="button"
-              onClick={() => setSelectedJoint(j.id)}
-              className={`min-h-[34px] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                isActive
-                  ? 'bg-primary text-primary-foreground shadow-2xs'
-                  : 'bg-layer text-muted-foreground-1 border border-layer-line hover:bg-layer-hover hover:text-foreground'
-              }`}
-            >
-              {bi(j.ar, j.en)}
-            </button>
-          );
-        })}
+      {/* Joint Filter Pills (Horizontally scrollable strip) */}
+      <div className="rounded-2xl border border-line-2 bg-surface/60 p-1 overflow-hidden">
+        <div className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-1 pt-0.5 px-0.5">
+          {JOINT_LABELS.map((j) => {
+            const isActive = selectedJoint === j.id;
+            return (
+              <button
+                key={j.id}
+                type="button"
+                onClick={(e) => {
+                  setSelectedJoint(j.id);
+                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }}
+                className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-2xs'
+                    : 'bg-card text-muted-foreground-1 border border-line-2/70 hover:bg-layer-hover hover:text-foreground'
+                }`}
+              >
+                {bi(j.ar, j.en)}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Quick Custom Special Test Input + Interactive Form */}
@@ -751,9 +800,6 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
                   >
                     <option value="positive">{bi('إيجابي (+)', 'Positive (+)', 'پۆزەتیڤ (+)')}</option>
                     <option value="negative">{bi('سلبي (-)', 'Negative (-)', 'نێگەتیڤ (-)')}</option>
-                    <option value="pain_reproduced">
-                      {bi('استثارة الألم', 'Pain Reproduced', 'دروستبوونەوەی ئازار')}
-                    </option>
                     <option value="inconclusive">{bi('غير حاسم', 'Inconclusive', 'یەکلاکەرەوە نییە')}</option>
                   </select>
                 </div>
@@ -808,8 +854,18 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
               key={test.id}
               test={test}
               currentOutcome={test.outcome}
+              notes={test.notes}
               readOnly={readOnly}
               onSelectOutcome={(outcome) => handleSetOutcome(test, outcome)}
+              onOpenNotes={() =>
+                setActiveNoteTest({
+                  id: test.id,
+                  nameAr: test.nameAr,
+                  nameEn: test.nameEn,
+                  notes: test.notes || '',
+                  template: test,
+                })
+              }
               onRemoveCustom={() => handleRemoveCustomTest(test.id)}
             />
           ))}
@@ -819,14 +875,26 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
       {/* Built-In Orthopedic Tests Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         {filteredMasterTests.map((test) => {
-          const currentOutcome = outcomeMap.get(test.id)?.outcome || 'not_tested';
+          const recorded = outcomeMap.get(test.id);
+          const currentOutcome = recorded?.outcome || 'not_tested';
+          const notes = recorded?.notes;
           return (
             <SpecialTestRowCard
               key={test.id}
               test={test}
               currentOutcome={currentOutcome}
+              notes={notes}
               readOnly={readOnly}
               onSelectOutcome={(outcome) => handleSetOutcome(test, outcome)}
+              onOpenNotes={() =>
+                setActiveNoteTest({
+                  id: test.id,
+                  nameAr: test.nameAr,
+                  nameEn: test.nameEn,
+                  notes: notes || '',
+                  template: test,
+                })
+              }
             />
           );
         })}
@@ -837,6 +905,61 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
           {bi('لا توجد فحوصات مطابقة للبحث.', 'No matching special tests found.', 'هیچ تاقیکردنەوەیەکی گونجاو نەدۆزرایەوە.')}
         </p>
       )}
+
+      {/* Test Notes Modal */}
+      <ModalDialog
+        isOpen={activeNoteTest !== null}
+        onOpenChange={(open) => {
+          if (!open) setActiveNoteTest(null);
+        }}
+        size="sm"
+        title={bi('ملاحظات الفحص السريري', 'Special Test Clinical Notes', 'تێبینییەکانی تاقیکردنەوەی کلینیکی')}
+        subtitle={activeNoteTest ? bi(activeNoteTest.nameAr, activeNoteTest.nameEn) : undefined}
+      >
+        {activeNoteTest && (
+          <div className="space-y-4 p-1">
+            <div>
+              <label htmlFor="special-test-modal-notes" className="block text-xs font-bold text-foreground mb-1.5">
+                {bi('الملاحظات السريرية والمشاهدات:', 'Clinical Observations & Notes:', 'تێبینی و ڕوانینە کلينیکییەکان:')}
+              </label>
+              <textarea
+                id="special-test-modal-notes"
+                rows={4}
+                disabled={readOnly}
+                value={activeNoteTest.notes}
+                onChange={(e) => setActiveNoteTest({ ...activeNoteTest, notes: e.target.value })}
+                placeholder={bi(
+                  'اكتب ملاحظات الفحص (مثل: مكان الألم بدقة، صوت فرقعة، إحساس بعدم الثبات، رد فعل المريض...)',
+                  'Enter test notes (e.g., exact pain location, clicking, apprehension, patient guarding...)',
+                  'تێبینییەکانی تاقیکردنەوە بنووسە...'
+                )}
+                className="w-full px-3 py-2 rounded-xl bg-layer border border-line-2 text-xs text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none leading-relaxed"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-line-2/60">
+              <button
+                type="button"
+                onClick={() => setActiveNoteTest(null)}
+                className="px-3.5 py-1.5 rounded-xl bg-layer hover:bg-layer-hover text-muted-foreground-1 text-xs font-semibold border border-line-2 cursor-pointer transition-colors"
+              >
+                {bi('إلغاء', 'Cancel', 'پاشگەزبوونەوە')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleSaveNote(activeNoteTest.id, activeNoteTest.template, activeNoteTest.notes);
+                  setActiveNoteTest(null);
+                }}
+                className="px-4 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold shadow-2xs cursor-pointer transition-colors"
+              >
+                {bi('حفظ الملاحظة', 'Save Note', 'پاشەکەوتکردنی تێبینی')}
+              </button>
+            </div>
+          </div>
+        )}
+      </ModalDialog>
     </div>
   );
 };
@@ -844,16 +967,20 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
 interface SpecialTestRowCardProps {
   test: Omit<OrthopedicSpecialTestItem, 'outcome' | 'notes' | 'painScoreNrs'>;
   currentOutcome: SpecialTestOutcome;
+  notes?: string;
   readOnly: boolean;
   onSelectOutcome: (outcome: SpecialTestOutcome) => void;
+  onOpenNotes: () => void;
   onRemoveCustom?: () => void;
 }
 
 const SpecialTestRowCard: React.FC<SpecialTestRowCardProps> = ({
   test,
   currentOutcome,
+  notes,
   readOnly,
   onSelectOutcome,
+  onOpenNotes,
   onRemoveCustom,
 }) => {
   const { bi } = useLanguage();
@@ -871,21 +998,41 @@ const SpecialTestRowCard: React.FC<SpecialTestRowCardProps> = ({
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="text-xs font-bold text-foreground">
             {bi(test.nameAr, test.nameEn)}
           </div>
+          {notes && (
+            <div className="mt-1 text-[11px] text-muted-foreground-1 line-clamp-1 italic bg-muted/40 px-2 py-0.5 rounded-md border border-line-2/40">
+              "{notes}"
+            </div>
+          )}
         </div>
-        {onRemoveCustom && !readOnly && (
+        <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
-            onClick={onRemoveCustom}
-            aria-label={bi('حذف الفحص', 'Remove test', 'سڕینەوەی تاقیکردنەوە')}
-            className="min-w-[36px] min-h-[36px] p-1 rounded-lg text-muted-foreground-2 hover:text-rose-600 inline-flex items-center justify-center cursor-pointer"
+            onClick={onOpenNotes}
+            title={bi('ملاحظات الفحص', 'Test notes', 'تێبینییەکانی تاقیکردنەوە')}
+            aria-label={bi('ملاحظات الفحص', 'Test notes', 'تێبینییەکانی تاقیکردنەوە')}
+            className={`min-w-[32px] min-h-[32px] p-1.5 rounded-lg inline-flex items-center justify-center cursor-pointer transition-colors ${
+              notes
+                ? 'bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 shadow-2xs'
+                : 'text-muted-foreground-2 hover:text-foreground hover:bg-layer-hover border border-transparent'
+            }`}
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <StickyNote className="w-3.5 h-3.5" />
           </button>
-        )}
+          {onRemoveCustom && !readOnly && (
+            <button
+              type="button"
+              onClick={onRemoveCustom}
+              aria-label={bi('حذف الفحص', 'Remove test', 'سڕینەوەی تاقیکردنەوە')}
+              className="min-w-[32px] min-h-[32px] p-1.5 rounded-lg text-muted-foreground-2 hover:text-rose-600 inline-flex items-center justify-center cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Outcome Pills */}
@@ -903,21 +1050,6 @@ const SpecialTestRowCard: React.FC<SpecialTestRowCardProps> = ({
         >
           <XCircle className="w-3.5 h-3.5" />
           <span>{bi('إيجابي (+)', 'Positive (+)', 'پۆزەتیڤ (+)')}</span>
-        </button>
-
-        <button
-          type="button"
-          disabled={readOnly}
-          aria-pressed={currentOutcome === 'pain_reproduced'}
-          onClick={() => onSelectOutcome('pain_reproduced')}
-          className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
-            currentOutcome === 'pain_reproduced'
-              ? 'bg-amber-700 text-white shadow-2xs'
-              : 'bg-layer hover:bg-amber-500/10 text-muted-foreground-1 border border-line-2'
-          }`}
-        >
-          <AlertTriangle className="w-3.5 h-3.5" />
-          <span>{bi('ألم مألوف', 'Pain', 'ئازاری ناسراو')}</span>
         </button>
 
         <button

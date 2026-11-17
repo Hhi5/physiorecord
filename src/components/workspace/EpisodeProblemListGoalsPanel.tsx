@@ -18,7 +18,7 @@ import {
 } from '../../utils/reEvalNudge';
 import { DatePickerInput, Num } from '../ui/Primitives';
 import { formatClinicalDate } from '../../utils/date';
-import { CheckCircle2, ListChecks, Plus, Target, Trash2 } from 'lucide-react';
+import { CheckCircle2, ChevronDown, ListChecks, Plus, Target, Trash2 } from 'lucide-react';
 
 interface EpisodeProblemListGoalsPanelProps {
   episodeStore: EpisodeScopedClinicalStore;
@@ -292,24 +292,28 @@ export const EpisodeProblemListGoalsPanel: React.FC<EpisodeProblemListGoalsPanel
               <label htmlFor="goal-instrument-select" className="text-xs text-muted-foreground-1 block mb-0.5">
                 {bi('المقياس', 'Measure')}
               </label>
-              <select
-                id="goal-instrument-select"
-                data-testid="outcome-goal-instrument-select"
-                value={goalInstrument}
-                onChange={(e) => {
-                  const nextId = e.target.value as OutcomeLinkedGoal['linkedInstrumentId'];
-                  setGoalInstrument(nextId);
-                  const matched = latestScoreByInstrument.get(nextId);
-                  if (matched !== undefined) setBaselineInput(String(matched));
-                }}
-                className="w-full px-2 py-1.5 rounded-lg bg-layer border border-layer-line text-foreground"
-              >
-                {Object.values(OUTCOME_INSTRUMENTS).map((inst) => (
-                  <option key={inst.id} value={inst.id}>
-                    {inst.code}
-                  </option>
-                ))}
-              </select>
+              <div className="relative flex items-center">
+                <select
+                  id="goal-instrument-select"
+                  data-testid="outcome-goal-instrument-select"
+                  value={goalInstrument}
+                  onChange={(e) => {
+                    const nextId = e.target.value as OutcomeLinkedGoal['linkedInstrumentId'];
+                    setGoalInstrument(nextId);
+                    const matched = latestScoreByInstrument.get(nextId);
+                    if (matched !== undefined) setBaselineInput(String(matched));
+                  }}
+                  className="w-full px-6 py-1.5 rounded-lg bg-layer border border-layer-line font-mono font-bold text-center appearance-none text-foreground cursor-pointer focus:outline-none focus:border-primary"
+                  style={{ textAlign: 'center', textAlignLast: 'center' }}
+                >
+                  {Object.values(OUTCOME_INSTRUMENTS).map((inst) => (
+                    <option key={inst.id} value={inst.id} className="text-center bg-card text-foreground">
+                      {inst.code}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="size-3 text-muted-foreground-1 absolute start-2 pointer-events-none" />
+              </div>
             </div>
             <div>
               <label htmlFor="goal-baseline-input" className="text-xs text-muted-foreground-1 block mb-0.5">

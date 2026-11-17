@@ -189,7 +189,7 @@ export const RecoveryDrillModal: React.FC<RecoveryDrillModalProps> = ({
             </span>
           </div>
           {lastRecoveryDrillAt ? (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold">
+            <span className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold">
               <CheckCircle2 className="size-3.5" />
               <span>{formatClinicalDate(lastRecoveryDrillAt, language === 'en' ? 'en' : 'ar')}</span>
             </span>
@@ -217,7 +217,7 @@ export const RecoveryDrillModal: React.FC<RecoveryDrillModalProps> = ({
               </span>
             </div>
             {keyStatus === 'passed' && (
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold inline-flex items-center gap-1">
+              <span className="text-emerald-700 dark:text-emerald-400 font-bold inline-flex items-center gap-1">
                 <CheckCircle2 className="size-3.5" />
                 {bi('صحيح', 'Matched', 'دروستە')}
               </span>

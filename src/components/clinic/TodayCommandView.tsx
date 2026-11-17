@@ -4,7 +4,7 @@
 // Pinned/Recent Smart Memory + Thumb-Reach Mobile Action Bar
 // =======================================================================
 
-import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useVault } from '../../context/VaultContext';
 import { usePatients } from '../../context/PatientContext';
@@ -57,6 +57,10 @@ import {
   UserCheck,
   ArrowUpRight,
   ArrowUpLeft,
+  ArrowLeft,
+  ArrowRight,
+  SkipForward,
+  Undo2,
   CalendarClock,
   Sparkles,
   Printer,
@@ -161,6 +165,25 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
     ClinicOperationsService.isScheduleVisitCardPrintEnabled()
   );
   const [reEvalDuePatientIds, setReEvalDuePatientIds] = useState<Set<string>>(new Set());
+  const [tossExitingId, setTossExitingId] = useState<string | null>(null);
+  const [dragOffsetX, setDragOffsetX] = useState(0);
+  const [deferredApptIds, setDeferredApptIds] = useState<string[]>([]);
+  const [recentCompletedUndo, setRecentCompletedUndo] = useState<{
+    apptId: string;
+    prevStatus: AppointmentStatus;
+    patientName: string;
+  } | null>(null);
+  const dragStartXRef = useRef<number | null>(null);
+  const isDraggingCardRef = useRef(false);
+  const tossTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const undoToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (tossTimerRef.current) clearTimeout(tossTimerRef.current);
+      if (undoToastTimerRef.current) clearTimeout(undoToastTimerRef.current);
+    };
+  }, []);
 
   const today = localDate();
   const tomorrow = useMemo(() => addDaysToDateStr(today, 1), [today]);
@@ -332,16 +355,69 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
     return active;
   }, [todayAppointments, statusFilter]);
 
-  // Next actionable appointment for the Hero "Start Next Session" CTA
-  const nextUpAppointment = useMemo(() => {
-    const active = todayAppointments.filter((a) => a.status !== 'cancelled' && a.status !== 'completed');
-    return (
-      active.find((a) => a.status === 'arrived') ||
-      active.find((a) => a.status === 'scheduled') ||
-      active.find((a) => a.status === 'in_session') ||
-      null
+  // Prioritized queue for the interactive stacked card deck:
+  // in_session -> arrived -> scheduled (with user-deferred cards shifted after the front)
+  const queuedAppointments = useMemo(() => {
+    const active = todayAppointments.filter(
+      (a) => a.status !== 'cancelled' && a.status !== 'completed'
     );
-  }, [todayAppointments]);
+    const tierWeight: Record<AppointmentStatus, number> = {
+      in_session: 0,
+      arrived: 1,
+      scheduled: 2,
+      completed: 3,
+      cancelled: 4,
+      no_show: 5,
+    };
+    return [...active].sort((a, b) => {
+      const aDeferred = deferredApptIds.includes(a.id) ? 1 : 0;
+      const bDeferred = deferredApptIds.includes(b.id) ? 1 : 0;
+      if (aDeferred !== bDeferred) return aDeferred - bDeferred;
+      const wDiff = tierWeight[a.status] - tierWeight[b.status];
+      if (wDiff !== 0) return wDiff;
+      return a.startTime.localeCompare(b.startTime);
+    });
+  }, [todayAppointments, deferredApptIds]);
+
+  const handleTossFinishCard = (appt: ClinicAppointment) => {
+    if (tossExitingId) return;
+    setTossExitingId(appt.id);
+    if (tossTimerRef.current) clearTimeout(tossTimerRef.current);
+    tossTimerRef.current = setTimeout(() => {
+      ClinicOperationsService.updateAppointmentStatus(appt.id, 'completed');
+      setTossExitingId(null);
+      setDeferredApptIds((prev) => prev.filter((id) => id !== appt.id));
+      setRecentCompletedUndo({
+        apptId: appt.id,
+        prevStatus: appt.status,
+        patientName: appt.patientName,
+      });
+      if (undoToastTimerRef.current) clearTimeout(undoToastTimerRef.current);
+      undoToastTimerRef.current = setTimeout(() => {
+        setRecentCompletedUndo(null);
+      }, 6000);
+    }, 330);
+  };
+
+  const handleDeferFrontCard = (apptId: string) => {
+    if (queuedAppointments.length <= 1 || tossExitingId) return;
+    setTossExitingId(apptId);
+    if (tossTimerRef.current) clearTimeout(tossTimerRef.current);
+    tossTimerRef.current = setTimeout(() => {
+      setDeferredApptIds((prev) => [...prev.filter((id) => id !== apptId), apptId]);
+      setTossExitingId(null);
+    }, 300);
+  };
+
+  const handleUndoTossFinish = () => {
+    if (!recentCompletedUndo) return;
+    ClinicOperationsService.updateAppointmentStatus(
+      recentCompletedUndo.apptId,
+      recentCompletedUndo.prevStatus
+    );
+    setRecentCompletedUndo(null);
+    if (undoToastTimerRef.current) clearTimeout(undoToastTimerRef.current);
+  };
 
   const todayFinanceSummary = useMemo(() => {
     void opsVersion;
@@ -462,71 +538,88 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
         ar: 'محجوز',
         en: 'Scheduled',
         ckb: 'نۆرەگیراو',
-        cls: 'bg-sky-500/12 text-sky-700 dark:text-sky-300 border-sky-500/30',
+        cls: 'text-sky-700 dark:text-sky-300',
       },
       arrived: {
         ar: 'وصل / بالانتظار',
         en: 'Arrived',
         ckb: 'گەیشت / چاوەڕوانە',
-        cls: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30',
+        cls: 'text-amber-700 dark:text-amber-300',
       },
       in_session: {
         ar: 'داخل الجلسة',
         en: 'In Session',
         ckb: 'لە دانیشتندایە',
-        cls: 'bg-primary/15 text-primary border-primary/35',
+        cls: 'text-primary',
       },
       completed: {
         ar: 'منتهي',
         en: 'Completed',
         ckb: 'تەواوبوو',
-        cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+        cls: 'text-emerald-700 dark:text-emerald-300',
       },
       cancelled: {
         ar: 'ملغي',
         en: 'Cancelled',
         ckb: 'هەڵوەشاوەتەوە',
-        cls: 'bg-muted text-muted-foreground-2 border-line-2',
+        cls: 'text-muted-foreground-2',
       },
       no_show: {
         ar: 'لم يحضر',
         en: 'No Show',
         ckb: 'نەهات',
-        cls: 'bg-rose-500/12 text-rose-700 dark:text-rose-300 border-rose-500/30',
+        cls: 'text-rose-700 dark:text-rose-300',
       },
     };
     const info = styles[status] || styles.scheduled;
     return (
-      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${info.cls}`}>
-        {bi(info.ar, info.en, info.ckb)}
+      <span className={`inline-flex items-center gap-1.5 text-xs font-extrabold ${info.cls}`}>
+        <span className="size-1.5 rounded-full bg-current shrink-0" aria-hidden="true" />
+        <span>{bi(info.ar, info.en, info.ckb)}</span>
       </span>
     );
   };
 
   const ArrowOpenIcon = isRtl ? ArrowUpLeft : ArrowUpRight;
+  const SideTossIcon = isRtl ? ArrowLeft : ArrowRight;
+
+  const clinicGreeting = useMemo(() => {
+    const hr = new Date().getHours();
+    if (hr < 12) return bi('صباح الخير', 'Good morning', 'بەیانیت باش');
+    if (hr < 17) return bi('طاب يومك', 'Good afternoon', 'ڕۆژت باش');
+    return bi('مساء الخير', 'Good evening', 'ئێوارەت باش');
+  }, [bi]);
 
   return (
-    <div className="max-w-[85rem] w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-3 sm:space-y-4 pb-6">
+    <div className="max-w-[85rem] w-full mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5 pb-8">
       {/* Contextual Onboarding Tip (2.8) */}
-      <ContextualTipBanner
-        tipId="today_welcome_tip"
-        titleAr="إدارة يوم العيادة بخطوة واحدة"
-        titleEn="Streamlined Daily Solo Workflow"
-        titleCkb="بەڕێوەبردنی ڕۆژی کلینیک بە یەک هەنگاو"
-        bodyAr='سجّل المراجع المفاجئ بالاسم والهاتف فقط خلال 10 ثوانٍ، أو اضغط "نهاية اليوم" لمراجعة النقد، المسودات غير الموقعة، وتذكيرات الواتساب.'
-        bodyEn='Add walk-in patients in 10 seconds with just name & phone, or open "End of Day" for daily cash summary, unsigned drafts, and WhatsApp reminders.'
-        bodyCkb='لە ماوەی ١٠ چرکەدا نەخۆشی کتوپڕ تۆمار بکە تەنها بە ناو و ژمارە تەلەفۆن، یان "کۆتایی ڕۆژ" بکەرەوە بۆ پوختەی سندووق، مسۆدە واژوونەکراوەکان و یادخەرەوەی واتساپ.'
-        onStartTour={onOpenTour}
-      />
+      <div className="max-[1479px]:ps-12 sm:max-[1479px]:ps-14">
+        <ContextualTipBanner
+          tipId="today_welcome_tip"
+          titleAr="إدارة يوم العيادة بخطوة واحدة"
+          titleEn="Streamlined Daily Solo Workflow"
+          titleCkb="بەڕێوەبردنی ڕۆژی کلینیک بە یەک هەنگاو"
+          bodyAr='سجّل المراجع المفاجئ بالاسم والهاتف فقط خلال 10 ثوانٍ، أو اضغط "نهاية اليوم" لمراجعة النقد، المسودات غير الموقعة، وتذكيرات الواتساب.'
+          bodyEn='Add walk-in patients in 10 seconds with just name & phone, or open "End of Day" for daily cash summary, unsigned drafts, and WhatsApp reminders.'
+          bodyCkb='لە ماوەی ١٠ چرکەدا نەخۆشی کتوپڕ تۆمار بکە تەنها بە ناو و ژمارە تەلەفۆن، یان "کۆتایی ڕۆژ" بکەرەوە بۆ پوختەی سندووق، مسۆدە واژوونەکراوەکان و یادخەرەوەی واتساپ.'
+          onStartTour={onOpenTour}
+        />
+      </div>
 
-      {/* Top Mode Switcher Header: Today | End of Day | Full Schedule */}
-      <div className="pr-page-header">
+      {/* Airy Top Header Band (Borderless directly over soft theme gradient canvas) */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-3.5 max-[1479px]:ps-12 sm:max-[1479px]:ps-14">
         <div className="space-y-1 min-w-0">
-          <span className="pr-eyebrow">
-            <Sparkles className="size-3.5" />
-            {bi('مركز قيادة العيادة', 'Clinic command center', 'ناوەندی فەرماندەیی کلینیک')}
-          </span>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground-1">
+            <span className="text-primary font-bold">{clinicGreeting}</span>
+            <span aria-hidden="true">·</span>
+            <span>{formatClinicalDate(today, language)}</span>
+            <span aria-hidden="true">·</span>
+            <span>
+              <Num value={queueCounts.total} /> {bi('موعد اليوم', 'visits today', 'سەردانی ئەمڕۆ')}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5">
             {subTab === 'schedule' ? (
               <h2 className="pr-page-title">
                 {bi(
@@ -551,36 +644,32 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                       'Data Health & 30-Day Recycle Bin',
                       'تەندروستیی داتا و سەبەتەی سڕاوەکان (٣٠ ڕۆژ)'
                     )
-                  : bi('اليوم — جدول الجلسات الفوري', 'Today — Daily Timeline', 'ئەمڕۆ — خشتەی ڕاستەوخۆی دانیشتنەکان')}
+                  : bi('اليوم والطابور', 'Today & Queue', 'ئەمڕۆ و ڕیز')}
               </h1>
             )}
             {draftSessions.length > 0 && (
-              <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 text-xs font-bold">
-                <Num value={draftSessions.length} /> {bi('مسودة غير موقعة', 'unsigned drafts', 'مسۆدەی واژوونەکراو')}
+              <span className="text-xs font-extrabold text-amber-700 dark:text-amber-300">
+                · <Num value={draftSessions.length} /> {bi('مسودة غير موقعة', 'unsigned drafts', 'مسۆدەی واژوونەکراو')}
               </span>
             )}
           </div>
-          <p className="pr-page-subtitle">
-            {formatClinicalDate(today, language)} ·{' '}
-            <Num value={queueCounts.total} /> {bi('موعد اليوم', 'visits today', 'سەردانی ئەمڕۆ')}
-          </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto min-w-0">
-          {/* Sub-navigation pills */}
-          <div className="pr-seg pr-today-tabs min-w-0 flex-1 md:flex-none">
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto min-w-0">
+          {/* Clean Frosted Sub-navigation Pills */}
+          <div className="pr-seg pr-today-tabs overflow-visible flex-wrap rounded-2xl bg-card/85 backdrop-blur-sm border-transparent shadow-xs">
             {(
               [
                 { id: 'today', ar: 'اليوم', en: 'Today', ckb: 'ئەمڕۆ', icon: Clock },
                 { id: 'eod', ar: 'نهاية اليوم', en: 'End of Day', ckb: 'کۆتایی ڕۆژ', icon: Banknote },
-                { id: 'schedule', ar: 'الجدول الكامل', en: 'Full Schedule', ckb: 'خشتەی تەواو', icon: Calendar },
+                { id: 'schedule', ar: 'الجدول الكامل', en: 'Schedule', ckb: 'خشتە', icon: Calendar },
                 ...(referralsRetentionEnabled
                   ? [
                       {
                         id: 'referrals_retention' as const,
-                        ar: 'الإحالات والمتابعة',
-                        en: 'Referrals & Retention',
-                        ckb: 'ئاڕاستە و بەدواداچوون',
+                        ar: 'الإحالات',
+                        en: 'Referrals',
+                        ckb: 'ئاڕاستە',
                         icon: UserCheck,
                       },
                     ]
@@ -589,9 +678,9 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                   ? [
                       {
                         id: 'data_health' as const,
-                        ar: 'صحة البيانات والسلة',
-                        en: 'Data Health & Trash',
-                        ckb: 'تەندروستیی داتا و سەبەتە',
+                        ar: 'صحة البيانات',
+                        en: 'Data Health',
+                        ckb: 'داتا',
                         icon: ShieldCheck,
                       },
                     ]
@@ -605,6 +694,8 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                   key={tab.id}
                   type="button"
                   data-testid={`today-subtab-${tab.id}`}
+                  aria-label={bi(tab.ar, tab.en, tab.ckb)}
+                  title={bi(tab.ar, tab.en, tab.ckb)}
                   onClick={() => setSubTab(tab.id)}
                   data-active={active}
                   className="pr-seg-item"
@@ -616,194 +707,380 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
             })}
           </div>
 
+          {/* Quick Actions: New Patient & Privacy Blur */}
+          <button
+            type="button"
+            onClick={() => (onOpenNewPatientModal ? onOpenNewPatientModal() : onOpenNewPatient())}
+            className="min-h-[2.375rem] px-3.5 rounded-full bg-primary/12 hover:bg-primary/20 text-primary text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+          >
+            <UserPlus className="size-3.5" />
+            <span>{bi('مريض جديد', 'New Patient', 'نەخۆشی نوێ')}</span>
+          </button>
+
           <button
             type="button"
             onClick={togglePrivacyBlur}
-            className="pr-btn pr-btn-ghost min-h-[2.25rem] px-3"
+            className="size-9 rounded-full bg-card/75 hover:bg-card text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center shadow-2xs cursor-pointer transition-colors shrink-0"
             aria-label={bi('إخفاء أو إظهار أسماء المرضى', 'Privacy blur patient names', 'شاردنەوە یان پیشاندانی ناوی نەخۆشان')}
-            title={bi('إخفاء أو إظهار أسماء المرضى عن المراجعين', 'Privacy blur patient names', 'لێڵکردنی ناوی نەخۆشان لە سەردانیکەران')}
+            title={bi('تمويه أسماء المرضى عن المراجعين', 'Privacy blur patient names', 'لێڵکردنی ناوی نەخۆشان لە سەردانیکەران')}
           >
             {privacyBlur ? <EyeOff className="size-4 text-primary" /> : <Eye className="size-4" />}
-            <span className="hidden sm:inline">
-              {privacyBlur
-                ? bi('وضع الخصوصية مفعل', 'Privacy Blur On', 'دۆخی نهێنی چالاکە')
-                : bi('تمويه الأسماء', 'Privacy Blur', 'لێڵکردنی ناوەکان')}
-            </span>
           </button>
         </div>
       </div>
 
       {actionError && (
-        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs font-semibold text-rose-700 dark:text-rose-300">
+        <p className="px-1 text-xs font-bold text-rose-700 dark:text-rose-300">
           {actionError}
-        </div>
+        </p>
       )}
 
       {/* ================================================================ */}
-      {/* TAB 1: TODAY TIMELINE & QUICK ACTIONS (2.2)                      */}
+      {/* TAB 1: STACKED PATIENT QUEUE DECK & CLEAN DAILY TIMELINE         */}
       {/* ================================================================ */}
       {subTab === 'today' && (
-        <div className="space-y-3 sm:space-y-4">
-          {/* Primary CTA Row: Compact strip on mobile so queue stays above the fold; split cards on desktop */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 sm:gap-3">
-            <div className="md:col-span-7 pr-hero p-3 sm:p-5 flex items-center justify-between gap-2.5 sm:gap-4">
-              <div className="space-y-0.5 min-w-0">
-                <span className="hidden sm:inline-flex text-xs font-bold text-primary items-center gap-1">
-                  <Sparkles className="size-3.5" />
-                  <span>{bi('الجلسة التالية في الطابور', 'Up Next on Schedule', 'دانیشتنی داهاتوو لە ڕیزدا')}</span>
+        <div className="space-y-5">
+          {/* Hero Stage: Centered 3-Layer Stacked Patient Deck + Clean Compact Action Strip */}
+          <div className="max-w-3xl mx-auto w-full space-y-3.5">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-bold text-foreground/80 inline-flex items-center gap-1.5">
+                <Sparkles className="size-3.5 text-primary" />
+                <span>{bi('المريض الحالي والقادمون في العيادة', 'Now in Clinic & Next Queue', 'نەخۆشی ئێستا و ڕیزی دواتر')}</span>
+              </span>
+              {queuedAppointments.length > 0 && (
+                <span dir="ltr" className="text-xs font-extrabold text-primary tabular-nums">
+                  1 / {queuedAppointments.length}
                 </span>
-                {nextUpAppointment ? (
-                  <>
-                    <h2 className={`text-sm sm:text-base font-extrabold text-foreground leading-snug ${privacyBlur ? 'blur-xs select-none' : ''}`}>
-                      {nextUpAppointment.patientName}
-                    </h2>
-                    <p className="text-xs text-muted-foreground-1 flex flex-wrap items-center gap-1.5">
-                      <TimeDisplay
-                        time={nextUpAppointment.startTime}
-                        className="font-bold text-primary"
-                      />
-                      <span>·</span>
-                      <span>
-                        <Num value={nextUpAppointment.durationMinutes} /> {bi('دقيقة', 'min', 'خولەک')}
-                      </span>
-                      <span className="hidden sm:inline">· {nextUpAppointment.roomOrBed}</span>
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <h2 className="text-sm sm:text-base font-extrabold text-foreground">
-                      {bi('لا توجد جلسة منتظرة الآن', 'Queue is clear right now', 'لە ئێستادا هیچ دانیشتنێک چاوەڕوان نییە')}
-                    </h2>
-                    <p className="hidden sm:block text-xs text-muted-foreground-1">
-                      {bi(
-                        'أضف مراجعاً فورياً خلال 10 ثوانٍ أو افتح ملف مريض حالي.',
-                        'Add a walk-in patient in 10 seconds or pick a patient below.',
-                        'لە ماوەی ١٠ چرکەدا سەردانیکەرێکی کتوپڕ زیاد بکە یان دۆسیەی نەخۆشێکی ئێستا بکەرەوە.'
-                      )}
-                    </p>
-                  </>
-                )}
-              </div>
-
-              <button
-                type="button"
-                data-testid="today-start-next-btn"
-                disabled={startingId !== null || (!nextUpAppointment && activePatients.length === 0)}
-                onClick={() => {
-                  if (nextUpAppointment) {
-                    const matched = patients.find((p) => p.id === nextUpAppointment.patientId);
-                    if (matched) {
-                      void ensureAndStartSessionForPatient(matched, nextUpAppointment, false);
-                    }
-                  } else {
-                    setShowWalkInModal(true);
-                  }
-                }}
-                className="pr-btn pr-btn-primary min-h-[2.5rem] sm:min-h-[2.875rem] px-3.5 sm:px-5 shrink-0"
-              >
-                <Play className="size-3.5 sm:size-4 fill-current" />
-                <span>
-                  {nextUpAppointment
-                    ? bi('ابدأ التالي', 'Start Next', 'دەستپێکردنی داهاتوو')
-                    : bi('تسجيل مراجع', 'New Walk-In', 'تۆمارکردنی سەردانیکەر')}
-                </span>
-              </button>
+              )}
             </div>
 
-            <div className="md:col-span-5 pr-surface p-3 sm:p-5 flex flex-col justify-between gap-2 sm:gap-3">
-              <div className="hidden sm:flex items-start justify-between gap-2">
-                <div>
-                  <h2 className="text-sm font-extrabold text-foreground">
-                    {bi('مراجع مفاجئ / تسجيل سريع', 'Quick Walk-In (10s)', 'نەخۆشی کتوپڕ / تۆماری خێرا')}
+            {queuedAppointments.length > 0 ? (
+              <div className="pr-queue-deck">
+                {/* Always maintain clear 2-sheet stacked backdrop depth behind real cards */}
+                {queuedAppointments.length <= 2 && (
+                  <div className="pr-queue-card pr-queue-card--layer-2" aria-hidden="true" />
+                )}
+                {queuedAppointments.length === 1 && (
+                  <div className="pr-queue-card pr-queue-card--layer-1" aria-hidden="true" />
+                )}
+
+                {queuedAppointments
+                  .slice(0, 3)
+                  .reverse()
+                  .map((cardAppt) => {
+                    const stackIndex = queuedAppointments.findIndex((x) => x.id === cardAppt.id);
+                    const isFront = stackIndex === 0;
+                    const frontAppt = queuedAppointments[0];
+                    const isExitingFront = tossExitingId !== null && frontAppt?.id === tossExitingId;
+                    const isThisTossing = tossExitingId === cardAppt.id;
+
+                    const layerClass = isThisTossing
+                      ? 'pr-queue-card--front pr-queue-card--toss'
+                      : isFront
+                      ? `pr-queue-card--front ${dragOffsetX !== 0 ? 'pr-queue-card--dragging cursor-grabbing' : 'cursor-grab'}`
+                      : isExitingFront && stackIndex === 1
+                      ? 'pr-queue-card--promote'
+                      : isExitingFront && stackIndex === 2
+                      ? 'pr-queue-card--layer-1'
+                      : stackIndex === 1
+                      ? 'pr-queue-card--layer-1'
+                      : 'pr-queue-card--layer-2';
+
+                    const matchedPatient = patients.find((p) => p.id === cardAppt.patientId);
+                    const isBusy = startingId === cardAppt.id;
+                    const avatarInitial = cardAppt.patientName.trim().charAt(0) || 'م';
+
+                    return (
+                      <div
+                        key={cardAppt.id}
+                        data-testid={isFront ? 'today-active-queue-card' : undefined}
+                        className={`pr-queue-card p-4 sm:p-5 ${layerClass}`}
+                        aria-hidden={!isFront && !isExitingFront}
+                        style={
+                          isFront && !isThisTossing && dragOffsetX !== 0
+                            ? {
+                                transform: `translate3d(${dragOffsetX}px, ${-Math.abs(dragOffsetX) * 0.06}px, 0) rotate(${dragOffsetX * 0.035}deg)`,
+                                opacity: Math.max(0.45, 1 - Math.abs(dragOffsetX) / 300),
+                              }
+                            : undefined
+                        }
+                        onPointerDown={
+                          isFront && !isThisTossing
+                            ? (e) => {
+                                if ((e.target as HTMLElement).closest('button, a')) return;
+                                dragStartXRef.current = e.clientX;
+                                isDraggingCardRef.current = true;
+                                try {
+                                  (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                                } catch {
+                                  // ignore on synthetic events
+                                }
+                              }
+                            : undefined
+                        }
+                        onPointerMove={
+                          isFront && !isThisTossing
+                            ? (e) => {
+                                if (!isDraggingCardRef.current || dragStartXRef.current === null) return;
+                                setDragOffsetX(e.clientX - dragStartXRef.current);
+                              }
+                            : undefined
+                        }
+                        onPointerUp={
+                          isFront && !isThisTossing
+                            ? () => {
+                                if (!isDraggingCardRef.current) return;
+                                isDraggingCardRef.current = false;
+                                dragStartXRef.current = null;
+                                if (Math.abs(dragOffsetX) >= 85) {
+                                  setDragOffsetX(0);
+                                  handleTossFinishCard(cardAppt);
+                                } else {
+                                  setDragOffsetX(0);
+                                }
+                              }
+                            : undefined
+                        }
+                        onPointerCancel={
+                          isFront && !isThisTossing
+                            ? () => {
+                                isDraggingCardRef.current = false;
+                                dragStartXRef.current = null;
+                                setDragOffsetX(0);
+                              }
+                            : undefined
+                        }
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            <div className="size-12 sm:size-14 rounded-2xl bg-primary/12 text-primary font-extrabold text-lg flex items-center justify-center shrink-0">
+                              {avatarInitial}
+                            </div>
+                            <div className="min-w-0 space-y-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                  type="button"
+                                  disabled={!matchedPatient}
+                                  onClick={() => matchedPatient && onOpenPatientSession(matchedPatient)}
+                                  className={`text-base sm:text-lg font-extrabold text-foreground hover:text-primary transition-colors text-start truncate cursor-pointer ${
+                                    privacyBlur ? 'blur-xs select-none' : ''
+                                  }`}
+                                >
+                                  {cardAppt.patientName}
+                                </button>
+                                {renderStatusPill(cardAppt.status)}
+                                {reEvalNudgesEnabled && reEvalDuePatientIds.has(cardAppt.patientId) && (
+                                  <span className="text-xs font-extrabold text-amber-700 dark:text-amber-300">
+                                    · {bi('إعادة تقييم', 'Re-eval due')}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground-1 font-medium">
+                                <TimeDisplay
+                                  time={cardAppt.startTime}
+                                  className="font-bold text-primary"
+                                />
+                                <span aria-hidden="true">·</span>
+                                <span>
+                                  <Num value={cardAppt.durationMinutes} /> {bi('دقيقة', 'min', 'خولەک')}
+                                </span>
+                                {cardAppt.roomOrBed && (
+                                  <>
+                                    <span aria-hidden="true">·</span>
+                                    <span>{cardAppt.roomOrBed}</span>
+                                  </>
+                                )}
+                                {cardAppt.episodeTitle && (
+                                  <>
+                                    <span aria-hidden="true">·</span>
+                                    <bdi dir="auto" className="truncate max-w-[14rem]">
+                                      {cardAppt.episodeTitle}
+                                    </bdi>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {isFront && (
+                            <div className="flex flex-wrap items-center gap-2 shrink-0">
+                              <button
+                                type="button"
+                                data-testid="today-start-next-btn"
+                                disabled={isBusy || !matchedPatient}
+                                onClick={() => {
+                                  if (matchedPatient) {
+                                    void ensureAndStartSessionForPatient(matchedPatient, cardAppt, false);
+                                  }
+                                }}
+                                className="min-h-[2.625rem] px-4 py-2 rounded-2xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                              >
+                                <Play className="size-3.5 fill-current" />
+                                <span>
+                                  {isBusy
+                                    ? bi('جاري الفتح...', 'Opening...', 'دەکرێتەوە...')
+                                    : bi('ابدأ الجلسة', 'Start Session', 'دەستپێکردن')}
+                                </span>
+                              </button>
+
+                              <button
+                                type="button"
+                                data-testid="today-toss-next-btn"
+                                disabled={tossExitingId !== null}
+                                onClick={() => handleTossFinishCard(cardAppt)}
+                                className="min-h-[2.625rem] px-3.5 py-2 rounded-2xl bg-primary/10 hover:bg-primary/18 text-primary text-xs font-extrabold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50"
+                              >
+                                <CheckCircle2 className="size-4" />
+                                <span>{bi('إنهاء / التالي', 'Finish & Next', 'تەواو / داهاتوو')}</span>
+                                <SideTossIcon className="size-3.5" />
+                              </button>
+
+                              {queuedAppointments.length > 1 && (
+                                <button
+                                  type="button"
+                                  disabled={tossExitingId !== null}
+                                  onClick={() => handleDeferFrontCard(cardAppt.id)}
+                                  title={bi('تأخير للبطاقة التالية', 'Move behind next patient')}
+                                  aria-label={bi('تأخير للبطاقة التالية', 'Move behind next patient')}
+                                  className="size-[2.625rem] rounded-2xl bg-surface hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer transition-colors"
+                                >
+                                  <SkipForward className="size-4" />
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            ) : (
+              <div
+                data-testid="today-active-queue-card"
+                className="mt-4 rounded-[24px] bg-card p-5 sm:p-6 shadow-[0_14px_38px_-14px_rgba(15,23,42,0.1)] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <div className="space-y-1 min-w-0">
+                  <h2 className="text-sm sm:text-base font-extrabold text-foreground">
+                    {bi('لا توجد جلسة منتظرة الآن', 'Queue is clear right now', 'لە ئێستادا هیچ دانیشتنێک چاوەڕوان نییە')}
                   </h2>
-                  <p className="text-xs text-muted-foreground-1 mt-0.5">
+                  <p className="text-xs text-muted-foreground-1">
                     {bi(
-                      'الاسم والهاتف فقط ← مريض + موعد + جلسة مفتوحة',
-                      'Name + Phone → Patient + Visit + Session in one step',
-                      'تەنها ناو و مۆبایل ← نەخۆش + نۆرە + دانیشتنی کراوە'
+                      'أضف مراجعاً فورياً خلال 10 ثوانٍ أو افتح ملف مريض حالي من الجدول.',
+                      'Add a walk-in patient in 10 seconds or pick a patient below.',
+                      'لە ماوەی ١٠ چرکەدا سەردانیکەرێکی کتوپڕ زیاد بکە یان دۆسیەی نەخۆشێک بکەرەوە.'
                     )}
                   </p>
                 </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  data-testid="today-walkin-btn"
+                  data-testid="today-start-next-btn"
                   onClick={() => setShowWalkInModal(true)}
-                  className="pr-btn pr-btn-primary flex-1 min-h-[2.5rem] sm:min-h-[2.75rem] px-3.5 sm:px-4"
+                  className="min-h-[2.625rem] px-4 py-2 rounded-2xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-xs"
                 >
                   <UserPlus className="size-4" />
-                  <span>{bi('+ مراجع سريع (10 ثوانٍ)', '+ Walk-In Patient (10s)', '+ سەردانیکەری خێرا (١٠ چرکە)')}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSubTab('schedule')}
-                  className="min-h-[40px] sm:min-h-[44px] px-3 sm:px-3.5 py-2 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  <CalendarClock className="size-4 text-primary" />
-                  <span>{bi('حجز / متكرر', 'Book / Recur', 'نۆرە / دووبارەبوو')}</span>
+                  <span>{bi('تسجيل مراجع', 'New Walk-In', 'تۆمارکردنی سەردانیکەر')}</span>
                 </button>
               </div>
+            )}
+
+            {/* Undo strip after tossing a patient card */}
+            {recentCompletedUndo && (
+              <div className="px-4 py-2 rounded-2xl bg-card/85 shadow-xs flex items-center justify-between gap-3 text-xs">
+                <span className="text-foreground font-semibold truncate">
+                  {bi(
+                    `تم إنهاء موعد ${recentCompletedUndo.patientName} وانتقل الطابور للتالي`,
+                    `Completed ${recentCompletedUndo.patientName} — advanced to next`,
+                    `نۆرەی ${recentCompletedUndo.patientName} تەواوکرا`
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleUndoTossFinish}
+                  className="px-2.5 py-1 rounded-xl bg-primary/12 hover:bg-primary/20 text-primary font-extrabold inline-flex items-center gap-1 cursor-pointer shrink-0"
+                >
+                  <Undo2 className="size-3.5" />
+                  <span>{bi('تراجع', 'Undo', 'گەڕانەوە')}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Compact Clean Action Strip (replaces heavy second box card) */}
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-0.5">
+              <button
+                type="button"
+                data-testid="today-walkin-btn"
+                onClick={() => setShowWalkInModal(true)}
+                className="min-h-[2.5rem] px-4 py-2 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+              >
+                <UserPlus className="size-4" />
+                <span>{bi('+ مراجع سريع (10 ثوانٍ)', '+ Walk-In Patient (10s)', '+ سەردانیکەری خێرا (١٠ چرکە)')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSubTab('schedule')}
+                className="min-h-[2.5rem] px-4 py-2 rounded-full bg-card/85 hover:bg-card text-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
+              >
+                <CalendarClock className="size-4 text-primary" />
+                <span>{bi('حجز / متكرر', 'Book / Recur', 'نۆرە / دووبارەبوو')}</span>
+              </button>
             </div>
           </div>
 
-          {/* Pinned & Recent Patients Quick Access Bar (2.6) */}
+          {/* Pinned & Recent Patients Quick Access Strip (Borderless frosted pills, text-only DEMO) */}
           {(pinnedPatients.length > 0 || recentPatients.length > 0) && (
-            <div className="p-2.5 sm:p-3.5 pr-surface space-y-2">
-              <div className="flex flex-wrap items-center gap-3 text-xs">
-                {pinnedPatients.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="inline-flex items-center gap-1 font-bold text-amber-800 dark:text-amber-300">
-                      <Star className="size-3.5 fill-current" />
-                      <span>{bi('المثبتون:', 'Pinned:', 'چەسپاوەکان:')}</span>
-                    </span>
-                    {pinnedPatients.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => {
-                          ClinicOperationsService.recordPatientVisitMemory(p.id);
-                          onOpenPatientSession(p);
-                        }}
-                        className={`min-h-[36px] px-2.5 py-1 rounded-full bg-amber-500/12 hover:bg-amber-500/20 border border-amber-500/30 text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer ${privacyBlur ? 'blur-xs' : ''}`}
-                      >
-                        <span>{getPatientDisplayName(p.data, language)}</span>
-                        {isDemoPatient(p) && <DemoBadge />}
-                      </button>
-                    ))}
-                  </div>
-                )}
+            <div className="flex flex-wrap items-center gap-2 text-xs px-1">
+              {pinnedPatients.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 font-bold text-amber-700 dark:text-amber-300">
+                    <Star className="size-3.5 fill-current" />
+                    <span>{bi('المثبتون:', 'Pinned:', 'چەسپاوەکان:')}</span>
+                  </span>
+                  {pinnedPatients.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        ClinicOperationsService.recordPatientVisitMemory(p.id);
+                        onOpenPatientSession(p);
+                      }}
+                      className={`min-h-[34px] px-3 py-1 rounded-full bg-card/85 hover:bg-card shadow-2xs text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors ${privacyBlur ? 'blur-xs' : ''}`}
+                    >
+                      <span>{getPatientDisplayName(p.data, language)}</span>
+                      {isDemoPatient(p) && <DemoBadge />}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-                {recentPatients.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="inline-flex items-center gap-1 font-bold text-muted-foreground-1">
-                      <History className="size-3.5" />
-                      <span>{bi('الأخيرة:', 'Recent:', 'کۆتاییەکان:')}</span>
-                    </span>
-                    {recentPatients.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => {
-                          ClinicOperationsService.recordPatientVisitMemory(p.id);
-                          onOpenPatientSession(p);
-                        }}
-                        className={`min-h-[36px] px-2.5 py-1 rounded-full bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer ${privacyBlur ? 'blur-xs' : ''}`}
-                      >
-                        <span>{getPatientDisplayName(p.data, language)}</span>
-                        {isDemoPatient(p) && <DemoBadge />}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {recentPatients.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 font-bold text-muted-foreground-1">
+                    <History className="size-3.5" />
+                    <span>{bi('الأخيرة:', 'Recent:', 'کۆتاییەکان:')}</span>
+                  </span>
+                  {recentPatients.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        ClinicOperationsService.recordPatientVisitMemory(p.id);
+                        onOpenPatientSession(p);
+                      }}
+                      className={`min-h-[34px] px-3 py-1 rounded-full bg-card/85 hover:bg-card shadow-2xs text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors ${privacyBlur ? 'blur-xs' : ''}`}
+                    >
+                      <span>{getPatientDisplayName(p.data, language)}</span>
+                      {isDemoPatient(p) && <DemoBadge />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Filter Strip */}
+          {/* Filter Strip + Schedule Link */}
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="pr-seg pr-seg-wrap">
+            <div className="pr-seg pr-seg-wrap bg-card/75 border-transparent shadow-2xs">
               {(
                 [
                   { id: 'all', ar: 'الكل', en: 'All', ckb: 'هەموو', count: queueCounts.total },
@@ -826,15 +1103,26 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                 </button>
               ))}
             </div>
+
+            {schedulePrintEnabled && tomorrowAppointments.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setPrintTomorrowOpen(true)}
+                className="min-h-[38px] px-3.5 py-1.5 rounded-full bg-card/80 hover:bg-card shadow-2xs text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <Printer className="size-3.5 text-primary" />
+                <span>{bi('طباعة قائمة الغد', "Print Tomorrow's List", 'چاپکردنی لیستی سبەینێ')}</span>
+              </button>
+            )}
           </div>
 
-          {/* Today Timeline List */}
+          {/* Clean Border-Minimal Unified Timeline Surface */}
           {filteredAppointments.length === 0 ? (
             <div
               data-testid="today-empty-state"
-              className="pr-surface p-8 text-center space-y-3"
+              className="rounded-[24px] bg-card/90 p-8 text-center space-y-3 shadow-[0_8px_24px_-10px_rgba(15,23,42,0.06)]"
             >
-              <Clock className="size-8 text-muted-foreground-2 mx-auto" />
+              <Clock className="size-8 text-primary/45 mx-auto" />
               <div>
                 <p className="text-sm font-bold text-foreground">
                   {bi(
@@ -856,7 +1144,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                   type="button"
                   data-testid="today-empty-primary-btn"
                   onClick={() => setShowWalkInModal(true)}
-                  className="min-h-[40px] px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                  className="min-h-[40px] px-4 py-2 rounded-2xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <UserPlus className="size-4" />
                   <span>
@@ -866,7 +1154,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
               </div>
             </div>
           ) : (
-            <div className="space-y-2.5">
+            <div className="rounded-[24px] bg-card/95 shadow-[0_10px_30px_-14px_rgba(15,23,42,0.08)] divide-y divide-border/15 overflow-hidden">
               {filteredAppointments.map((appt) => {
                 const matchedPatient = patients.find((p) => p.id === appt.patientId);
                 const isBusy = startingId === appt.id;
@@ -875,11 +1163,11 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                   <div
                     key={appt.id}
                     data-testid={`today-row-${appt.id}`}
-                    className="pr-surface pr-surface-interactive p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3"
+                    className="p-3.5 sm:px-5 sm:py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 hover:bg-primary/[0.025] transition-colors"
                   >
                     <div className="flex items-start gap-3 min-w-0">
-                      {/* Time Column */}
-                      <div className="px-3 py-2 rounded-xl bg-[var(--pr-accent-softer)] border border-[var(--pr-accent-line)] text-center shrink-0 min-w-[82px]">
+                      {/* Soft Borderless Time Pill */}
+                      <div className="px-3 py-2 rounded-2xl bg-primary/[0.07] text-center shrink-0 min-w-[78px]">
                         <TimeDisplay
                           time={appt.startTime}
                           className="text-sm font-extrabold text-primary justify-center"
@@ -906,7 +1194,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                           {reEvalNudgesEnabled && reEvalDuePatientIds.has(appt.patientId) && (
                             <span
                               data-testid="today-reeval-due-badge"
-                              className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 inline-flex items-center gap-1"
+                              className="text-xs font-extrabold text-amber-700 dark:text-amber-300 inline-flex items-center gap-1"
                             >
                               <CalendarClock className="size-3.5" />
                               <span>
@@ -927,7 +1215,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                         </div>
                         <div className="flex flex-wrap items-center gap-2.5 text-xs text-muted-foreground-1">
                           {(appt.therapistName || ClinicOperationsService.getClinicProfile().therapistNameAr || ClinicOperationsService.getStaffRoster()[0]?.nameAr) && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted border border-layer-line text-foreground font-semibold text-xs">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface text-foreground font-semibold text-xs">
                               <Stethoscope className="size-3 text-primary" />
                               <span>{appt.therapistName || ClinicOperationsService.getClinicProfile().therapistNameAr || ClinicOperationsService.getStaffRoster()[0]?.nameAr}</span>
                             </span>
@@ -953,7 +1241,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleRowStatus(appt.id, 'arrived')}
-                          className="min-h-[40px] px-3 py-1.5 rounded-xl bg-amber-500/12 hover:bg-amber-500/20 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                          className="min-h-[38px] px-3 py-1.5 rounded-xl bg-surface hover:bg-layer-hover text-amber-700 dark:text-amber-300 text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
                         >
                           <UserCheck className="size-3.5" />
                           <span>{bi('وصل', 'Arrived', 'گەیشت')}</span>
@@ -965,7 +1253,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                           type="button"
                           disabled={isBusy}
                           onClick={() => void ensureAndStartSessionForPatient(matchedPatient, appt, false)}
-                          className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed"
+                          className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                         >
                           <Play className="size-3.5 fill-current" />
                           <span>
@@ -981,7 +1269,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                           type="button"
                           disabled={isBusy}
                           onClick={() => void ensureAndStartSessionForPatient(matchedPatient, appt, true)}
-                          className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-emerald-600/12 hover:bg-emerald-600/20 border border-emerald-600/35 text-emerald-700 dark:text-emerald-300 text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:border-line-2 disabled:cursor-not-allowed"
+                          className="min-h-[38px] px-3 py-1.5 rounded-xl hover:bg-surface/80 text-emerald-700 dark:text-emerald-300 text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                         >
                           <CheckCircle2 className="size-3.5" />
                           <span>{bi('إنهاء وتحصيل', 'Finish & Collect', 'تەواوکردن و وەرگرتن')}</span>
@@ -998,7 +1286,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
           {!onboardingSummary.isDismissed ? (
             <div
               data-testid="onboarding-checklist-card"
-              className="p-3.5 sm:p-4 pr-surface border-[var(--pr-accent-line)] space-y-3"
+              className="p-4 sm:p-5 rounded-[24px] bg-card/90 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.06)] space-y-3"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -1013,7 +1301,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                   <span
                     data-testid="onboarding-checklist-progress"
                     dir="ltr"
-                    className="px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-mono font-bold tabular-nums"
+                    className="text-xs font-mono font-extrabold text-primary tabular-nums"
                   >
                     {onboardingSummary.completedCount} / {onboardingSummary.totalCount}
                   </span>
@@ -1025,7 +1313,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                     setChecklistDismissed(true);
                     void ClinicOperationsService.setOnboardingChecklistDismissedAsync(true);
                   }}
-                  className="min-h-[36px] px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-muted-foreground-1 hover:text-foreground text-xs font-bold cursor-pointer"
+                  className="min-h-[34px] px-2.5 py-1 rounded-full bg-surface hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground text-xs font-bold cursor-pointer"
                 >
                   {bi('إخفاء القائمة', 'Dismiss', 'شاردنەوەی لیست')}
                 </button>
@@ -1038,10 +1326,10 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                     <div
                       key={step.id}
                       data-testid={`onboarding-step-${step.id}`}
-                      className={`p-3 rounded-xl border flex flex-col justify-between gap-2.5 ${
+                      className={`p-3 rounded-2xl flex flex-col justify-between gap-2.5 ${
                         step.completed
-                          ? 'bg-emerald-500/8 border-emerald-500/30'
-                          : 'bg-surface border-line-2'
+                          ? 'bg-primary/[0.06]'
+                          : 'bg-surface/80'
                       }`}
                     >
                       <div className="space-y-1">
@@ -1083,7 +1371,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                         }}
                         className={`min-h-[36px] w-full px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer ${
                           step.completed
-                            ? 'bg-layer hover:bg-layer-hover border border-layer-line text-foreground'
+                            ? 'bg-surface/70 hover:bg-surface text-foreground'
                             : 'bg-primary hover:bg-primary-hover text-primary-foreground'
                         }`}
                       >
@@ -1105,7 +1393,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                     setChecklistDismissed(false);
                     void ClinicOperationsService.setOnboardingChecklistDismissedAsync(false);
                   }}
-                  className="min-h-[36px] px-3 py-1.5 rounded-full bg-surface hover:bg-layer-hover border border-line-2 text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                  className="min-h-[36px] px-3 py-1.5 rounded-full bg-surface/75 hover:bg-surface text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   <ShieldCheck className="size-3.5 text-primary" />
                   <span>
@@ -1130,7 +1418,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
           {/* 1. Cash & Collections Summary + 10s Backup Trigger */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <div className="lg:col-span-8 p-4 pr-surface space-y-3">
-              <div className="flex items-center justify-between gap-2 border-b border-card-divider pb-2.5">
+              <div className="flex items-center justify-between gap-2 border-b border-card-divider/60 pb-2.5">
                 <h2 className="flex items-center gap-2 text-sm font-extrabold text-foreground">
                   <Banknote className="size-4 text-emerald-700 dark:text-emerald-400" />
                   <span>
@@ -1146,39 +1434,39 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                <div className="p-3 rounded-xl bg-surface border border-line-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-0.5">
+                <div className="px-1 py-1.5">
                   <span className="text-muted-foreground-1 block mb-1">{bi('نقداً', 'Cash', 'کاش')}</span>
                   <Money amount={todayFinanceSummary.byMethod.cash} className="text-sm font-extrabold" />
                 </div>
-                <div className="p-3 rounded-xl bg-surface border border-line-2">
+                <div className="px-1 py-1.5">
                   <span className="text-muted-foreground-1 block mb-1">ZainCash</span>
                   <Money amount={todayFinanceSummary.byMethod.zain_cash} className="text-sm font-extrabold" />
                 </div>
-                <div className="p-3 rounded-xl bg-surface border border-line-2">
+                <div className="px-1 py-1.5">
                   <span className="text-muted-foreground-1 block mb-1">QiCard</span>
                   <Money amount={todayFinanceSummary.byMethod.qi_card} className="text-sm font-extrabold" />
                 </div>
-                <div className="p-3 rounded-xl bg-surface border border-line-2">
+                <div className="px-1 py-1.5">
                   <span className="text-muted-foreground-1 block mb-1">{bi('أخرى', 'Other', 'هیتر')}</span>
                   <Money amount={todayFinanceSummary.byMethod.other} className="text-sm font-extrabold" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-xs">
-                <div className="p-3 rounded-xl bg-emerald-500/8 border border-emerald-500/25 flex items-center justify-between">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-card-divider/50 text-xs">
+                <div className="px-1 py-1.5 flex items-center justify-between gap-2">
                   <span className="font-bold text-foreground">
                     {bi('إجمالي المقبوضات:', 'Total Collected:', 'کۆی وەرگیراو:')}
                   </span>
                   <Money amount={todayFinanceSummary.totalCollectedIQD} className="text-sm font-extrabold text-emerald-700 dark:text-emerald-300" />
                 </div>
-                <div className="p-3 rounded-xl bg-rose-500/8 border border-rose-500/25 flex items-center justify-between">
+                <div className="px-1 py-1.5 flex items-center justify-between gap-2">
                   <span className="font-bold text-foreground">
                     {bi('مصاريف اليوم:', 'Today Expenses:', 'خەرجییەکانی ئەمڕۆ:')}
                   </span>
                   <Money amount={todayFinanceSummary.expensesIQD} className="text-sm font-extrabold text-rose-700 dark:text-rose-300" />
                 </div>
-                <div className="p-3 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-between">
+                <div className="px-1 py-1.5 flex items-center justify-between gap-2">
                   <span className="font-bold text-foreground">
                     {bi('صافي الصندوق:', 'Net Cash:', 'پوختەی سندووق:')}
                   </span>
@@ -1188,7 +1476,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
             </div>
 
             {/* Backup Now (10s) Card */}
-            <div className="lg:col-span-4 p-4 rounded-2xl bg-gradient-to-br from-primary/12 via-card to-card border border-primary/25 flex flex-col justify-between gap-3">
+            <div className="lg:col-span-4 p-4 pr-surface flex flex-col justify-between gap-3">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 text-sm font-extrabold text-foreground">
                   <ShieldCheck className="size-4 text-primary" />
@@ -1216,7 +1504,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
 
           {/* 2. Unsigned / Draft Notes Checklist */}
           <div className="p-4 pr-surface space-y-3">
-            <div className="flex items-center justify-between gap-2 border-b border-card-divider pb-2.5">
+            <div className="flex items-center justify-between gap-2 border-b border-card-divider/60 pb-2.5">
               <h2 className="flex items-center gap-2 text-sm font-extrabold text-foreground">
                 <FileWarning className="size-4 text-amber-700 dark:text-amber-400" />
                 <span>
@@ -1243,14 +1531,14 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                 )}
               </p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              <div className="divide-y divide-card-divider/60">
                 {draftSessions.map((draft) => {
                   const p = patients.find((pt) => pt.id === draft.patientId);
                   const name = p ? getPatientDisplayName(p.data, language) : draft.patientId;
                   return (
                     <div
                       key={draft.id}
-                      className="p-3 rounded-xl bg-surface border border-line-2 flex items-center justify-between gap-2 text-xs"
+                      className="py-2.5 flex items-center justify-between gap-2 text-xs"
                     >
                       <div className="min-w-0">
                         <p className={`font-bold text-foreground leading-snug ${privacyBlur ? 'blur-xs' : ''}`}>
@@ -1266,7 +1554,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                         <button
                           type="button"
                           onClick={() => onOpenPatientSession(p, draft.id, false)}
-                          className="min-h-[38px] px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/35 text-amber-800 dark:text-amber-300 font-bold cursor-pointer shrink-0"
+                          className="min-h-[36px] px-2.5 py-1.5 rounded-lg hover:bg-surface/80 text-amber-700 dark:text-amber-300 font-bold cursor-pointer shrink-0 transition-colors"
                         >
                           {bi('إكمال واعتماد', 'Review & Sign', 'تەواوکردن و پەسەندکردن')}
                         </button>
@@ -1280,7 +1568,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
 
           {/* 3. Tomorrow's Schedule + WhatsApp Reminders */}
           <div className="p-4 pr-surface space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-card-divider pb-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-card-divider/60 pb-2.5">
               <h2 className="flex items-center gap-2 text-sm font-extrabold text-foreground">
                 <MessageCircle className="size-4 text-emerald-700 dark:text-emerald-400" />
                 <span>
@@ -1300,7 +1588,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                     type="button"
                     data-testid="eod-print-tomorrow-schedule-btn"
                     onClick={() => setPrintTomorrowOpen(true)}
-                    className="min-h-[38px] px-3 py-1.5 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                    className="min-h-[38px] px-3 py-1.5 rounded-lg bg-surface/65 hover:bg-surface text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
                   >
                     <Printer className="size-3.5 text-primary" />
                     <span>{bi('طباعة جدول الغد', "Print Tomorrow's Schedule", 'چاپکردنی خشتەی سبەینێ')}</span>
@@ -1318,7 +1606,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                 )}
               </p>
             ) : (
-              <div className="space-y-2">
+              <div className="divide-y divide-card-divider/60">
                 {tomorrowAppointments.map((appt) => {
                   const langKey = language === 'en' ? 'en' : 'ar';
                   const templates = ClinicOperationsService.getWhatsAppTemplates();
@@ -1334,7 +1622,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                   return (
                     <div
                       key={appt.id}
-                      className="p-3 rounded-xl bg-surface border border-line-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
+                      className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
                     >
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
@@ -1362,7 +1650,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                               setTimeout(() => setCopiedWhatsAppId(null), 2000);
                             });
                           }}
-                          className="min-h-[38px] px-3 py-1.5 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-foreground font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                          className="min-h-[38px] px-3 py-1.5 rounded-lg bg-surface/65 hover:bg-surface text-foreground font-bold inline-flex items-center gap-1.5 cursor-pointer"
                         >
                           {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
                           <span>

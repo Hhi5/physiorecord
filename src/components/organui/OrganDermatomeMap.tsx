@@ -177,12 +177,12 @@ export const OrganDermatomeMap: React.FC<OrganDermatomeMapProps> = ({
   return (
     <div className="space-y-4">
       {/* Dermatome Header Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-surface border border-card-line">
         <div className="flex items-center gap-2.5">
-          <span className="px-2 py-0.5 rounded-md text-xs font-mono font-bold bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800">
+          <span className="px-2 py-0.5 rounded-md text-xs font-mono font-bold bg-primary/10 text-primary border border-primary/25">
             ASIA ISNCSCI
           </span>
-          <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+          <span className="text-xs font-bold text-foreground">
             {bi(
               'خريطة القطاعات الجلدية الحسية التفاعلية (C2–S5)',
               'Interactive Sensory Dermatome Map (C2–S5)',
@@ -192,7 +192,7 @@ export const OrganDermatomeMap: React.FC<OrganDermatomeMapProps> = ({
         </div>
 
         {/* Region Filter Tabs */}
-        <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+        <div className="flex flex-wrap items-center gap-1 bg-layer p-1 rounded-lg border border-layer-line text-xs font-semibold">
           {(['all', 'cervical', 'thoracic', 'lumbar', 'sacral'] as const).map((grp) => (
             <button
               key={grp}
@@ -200,8 +200,8 @@ export const OrganDermatomeMap: React.FC<OrganDermatomeMapProps> = ({
               onClick={() => setSelectedGroup(grp)}
               className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                 selectedGroup === grp
-                  ? 'bg-teal-600 text-white shadow-2xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-primary text-primary-foreground shadow-2xs'
+                  : 'text-muted-foreground-1 hover:text-foreground'
               }`}
             >
               {grp === 'all' && bi('الكل', 'All', 'هەموو')}
@@ -225,8 +225,8 @@ export const OrganDermatomeMap: React.FC<OrganDermatomeMapProps> = ({
                 onClick={() => setActiveView('anterior')}
                 className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
                   activeView === 'anterior'
-                    ? 'bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 shadow-2xs'
-                    : 'text-slate-600 dark:text-slate-400'
+                    ? 'bg-card text-primary shadow-2xs'
+                    : 'text-muted-foreground-1'
                 }`}
               >
                 {bi('أمامي (Anterior)', 'Anterior', 'پێشەوە (Anterior)')}
@@ -236,15 +236,15 @@ export const OrganDermatomeMap: React.FC<OrganDermatomeMapProps> = ({
                 onClick={() => setActiveView('posterior')}
                 className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
                   activeView === 'posterior'
-                    ? 'bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 shadow-2xs'
-                    : 'text-slate-600 dark:text-slate-400'
+                    ? 'bg-card text-primary shadow-2xs'
+                    : 'text-muted-foreground-1'
                 }`}
               >
                 {bi('خلفي (Posterior)', 'Posterior', 'پشتەوە (Posterior)')}
               </button>
             </div>
 
-            <span className="text-xs font-mono font-bold text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/60 px-2.5 py-1 rounded-md border border-teal-200 dark:border-teal-800">
+            <span className="text-xs font-mono font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-md border border-primary/25">
               {activeRoot}
             </span>
           </div>
@@ -659,7 +659,7 @@ export const OrganDermatomeMap: React.FC<OrganDermatomeMapProps> = ({
                   'Search nerve root (C6, L4, S1) or ASIA sensory point...',
                   'گەڕان بەدوای ڕەگی دەمار (C6, L4, S1) یان خاڵی هەستیی ASIA...'
                 )}
-                className="w-full ps-8 pe-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-teal-500"
+                className="w-full ps-8 pe-3 py-1.5 text-xs rounded-xl bg-layer border border-layer-line text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:border-primary"
               />
             </div>
 
@@ -677,12 +677,12 @@ export const OrganDermatomeMap: React.FC<OrganDermatomeMapProps> = ({
                     onClick={() => setActiveRoot(d.rootLevel)}
                     className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1 ${
                       activeRoot === d.rootLevel
-                        ? 'bg-teal-600 text-white shadow-2xs ring-2 ring-teal-500/30'
+                        ? 'bg-primary text-primary-foreground shadow-2xs ring-2 ring-primary/30'
                         : hasAbnormality
                         ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
                         : finding
                         ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                        : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-teal-400'
+                        : 'bg-surface text-foreground border border-layer-line hover:border-primary/50'
                     }`}
                   >
                     <span>{d.rootLevel}</span>
@@ -694,11 +694,11 @@ export const OrganDermatomeMap: React.FC<OrganDermatomeMapProps> = ({
           </div>
 
           {/* Selected Root Details & Bilateral Sensory Grading */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-4 shadow-2xs">
-            <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div className="bg-card border border-card-line rounded-2xl p-4 space-y-4 shadow-2xs">
+            <div className="flex items-start justify-between border-b border-card-divider pb-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-md text-xs font-mono font-bold bg-teal-600 text-white">
+                  <span className="px-2 py-0.5 rounded-md text-xs font-mono font-bold bg-primary text-primary-foreground">
                     {selectedDermatome.rootLevel}
                   </span>
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -755,7 +755,7 @@ export const OrganDermatomeMap: React.FC<OrganDermatomeMapProps> = ({
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
                     {bi('الجانب الأيمن (Right):', 'Right Side (R):', 'لای ڕاست (Right):')}
                   </span>
-                  <span className="text-xs font-mono font-semibold text-teal-600 dark:text-teal-400">
+                  <span className="text-xs font-mono font-semibold text-primary">
                     {activeFinding?.rightStatus || bi('غير مفحوص', 'Unrecorded', 'تۆمار نەکراوە')}
                   </span>
                 </div>
@@ -770,8 +770,8 @@ export const OrganDermatomeMap: React.FC<OrganDermatomeMapProps> = ({
                         onClick={() => handleSetStatus(activeRoot, 'right', opt.id)}
                         className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
                           isSelected
-                            ? opt.badgeClass + ' ring-2 ring-teal-500/30'
-                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                            ? opt.badgeClass + ' ring-2 ring-primary/30'
+                            : 'bg-card text-muted-foreground-1 border-layer-line hover:border-primary/40'
                         }`}
                       >
                         {bi(opt.shortAr, opt.shortEn, opt.shortCkb)}
@@ -782,12 +782,12 @@ export const OrganDermatomeMap: React.FC<OrganDermatomeMapProps> = ({
               </div>
 
               {/* Left Side */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
+              <div className="p-3 rounded-xl bg-surface border border-card-line space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                  <span className="text-xs font-bold text-foreground">
                     {bi('الجانب الأيسر (Left):', 'Left Side (L):', 'لای چەپ (Left):')}
                   </span>
-                  <span className="text-xs font-mono font-semibold text-teal-600 dark:text-teal-400">
+                  <span className="text-xs font-mono font-semibold text-primary">
                     {activeFinding?.leftStatus || bi('غير مفحوص', 'Unrecorded', 'تۆمار نەکراوە')}
                   </span>
                 </div>
@@ -802,8 +802,8 @@ export const OrganDermatomeMap: React.FC<OrganDermatomeMapProps> = ({
                         onClick={() => handleSetStatus(activeRoot, 'left', opt.id)}
                         className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
                           isSelected
-                            ? opt.badgeClass + ' ring-2 ring-teal-500/30'
-                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                            ? opt.badgeClass + ' ring-2 ring-primary/30'
+                            : 'bg-card text-muted-foreground-1 border-layer-line hover:border-primary/40'
                         }`}
                       >
                         {bi(opt.shortAr, opt.shortEn, opt.shortCkb)}
@@ -816,8 +816,8 @@ export const OrganDermatomeMap: React.FC<OrganDermatomeMapProps> = ({
 
             {/* Recorded Dermatome Findings Summary Chips */}
             {value.length > 0 && (
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 block">
+              <div className="pt-2 border-t border-card-divider space-y-2">
+                <span className="text-xs font-bold text-muted-foreground-1 block">
                   {bi('القطاعات الحسية الموثقة بالمخطط:', 'Documented Dermatome Findings:', 'دێرماتۆمە هەستییە تۆمارکراوەکان:')}
                 </span>
                 <div className="flex flex-wrap gap-1.5">
@@ -825,9 +825,9 @@ export const OrganDermatomeMap: React.FC<OrganDermatomeMapProps> = ({
                     <div
                       key={f.rootLevel}
                       onClick={() => setActiveRoot(f.rootLevel as SpinalLevel)}
-                      className="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs flex items-center gap-2 cursor-pointer hover:border-teal-500"
+                      className="px-2.5 py-1 rounded-lg bg-surface border border-card-line text-xs flex items-center gap-2 cursor-pointer hover:border-primary"
                     >
-                      <span className="font-mono font-bold text-teal-600 dark:text-teal-400">
+                      <span className="font-mono font-bold text-primary">
                         {f.rootLevel}
                       </span>
                       <span className="text-xs text-slate-600 dark:text-slate-300 tabular-nums">

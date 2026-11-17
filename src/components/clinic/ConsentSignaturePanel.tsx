@@ -393,7 +393,7 @@ export const ConsentSignaturePanel: React.FC<ConsentSignaturePanelProps> = ({
         {isPediatricMinor && (
           <div
             data-testid="consent-pediatric-guardian-alert"
-            className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-900 dark:text-amber-200 space-y-1"
+            className="p-3 rounded-xl bg-surface/75 text-xs text-amber-900 dark:text-amber-200 space-y-1"
           >
             <p className="font-bold">
               {bi(
@@ -507,7 +507,7 @@ export const ConsentSignaturePanel: React.FC<ConsentSignaturePanelProps> = ({
         </label>
 
         {errorMsg && (
-          <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
+          <div className="p-2.5 rounded-xl bg-surface/75 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
             <AlertCircle className="size-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
@@ -563,10 +563,10 @@ export const ConsentSignaturePanel: React.FC<ConsentSignaturePanelProps> = ({
                         )}
                       </span>
                       <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        className={`text-xs font-semibold ${
                           item.revokedAt
-                            ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
-                            : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-emerald-600 dark:text-emerald-400'
                         }`}
                       >
                         {item.revokedAt
@@ -605,7 +605,7 @@ export const ConsentSignaturePanel: React.FC<ConsentSignaturePanelProps> = ({
                         setRevokingId(item.id);
                         setRevokeReason('');
                       }}
-                      className="px-2.5 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+                      className="px-2.5 py-1.5 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-rose-600 dark:text-rose-400 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
                     >
                       <Ban className="size-3.5" />
                       <span>{bi('سحب الموافقة', 'Revoke', 'کێشانەوەی ڕەزامەندی')}</span>

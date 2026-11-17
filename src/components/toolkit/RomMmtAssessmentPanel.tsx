@@ -316,24 +316,24 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
   const getGradeBadgeClass = (grade: MmtGradeValue) => {
     switch (grade) {
       case '0':
-        return 'bg-rose-100 text-rose-800 border-rose-300';
+        return 'text-rose-700 dark:text-rose-400 font-bold';
       case '1':
       case '2-':
       case '2':
-        return 'bg-amber-100 text-amber-900 border-amber-300';
+        return 'text-amber-700 dark:text-amber-400 font-bold';
       case '2+':
       case '3-':
       case '3':
-        return 'bg-yellow-100 text-yellow-900 border-yellow-300';
+        return 'text-yellow-700 dark:text-yellow-400 font-bold';
       case '3+':
       case '4-':
       case '4':
       case '4+':
-        return 'bg-sky-100 text-sky-900 border-sky-300';
+        return 'text-sky-700 dark:text-sky-400 font-bold';
       case '5':
-        return 'bg-emerald-100 text-emerald-900 border-emerald-300';
+        return 'text-emerald-700 dark:text-emerald-400 font-bold';
       default:
-        return 'bg-slate-100 text-slate-800 border-slate-300';
+        return 'text-foreground font-bold';
     }
   };
 
@@ -360,9 +360,9 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
       <div className="space-y-3 text-xs">
         {/* ROM Summary */}
         {romEntries.length > 0 && (
-          <div className="rounded-xl border border-teal-200 bg-teal-50/40 p-3">
-            <div className="flex items-center gap-1.5 font-bold text-teal-900 mb-2 border-b border-teal-200/60 pb-1">
-              <Compass className="w-3.5 h-3.5 text-teal-600" />
+          <div className="rounded-xl border border-primary/25 bg-primary/5 p-3">
+            <div className="flex items-center gap-1.5 font-bold text-foreground mb-2 border-b border-primary/20 pb-1">
+              <Compass className="w-3.5 h-3.5 text-primary" />
               <span>
                 {bi(
                   `قياسات المدى الحركي (ROM) — ${romEntries.length} قياسات`,
@@ -375,13 +375,13 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
               {romEntries.map((e) => (
                 <div
                   key={e.entryId}
-                  className="bg-white/80 p-2 rounded-lg border border-teal-100 text-xs space-y-1 shadow-2xs"
+                  className="bg-white/90 p-2 rounded-lg border border-primary/15 text-xs space-y-1 shadow-2xs"
                 >
                   <div className="flex items-center justify-between font-bold text-slate-800">
                     <span>
                       {bi(e.jointNameAr, e.jointNameEn)} — {bi(e.movementNameAr, e.movementNameEn)}
                     </span>
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-teal-100 text-teal-800 font-mono">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-primary/10 text-primary font-mono">
                       {e.movementType}
                     </span>
                   </div>
@@ -390,7 +390,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                       {bi('الجهة:', 'Side:', 'لا:')} {labelLaterality(e.laterality)}
                     </span>
                     {e.isTested ? (
-                      <span className="font-bold text-teal-700 text-xs font-mono">
+                      <span className="font-bold text-primary text-xs font-mono">
                         {e.measuredAngleDegrees}°
                         {e.referenceUninvolvedAngleDegrees != null && (
                           <span className="text-xs text-slate-400 mr-1">
@@ -403,7 +403,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                         )}
                       </span>
                     ) : (
-                      <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800">
+                      <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
                         {bi('غير مفحوص', 'Not Tested', 'پشکنین نەکراو')} ({labelNonTestableReason(e.reasonNotTested)})
                       </span>
                     )}
@@ -426,9 +426,9 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
 
         {/* MMT Summary */}
         {mmtEntries.length > 0 && (
-          <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-3">
-            <div className="flex items-center gap-1.5 font-bold text-indigo-900 mb-2 border-b border-indigo-200/60 pb-1">
-              <Dumbbell className="w-3.5 h-3.5 text-indigo-600" />
+          <div className="rounded-xl bg-card shadow-2xs p-3">
+            <div className="flex items-center gap-1.5 font-bold text-foreground mb-2 border-b border-card-line pb-1">
+              <Dumbbell className="w-3.5 h-3.5 text-primary" />
               <span>
                 {bi(
                   `فحوصات القوة العضلية (MMT) — ${mmtEntries.length} فحوصات`,
@@ -441,20 +441,20 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
               {mmtEntries.map((e) => (
                 <div
                   key={e.entryId}
-                  className="bg-white/80 p-2 rounded-lg border border-indigo-100 text-xs space-y-1 shadow-2xs"
+                  className="bg-layer p-2 rounded-lg border border-layer-line text-xs space-y-1 shadow-2xs"
                 >
-                  <div className="flex items-center justify-between font-bold text-slate-800">
+                  <div className="flex items-center justify-between font-bold text-foreground">
                     <span>{bi(e.muscleNameAr, e.muscleNameEn)}</span>
                     {e.isTested && e.gradeValue ? (
                       <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-bold border font-mono ${getGradeBadgeClass(
+                        className={`text-xs font-bold font-mono ${getGradeBadgeClass(
                           e.gradeValue
                         )}`}
                       >
                         {bi(`درجة ${e.gradeValue}`, `Grade ${e.gradeValue}`, `پلەی ${e.gradeValue}`)}
                       </span>
                     ) : (
-                      <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800">
+                      <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
                         {bi('غير مفحوص', 'Not Tested', 'پشکنین نەکراو')}
                       </span>
                     )}
@@ -512,7 +512,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
             onClick={() => setActiveWorkflow('rom')}
             className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
               activeWorkflow === 'rom'
-                ? 'bg-teal-600 text-white shadow-xs'
+                ? 'bg-primary text-primary-foreground shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
             }`}
           >
@@ -521,7 +521,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
             {romEntries.length > 0 && (
               <span
                 className={`px-1.5 py-0.2 rounded-full text-xs font-mono ${
-                  activeWorkflow === 'rom' ? 'bg-teal-700 text-white' : 'bg-slate-200 text-slate-700'
+                  activeWorkflow === 'rom' ? 'bg-black/20 text-white' : 'bg-slate-200 text-slate-700'
                 }`}
               >
                 {romEntries.length}
@@ -553,7 +553,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
         </div>
 
         <div className="text-xs text-slate-500 flex items-center gap-1">
-          <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+          <Sparkles className="w-3.5 h-3.5 text-primary" />
           <span>
             {bi(
               'قياس وتوثيق سريري معياري (WHO & MRC Standard)',
@@ -571,10 +571,10 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
       {activeWorkflow === 'rom' && (
         <div className="space-y-4">
           {!readOnly && (
-            <div className="bg-teal-50/40 p-3.5 rounded-2xl border border-teal-100 space-y-3">
+            <div className="bg-primary/5 p-3.5 rounded-2xl border border-primary/20 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-teal-950 flex items-center gap-1.5">
-                  <Compass className="w-4 h-4 text-teal-600" />
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Compass className="w-4 h-4 text-primary" />
                   <span>
                     {bi(
                       'تسجيل قياس جديد للمدى الحركي (New ROM Entry)',
@@ -607,7 +607,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
               </div>
 
               {romError && (
-                <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-1.5">
+                <div className="p-2 rounded-lg bg-surface/75 text-rose-700 dark:text-rose-400 text-xs flex items-center gap-1.5">
                   <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                   <span>{romError}</span>
                 </div>
@@ -622,7 +622,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                   <select
                     value={selectedJointId}
                     onChange={(e) => handleJointChange(e.target.value)}
-                    className="w-full text-xs py-1.5 px-2.5 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-teal-500"
+                    className="w-full text-xs py-1.5 px-2.5 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-primary"
                   >
                     {ROM_JOINTS_CATALOG.map((j) => (
                       <option key={j.jointId} value={j.jointId}>
@@ -639,7 +639,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                   <select
                     value={selectedMovementId}
                     onChange={(e) => setSelectedMovementId(e.target.value)}
-                    className="w-full text-xs py-1.5 px-2.5 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-teal-500"
+                    className="w-full text-xs py-1.5 px-2.5 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-primary"
                   >
                     {currentJoint.movements.map((m) => (
                       <option key={m.movementId} value={m.movementId}>
@@ -656,7 +656,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                   <select
                     value={movementType}
                     onChange={(e) => setMovementType(e.target.value as RomMovementType)}
-                    className="w-full text-xs py-1.5 px-2.5 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-teal-500"
+                    className="w-full text-xs py-1.5 px-2.5 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-primary"
                   >
                     {(Object.keys(ROM_MOVEMENT_TYPES) as RomMovementType[]).map((t) => (
                       <option key={t} value={t}>
@@ -677,7 +677,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                   <select
                     value={romLaterality}
                     onChange={(e) => setRomLaterality(e.target.value as BodyLaterality)}
-                    className="w-full text-xs py-1.5 px-2.5 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-teal-500"
+                    className="w-full text-xs py-1.5 px-2.5 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-primary"
                   >
                     {currentJoint.applicableLateralities.map((lat) => (
                       <option key={lat} value={lat}>
@@ -690,7 +690,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
 
               {/* Angle Inputs OR Non-Testable Reason */}
               {romIsTested ? (
-                <div className="space-y-3 pt-1 border-t border-teal-200/60">
+                <div className="space-y-3 pt-1 border-t border-primary/20">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
                     {/* Primary Angle Input with Stepper */}
                     <div>
@@ -723,7 +723,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                           step="1"
                           min="-45"
                           max="360"
-                          className="w-full text-center text-sm font-bold font-mono py-1 rounded-xl border border-teal-300 bg-white focus:ring-2 focus:ring-teal-500"
+                          className="w-full text-center text-sm font-bold font-mono py-1 rounded-xl border border-primary/40 bg-white focus:ring-2 focus:ring-primary"
                         />
                         <button
                           type="button"
@@ -761,7 +761,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                         step="1"
                         min="0"
                         max="360"
-                        className="w-full text-xs py-1.5 px-3 rounded-xl border border-slate-300 bg-white font-mono focus:ring-2 focus:ring-teal-500"
+                        className="w-full text-xs py-1.5 px-3 rounded-xl border border-slate-300 bg-white font-mono focus:ring-2 focus:ring-primary"
                       />
                     </div>
 
@@ -773,7 +773,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                       <select
                         value={endFeel}
                         onChange={(e) => setEndFeel(e.target.value as RomEndFeel)}
-                        className="w-full text-xs py-1.5 px-2.5 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-teal-500"
+                        className="w-full text-xs py-1.5 px-2.5 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-primary"
                       >
                         {(Object.keys(ROM_END_FEELS) as RomEndFeel[]).map((key) => (
                           <option key={key} value={key}>
@@ -786,9 +786,9 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
 
                   {/* Symmetry Calculation Feedback */}
                   {currentSymmetry && currentSymmetry.symmetryIndexPercent !== null && (
-                    <div className="p-2.5 rounded-xl bg-teal-100/70 border border-teal-200 text-xs text-teal-900 flex items-center justify-between">
+                    <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/25 text-xs text-foreground flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <Scale className="w-4 h-4 text-teal-700" />
+                        <Scale className="w-4 h-4 text-primary" />
                         <span>
                           <strong>
                             {bi('مؤشر التناظر (BSI):', 'Bilateral Symmetry Index (BSI):', 'پێنوێنی هاوسەنگیی هەردوو لا (BSI):')}
@@ -800,7 +800,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                           )}
                         </span>
                       </div>
-                      <span className="font-mono font-bold text-teal-950">
+                      <span className="font-mono font-bold text-primary">
                         {bi(
                           `عجز المدى: -${currentSymmetry.deficitDegrees}°`,
                           `Deficit: -${currentSymmetry.deficitDegrees}°`,
@@ -812,7 +812,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
 
                   {/* End-feel clinical description */}
                   <div className="text-xs text-slate-500 bg-white/70 p-2 rounded-lg border border-slate-200 flex items-start gap-1.5">
-                    <Info className="w-3.5 h-3.5 text-teal-600 shrink-0 mt-0.5" />
+                    <Info className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
                     <span>
                       {ROM_END_FEELS[endFeel]
                         ? bi(
@@ -843,8 +843,8 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                             ? num > 6
                               ? 'bg-rose-600 text-white border-rose-600'
                               : num > 3
-                              ? 'bg-amber-500 text-white border-amber-500'
-                              : 'bg-teal-600 text-white border-teal-600'
+                              ? 'bg-amber-700 text-white border-amber-700'
+                              : 'bg-primary text-primary-foreground border-primary'
                             : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
                         }`}
                       >
@@ -855,8 +855,8 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                 </div>
               ) : (
                 /* Non-Testable Reason Selection */
-                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 space-y-2">
-                  <div className="flex items-center gap-1.5 text-amber-900 font-bold text-xs">
+                <div className="p-3 bg-card shadow-2xs rounded-xl space-y-2">
+                  <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-bold text-xs">
                     <AlertTriangle className="w-4 h-4 text-amber-600" />
                     <span>
                       {bi(
@@ -881,7 +881,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
               )}
 
               {/* Notes & Add Button */}
-              <div className="flex flex-col sm:flex-row items-center gap-2 pt-2 border-t border-teal-200/60">
+              <div className="flex flex-col sm:flex-row items-center gap-2 pt-2 border-t border-primary/20">
                 <input
                   type="text"
                   placeholder={bi(
@@ -891,12 +891,12 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                   )}
                   value={romNotes}
                   onChange={(e) => setRomNotes(e.target.value)}
-                  className="w-full text-xs py-1.5 px-3 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500"
+                  className="w-full text-xs py-1.5 px-3 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-primary"
                 />
                 <button
                   type="button"
                   onClick={handleAddRomEntry}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-xs whitespace-nowrap transition-all"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-primary-foreground bg-primary hover:bg-primary-hover shadow-xs whitespace-nowrap transition-all"
                 >
                   <Plus className="w-4 h-4" />
                   <span>{bi('إضافة القياس إلى الجلسة', 'Add Measurement to Session', 'زیادکردنی پێوانە بۆ دانیشتن')}</span>
@@ -940,7 +940,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                           <span>
                             {bi(entry.jointNameAr, entry.jointNameEn)} — {bi(entry.movementNameAr, entry.movementNameEn)}
                           </span>
-                          <span className="px-1.5 py-0.2 rounded text-xs font-mono bg-teal-100 text-teal-800">
+                          <span className="px-1.5 py-0.2 rounded text-xs font-mono bg-primary/10 text-primary">
                             {entry.movementType}
                           </span>
                           <span className="px-1.5 py-0.2 rounded text-xs bg-slate-100 text-slate-700">
@@ -951,7 +951,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                         <div className="flex flex-wrap items-center gap-2 text-slate-600 text-xs">
                           {entry.isTested ? (
                             <>
-                              <span className="font-bold text-teal-800 text-xs font-mono">
+                              <span className="font-bold text-primary text-xs font-mono">
                                 {entry.measuredAngleDegrees}°
                               </span>
                               {entry.referenceUninvolvedAngleDegrees != null && (
@@ -964,7 +964,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                                 </span>
                               )}
                               {bsi && bsi.symmetryIndexPercent !== null && (
-                                <span className="px-1.5 py-0.2 rounded bg-teal-50 text-teal-700 border border-teal-200 font-mono font-bold">
+                                <span className="px-1.5 py-0.2 rounded bg-primary/10 text-primary border border-primary/25 font-mono font-bold">
                                   BSI: {bsi.symmetryIndexPercent}%
                                 </span>
                               )}
@@ -975,13 +975,13 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                               )}
                             </>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                            <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
                               {bi('غير مفحوص:', 'Not Tested:', 'پشکنین نەکراو:')} {labelNonTestableReason(entry.reasonNotTested)}
                             </span>
                           )}
 
                           {entry.painNrsScore !== undefined && entry.painNrsScore > 0 && (
-                            <span className="px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200 font-mono font-medium">
+                            <span className="text-rose-700 dark:text-rose-400 font-mono font-medium text-xs">
                               {bi('الألم:', 'Pain:', 'ئازار:')} <bdi dir="ltr">{entry.painNrsScore}/10</bdi>
                             </span>
                           )}
@@ -1042,10 +1042,10 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
       {activeWorkflow === 'mmt' && (
         <div className="space-y-4">
           {!readOnly && (
-            <div className="bg-indigo-50/40 p-3.5 rounded-2xl border border-indigo-100 space-y-3">
+            <div className="bg-card shadow-2xs p-3.5 rounded-2xl space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
-                  <Dumbbell className="w-4 h-4 text-indigo-600" />
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Dumbbell className="w-4 h-4 text-primary" />
                   <span>
                     {bi(
                       'فحص عضلي يدوي جديد (New MMT Assessment)',
@@ -1078,7 +1078,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
               </div>
 
               {mmtError && (
-                <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-1.5">
+                <div className="p-2 rounded-lg bg-surface/75 text-rose-700 dark:text-rose-400 text-xs flex items-center gap-1.5">
                   <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                   <span>{mmtError}</span>
                 </div>
@@ -1244,8 +1244,8 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                 </div>
               ) : (
                 /* Non-Testable Reason Selection */
-                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 space-y-2">
-                  <div className="flex items-center gap-1.5 text-amber-900 font-bold text-xs">
+                <div className="p-3 bg-card shadow-2xs rounded-xl space-y-2">
+                  <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-bold text-xs">
                     <AlertTriangle className="w-4 h-4 text-amber-600" />
                     <span>
                       {bi(
@@ -1329,14 +1329,14 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                         </span>
                         {entry.isTested && entry.gradeValue ? (
                           <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-bold border font-mono ${getGradeBadgeClass(
+                            className={`text-xs font-bold font-mono ${getGradeBadgeClass(
                               entry.gradeValue
                             )}`}
                           >
                             {bi(`درجة ${entry.gradeValue} (MRC)`, `Grade ${entry.gradeValue} (MRC)`, `پلەی ${entry.gradeValue} (MRC)`)}
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                          <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
                             {bi('غير مفحوص:', 'Not Tested:', 'پشکنین نەکراو:')} {labelNonTestableReason(entry.reasonNotTested)}
                           </span>
                         )}
@@ -1349,7 +1349,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                             : bi('وضع إلغاء الجاذبية', 'Gravity Eliminated', 'دۆخی لابردنی هێزی کێشکردن')}
                         </span>
                         {entry.substitutionObserved && (
-                          <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 font-semibold flex items-center gap-1">
+                          <span className="text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1 text-xs">
                             <AlertTriangle className="w-3 h-3 text-amber-500" />
                             <span>
                               {bi('حركة تعويضية (Trick)', 'Trick / Substitution Movement', 'جووڵەی جێگرەوە (Trick)')}
@@ -1357,7 +1357,7 @@ export const RomMmtAssessmentPanel: React.FC<RomMmtAssessmentPanelProps> = ({
                           </span>
                         )}
                         {entry.painNrsScore !== undefined && entry.painNrsScore > 0 && (
-                          <span className="px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200 font-mono font-medium">
+                          <span className="text-rose-700 dark:text-rose-400 font-mono font-medium text-xs">
                             {bi('الألم:', 'Pain:', 'ئازار:')} <bdi dir="ltr">{entry.painNrsScore}/10</bdi>
                           </span>
                         )}

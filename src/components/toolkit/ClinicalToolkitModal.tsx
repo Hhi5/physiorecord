@@ -9,6 +9,7 @@ import { DermatomesMapTab } from './DermatomesMapTab';
 import { MyotomesTab } from './MyotomesTab';
 import { DtrReferenceTab } from './DtrReferenceTab';
 import { X, Layers, Activity, Stethoscope, ShieldCheck, BookOpen } from 'lucide-react';
+import { GeometricHeaderBackdrop } from '../ui/Dialog';
 
 export type ToolkitTabId = 'dermatomes' | 'myotomes' | 'dtr';
 
@@ -62,38 +63,37 @@ export const ClinicalToolkitModal: React.FC<ClinicalToolkitModalProps> = ({
       >
         
         {/* Header Bar */}
-        <div className="bg-muted/40 px-5 sm:px-6 py-4 border-b border-card-divider flex items-center justify-between gap-4 flex-shrink-0">
-          
-          {/* Title and Icon */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-2xs flex-shrink-0">
-              <Stethoscope className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 id="toolkit-modal-title" className="text-base sm:text-lg font-bold text-foreground">
+        <div className="relative overflow-hidden px-5 sm:px-6 pt-3 sm:pt-4 pb-4 bg-primary text-primary-foreground flex flex-col gap-2.5 shrink-0 shadow-xs">
+          <GeometricHeaderBackdrop />
+          <div className="relative z-10 w-10 h-1 bg-primary-foreground/40 rounded-full mx-auto sm:hidden shrink-0" aria-hidden="true" />
+          <div className="relative z-10 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="size-10 rounded-xl bg-primary-foreground/15 text-primary-foreground border border-primary-foreground/25 flex items-center justify-center shrink-0">
+                <Stethoscope className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <h2 id="toolkit-modal-title" className="text-sm sm:text-base font-bold text-primary-foreground truncate">
                   {bi('المراجع السريرية التفاعلية', 'Interactive Clinical Reference Toolkit', 'سەرچاوە کلینیکییە کارلێکەکان')}
                 </h2>
+                <p className="text-xs text-primary-foreground/85 truncate">
+                  {bi(
+                    'دليل الفحص العصبي الشامل: القطاعات الجلدية، العضلية، والمنعكسات الوترية العميقة',
+                    'Comprehensive Neurological Reference: Dermatomes, Myotomes & Deep Tendon Reflexes',
+                    'ڕێبەری گشتگیری پشکنینی دەمار: دێرماتۆمەکان، مایۆتۆمەکان و کاردانەوەی ژێیە قووڵەکان'
+                  )}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground-1">
-                {bi(
-                  'دليل الفحص العصبي الشامل: القطاعات الجلدية، العضلية، والمنعكسات الوترية العميقة',
-                  'Comprehensive Neurological Reference: Dermatomes, Myotomes & Deep Tendon Reflexes',
-                  'ڕێبەری گشتگیری پشکنینی دەمار: دێرماتۆمەکان، مایۆتۆمەکان و کاردانەوەی ژێیە قووڵەکان'
-                )}
-              </p>
             </div>
-          </div>
 
-          {/* Close Button */}
-          <button
-            type="button"
-            onClick={onClose}
-            title={bi('إغلاق المرجع (Esc)', 'Close toolkit (Esc)', 'داخستنی سەرچاوە (Esc)')}
-            className="w-8 h-8 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-muted-foreground-1 hover:text-foreground flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={bi('إغلاق المرجع (Esc)', 'Close toolkit (Esc)', 'داخستنی سەرچاوە (Esc)')}
+              className="size-9 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
         </div>
 
         {/* Tab Switcher Navigation */}

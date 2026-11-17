@@ -48,7 +48,8 @@ export type MeasurementToolMode =
   | 'distance'
   | 'calibrate'
   | 'arrow'
-  | 'pan';
+  | 'pan'
+  | 'all';
 
 export interface KonvaMeasurementCanvasHandle {
   /** Exports the exact image area (excluding viewport padding/bars) with crisp annotations as JPEG data URL */
@@ -122,6 +123,7 @@ interface PrecisionPinProps {
   color: string;
   isSelected?: boolean;
   isPrimaryVertex?: boolean;
+  invisiblePin?: boolean;
   uiScale: number;
   imgW: number;
   imgH: number;
@@ -136,6 +138,7 @@ const PrecisionPin: React.FC<PrecisionPinProps> = ({
   color,
   isSelected,
   isPrimaryVertex,
+  invisiblePin = false,
   uiScale,
   imgW,
   imgH,
@@ -170,9 +173,11 @@ const PrecisionPin: React.FC<PrecisionPinProps> = ({
       draggable
       onMouseDown={(e) => {
         e.cancelBubble = true;
+        e.evt?.stopPropagation?.();
       }}
       onTouchStart={(e) => {
         e.cancelBubble = true;
+        e.evt?.stopPropagation?.();
       }}
       onClick={(e) => {
         e.cancelBubble = true;
@@ -180,8 +185,20 @@ const PrecisionPin: React.FC<PrecisionPinProps> = ({
       onTap={(e) => {
         e.cancelBubble = true;
       }}
-      onDragMove={(e) => syncClamped(e.target, false)}
-      onDragEnd={(e) => syncClamped(e.target, true)}
+      onDragStart={(e) => {
+        e.cancelBubble = true;
+        e.evt?.stopPropagation?.();
+      }}
+      onDragMove={(e) => {
+        e.cancelBubble = true;
+        e.evt?.stopPropagation?.();
+        syncClamped(e.target, false);
+      }}
+      onDragEnd={(e) => {
+        e.cancelBubble = true;
+        e.evt?.stopPropagation?.();
+        syncClamped(e.target, true);
+      }}
     >
       {/* Generous invisible hit area for finger/mouse accuracy */}
       <Circle radius={hitR} fill="rgba(0,0,0,0.001)" />
@@ -194,57 +211,61 @@ const PrecisionPin: React.FC<PrecisionPinProps> = ({
           listening={false}
         />
       )}
-      <Circle
-        radius={outerR}
-        fill="rgba(15, 23, 42, 0.25)"
-        stroke="#ffffff"
-        strokeWidth={2 * uiScale}
-        listening={false}
-      />
-      <Circle
-        radius={outerR - 1.5 * uiScale}
-        stroke={color}
-        strokeWidth={2 * uiScale}
-        listening={false}
-      />
-      {/* Central crosshair + 2px landmark core */}
-      <Line
-        points={[-tickOuter, 0, -tickInner, 0]}
-        stroke="#ffffff"
-        strokeWidth={1.2 * uiScale}
-        listening={false}
-      />
-      <Line
-        points={[tickInner, 0, tickOuter, 0]}
-        stroke="#ffffff"
-        strokeWidth={1.2 * uiScale}
-        listening={false}
-      />
-      <Line
-        points={[0, -tickOuter, 0, -tickInner]}
-        stroke="#ffffff"
-        strokeWidth={1.2 * uiScale}
-        listening={false}
-      />
-      <Line
-        points={[0, tickInner, 0, tickOuter]}
-        stroke="#ffffff"
-        strokeWidth={1.2 * uiScale}
-        listening={false}
-      />
-      <Circle radius={2 * uiScale} fill="#ffffff" listening={false} />
-      {labelTag && (
-        <Text
-          x={outerR + 4 * uiScale}
-          y={-outerR - 4 * uiScale}
-          text={labelTag}
-          fontSize={10 * uiScale}
-          fontStyle="bold"
-          fill="#ffffff"
-          shadowColor="#0f172a"
-          shadowBlur={4}
-          listening={false}
-        />
+      {!invisiblePin && (
+        <>
+          <Circle
+            radius={outerR}
+            fill="rgba(15, 23, 42, 0.25)"
+            stroke="#ffffff"
+            strokeWidth={2 * uiScale}
+            listening={false}
+          />
+          <Circle
+            radius={outerR - 1.5 * uiScale}
+            stroke={color}
+            strokeWidth={2 * uiScale}
+            listening={false}
+          />
+          {/* Central crosshair + 2px landmark core */}
+          <Line
+            points={[-tickOuter, 0, -tickInner, 0]}
+            stroke="#ffffff"
+            strokeWidth={1.2 * uiScale}
+            listening={false}
+          />
+          <Line
+            points={[tickInner, 0, tickOuter, 0]}
+            stroke="#ffffff"
+            strokeWidth={1.2 * uiScale}
+            listening={false}
+          />
+          <Line
+            points={[0, -tickOuter, 0, -tickInner]}
+            stroke="#ffffff"
+            strokeWidth={1.2 * uiScale}
+            listening={false}
+          />
+          <Line
+            points={[0, tickInner, 0, tickOuter]}
+            stroke="#ffffff"
+            strokeWidth={1.2 * uiScale}
+            listening={false}
+          />
+          <Circle radius={2 * uiScale} fill="#ffffff" listening={false} />
+          {labelTag && (
+            <Text
+              x={outerR + 4 * uiScale}
+              y={-outerR - 4 * uiScale}
+              text={labelTag}
+              fontSize={10 * uiScale}
+              fontStyle="bold"
+              fill="#ffffff"
+              shadowColor="#0f172a"
+              shadowBlur={4}
+              listening={false}
+            />
+          )}
+        </>
       )}
     </Group>
   );
@@ -532,7 +553,7 @@ export const KonvaMeasurementCanvas = forwardRef<
   };
 
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
-    if (activeTool === 'pan' || isPanningRef.current) {
+    if (activeTool === 'pan' || activeTool === 'all' || isPanningRef.current) {
       isPanningRef.current = false;
       return;
     }
@@ -548,6 +569,7 @@ export const KonvaMeasurementCanvas = forwardRef<
   };
 
   const uiScale = 1 / Math.sqrt(Math.max(1, zoom));
+  const isAll = activeTool === 'all';
   const divisions = getDivisions(annotations.gridMode);
   const cobbAngles: PhotoCobbAngleMeasurement[] = annotations.cobbAngles || [];
   const distances: PhotoDistanceMeasurement[] = annotations.distances || [];
@@ -564,10 +586,10 @@ export const KonvaMeasurementCanvas = forwardRef<
         dir="ltr"
         data-testid="photo-studio-canvas-stage"
         aria-label={ariaLabel}
-        className={`relative w-full rounded-xl bg-slate-950 border border-card-stroke overflow-hidden touch-none select-none ${
-          activeTool === 'pan' ? 'cursor-grab active:cursor-grabbing' : 'cursor-crosshair'
+        className={`relative w-full rounded-xl bg-slate-950 border border-card-stroke overflow-hidden touch-none select-none [&_.konvajs-content]:touch-none [&_.konvajs-content]:select-none ${
+          activeTool === 'pan' || activeTool === 'all' ? 'cursor-grab active:cursor-grabbing' : 'cursor-crosshair'
         }`}
-        style={{ height: `${containerSize.height}px` }}
+        style={{ height: `${containerSize.height}px`, touchAction: 'none' }}
       >
         <Stage
           ref={stageRef}
@@ -588,14 +610,19 @@ export const KonvaMeasurementCanvas = forwardRef<
               scaleX={zoom}
               scaleY={zoom}
               draggable={activeTool === 'pan'}
-              onDragStart={() => {
+              onDragStart={(e) => {
+                if ((e.target as unknown) !== viewportGroupRef.current) return;
                 isPanningRef.current = true;
               }}
               onDragMove={(e) => {
-                setPan({ x: e.target.x(), y: e.target.y() });
+                if ((e.target as unknown) !== viewportGroupRef.current) return;
+                const tgt = e.target as unknown as Konva.Group;
+                setPan({ x: tgt.x(), y: tgt.y() });
               }}
               onDragEnd={(e) => {
-                setPan({ x: e.target.x(), y: e.target.y() });
+                if ((e.target as unknown) !== viewportGroupRef.current) return;
+                const tgt = e.target as unknown as Konva.Group;
+                setPan({ x: tgt.x(), y: tgt.y() });
                 window.setTimeout(() => {
                   isPanningRef.current = false;
                 }, 40);
@@ -643,20 +670,32 @@ export const KonvaMeasurementCanvas = forwardRef<
                   <Group
                     x={(Math.max(0, Math.min(100, annotations.plumbLineXPercent)) / 100) * imageBox.width}
                     y={0}
-                    draggable
+                    draggable={!isAll}
                     onMouseDown={(e) => {
                       e.cancelBubble = true;
+                      e.evt?.stopPropagation?.();
+                    }}
+                    onTouchStart={(e) => {
+                      e.cancelBubble = true;
+                      e.evt?.stopPropagation?.();
                     }}
                     onClick={(e) => {
                       e.cancelBubble = true;
                     }}
+                    onDragStart={(e) => {
+                      e.cancelBubble = true;
+                    }}
                     onDragMove={(e) => {
+                      e.cancelBubble = true;
                       const cx = Math.max(0, Math.min(imageBox.width, e.target.x()));
                       e.target.x(cx);
                       e.target.y(0);
                       onChangePlumbXPercent(Math.round((cx / imageBox.width) * 1000) / 10);
                     }}
-                    onDragEnd={() => onInteractionCommit?.()}
+                    onDragEnd={(e) => {
+                      e.cancelBubble = true;
+                      onInteractionCommit?.();
+                    }}
                   >
                     <Line
                       points={[0, 0, 0, imageBox.height]}
@@ -694,20 +733,32 @@ export const KonvaMeasurementCanvas = forwardRef<
                       (Math.max(0, Math.min(100, annotations.horizontalLevelYPercent)) / 100) *
                       imageBox.height
                     }
-                    draggable
+                    draggable={!isAll}
                     onMouseDown={(e) => {
                       e.cancelBubble = true;
+                      e.evt?.stopPropagation?.();
+                    }}
+                    onTouchStart={(e) => {
+                      e.cancelBubble = true;
+                      e.evt?.stopPropagation?.();
                     }}
                     onClick={(e) => {
                       e.cancelBubble = true;
                     }}
+                    onDragStart={(e) => {
+                      e.cancelBubble = true;
+                    }}
                     onDragMove={(e) => {
+                      e.cancelBubble = true;
                       const cy = Math.max(0, Math.min(imageBox.height, e.target.y()));
                       e.target.x(0);
                       e.target.y(cy);
                       onChangeLevelYPercent(Math.round((cy / imageBox.height) * 1000) / 10);
                     }}
-                    onDragEnd={() => onInteractionCommit?.()}
+                    onDragEnd={(e) => {
+                      e.cancelBubble = true;
+                      onInteractionCommit?.();
+                    }}
                   >
                     <Line
                       points={[0, 0, imageBox.width, 0]}
@@ -737,8 +788,8 @@ export const KonvaMeasurementCanvas = forwardRef<
                   </Group>
                 )}
 
-                {/* Calibration Reference Scale Bar */}
-                {calibA && calibB && (
+                {/* Calibration Reference Scale Bar - Visible in calibrate mode or all mode */}
+                {calibA && calibB && (activeTool === 'calibrate' || (isAll && Boolean(calibration))) && (
                   <Group>
                     <Line
                       points={[
@@ -764,36 +815,41 @@ export const KonvaMeasurementCanvas = forwardRef<
                       textColor="#f3e8ff"
                       borderColor="#c084fc"
                     />
-                    <PrecisionPin
-                      x={calibA.xNorm * imageBox.width}
-                      y={calibA.yNorm * imageBox.height}
-                      color="#c084fc"
-                      isSelected={activeTool === 'calibrate' && activeCalibPointRole === 'A'}
-                      uiScale={uiScale}
-                      imgW={imageBox.width}
-                      imgH={imageBox.height}
-                      labelTag="R1"
-                      onDragPoint={(pt) => onDragCalibrationPoint('A', pt)}
-                      onDragCommit={onInteractionCommit}
-                    />
-                    <PrecisionPin
-                      x={calibB.xNorm * imageBox.width}
-                      y={calibB.yNorm * imageBox.height}
-                      color="#c084fc"
-                      isSelected={activeTool === 'calibrate' && activeCalibPointRole === 'B'}
-                      uiScale={uiScale}
-                      imgW={imageBox.width}
-                      imgH={imageBox.height}
-                      labelTag="R2"
-                      onDragPoint={(pt) => onDragCalibrationPoint('B', pt)}
-                      onDragCommit={onInteractionCommit}
-                    />
+                    {activeTool === 'calibrate' && (
+                      <>
+                        <PrecisionPin
+                          x={calibA.xNorm * imageBox.width}
+                          y={calibA.yNorm * imageBox.height}
+                          color="#c084fc"
+                          isSelected={activeTool === 'calibrate' && activeCalibPointRole === 'A'}
+                          uiScale={uiScale}
+                          imgW={imageBox.width}
+                          imgH={imageBox.height}
+                          labelTag="R1"
+                          onDragPoint={(pt) => onDragCalibrationPoint('A', pt)}
+                          onDragCommit={onInteractionCommit}
+                        />
+                        <PrecisionPin
+                          x={calibB.xNorm * imageBox.width}
+                          y={calibB.yNorm * imageBox.height}
+                          color="#c084fc"
+                          isSelected={activeTool === 'calibrate' && activeCalibPointRole === 'B'}
+                          uiScale={uiScale}
+                          imgW={imageBox.width}
+                          imgH={imageBox.height}
+                          labelTag="R2"
+                          onDragPoint={(pt) => onDragCalibrationPoint('B', pt)}
+                          onDragCommit={onInteractionCommit}
+                        />
+                      </>
+                    )}
                   </Group>
                 )}
 
-                {/* 3-Point Joint Goniometer Angles */}
-                {annotations.angles.map((ang: PhotoAngleMeasurement, idx: number) => {
-                  const isActive = activeTool === 'angle3' && idx === activeAngleIndex;
+                {/* 3-Point Joint Goniometer Angles - Visible when angle3 or all is selected */}
+                {(activeTool === 'angle3' || isAll) &&
+                  annotations.angles.map((ang: PhotoAngleMeasurement, idx: number) => {
+                    const isActive = idx === activeAngleIndex;
                   const ax = ang.pointA.xNorm * imageBox.width;
                   const ay = ang.pointA.yNorm * imageBox.height;
                   const bx = ang.vertexB.xNorm * imageBox.width;
@@ -812,7 +868,7 @@ export const KonvaMeasurementCanvas = forwardRef<
                   const arcSweepAbs = Math.abs(sweep);
 
                   return (
-                    <Group key={ang.id} opacity={isActive || activeTool !== 'angle3' ? 1 : 0.78}>
+                    <Group key={ang.id} opacity={isActive || isAll || activeTool !== 'angle3' ? 1 : 0.78}>
                       <Arc
                         x={bx}
                         y={by}
@@ -828,7 +884,7 @@ export const KonvaMeasurementCanvas = forwardRef<
                       <Line
                         points={[ax, ay, bx, by, cx, cy]}
                         stroke="#facc15"
-                        strokeWidth={(isActive ? 2.6 : 2) * uiScale}
+                        strokeWidth={(isActive && !isAll ? 2.6 : 2) * uiScale}
                         lineCap="round"
                         lineJoin="round"
                         listening={false}
@@ -841,52 +897,57 @@ export const KonvaMeasurementCanvas = forwardRef<
                         imgH={imageBox.height}
                         uiScale={uiScale}
                         textColor="#fef08a"
-                        borderColor={isActive ? '#facc15' : '#475569'}
+                        borderColor={isActive && !isAll ? '#facc15' : '#475569'}
                       />
-                      <PrecisionPin
-                        x={ax}
-                        y={ay}
-                        color="#14b8a6"
-                        isSelected={isActive && activeAnglePointRole === 'A'}
-                        uiScale={uiScale}
-                        imgW={imageBox.width}
-                        imgH={imageBox.height}
-                        labelTag="A"
-                        onDragPoint={(pt) => onDragAnglePoint(idx, 'A', pt)}
-                        onDragCommit={onInteractionCommit}
-                      />
-                      <PrecisionPin
-                        x={bx}
-                        y={by}
-                        color="#ef4444"
-                        isPrimaryVertex
-                        isSelected={isActive && activeAnglePointRole === 'B'}
-                        uiScale={uiScale}
-                        imgW={imageBox.width}
-                        imgH={imageBox.height}
-                        labelTag="B"
-                        onDragPoint={(pt) => onDragAnglePoint(idx, 'B', pt)}
-                        onDragCommit={onInteractionCommit}
-                      />
-                      <PrecisionPin
-                        x={cx}
-                        y={cy}
-                        color="#14b8a6"
-                        isSelected={isActive && activeAnglePointRole === 'C'}
-                        uiScale={uiScale}
-                        imgW={imageBox.width}
-                        imgH={imageBox.height}
-                        labelTag="C"
-                        onDragPoint={(pt) => onDragAnglePoint(idx, 'C', pt)}
-                        onDragCommit={onInteractionCommit}
-                      />
+                      {activeTool === 'angle3' && (
+                        <>
+                          <PrecisionPin
+                            x={ax}
+                            y={ay}
+                            color="#14b8a6"
+                            isSelected={isActive && activeAnglePointRole === 'A'}
+                            uiScale={uiScale}
+                            imgW={imageBox.width}
+                            imgH={imageBox.height}
+                            labelTag="A"
+                            onDragPoint={(pt) => onDragAnglePoint(idx, 'A', pt)}
+                            onDragCommit={onInteractionCommit}
+                          />
+                          <PrecisionPin
+                            x={bx}
+                            y={by}
+                            color="#ef4444"
+                            isPrimaryVertex
+                            isSelected={isActive && activeAnglePointRole === 'B'}
+                            uiScale={uiScale}
+                            imgW={imageBox.width}
+                            imgH={imageBox.height}
+                            labelTag="B"
+                            onDragPoint={(pt) => onDragAnglePoint(idx, 'B', pt)}
+                            onDragCommit={onInteractionCommit}
+                          />
+                          <PrecisionPin
+                            x={cx}
+                            y={cy}
+                            color="#14b8a6"
+                            isSelected={isActive && activeAnglePointRole === 'C'}
+                            uiScale={uiScale}
+                            imgW={imageBox.width}
+                            imgH={imageBox.height}
+                            labelTag="C"
+                            onDragPoint={(pt) => onDragAnglePoint(idx, 'C', pt)}
+                            onDragCommit={onInteractionCommit}
+                          />
+                        </>
+                      )}
                     </Group>
                   );
                 })}
 
-                {/* 4-Point Cobb / Spinal Endplate Angles */}
-                {cobbAngles.map((cobb, idx) => {
-                  const isActive = activeTool === 'cobb4' && idx === activeCobbIndex;
+                {/* 4-Point Cobb / Spinal Endplate Angles - Visible when cobb4 or all is selected */}
+                {(activeTool === 'cobb4' || isAll) &&
+                  cobbAngles.map((cobb, idx) => {
+                    const isActive = idx === activeCobbIndex;
                   const x1a = cobb.line1Start.xNorm * imageBox.width;
                   const y1a = cobb.line1Start.yNorm * imageBox.height;
                   const x1b = cobb.line1End.xNorm * imageBox.width;
@@ -902,18 +963,18 @@ export const KonvaMeasurementCanvas = forwardRef<
                   const m2y = (y2a + y2b) / 2;
 
                   return (
-                    <Group key={cobb.id} opacity={isActive || activeTool !== 'cobb4' ? 1 : 0.78}>
+                    <Group key={cobb.id} opacity={isActive || isAll || activeTool !== 'cobb4' ? 1 : 0.78}>
                       <Line
                         points={[x1a, y1a, x1b, y1b]}
                         stroke="#38bdf8"
-                        strokeWidth={(isActive ? 2.6 : 2) * uiScale}
+                        strokeWidth={(isActive && !isAll ? 2.6 : 2) * uiScale}
                         lineCap="round"
                         listening={false}
                       />
                       <Line
                         points={[x2a, y2a, x2b, y2b]}
                         stroke="#38bdf8"
-                        strokeWidth={(isActive ? 2.6 : 2) * uiScale}
+                        strokeWidth={(isActive && !isAll ? 2.6 : 2) * uiScale}
                         lineCap="round"
                         listening={false}
                       />
@@ -932,170 +993,203 @@ export const KonvaMeasurementCanvas = forwardRef<
                         imgH={imageBox.height}
                         uiScale={uiScale}
                         textColor="#bae6fd"
-                        borderColor={isActive ? '#38bdf8' : '#475569'}
+                        borderColor={isActive && !isAll ? '#38bdf8' : '#475569'}
                       />
-                      <PrecisionPin
-                        x={x1a}
-                        y={y1a}
-                        color="#0284c7"
-                        isSelected={isActive && activeCobbPointRole === 'L1A'}
-                        uiScale={uiScale}
-                        imgW={imageBox.width}
-                        imgH={imageBox.height}
-                        labelTag="1A"
-                        onDragPoint={(pt) => onDragCobbPoint(idx, 'L1A', pt)}
-                        onDragCommit={onInteractionCommit}
-                      />
-                      <PrecisionPin
-                        x={x1b}
-                        y={y1b}
-                        color="#0284c7"
-                        isSelected={isActive && activeCobbPointRole === 'L1B'}
-                        uiScale={uiScale}
-                        imgW={imageBox.width}
-                        imgH={imageBox.height}
-                        labelTag="1B"
-                        onDragPoint={(pt) => onDragCobbPoint(idx, 'L1B', pt)}
-                        onDragCommit={onInteractionCommit}
-                      />
-                      <PrecisionPin
-                        x={x2a}
-                        y={y2a}
-                        color="#0ea5e9"
-                        isSelected={isActive && activeCobbPointRole === 'L2A'}
-                        uiScale={uiScale}
-                        imgW={imageBox.width}
-                        imgH={imageBox.height}
-                        labelTag="2A"
-                        onDragPoint={(pt) => onDragCobbPoint(idx, 'L2A', pt)}
-                        onDragCommit={onInteractionCommit}
-                      />
-                      <PrecisionPin
-                        x={x2b}
-                        y={y2b}
-                        color="#0ea5e9"
-                        isSelected={isActive && activeCobbPointRole === 'L2B'}
-                        uiScale={uiScale}
-                        imgW={imageBox.width}
-                        imgH={imageBox.height}
-                        labelTag="2B"
-                        onDragPoint={(pt) => onDragCobbPoint(idx, 'L2B', pt)}
-                        onDragCommit={onInteractionCommit}
-                      />
+                      {activeTool === 'cobb4' && (
+                        <>
+                          <PrecisionPin
+                            x={x1a}
+                            y={y1a}
+                            color="#0284c7"
+                            isSelected={isActive && activeCobbPointRole === 'L1A'}
+                            uiScale={uiScale}
+                            imgW={imageBox.width}
+                            imgH={imageBox.height}
+                            labelTag="1A"
+                            onDragPoint={(pt) => onDragCobbPoint(idx, 'L1A', pt)}
+                            onDragCommit={onInteractionCommit}
+                          />
+                          <PrecisionPin
+                            x={x1b}
+                            y={y1b}
+                            color="#0284c7"
+                            isSelected={isActive && activeCobbPointRole === 'L1B'}
+                            uiScale={uiScale}
+                            imgW={imageBox.width}
+                            imgH={imageBox.height}
+                            labelTag="1B"
+                            onDragPoint={(pt) => onDragCobbPoint(idx, 'L1B', pt)}
+                            onDragCommit={onInteractionCommit}
+                          />
+                          <PrecisionPin
+                            x={x2a}
+                            y={y2a}
+                            color="#0ea5e9"
+                            isSelected={isActive && activeCobbPointRole === 'L2A'}
+                            uiScale={uiScale}
+                            imgW={imageBox.width}
+                            imgH={imageBox.height}
+                            labelTag="2A"
+                            onDragPoint={(pt) => onDragCobbPoint(idx, 'L2A', pt)}
+                            onDragCommit={onInteractionCommit}
+                          />
+                          <PrecisionPin
+                            x={x2b}
+                            y={y2b}
+                            color="#0ea5e9"
+                            isSelected={isActive && activeCobbPointRole === 'L2B'}
+                            uiScale={uiScale}
+                            imgW={imageBox.width}
+                            imgH={imageBox.height}
+                            labelTag="2B"
+                            onDragPoint={(pt) => onDragCobbPoint(idx, 'L2B', pt)}
+                            onDragCommit={onInteractionCommit}
+                          />
+                        </>
+                      )}
                     </Group>
                   );
                 })}
 
-                {/* Distance Calipers */}
-                {distances.map((dist, idx) => {
-                  const isActive = activeTool === 'distance' && idx === activeDistanceIndex;
-                  const sx = dist.start.xNorm * imageBox.width;
-                  const sy = dist.start.yNorm * imageBox.height;
-                  const ex = dist.end.xNorm * imageBox.width;
-                  const ey = dist.end.yNorm * imageBox.height;
-                  return (
-                    <Group key={dist.id} opacity={isActive || activeTool !== 'distance' ? 1 : 0.78}>
-                      <Line
-                        points={[sx, sy, ex, ey]}
-                        stroke="#34d399"
-                        strokeWidth={(isActive ? 2.6 : 2) * uiScale}
-                        lineCap="round"
-                        listening={false}
-                      />
-                      <CanvasBadge
-                        text={formatPhotoDistanceBadgeText(dist)}
-                        anchorX={(sx + ex) / 2 + 8}
-                        anchorY={(sy + ey) / 2 - 22}
-                        imgW={imageBox.width}
-                        imgH={imageBox.height}
-                        uiScale={uiScale}
-                        textColor="#a7f3d0"
-                        borderColor={isActive ? '#34d399' : '#475569'}
-                      />
-                      <PrecisionPin
-                        x={sx}
-                        y={sy}
-                        color="#10b981"
-                        isSelected={isActive && activeDistancePointRole === 'start'}
-                        uiScale={uiScale}
-                        imgW={imageBox.width}
-                        imgH={imageBox.height}
-                        labelTag="D1"
-                        onDragPoint={(pt) => onDragDistancePoint(idx, 'start', pt)}
-                        onDragCommit={onInteractionCommit}
-                      />
-                      <PrecisionPin
-                        x={ex}
-                        y={ey}
-                        color="#10b981"
-                        isSelected={isActive && activeDistancePointRole === 'end'}
-                        uiScale={uiScale}
-                        imgW={imageBox.width}
-                        imgH={imageBox.height}
-                        labelTag="D2"
-                        onDragPoint={(pt) => onDragDistancePoint(idx, 'end', pt)}
-                        onDragCommit={onInteractionCommit}
-                      />
-                    </Group>
-                  );
-                })}
+                {/* 2-Point Linear Distance Caliper - Visible when distance or all is selected */}
+                {(activeTool === 'distance' || isAll) &&
+                  distances.map((dist, idx) => {
+                    const isActive = idx === activeDistanceIndex;
+                    const sx = dist.start.xNorm * imageBox.width;
+                    const sy = dist.start.yNorm * imageBox.height;
+                    const ex = dist.end.xNorm * imageBox.width;
+                    const ey = dist.end.yNorm * imageBox.height;
+                    const mx = (sx + ex) / 2;
+                    const my = (sy + ey) / 2;
+                    const badgeText = formatPhotoDistanceBadgeText(dist);
 
-                {/* Callout Arrows */}
-                {arrows.map((arr, idx) => {
-                  const isActive = activeTool === 'arrow' && idx === activeArrowIndex;
-                  const sx = arr.start.xNorm * imageBox.width;
-                  const sy = arr.start.yNorm * imageBox.height;
-                  const ex = arr.end.xNorm * imageBox.width;
-                  const ey = arr.end.yNorm * imageBox.height;
-                  const color = arr.colorHex || '#f59e0b';
-                  return (
-                    <Group key={arr.id} opacity={isActive || activeTool !== 'arrow' ? 1 : 0.8}>
-                      <Arrow
-                        points={[sx, sy, ex, ey]}
-                        pointerLength={9 * uiScale}
-                        pointerWidth={8 * uiScale}
-                        fill={color}
-                        stroke={color}
-                        strokeWidth={(isActive ? 2.6 : 2) * uiScale}
-                        listening={false}
-                      />
-                      {arr.label.trim() && (
+                    return (
+                      <Group key={dist.id} opacity={isActive || isAll || activeTool !== 'distance' ? 1 : 0.85}>
+                        <Line
+                          points={[sx, sy, ex, ey]}
+                          stroke="#10b981"
+                          strokeWidth={(isActive && !isAll ? 2.6 : 2) * uiScale}
+                          lineCap="round"
+                          listening={false}
+                        />
+                        <Circle
+                          x={sx}
+                          y={sy}
+                          radius={3 * uiScale}
+                          fill="#10b981"
+                          listening={false}
+                        />
+                        <Circle
+                          x={ex}
+                          y={ey}
+                          radius={3 * uiScale}
+                          fill="#10b981"
+                          listening={false}
+                        />
                         <CanvasBadge
-                          text={arr.label}
-                          anchorX={sx - 10}
-                          anchorY={sy - 26 * uiScale}
+                          text={badgeText}
+                          anchorX={mx + 8 * uiScale}
+                          anchorY={my - 16 * uiScale}
                           imgW={imageBox.width}
                           imgH={imageBox.height}
                           uiScale={uiScale}
-                          textColor="#ffffff"
-                          borderColor={color}
+                          textColor="#a7f3d0"
+                          borderColor={isActive && !isAll ? '#10b981' : '#475569'}
                         />
-                      )}
-                      <PrecisionPin
-                        x={sx}
-                        y={sy}
-                        color={color}
-                        isSelected={isActive && activeArrowPointRole === 'start'}
-                        uiScale={uiScale}
-                        imgW={imageBox.width}
-                        imgH={imageBox.height}
-                        onDragPoint={(pt) => onDragArrowPoint(idx, 'start', pt)}
-                        onDragCommit={onInteractionCommit}
-                      />
-                      <PrecisionPin
-                        x={ex}
-                        y={ey}
-                        color={color}
-                        isSelected={isActive && activeArrowPointRole === 'end'}
-                        uiScale={uiScale}
-                        imgW={imageBox.width}
-                        imgH={imageBox.height}
-                        onDragPoint={(pt) => onDragArrowPoint(idx, 'end', pt)}
-                        onDragCommit={onInteractionCommit}
-                      />
-                    </Group>
-                  );
-                })}
+                        {activeTool === 'distance' && (
+                          <>
+                            <PrecisionPin
+                              x={sx}
+                              y={sy}
+                              color="#10b981"
+                              isSelected={isActive && activeDistancePointRole === 'start'}
+                              uiScale={uiScale}
+                              imgW={imageBox.width}
+                              imgH={imageBox.height}
+                              labelTag="D1"
+                              onDragPoint={(pt) => onDragDistancePoint(idx, 'start', pt)}
+                              onDragCommit={onInteractionCommit}
+                            />
+                            <PrecisionPin
+                              x={ex}
+                              y={ey}
+                              color="#10b981"
+                              isSelected={isActive && activeDistancePointRole === 'end'}
+                              uiScale={uiScale}
+                              imgW={imageBox.width}
+                              imgH={imageBox.height}
+                              labelTag="D2"
+                              onDragPoint={(pt) => onDragDistancePoint(idx, 'end', pt)}
+                              onDragCommit={onInteractionCommit}
+                            />
+                          </>
+                        )}
+                      </Group>
+                    );
+                  })}
+
+                {/* Callout Clinical Directional Arrows - Visible when arrow or all is selected */}
+                {(activeTool === 'arrow' || isAll) &&
+                  arrows.map((arr, idx) => {
+                    const isActive = idx === activeArrowIndex;
+                    const sx = arr.start.xNorm * imageBox.width;
+                    const sy = arr.start.yNorm * imageBox.height;
+                    const ex = arr.end.xNorm * imageBox.width;
+                    const ey = arr.end.yNorm * imageBox.height;
+                    const color = arr.colorHex || '#f59e0b';
+                    return (
+                      <Group key={arr.id} opacity={1}>
+                        <Arrow
+                          points={[sx, sy, ex, ey]}
+                          pointerLength={18 * uiScale}
+                          pointerWidth={16 * uiScale}
+                          fill={color}
+                          stroke={color}
+                          strokeWidth={(isActive && !isAll ? 3.5 : 2.8) * uiScale}
+                          listening={false}
+                        />
+                        {arr.label.trim() && (
+                          <CanvasBadge
+                            text={arr.label}
+                            anchorX={sx - 10}
+                            anchorY={sy - 26 * uiScale}
+                            imgW={imageBox.width}
+                            imgH={imageBox.height}
+                            uiScale={uiScale}
+                            textColor="#ffffff"
+                            borderColor={color}
+                          />
+                        )}
+                        {activeTool === 'arrow' && (
+                          <>
+                            <PrecisionPin
+                              x={sx}
+                              y={sy}
+                              color={color}
+                              isSelected={isActive && activeArrowPointRole === 'start'}
+                              uiScale={uiScale}
+                              imgW={imageBox.width}
+                              imgH={imageBox.height}
+                              onDragPoint={(pt) => onDragArrowPoint(idx, 'start', pt)}
+                              onDragCommit={onInteractionCommit}
+                            />
+                            <PrecisionPin
+                              x={ex}
+                              y={ey}
+                              color={color}
+                              isSelected={isActive && activeArrowPointRole === 'end'}
+                              uiScale={uiScale}
+                              imgW={imageBox.width}
+                              imgH={imageBox.height}
+                              invisiblePin={true}
+                              onDragPoint={(pt) => onDragArrowPoint(idx, 'end', pt)}
+                              onDragCommit={onInteractionCommit}
+                            />
+                          </>
+                        )}
+                      </Group>
+                    );
+                  })}
               </Group>
             </Group>
           </Layer>

@@ -5,7 +5,11 @@
 // =======================================================================
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import {
+  Dialog as AriaDialog,
+  Modal,
+  ModalOverlay,
+} from 'react-aria-components';
 import {
   X,
   Printer,
@@ -24,6 +28,7 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 import { useCurrency } from '../../context/CurrencyContext';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
+import { GeometricHeaderBackdrop } from '../ui/Dialog';
 import {
   getPrintDocumentGlossaryLabels,
   type PrintDocumentGlossaryLabels,
@@ -560,157 +565,178 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
     documentType === 'referral_letter' ||
     documentType === 'medical_report';
 
-  const content = (
-    <div
-      id="physiorecord-print-portal"
-      className="fixed inset-0 z-[90] bg-slate-950/65 backdrop-blur-xs overflow-y-auto p-3 sm:p-6 flex flex-col items-center"
-      dir={isRtl ? 'rtl' : 'ltr'}
+  return (
+    <ModalOverlay
+      isOpen={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      isDismissable
+      className="fixed inset-0 z-[90] bg-slate-950/65 backdrop-blur-xs flex flex-col outline-none"
     >
-      {/* Screen-only Toolbar */}
-      <div className="print-modal-chrome w-full max-w-[210mm] mb-4 bg-card border border-card-line rounded-2xl p-3.5 shadow-lg space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-              <Printer className="size-4" />
-            </span>
-            <div>
-              <h2 className="text-sm font-bold text-foreground">{uiDocTitle}</h2>
-              <p className="text-xs text-muted-foreground-1">
-                {bi(
-                  'معاينة قبل الطباعة أو الحفظ بصيغة PDF عبر المتصفح (يعمل بدون إنترنت)',
-                  'A4 print preview — use Print or Save as PDF (100% offline)',
-                  'پێشبینینی پێش چاپکردن یان پاشەکەوتکردن وەک PDF لە ڕێگەی وێبگەڕەوە (بێ ئینتەرنێت کاردەکات)'
-                )}
-              </p>
-            </div>
-          </div>
+      <Modal
+        dir={isRtl ? 'rtl' : 'ltr'}
+        className="w-full h-full max-h-[100dvh] flex flex-col outline-none print:h-auto print:max-h-none overflow-hidden"
+      >
+        <AriaDialog
+          aria-label={uiDocTitle}
+          className="w-full h-full flex flex-col min-h-0 outline-none print:h-auto overflow-hidden"
+        >
+          {/* Pinned Screen-only Top Header & Action Strip (Non-shrinking, Always Visible, Zero Clipping) */}
+          <header className="print-modal-chrome w-full bg-card border-b border-card-line shadow-md shrink-0 print:hidden z-30">
+            <div className="relative overflow-hidden px-4 sm:px-6 py-3 bg-primary text-primary-foreground">
+              <GeometricHeaderBackdrop />
+              <div className="relative z-10 max-w-[210mm] mx-auto flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="size-9 rounded-xl bg-primary-foreground/15 text-primary-foreground border border-primary-foreground/25 flex items-center justify-center shrink-0">
+                    <Printer className="size-4.5" />
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="text-sm font-black text-primary-foreground truncate">{uiDocTitle}</h2>
+                    <p className="text-xs text-primary-foreground/85 truncate">
+                      {bi(
+                        'معاينة قبل الطباعة أو الحفظ بصيغة PDF عبر المتصفح (يعمل بدون إنترنت)',
+                        'A4 print preview — use Print or Save as PDF (100% offline)',
+                        'پێشبینینی پێش چاپکردن یان پاشەکەوتکردن وەک PDF لە ڕێگەی وێبگەڕەوە (بێ ئینتەرنێت کاردەکات)'
+                      )}
+                    </p>
+                  </div>
+                </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setDocLang(docLang === 'ar' ? 'en' : 'ar')}
-              className="px-3 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <Languages className="size-3.5 text-primary" />
-              <span>
-                {isDocAr
-                  ? bi('التحويل للإنجليزية (EN)', 'Switch to English (EN)', 'گۆڕین بۆ ئینگلیزی (EN)')
-                  : bi('التحويل للعربية (AR)', 'Switch to Arabic (AR)', 'گۆڕین بۆ عەرەبی (AR)')}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="px-4 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
-            >
-              <Printer className="size-3.5" />
-              <span>{bi('طباعة / حفظ PDF', 'Print / Save PDF', 'چاپکردن / پاشەکەوتکردنی PDF')}</span>
-            </button>
-
-            {canDirectExportPdf && (
-              <button
-                type="button"
-                onClick={() => {
-                  void handleDirectExportPdf();
-                }}
-                className="px-3.5 py-1.5 rounded-xl border border-primary/35 bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                <Download className="size-3.5" />
-                <span>{bi('تصدير PDF مباشر', 'Direct Save PDF', 'پاشەکەوتکردنی ڕاستەوخۆی PDF')}</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label={bi('إغلاق', 'Close', 'داخستن')}
-              className="p-2 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer"
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Phase E1: Web Share API + WhatsApp / Copy / Offline HTML Download Fallbacks */}
-        {webShareEnabled && (
-          <div className="pt-2.5 border-t border-card-line/60 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                data-testid="print-web-share-file-btn"
-                onClick={() => {
-                  void handleWebShareFile();
-                }}
-                className="px-3 py-1.5 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                <Share2 className="size-3.5" />
-                <span>{bi('مشاركة الملف', 'Share File', 'هاوبەشکردنی پەڕگە')}</span>
-              </button>
-
-              <button
-                type="button"
-                data-testid="print-copy-summary-btn"
-                onClick={() => {
-                  void handleCopySummary();
-                }}
-                className="px-3 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                {shareFeedback?.kind === 'copied' ? (
-                  <Check className="size-3.5 text-emerald-600" />
-                ) : (
-                  <Copy className="size-3.5 text-primary" />
-                )}
-                <span>{bi('نسخ الملخص', 'Copy Summary', 'کۆپیکردنی پوختە')}</span>
-              </button>
-
-              <a
-                data-testid="print-whatsapp-fallback-link"
-                href={whatsappFallbackUrl || '#'}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  if (whatsappFallbackUrl && getElectronDesktopBridge()?.openExternalUrl) {
-                    e.preventDefault();
-                    void openSafeExternalUrl(whatsappFallbackUrl);
-                  }
-                }}
-                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs"
-              >
-                <MessageCircle className="size-3.5" />
-                <span>{bi('إرسال عبر واتساب', 'WhatsApp', 'واتساپ')}</span>
-              </a>
-
-              <button
-                type="button"
-                data-testid="print-download-share-file-btn"
-                onClick={() => {
-                  void handleDownloadShareFile();
-                }}
-                className="px-3 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                <Download className="size-3.5 text-primary" />
-                <span>{bi('تنزيل ملف للمشاركة', 'Download Share File', 'داگرتنی پەڕگە بۆ هاوبەشکردن')}</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label={bi('إغلاق', 'Close', 'داخستن')}
+                  className="size-9 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground inline-flex items-center justify-center cursor-pointer shrink-0 transition-colors"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
             </div>
 
-            {shareFeedback && (
-              <span
-                data-testid="print-share-status-notice"
-                role="status"
-                className="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold inline-flex items-center gap-1.5"
-              >
-                <CheckCircle2 className="size-3.5 shrink-0" />
-                <span>{shareFeedback.text}</span>
-              </span>
-            )}
-          </div>
-        )}
-      </div>
+            {/* Unified Horizontally Scrollable Print & Share Action Strip */}
+            <div className="px-4 sm:px-6 py-2.5 bg-surface/90 border-t border-card-line/80">
+              <div className="max-w-[210mm] mx-auto pr-hscroll overflow-x-auto flex items-center gap-2 whitespace-nowrap">
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  className="min-h-[36px] px-4 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors shrink-0"
+                >
+                  <Printer className="size-3.5" />
+                  <span>{bi('طباعة / حفظ PDF', 'Print / Save PDF', 'چاپکردن / پاشەکەوتکردنی PDF')}</span>
+                </button>
 
+                <button
+                  type="button"
+                  onClick={() => setDocLang(docLang === 'ar' ? 'en' : 'ar')}
+                  className="min-h-[36px] px-3 py-1.5 rounded-xl border border-line-2 bg-card hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                >
+                  <Languages className="size-3.5 text-primary" />
+                  <span>
+                    {isDocAr
+                      ? bi('التحويل للإنجليزية (EN)', 'Switch to English (EN)', 'گۆڕین بۆ ئینگلیزی (EN)')
+                      : bi('التحويل للعربية (AR)', 'Switch to Arabic (AR)', 'گۆڕین بۆ عەرەبی (AR)')}
+                  </span>
+                </button>
+
+                {canDirectExportPdf && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void handleDirectExportPdf();
+                    }}
+                    className="min-h-[36px] px-3.5 py-1.5 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                  >
+                    <Download className="size-3.5" />
+                    <span>{bi('تصدير PDF مباشر', 'Direct Save PDF', 'پاشەکەوتکردنی ڕاستەوخۆی PDF')}</span>
+                  </button>
+                )}
+
+                {webShareEnabled && (
+                  <>
+                    <span className="h-5 w-px bg-card-divider mx-0.5 shrink-0" aria-hidden="true" />
+
+                    <button
+                      type="button"
+                      data-testid="print-web-share-file-btn"
+                      onClick={() => {
+                        void handleWebShareFile();
+                      }}
+                      className="min-h-[36px] px-3 py-1.5 rounded-xl border border-primary/25 bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                    >
+                      <Share2 className="size-3.5" />
+                      <span>{bi('مشاركة الملف', 'Share File', 'هاوبەشکردنی پەڕگە')}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      data-testid="print-copy-summary-btn"
+                      onClick={() => {
+                        void handleCopySummary();
+                      }}
+                      className="min-h-[36px] px-3 py-1.5 rounded-xl border border-line-2 bg-card hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                    >
+                      {shareFeedback?.kind === 'copied' ? (
+                        <Check className="size-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="size-3.5 text-primary" />
+                      )}
+                      <span>{bi('نسخ الملخص', 'Copy Summary', 'کۆپیکردنی پوختە')}</span>
+                    </button>
+
+                    <a
+                      data-testid="print-whatsapp-fallback-link"
+                      href={whatsappFallbackUrl || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        if (whatsappFallbackUrl && getElectronDesktopBridge()?.openExternalUrl) {
+                          e.preventDefault();
+                          void openSafeExternalUrl(whatsappFallbackUrl);
+                        }
+                      }}
+                      className="min-h-[36px] px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-colors shrink-0"
+                    >
+                      <MessageCircle className="size-3.5" />
+                      <span>{bi('إرسال عبر واتساب', 'WhatsApp', 'واتساپ')}</span>
+                    </a>
+
+                    <button
+                      type="button"
+                      data-testid="print-download-share-file-btn"
+                      onClick={() => {
+                        void handleDownloadShareFile();
+                      }}
+                      className="min-h-[36px] px-3 py-1.5 rounded-xl border border-line-2 bg-card hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                    >
+                      <Download className="size-3.5 text-primary" />
+                      <span>{bi('تنزيل ملف للمشاركة', 'Download Share File', 'داگرتنی پەڕگە بۆ هاوبەشکردن')}</span>
+                    </button>
+
+                    {shareFeedback && (
+                      <span
+                        data-testid="print-share-status-notice"
+                        role="status"
+                        className="text-emerald-700 dark:text-emerald-400 text-xs font-semibold inline-flex items-center gap-1.5 px-1 shrink-0"
+                      >
+                        <CheckCircle2 className="size-3.5 shrink-0" />
+                        <span>{shareFeedback.text}</span>
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </header>
+
+          <div
+            id="physiorecord-print-portal"
+            tabIndex={0}
+            className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain touch-pan-y p-3 sm:p-6 flex flex-col items-center focus:outline-none print:overflow-visible print:p-0 print:block"
+          >
       {/* Screen-only Optional Personalization Bar for Clinical Reports/Letters */}
       {isClinicalLetter && (
-        <div className="print-modal-chrome w-full max-w-[210mm] mb-4 bg-card border border-card-line rounded-2xl p-3.5 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="print-modal-chrome w-full max-w-[210mm] mb-4 bg-card border border-card-line rounded-2xl p-3.5 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-3 shrink-0 print:hidden">
           {documentType === 'referral_letter' && (
             <div>
               <label className="block text-xs font-semibold text-foreground mb-1">
@@ -759,20 +785,21 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
         </div>
       )}
 
-      {/* Printable A4 Sheet */}
-      <div
-        ref={sheetRef}
-        dir={docDir}
-        className="print-sheet-container w-full max-w-[210mm] bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-2xl p-6 sm:p-10 space-y-6 text-xs leading-relaxed"
-      >
+      {/* Printable A4 Sheet (Full original width with smooth horizontal & vertical pan on mobile) */}
+      <div className="w-full max-w-[210mm] overflow-x-auto overscroll-x-contain touch-auto rounded-2xl shadow-2xl shrink-0 print:overflow-visible print:max-w-none print:shadow-none">
+        <div
+          ref={sheetRef}
+          dir={docDir}
+          className="print-sheet-container w-[210mm] min-w-[210mm] print:w-full print:min-w-0 bg-white text-slate-900 rounded-2xl border border-slate-200 border-t-4 border-t-emerald-700 p-6 sm:p-10 space-y-6 text-xs leading-relaxed"
+        >
         {/* Clinic Letterhead */}
-        <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-slate-800 pb-5 print-break-inside-avoid">
+        <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-emerald-700/20 pb-5 print-break-inside-avoid">
           <div className="flex items-start gap-3.5">
             {logoSafe && (
               <img
                 src={logoSafe}
                 alt="Clinic Logo"
-                className="h-16 w-16 object-contain rounded-lg border border-slate-200 p-1 bg-white shrink-0"
+                className="h-16 w-16 object-contain rounded-xl border border-emerald-200/80 p-1 bg-white shrink-0"
               />
             )}
             <div className="space-y-1">
@@ -781,7 +808,7 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                   clinicProfile.clinicNameAr ||
                   clinicProfile.clinicNameEn}
               </h1>
-              <p className="text-xs font-semibold text-slate-700">
+              <p className="text-xs font-semibold text-emerald-800">
                 {isDocAr ? 'المعالج الفيزيائي: ' : 'Physiotherapist: '}
                 {(isDocAr ? clinicProfile.therapistNameAr : clinicProfile.therapistNameEn) ||
                   clinicProfile.therapistNameAr ||
@@ -811,8 +838,8 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
             </div>
           </div>
 
-          <div className={`space-y-1 ${isDocAr ? 'text-left' : 'text-right'}`}>
-            <div className="inline-block px-3 py-1 rounded-lg bg-slate-900 text-white font-bold text-xs">
+          <div className={`space-y-1.5 ${isDocAr ? 'text-left' : 'text-right'}`}>
+            <div className="inline-block px-3.5 py-1.5 rounded-xl bg-emerald-700 text-white font-bold text-xs shadow-2xs">
               {docTitle}
             </div>
             <p className="text-xs text-slate-600">
@@ -822,52 +849,23 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
               </bdi>
             </p>
             {invoice?.invoiceNumber && (
-              <p className="text-xs font-mono font-bold text-slate-800">
+              <p className="text-xs font-mono font-bold text-emerald-800">
                 <bdi dir="ltr">{invoice.invoiceNumber}</bdi>
               </p>
             )}
             {zReport?.zReportNumber && (
-              <p className="text-xs font-mono font-bold text-slate-800">
+              <p className="text-xs font-mono font-bold text-emerald-800">
                 <bdi dir="ltr">{zReport.zReportNumber}</bdi>
               </p>
             )}
           </div>
         </header>
 
-        {/* D5: Standardized Bilingual Clinical Terminology Reference Strip */}
-        {glossaryLabels && glossaryCounterpartLabels && (
-          <div
-            data-testid="print-bilingual-glossary-strip"
-            className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 print-break-inside-avoid"
-          >
-            <span>
-              <strong className="text-slate-800">{glossaryLabels.patientLabel}</strong>
-              {' · '}
-              <span>{glossaryCounterpartLabels.patientLabel}</span>
-            </span>
-            <span>
-              <strong className="text-slate-800">{glossaryLabels.diagnosisLabel}</strong>
-              {' · '}
-              <span>{glossaryCounterpartLabels.diagnosisLabel}</span>
-            </span>
-            <span>
-              <strong className="text-slate-800">{glossaryLabels.planOfCareLabel}</strong>
-              {' · '}
-              <span>{glossaryCounterpartLabels.planOfCareLabel}</span>
-            </span>
-            <span>
-              <strong className="text-slate-800">{glossaryLabels.therapistAttestationLabel}</strong>
-              {' · '}
-              <span>{glossaryCounterpartLabels.therapistAttestationLabel}</span>
-            </span>
-          </div>
-        )}
-
         {/* Patient Metadata Band (where applicable) */}
         {documentType !== 'z_report' &&
           documentType !== 'tomorrow_schedule' &&
           documentType !== 'patient_visit_card' && (
-          <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3.5 print-break-inside-avoid">
+          <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-emerald-50/45 border border-emerald-200/70 rounded-2xl p-4 print-break-inside-avoid">
             <div>
               <div className="text-xs text-slate-500">{isDocAr ? 'اسم المريض' : 'Patient Name'}</div>
               <div className="text-xs font-bold text-slate-900 mt-0.5">{resolvedPatientName}</div>
@@ -1521,7 +1519,7 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                     className="p-3.5 rounded-xl border border-slate-300 space-y-2 print-break-inside-avoid"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="size-6 rounded-md bg-slate-900 text-white font-mono font-bold text-xs flex items-center justify-center shrink-0">
+                      <span className="size-6 rounded-lg bg-emerald-700 text-white font-mono font-bold text-xs flex items-center justify-center shrink-0">
                         {idx + 1}
                       </span>
                       <div>
@@ -1869,7 +1867,7 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                           </div>
                           {isHomeVisit && (
                             <div className="space-y-0.5">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold">
+                              <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-800">
                                 <Home className="size-3" />
                                 <span>{isDocAr ? 'زيارة منزلية' : 'Home Visit'}</span>
                               </span>
@@ -1966,15 +1964,15 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
             {/* Highlighted Next Appointment Box */}
             <div
               data-testid="visit-card-next-appointment"
-              className="border-2 border-slate-800 rounded-xl p-4 bg-slate-50 space-y-2 print-break-inside-avoid"
+              className="border-2 border-emerald-700/35 rounded-2xl p-4 bg-emerald-50/40 space-y-2 print-break-inside-avoid"
             >
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-300 pb-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-200 pb-2">
                 <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-                  <Calendar className="size-4 text-slate-800" />
+                  <Calendar className="size-4 text-emerald-700" />
                   <span>{isDocAr ? 'الموعد القادم' : 'Next Appointment'}</span>
                 </h3>
                 {effectiveVisitCard?.nextAppointment && (
-                  <span className="px-2.5 py-0.5 rounded-full bg-slate-900 text-white text-xs font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-700 text-white text-xs font-bold">
                     {visitTypeLabel(effectiveVisitCard.nextAppointment.visitType)}
                   </span>
                 )}
@@ -2033,7 +2031,7 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                         </div>
                         <div className="text-xs font-bold text-slate-900 mt-0.5">
                           {isNextHome && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 me-1.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold">
+                            <span className="inline-flex items-center gap-1 me-1.5 text-xs font-bold text-amber-800">
                               {isDocAr ? 'زيارة منزلية' : 'Home Visit'}
                             </span>
                           )}
@@ -2071,7 +2069,7 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                     <h3 className="font-bold text-slate-900">
                       {isDocAr ? 'رصيد جلسات الكورس العلاجي' : 'Rehab Package Session Balance'}
                     </h3>
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-extrabold tabular-nums">
+                    <span className="text-emerald-800 text-xs font-extrabold tabular-nums">
                       {isDocAr ? 'المتبقي: ' : 'Remaining: '}
                       <bdi dir="ltr">{pkgRemaining}</bdi>
                     </span>
@@ -2233,43 +2231,63 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
         )}
 
         {/* Clinic Footer + Stamp / Signature */}
-        <footer className="pt-6 border-t border-slate-300 flex flex-wrap items-end justify-between gap-4 print-break-inside-avoid">
-          <div className="max-w-md space-y-1 text-xs text-slate-600">
+        <footer className="pt-6 border-t border-emerald-700/20 space-y-4 print-break-inside-avoid">
+          <div className="flex flex-col sm:flex-row items-end justify-between gap-4">
+            <div className="max-w-md space-y-1 text-xs text-slate-600 hidden sm:block">
+              {(clinicProfile.receiptFooterAr || clinicProfile.receiptFooterEn) && (
+                <p className="font-medium text-slate-800">
+                  {isDocAr
+                    ? clinicProfile.receiptFooterAr || clinicProfile.receiptFooterEn
+                    : clinicProfile.receiptFooterEn || clinicProfile.receiptFooterAr}
+                </p>
+              )}
+              <p className="text-slate-500">
+                {isDocAr
+                  ? 'تم إنشاء هذا المستند محلياً داخل عيادة PhysioRecord المشفرة على الجهاز.'
+                  : 'Generated locally inside PhysioRecord — encrypted on-device clinical workstation.'}
+              </p>
+            </div>
+
+            <div className="text-center min-w-[160px] space-y-1 ms-auto">
+              {stampSafe && (
+                <img
+                  src={stampSafe}
+                  alt="Clinic Stamp"
+                  className="h-16 mx-auto object-contain"
+                />
+              )}
+              <div className="border-t border-emerald-700/40 pt-1 font-semibold text-slate-800">
+                {(isDocAr ? clinicProfile.therapistNameAr : clinicProfile.therapistNameEn) ||
+                  clinicProfile.therapistNameAr ||
+                  clinicProfile.therapistNameEn}
+              </div>
+              <div className="text-xs text-slate-500">
+                {isDocAr ? 'توقيع وختم العيادة' : 'Clinic Stamp & Signature'}
+              </div>
+            </div>
+          </div>
+
+          {/* On mobile / small screens, disclaimer footnote renders at the very bottom below signature */}
+          <div className="sm:hidden text-center text-[10px] text-slate-400 pt-2 border-t border-slate-100 space-y-0.5">
             {(clinicProfile.receiptFooterAr || clinicProfile.receiptFooterEn) && (
-              <p className="font-medium text-slate-800">
+              <p className="font-medium text-slate-600">
                 {isDocAr
                   ? clinicProfile.receiptFooterAr || clinicProfile.receiptFooterEn
                   : clinicProfile.receiptFooterEn || clinicProfile.receiptFooterAr}
               </p>
             )}
-            <p className="text-slate-500">
+            <p>
               {isDocAr
                 ? 'تم إنشاء هذا المستند محلياً داخل عيادة PhysioRecord المشفرة على الجهاز.'
                 : 'Generated locally inside PhysioRecord — encrypted on-device clinical workstation.'}
             </p>
           </div>
-
-          <div className="text-center min-w-[160px] space-y-1">
-            {stampSafe && (
-              <img
-                src={stampSafe}
-                alt="Clinic Stamp"
-                className="h-16 mx-auto object-contain"
-              />
-            )}
-            <div className="border-t border-slate-400 pt-1 font-semibold text-slate-800">
-              {(isDocAr ? clinicProfile.therapistNameAr : clinicProfile.therapistNameEn) ||
-                clinicProfile.therapistNameAr ||
-                clinicProfile.therapistNameEn}
-            </div>
-            <div className="text-xs text-slate-500">
-              {isDocAr ? 'توقيع وختم العيادة' : 'Clinic Stamp & Signature'}
-            </div>
-          </div>
         </footer>
       </div>
-    </div>
+      </div>
+          </div>
+        </AriaDialog>
+      </Modal>
+    </ModalOverlay>
   );
-
-  return createPortal(content, document.body);
 };

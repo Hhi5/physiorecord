@@ -106,18 +106,18 @@ export const FirstRunModeWizardModal: React.FC<FirstRunModeWizardModalProps> = (
             type="button"
             data-testid="wizard-mode-solo"
             onClick={() => setSelectedMode('solo')}
-            className={`text-start p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col gap-2.5 ${
+            className={`text-start p-4 rounded-2xl transition-all cursor-pointer flex flex-col gap-2.5 ${
               selectedMode === 'solo'
-                ? 'border-primary bg-primary/8 shadow-xs'
-                : 'border-layer-line bg-surface hover:border-primary/40'
+                ? 'bg-primary/10 shadow-2xs'
+                : 'bg-surface/65 hover:bg-surface'
             }`}
           >
             <div className="flex items-center justify-between">
-              <div className="size-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
+              <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                 <UserCheck className="size-5" />
               </div>
               {selectedMode === 'solo' && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                <span className="inline-flex items-center gap-1 text-primary text-xs font-bold">
                   <Check className="size-3.5" />
                   <span>{bi('مُوصى به', 'Recommended', 'پێشنیارکراو')}</span>
                 </span>
@@ -146,18 +146,18 @@ export const FirstRunModeWizardModal: React.FC<FirstRunModeWizardModalProps> = (
             type="button"
             data-testid="wizard-mode-team"
             onClick={() => setSelectedMode('team')}
-            className={`text-start p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col gap-2.5 ${
+            className={`text-start p-4 rounded-2xl transition-all cursor-pointer flex flex-col gap-2.5 ${
               selectedMode === 'team'
-                ? 'border-primary bg-primary/8 shadow-xs'
-                : 'border-layer-line bg-surface hover:border-primary/40'
+                ? 'bg-primary/10 shadow-2xs'
+                : 'bg-surface/65 hover:bg-surface'
             }`}
           >
             <div className="flex items-center justify-between">
-              <div className="size-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <div className="size-10 rounded-xl bg-card/85 text-amber-700 dark:text-amber-300 flex items-center justify-center">
                 <Users className="size-5" />
               </div>
               {selectedMode === 'team' && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                <span className="inline-flex items-center gap-1 text-primary text-xs font-bold">
                   <Check className="size-3.5" />
                 </span>
               )}
@@ -178,7 +178,7 @@ export const FirstRunModeWizardModal: React.FC<FirstRunModeWizardModalProps> = (
         </div>
 
         {/* Optional quick clinic & therapist identity */}
-        <div className="p-3.5 rounded-xl bg-surface border border-line-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="p-3.5 rounded-xl bg-surface/65 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-bold text-foreground block mb-1">
               {bi('اسمك السريري (اختياري):', 'Your Clinician Name (Optional):', 'ناوی کلینیکیت (ئارەزوومەندانە):')}
@@ -205,7 +205,7 @@ export const FirstRunModeWizardModal: React.FC<FirstRunModeWizardModalProps> = (
           </div>
         </div>
 
-        <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 flex items-center gap-2 text-xs text-muted-foreground-1">
+        <div className="p-3 rounded-xl bg-surface/65 flex items-center gap-2 text-xs text-muted-foreground-1">
           <ShieldCheck className="size-4 text-primary shrink-0" />
           <span>
             {bi(
@@ -217,7 +217,7 @@ export const FirstRunModeWizardModal: React.FC<FirstRunModeWizardModalProps> = (
         </div>
 
         {error && (
-          <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs font-semibold text-rose-600 dark:text-rose-400">
+          <div className="p-2.5 rounded-xl bg-surface/65 text-xs font-semibold text-rose-700 dark:text-rose-400">
             {error}
           </div>
         )}

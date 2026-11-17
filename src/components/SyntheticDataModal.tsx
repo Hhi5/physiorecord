@@ -20,6 +20,7 @@ import { ClinicOperationsService } from '../services/clinicOperationsService';
 import { computePatientAge } from '../utils/date';
 import { hasAnyDemoPatients } from '../utils/mrn';
 import { DemoBadge } from './ui/Primitives';
+import { GeometricHeaderBackdrop } from './ui/Dialog';
 import { X, Database, ShieldCheck, Sparkles, CheckCircle2, Trash2 } from 'lucide-react';
 import type {
   EpisodeClinicalData,
@@ -487,39 +488,43 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex justify-center items-center p-3 sm:p-4"
+      className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex justify-center items-end sm:items-center p-0 sm:p-6"
       dir={isRtl ? 'rtl' : 'ltr'}
       role="dialog"
       aria-modal="true"
       aria-labelledby="synthetic-modal-title"
     >
-      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-xl max-h-[88dvh] overflow-hidden border border-card-line flex flex-col">
+      <div className="bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-xl max-h-[92dvh] sm:max-h-[88dvh] overflow-hidden border border-card-line flex flex-col">
         {/* Header */}
-        <div className="px-4 sm:px-6 py-3.5 border-b border-card-divider flex items-center justify-between gap-2 bg-muted/40 shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
-              <Database className="w-4 h-4" />
+        <div className="relative overflow-hidden px-4 sm:px-6 pt-3 sm:pt-4 pb-3.5 bg-primary text-primary-foreground flex flex-col gap-2.5 shrink-0 shadow-xs">
+          <GeometricHeaderBackdrop />
+          <div className="relative z-10 w-10 h-1 bg-primary-foreground/40 rounded-full mx-auto sm:hidden shrink-0" aria-hidden="true" />
+          <div className="relative z-10 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-primary-foreground/15 text-primary-foreground border border-primary-foreground/25 flex items-center justify-center shrink-0">
+                <Database className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <h2 id="synthetic-modal-title" className="text-sm sm:text-base font-bold text-primary-foreground truncate">
+                  {bi('إدراج بيانات سريرية تجريبية', 'Insert Synthetic Clinical Demonstration Data')}
+                </h2>
+                <p className="text-xs text-primary-foreground/85 line-clamp-1">
+                  {bi(
+                    'بيانات وهمية سريرية لاختبار وتجربة كافة ميزات النظام والمخططات الحركية',
+                    'Clinical mock cases to test and verify all system features and kinetic progress'
+                  )}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h2 id="synthetic-modal-title" className="text-sm sm:text-base font-bold text-foreground truncate">
-                {bi('إدراج بيانات سريرية تجريبية', 'Insert Synthetic Clinical Demonstration Data')}
-              </h2>
-              <p className="text-xs text-muted-foreground-1 line-clamp-1">
-                {bi(
-                  'بيانات وهمية سريرية لاختبار وتجربة كافة ميزات النظام والمخططات الحركية',
-                  'Clinical mock cases to test and verify all system features and kinetic progress'
-                )}
-              </p>
-            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={bi('إغلاق', 'Close', 'داخستن')}
+              className="size-9 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={bi('إغلاق', 'Close', 'داخستن')}
-            className="min-w-[36px] min-h-[36px] rounded-lg flex items-center justify-center text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover transition-colors cursor-pointer shrink-0"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Content Body */}
@@ -548,7 +553,7 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
           {/* Public Demo Mode Card */}
           <div
             data-testid="public-demo-mode-card"
-            className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-3 text-xs"
+            className="p-3.5 rounded-xl bg-surface/75 flex flex-wrap items-center justify-between gap-3 text-xs"
           >
             <div className="space-y-0.5 min-w-0 flex-1">
               <div className="font-extrabold text-foreground flex items-center gap-1.5">
@@ -600,10 +605,10 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
                 type="button"
                 data-testid="synthetic-count-5-btn"
                 onClick={() => setSeedCount(5)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold border cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
                   seedCount === 5
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-layer text-foreground border-layer-line hover:bg-layer-hover'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-layer text-foreground hover:bg-layer-hover'
                 }`}
               >
                 {bi('5 حالات أساسية', '5 Core Cases')}
@@ -612,10 +617,10 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
                 type="button"
                 data-testid="synthetic-count-10-btn"
                 onClick={() => setSeedCount(10)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold border cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
                   seedCount === 10
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-layer text-foreground border-layer-line hover:bg-layer-hover'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-layer text-foreground hover:bg-layer-hover'
                 }`}
               >
                 {bi('10 حالات عراقية موسعة', '10 Extended Iraqi Cases')}
@@ -644,7 +649,7 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
           </div>
 
           {deletedNotice && (
-            <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2 font-semibold">
+            <div className="p-3.5 bg-surface/75 rounded-xl text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2 font-semibold">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>
                 {bi(
@@ -656,7 +661,7 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
           )}
 
           {successCount !== null && (
-            <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-xl text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
+            <div className="p-3.5 bg-surface/75 rounded-xl text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
               <span>
                 {bi(

@@ -277,51 +277,63 @@ export const PatientQuickViewModal: React.FC<PatientQuickViewModalProps> = ({
           if (!open) onClose();
         }}
         size="xl"
-        title={`${summary.header.primaryName}${summary.header.secondaryName ? ` (${summary.header.secondaryName})` : ''}`}
+        title={
+          <span className="inline-flex flex-wrap items-baseline gap-x-1.5">
+            <span>{summary.header.primaryName}</span>
+            {summary.header.secondaryName && (
+              <bdi dir="ltr" className="text-xs sm:text-sm font-medium text-primary-foreground/80">
+                ({summary.header.secondaryName})
+              </bdi>
+            )}
+          </span>
+        }
         subtitle={`${bi('التقرير السريري المختصر', 'Quick Read-Only Clinical Report')} · MRN: ${summary.header.mrn}`}
         closeLabel={bi('إغلاق', 'Close')}
         headerActions={
-          <div className="flex flex-wrap items-center gap-1.5">
+          <>
             <button
               type="button"
               onClick={() => setShowPlainText((v) => !v)}
-              className={`px-2.5 py-1.5 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors ${
+              aria-label={bi('عرض النص المنسق للنسخ', 'Plain Text View')}
+              className={`min-h-[34px] px-2.5 py-1.5 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors ${
                 showPlainText
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-surface border-line-2 text-foreground hover:border-primary/40'
+                  ? 'bg-card text-primary border-card shadow-2xs'
+                  : 'bg-primary-foreground/15 border-primary-foreground/25 text-primary-foreground hover:bg-primary-foreground/25'
               }`}
             >
-              <FileText className="size-3.5" />
-              <span>{bi('عرض النص المنسق للنسخ', 'Plain Text View')}</span>
+              <FileText className="size-3.5 shrink-0" />
+              <span>{bi('عرض كنص', 'Plain Text')}</span>
             </button>
             <button
               type="button"
               onClick={handleCopyReport}
-              className="px-2.5 py-1.5 rounded-xl bg-surface border border-line-2 hover:border-primary/40 text-xs font-semibold text-foreground inline-flex items-center gap-1.5 cursor-pointer"
+              aria-label={bi('نسخ التقرير النصي', 'Copy Text')}
+              className="min-h-[34px] px-2.5 py-1.5 rounded-lg bg-primary-foreground/15 border border-primary-foreground/25 hover:bg-primary-foreground/25 text-xs font-semibold text-primary-foreground inline-flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               {copied ? (
                 <>
-                  <Check className="size-3.5 text-emerald-600" />
+                  <Check className="size-3.5 text-emerald-200 shrink-0" />
                   <span className="text-emerald-700 dark:text-emerald-300">
-                    {bi('تم نسخ التقرير', 'Copied')}
+                    {bi('تم النسخ', 'Copied')}
                   </span>
                 </>
               ) : (
                 <>
-                  <Copy className="size-3.5" />
-                  <span>{bi('نسخ التقرير النصي', 'Copy Text')}</span>
+                  <Copy className="size-3.5 shrink-0" />
+                  <span>{bi('نسخ', 'Copy Text')}</span>
                 </>
               )}
             </button>
             <button
               type="button"
               onClick={() => setPrintOpen(true)}
-              className="px-2.5 py-1.5 rounded-xl bg-surface border border-line-2 hover:border-primary/40 text-xs font-semibold text-foreground inline-flex items-center gap-1.5 cursor-pointer"
+              aria-label={bi('طباعة التقرير', 'Print Report')}
+              className="min-h-[34px] px-2.5 py-1.5 rounded-lg bg-layer border border-layer-line hover:border-primary/40 text-xs font-semibold text-foreground inline-flex items-center gap-1.5 cursor-pointer"
             >
-              <Printer className="size-3.5" />
-              <span>{bi('طباعة التقرير', 'Print')}</span>
+              <Printer className="size-3.5 shrink-0" />
+              <span>{bi('طباعة', 'Print')}</span>
             </button>
-          </div>
+          </>
         }
         footer={
           <div className="w-full flex flex-wrap items-center justify-between gap-3">
@@ -431,14 +443,14 @@ export const PatientQuickViewModal: React.FC<PatientQuickViewModalProps> = ({
 
               {/* Safety Alerts & Red Flags */}
               {summary.alerts.hasAnyAlert && (
-                <section className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-rose-700 dark:text-rose-300">
+                <section className="p-4 rounded-2xl bg-card shadow-2xs space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-rose-700 dark:text-rose-400">
                     <ShieldAlert className="size-4" />
                     <span>
                       {bi('التنبيهات والمحاذير السريرية', 'Clinical Alerts & Red Flags')}
                     </span>
                   </div>
-                  <div className="space-y-1 text-xs text-rose-800 dark:text-rose-200 leading-relaxed">
+                  <div className="space-y-1 text-xs text-foreground leading-relaxed">
                     {summary.alerts.redFlags && (
                       <p>
                         <strong>{bi('علامات الخطر:', 'Red Flags:')}</strong>{' '}
@@ -735,8 +747,8 @@ export const PatientQuickViewModal: React.FC<PatientQuickViewModalProps> = ({
 
               {/* Financial Summary (Strictly RBAC gated) */}
               {summary.finance && (
-                <section className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                <section className="p-4 rounded-2xl bg-card shadow-2xs space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
                     <Wallet className="size-4" />
                     <span>{bi('الملخص المالي', 'Financial Summary')}</span>
                   </div>

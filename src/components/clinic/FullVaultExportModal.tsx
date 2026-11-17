@@ -209,7 +209,7 @@ export const FullVaultExportModal: React.FC<FullVaultExportModalProps> = ({
       closeLabel={isEn ? 'Close' : 'إغلاق'}
     >
       <div className="space-y-4">
-        <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/35 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+        <div className="p-3.5 rounded-xl bg-surface/75 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
           <ShieldAlert className="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-400" />
           <div className="space-y-1">
             <p className="font-bold">
@@ -224,13 +224,13 @@ export const FullVaultExportModal: React.FC<FullVaultExportModalProps> = ({
         </div>
 
         {errorMsg && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-700 dark:text-rose-300">
+          <div className="p-3 rounded-xl bg-surface/75 text-xs text-rose-700 dark:text-rose-300">
             {errorMsg}
           </div>
         )}
 
         {successMsg && (
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2 font-semibold">
+          <div className="p-3 rounded-xl bg-surface/75 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2 font-semibold">
             <CheckCircle2 className="w-4 h-4" />
             <span>{successMsg}</span>
           </div>
@@ -239,7 +239,7 @@ export const FullVaultExportModal: React.FC<FullVaultExportModalProps> = ({
         {!verified ? (
           <form onSubmit={handleVerifyPassword} className="space-y-3 p-4 rounded-xl bg-surface border border-card-divider">
             <label className="block text-xs font-bold text-foreground flex items-center gap-1.5">
-              <LockKeyhole className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+              <LockKeyhole className="w-4 h-4 text-primary" />
               {isEn
                 ? 'Re-enter Master Vault Password to Unlock Export'
                 : 'أعد إدخال كلمة مرور الخزينة الرئيسية لتأكيد التصدير'}
@@ -250,12 +250,12 @@ export const FullVaultExportModal: React.FC<FullVaultExportModalProps> = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••••"
-              className="w-full px-3 py-2.5 rounded-xl border border-card-stroke bg-layer text-sm text-foreground"
+              className="w-full px-3 py-2.5 rounded-xl border border-layer-line bg-layer text-sm text-foreground"
             />
             <button
               type="submit"
               disabled={verifying}
-              className="w-full py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
             >
               {verifying
                 ? isEn
@@ -272,10 +272,10 @@ export const FullVaultExportModal: React.FC<FullVaultExportModalProps> = ({
               type="button"
               disabled={exporting}
               onClick={handleExportCsvBundle}
-              className="w-full p-4 rounded-xl border border-card-stroke bg-surface hover:bg-layer-hover text-start flex items-center justify-between gap-3 cursor-pointer"
+              className="w-full p-4 rounded-xl border border-card-line bg-surface hover:bg-layer-hover text-start flex items-center justify-between gap-3 cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <FileSpreadsheet className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                <FileSpreadsheet className="w-5 h-5 text-primary" />
                 <div>
                   <div className="text-xs font-bold text-foreground">
                     {isEn

@@ -487,6 +487,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(() => session.data.status !== 'finalized');
+  const [savedSessionSeconds, setSavedSessionSeconds] = useState<number | null>(null);
   const [localUndoToast, setLocalUndoToast] = useState<{
     snapshot: FinishUndoSnapshot;
     label: string;
@@ -645,7 +646,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
     if (!status || !copiedFromInfo) return null;
     if (status === 'copied') {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold">
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
           <Copy className="size-3" />
           {bi(
             `منقول من #${copiedFromInfo.sessionNumber}`,
@@ -656,7 +657,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-semibold">
+      <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
         {bi('مُعدَّل', 'Edited', 'دەستکاریکراو')}
       </span>
     );
@@ -954,10 +955,18 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
   useEffect(() => {
     autoFinishTriggeredRef.current = false;
-    setElapsedSeconds(0);
-    setTimerRunning(session.data.status !== 'finalized');
+    const durMins = session.data.sessionDurationMinutes;
+    if (durMins && durMins > 0) {
+      setSavedSessionSeconds(durMins * 60);
+      setElapsedSeconds(durMins * 60);
+      setTimerRunning(false);
+    } else {
+      setSavedSessionSeconds(null);
+      setElapsedSeconds(0);
+      setTimerRunning(session.data.status !== 'finalized');
+    }
     loadSoapAndAddenda();
-  }, [loadSoapAndAddenda, session.id, session.data.status]);
+  }, [loadSoapAndAddenda, session.id, session.data.status, session.data.sessionDurationMinutes]);
 
   // Automatic session timer
   useEffect(() => {
@@ -1354,6 +1363,11 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
     appendPhysicalAgentDirectly(modality, modalityAr, defaultParams, durationMinutes, customId);
   };
 
+  const handleAddManualPhysicalAgent = () => {
+    if (isLocked) return;
+    appendPhysicalAgentDirectly('Other', '', '', 15);
+  };
+
   const handleConfirmModalityOverride = () => {
     if (!pendingModalityCandidate || isLocked) return;
     const { modality, modalityAr, defaultParams, rules } = pendingModalityCandidate;
@@ -1465,14 +1479,9 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
       setMissingLockFields(language === 'en' ? check.missingEn : check.missingAr);
       return;
     }
-    if (!ClinicOperationsService.isNoteCompletenessCheckEnabled()) {
-      const check = validateSignAndLockState(formState, requiresLegacyReview);
-      if (!check.valid) {
-        setMissingLockFields(language === 'en' ? check.missingEn : check.missingAr);
-        return;
-      }
-    }
-    setMissingLockFields([]);
+    // Missing SOAP fields are surfaced strictly as a non-blocking advisory notice inside the Sign & Lock modal
+    const check = validateSignAndLockState(formState, false);
+    setMissingLockFields(check.valid ? [] : language === 'en' ? check.missingEn : check.missingAr);
     setShowFinishFlowModal(true);
   };
 
@@ -1508,7 +1517,8 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         undefined,
         session.updatedAt,
         savedSoap.updatedAt,
-        Boolean(formState.legacyDraftReviewed)
+        Boolean(formState.legacyDraftReviewed),
+        { allowIncompleteSoap: true }
       );
       const finalizedSoap = await SoapService.getSoapNoteBySession(session.id, dek);
       if (finalizedSoap) {
@@ -1659,98 +1669,128 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden transition-colors">
-      {/* Top Session Bar (Compact single-row layout) */}
-      <div className="px-3 sm:px-5 py-1.5 bg-card border-b border-card-line flex flex-wrap items-center justify-between gap-2 shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <button
-            type="button"
-            onClick={() => handleSafeNavigation('back')}
-            aria-label={bi('العودة', 'Go back', 'گەڕانەوە')}
-            title={bi('العودة', 'Go back', 'گەڕانەوە')}
-            className="size-9 rounded-lg bg-layer border border-layer-line text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
-          >
-            {isRtl ? <ArrowRight className="size-4" /> : <ArrowLeft className="size-4" />}
-          </button>
+      {/* Top Session Bar (Modern cohesive layout) */}
+      <div className="px-3 sm:px-6 py-2.5 bg-card/95 backdrop-blur-xs border-b border-card-line flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0">
+        <div className="flex items-center justify-between sm:justify-start gap-2.5 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={() => handleSafeNavigation('back')}
+              aria-label={bi('العودة للسجل العام', 'Back to Episode Chart', 'گەڕانەوە بۆ تۆماری گشتی')}
+              title={bi('العودة للسجل العام', 'Back to Episode Chart', 'گەڕانەوە بۆ تۆماری گشتی')}
+              className="size-8 rounded-xl bg-surface hover:bg-layer-hover border border-line-2 text-foreground flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            >
+              {isRtl ? <ArrowRight className="size-4" /> : <ArrowLeft className="size-4" />}
+            </button>
 
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs tabular-nums min-w-0">
-            <span className="py-0.5 px-2 rounded-md bg-primary/10 text-primary border border-primary/20 font-bold font-mono shrink-0">
-              {bi(
-                `جلسة علاجية #${session.data.sessionNumber}`,
-                `Session #${session.data.sessionNumber}`,
-                `دانیشتنی چارەسەر #${session.data.sessionNumber}`
-              )}
-            </span>
-            <span className="hidden md:inline text-muted-foreground-1">·</span>
-            <span className="hidden md:inline text-foreground font-bold truncate max-w-[160px]">{patientName}</span>
-            <span className="text-muted-foreground-1">·</span>
-            <span className="text-muted-foreground-1 tabular-nums shrink-0">
-              <bdi dir="ltr">{formatDateDDMMYYYY(session.data.sessionDate)}</bdi>
-            </span>
-            <span className="hidden sm:inline text-muted-foreground-1">·</span>
-            <span className="hidden sm:inline text-xs font-bold text-foreground truncate max-w-[240px]">
-              {episodeTitle}
-            </span>
-            {isLocked && (
-              <span className="py-0.5 px-2 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold inline-flex items-center gap-1 shrink-0">
-                <Lock className="size-3" />
-                {bi('معتمدة ومغلقة', 'Signed & Locked', 'پەسەندکراو و داخراو')}
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs tabular-nums min-w-0">
+              <span className="py-1 px-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20 font-bold font-mono shrink-0">
+                {bi(
+                  `جلسة علاجية #${session.data.sessionNumber}`,
+                  `Session #${session.data.sessionNumber}`,
+                  `دانیشتنی چارەسەر #${session.data.sessionNumber}`
+                )}
               </span>
-            )}
-            {!isLocked && autosaveStatus === 'saving' && (
-              <span className="text-xs text-amber-600 dark:text-amber-400 font-medium shrink-0">
-                {bi('جاري الحفظ...', 'Saving...', 'پاشەکەوتکردن...')}
+              <span className="hidden md:inline text-muted-foreground-1">·</span>
+              <span className="hidden md:inline text-foreground font-bold truncate max-w-[160px]">{patientName}</span>
+              <span className="text-muted-foreground-1">·</span>
+              <span className="text-muted-foreground-1 font-medium tabular-nums shrink-0">
+                <bdi dir="ltr">{formatDateDDMMYYYY(session.data.sessionDate)}</bdi>
               </span>
-            )}
-            {!isLocked && lastSavedAt && !isDirty && (
-              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium inline-flex items-center gap-1 shrink-0">
-                <CheckCircle2 className="size-3.5" />
-                <span className="hidden sm:inline">
-                  {bi('تم الحفظ ', 'Saved ', 'پاشەکەوت کرا ')}
+              <span className="hidden sm:inline text-muted-foreground-1">·</span>
+              <span className="hidden sm:inline text-xs font-bold text-foreground truncate max-w-[240px]">
+                {episodeTitle}
+              </span>
+              {isLocked && (
+                <span className="py-0.5 px-2 rounded-full bg-emerald-500/12 border border-emerald-500/25 text-emerald-700 dark:text-emerald-400 font-bold inline-flex items-center gap-1 shrink-0 text-[11px]">
+                  <Lock className="size-3" />
+                  {bi('معتمدة ومغلقة', 'Signed & Locked', 'پەسەندکراو و داخراو')}
                 </span>
-                <bdi dir="ltr" className="font-mono tabular-nums">{lastSavedAt}</bdi>
-              </span>
-            )}
+              )}
+              {!isLocked && autosaveStatus === 'saving' && (
+                <span className="text-xs text-amber-600 dark:text-amber-400 font-medium shrink-0">
+                  {bi('جاري الحفظ...', 'Saving...', 'پاشەکەوتکردن...')}
+                </span>
+              )}
+              {!isLocked && lastSavedAt && !isDirty && (
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium inline-flex items-center gap-1 shrink-0">
+                  <CheckCircle2 className="size-3.5" />
+                  <span className="hidden sm:inline">
+                    {bi('تم الحفظ ', 'Saved ', 'پاشەکەوت کرا ')}
+                  </span>
+                  <bdi dir="ltr" className="font-mono tabular-nums">{lastSavedAt}</bdi>
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-1.5 sm:gap-2">
           {!isLocked && (
             <div
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface border border-line-2 text-xs font-mono tabular-nums"
+              className="inline-flex items-center gap-1 ps-2.5 pe-1 py-0.5 rounded-xl bg-surface border border-line-2 text-xs font-mono tabular-nums"
               title={bi('مؤقت الجلسة', 'Session Timer', 'کاتژمێری دانیشتن')}
             >
               <Timer className="size-3.5 text-primary" />
-              <span className="font-bold text-foreground">
-                <bdi dir="ltr">{formatElapsedMmSs(elapsedSeconds)}</bdi>
-              </span>
-              <button
-                type="button"
-                onClick={() => setTimerRunning((r) => !r)}
-                className="min-w-[36px] min-h-[36px] inline-flex items-center justify-center rounded hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer"
-                aria-label={
-                  timerRunning
-                    ? bi('إيقاف مؤقت', 'Pause timer', 'وەستاندنی کاتژمێر')
-                    : bi('تشغيل المؤقت', 'Resume timer', 'کارپێکردنەوەی کاتژمێر')
-                }
-              >
-                {timerRunning ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
-              </button>
-              <button
-                type="button"
-                onClick={() => setElapsedSeconds(0)}
-                className="min-w-[36px] min-h-[36px] inline-flex items-center justify-center rounded hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer"
-                aria-label={bi('تصفير المؤقت', 'Reset timer', 'سفرکردنەوەی کاتژمێر')}
-              >
-                <RotateCcw className="size-3.5" />
-              </button>
+              {savedSessionSeconds !== null && !timerRunning ? (
+                <>
+                  <span className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-0.5">
+                    <bdi dir="ltr">{formatElapsedMmSs(savedSessionSeconds)}</bdi>
+                    <span className="text-[10px] ms-0.5">{bi('مسجّل', 'saved', 'تۆمارکرا')}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSavedSessionSeconds(null);
+                      setElapsedSeconds(0);
+                      setTimerRunning(true);
+                    }}
+                    className="min-w-[30px] min-h-[30px] inline-flex items-center justify-center rounded-lg hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer transition-colors"
+                    aria-label={bi('إعادة التعيين', 'Reset timer', 'سفرکردنەوەی کاتژمێر')}
+                  >
+                    <RotateCcw className="size-3.5" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="font-bold text-foreground">
+                    <bdi dir="ltr">{formatElapsedMmSs(elapsedSeconds)}</bdi>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (timerRunning) {
+                        setSavedSessionSeconds(elapsedSeconds);
+                      }
+                      setTimerRunning((r) => !r);
+                    }}
+                    className="min-w-[30px] min-h-[30px] inline-flex items-center justify-center rounded-lg hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer transition-colors"
+                    aria-label={
+                      timerRunning
+                        ? bi('إيقاف مؤقت وحفظ الوقت', 'Pause & save time', 'وەستاندن و پاشەکەوتکردنی کات')
+                        : bi('تشغيل المؤقت', 'Resume timer', 'کارپێکردنەوەی کاتژمێر')
+                    }
+                  >
+                    {timerRunning ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setElapsedSeconds(0)}
+                    className="min-w-[30px] min-h-[30px] inline-flex items-center justify-center rounded-lg hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer transition-colors"
+                    aria-label={bi('تصفير المؤقت', 'Reset timer', 'سفرکردنەوەی کاتژمێر')}
+                  >
+                    <RotateCcw className="size-3.5" />
+                  </button>
+                </>
+              )}
             </div>
           )}
 
           <button
             type="button"
             onClick={() => setShowShortcutsModal(true)}
-            className="hidden sm:inline-flex min-h-[32px] py-1 px-2 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-muted-foreground-1 hover:text-foreground text-xs font-semibold items-center gap-1 cursor-pointer"
+            className="hidden sm:inline-flex min-h-[34px] py-1 px-2.5 rounded-xl bg-surface hover:bg-layer-hover border border-line-2 text-muted-foreground-1 hover:text-foreground text-xs font-semibold items-center gap-1 cursor-pointer transition-colors"
             title={bi('اختصارات لوحة المفاتيح (?)', 'Keyboard Shortcuts (?)', 'قەدبڕەکانی کیبۆرد (؟)')}
           >
             <Keyboard className="size-3.5" />
@@ -1760,22 +1800,22 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
           <button
             type="button"
             onClick={() => handleSafeNavigation('chart')}
-            className="min-h-[32px] py-1 px-2.5 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-layer-foreground text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
+            className="hidden sm:inline-flex min-h-[34px] py-1 px-3 rounded-xl bg-surface hover:bg-layer-hover border border-line-2 text-foreground text-xs font-semibold items-center gap-1.5 cursor-pointer whitespace-nowrap transition-colors"
           >
             <Layers className="size-3.5 text-primary" />
             <span>{bi('السجل العام', 'Episode Chart', 'تۆماری گشتیی بارودۆخ')}</span>
           </button>
 
           {!isLocked && (
-            <>
+            <div className="flex items-center gap-1.5 ms-auto sm:ms-0">
               <button
                 type="button"
                 onClick={() => void persistDraftSoap(false)}
                 disabled={isSaving}
-                className={`min-h-[32px] py-1 px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap ${
+                className={`min-h-[34px] py-1 px-3 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-all ${
                   saveSuccess
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-primary hover:bg-primary-hover text-primary-foreground'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-primary/10 hover:bg-primary/15 text-primary border border-primary/25'
                 }`}
               >
                 <Save className="size-3.5" />
@@ -1787,21 +1827,21 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                   type="button"
                   onClick={handleRequestSignAndLock}
                   disabled={isSaving}
-                  className="min-h-[32px] py-1 px-3 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap border border-amber-500/40"
+                  className="min-h-[34px] py-1 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-xs shadow-primary/20 cursor-pointer whitespace-nowrap transition-all"
                 >
                   <Lock className="size-3.5" />
                   <span>{bi('إنهاء واعتماد', 'Finish & Sign', 'تەواوکردن و پەسەندکردن')}</span>
                 </button>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
 
       {/* Unsaved Navigation Guard Banner */}
       {pendingNavAction && (
-        <div className="px-4 py-3 bg-amber-500/15 border-b border-amber-500/30 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-bold">
+        <div className="px-4 py-3 bg-card border-b border-card-line shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-bold">
             <AlertTriangle className="size-4 shrink-0" />
             <span>
               {bi(
@@ -1862,9 +1902,9 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
       >
         {/* Load / Decrypt / Validation Warnings */}
         {loadError && (
-          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-800 dark:text-rose-200 flex items-center justify-between gap-3">
+          <div className="p-4 rounded-2xl bg-card shadow-2xs text-xs text-rose-700 dark:text-rose-400 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <AlertCircle className="size-4 shrink-0" />
+              <AlertCircle className="size-4 shrink-0 text-rose-600" />
               <span>{loadError}</span>
             </div>
             <button
@@ -1879,25 +1919,25 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         )}
 
         {saveError && (
-          <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-700 dark:text-rose-300 flex items-center gap-2">
-            <AlertCircle className="size-4 shrink-0" />
+          <div className="p-3.5 rounded-2xl bg-card shadow-2xs text-xs text-rose-700 dark:text-rose-400 flex items-center gap-2">
+            <AlertCircle className="size-4 shrink-0 text-rose-600" />
             <span>{saveError}</span>
           </div>
         )}
 
         {missingLockFields.length > 0 && (
-          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-900 dark:text-amber-200 space-y-2">
-            <div className="flex items-center gap-2 font-bold">
+          <div className="p-3.5 rounded-2xl bg-card shadow-2xs text-xs text-amber-700 dark:text-amber-400 space-y-1.5">
+            <div className="flex items-center gap-2 font-extrabold">
               <AlertTriangle className="size-4 shrink-0" />
               <span>
                 {bi(
-                  'لا يمكن اعتماد وقفل الجلسة قبل استكمال الحقول الإلزامية التالية:',
-                  'Cannot Sign & Lock session until the following required fields are completed:',
-                  'ناتوانرێت دانیشتن پەسەند و قفڵ بکرێت پێش تەواوکردنی ئەم خانە پێویستانە:'
+                  'تنبيه إرشادي (غير مانع للاعتماد) — يفضّل استكمال الملاحظات التالية:',
+                  'Advisory reminder (non-blocking) — recommended clinical fields to review:',
+                  'ئاگاداری ڕێنمایی (ڕێگر نییە لە پەسەندکردن) — پێشنیار دەکرێت ئەم خانانە پڕبکرێنەوە:'
                 )}
               </span>
             </div>
-            <ul className="list-disc list-inside space-y-1 font-medium">
+            <ul className="list-disc list-inside space-y-0.5 font-semibold text-muted-foreground-1">
               {missingLockFields.map((item) => (
                 <li key={item}>{item}</li>
               ))}
@@ -1906,7 +1946,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         )}
 
         {(addendaFailedCount > 0 || flowsheetFailedCount > 0) && (
-          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-800 dark:text-amber-200 flex items-center gap-2">
+          <div className="p-3.5 rounded-2xl bg-card shadow-2xs text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2">
             <AlertTriangle className="size-4 shrink-0" />
             <span>
               {bi(
@@ -1919,7 +1959,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         )}
 
         {sealStatus === 'mismatch' && sealMismatchWarning && (
-          <div className="p-4 rounded-2xl bg-rose-500/15 border-2 border-rose-500/40 text-xs text-rose-900 dark:text-rose-200 flex items-center gap-2.5 font-bold">
+          <div className="p-4 rounded-2xl bg-card shadow-2xs text-xs text-rose-700 dark:text-rose-400 flex items-center gap-2.5 font-bold">
             <AlertCircle className="size-5 text-rose-600 dark:text-rose-400 shrink-0" />
             <span>{sealMismatchWarning}</span>
           </div>
@@ -1933,7 +1973,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         )}
 
         {soapRecord?.data.legacyReviewedAt ? (
-          <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-900 dark:text-emerald-200 flex items-center gap-2 font-semibold">
+          <div className="p-3.5 rounded-2xl bg-card shadow-2xs text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-2 font-semibold">
             <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <span>
               {bi(
@@ -1969,7 +2009,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
           </div>
         ) : (
           (soapRecord?.data.legacyUnreviewed || isLegacyDraftOrigin) && (
-            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-900 dark:text-amber-200 space-y-2.5">
+            <div className="p-4 rounded-2xl bg-card shadow-2xs text-xs text-amber-700 dark:text-amber-400 space-y-2.5">
               <div className="flex items-center gap-2 font-bold">
                 <AlertTriangle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
                 <span>
@@ -1991,7 +2031,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                       setFormState((prev) => ({ ...prev, legacyDraftReviewed: checked }));
                       setMissingLockFields([]);
                     }}
-                    className="size-4 rounded border-amber-400 text-primary focus:ring-primary cursor-pointer"
+                    className="size-4 rounded border-line-2 text-primary focus:ring-primary cursor-pointer"
                   />
                   <span>
                     {bi(
@@ -2007,7 +2047,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         )}
 
         {soapRecord?.data.repairedDuringMigration && !soapRecord?.data.legacyUnreviewed && (
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-card shadow-2xs text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2">
             <ShieldCheck className="size-4 shrink-0" />
             <span>
               {bi(
@@ -2021,25 +2061,29 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
         {/* Quick SOAP Bar: Copy-Forward Notice + Custom Favorite Chips */}
         {!isLocked && (
-          <div className="p-4 rounded-2xl bg-card border border-card-line shadow-2xs space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <Sparkles className="size-4 text-primary shrink-0" />
-                <span className="font-bold text-foreground">
-                  {bi('أدوات التوثيق السريع (Quick SOAP)', 'Quick SOAP Helpers', 'ئامرازەکانی تۆمارکردنی خێرا (Quick SOAP)')}
-                </span>
-                {copiedFromInfo && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-semibold">
-                    <Copy className="size-3" />
-                    <span>
-                      {bi(
-                        `تم النسخ المسبق من الجلسة #${copiedFromInfo.sessionNumber} — راجع الحقول المظللة وعدّل ما تغير`,
-                        `Copied forward from Session #${copiedFromInfo.sessionNumber} — review highlighted fields`,
-                        `پێشوەختە لە دانیشتنی #${copiedFromInfo.sessionNumber} کۆپی کرا — خانە ڕەنگکراوەکان بپشکنە و گۆڕاوەکان چاک بکە`
-                      )}
-                    </span>
+          <div className="p-4 sm:p-5 rounded-2xl bg-card border border-card-line shadow-2xs space-y-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-2.5">
+              <div className="flex flex-wrap items-center gap-2.5 text-xs">
+                <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Sparkles className="size-4" />
+                </div>
+                <div>
+                  <span className="font-bold text-foreground block">
+                    {bi('أدوات التوثيق السريع (Quick SOAP)', 'Quick SOAP Helpers', 'ئامرازەکانی تۆمارکردنی خێرا (Quick SOAP)')}
                   </span>
-                )}
+                  {copiedFromInfo && (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400 font-semibold mt-0.5">
+                      <Copy className="size-3" />
+                      <span>
+                        {bi(
+                          `تم النسخ المسبق من الجلسة #${copiedFromInfo.sessionNumber} — راجع الحقول وعدّل ما تغير`,
+                          `Copied forward from Session #${copiedFromInfo.sessionNumber} — review fields`,
+                          `پێشوەختە لە دانیشتنی #${copiedFromInfo.sessionNumber} کۆپی کرا — خانەکان بپشکنە و گۆڕاوەکان چاک بکە`
+                        )}
+                      </span>
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -2047,7 +2091,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                   <button
                     type="button"
                     onClick={handleResetCopiedFields}
-                    className="px-2.5 py-1.5 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-xs font-semibold text-foreground inline-flex items-center gap-1 cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl bg-surface hover:bg-layer-hover border border-line-2 text-xs font-semibold text-foreground inline-flex items-center gap-1.5 cursor-pointer transition-colors"
                   >
                     <RotateCcw className="size-3.5" />
                     <span>{bi('إفراغ المنسوخ', 'Clear Copied', 'سڕینەوەی کۆپیکراو')}</span>
@@ -2056,7 +2100,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                   <button
                     type="button"
                     onClick={() => void handleCopyPreviousSessionManual()}
-                    className="px-2.5 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/25 text-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/15 border border-primary/25 text-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
                   >
                     <Copy className="size-3.5" />
                     <span>{bi('نسخ من الجلسة السابقة', 'Copy Last Session', 'کۆپیکردن لە دانیشتنی پێشوو')}</span>
@@ -2066,7 +2110,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowChipEditorModal(true)}
-                  className="px-2.5 py-1.5 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-muted-foreground-1 hover:text-foreground text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-surface hover:bg-layer-hover border border-line-2 text-muted-foreground-1 hover:text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
                 >
                   <SlidersHorizontal className="size-3.5" />
                   <span>{bi('تخصيص البطاقات', 'Customize Chips', 'تایبەتمەندکردنی کارتەکان')}</span>
@@ -2075,48 +2119,57 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
             </div>
 
             {favoriteChips.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-card-divider">
-                <span className="text-xs text-muted-foreground-1 font-semibold me-1">
+              <div className="pt-2.5 border-t border-card-divider space-y-1.5">
+                <span className="text-xs text-muted-foreground-1 font-semibold block">
                   {bi('إدراج بلمسة واحدة:', '1-Tap Insert:', 'دانان بە یەک کرتە:')}
                 </span>
-                {favoriteChips.map((chip) => (
-                  <button
-                    key={chip.id}
-                    type="button"
-                    onClick={() => handleApplyFavoriteChip(chip)}
-                    className="min-h-[36px] px-2.5 py-1 rounded-full bg-surface hover:bg-primary/10 border border-line-2 hover:border-primary/40 text-xs font-semibold text-foreground hover:text-primary transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                  >
-                    {chip.category === 'exercise' ? (
-                      <Dumbbell className="size-3 text-emerald-600" />
-                    ) : chip.category === 'manual' ? (
-                      <Hand className="size-3 text-sky-600" />
-                    ) : (
-                      <Zap className="size-3 text-amber-500" />
-                    )}
-                    <span>+ {bi(chip.labelAr, chip.labelEn)}</span>
-                  </button>
-                ))}
+                <div className="rounded-2xl border border-line-2 bg-surface/60 p-1 overflow-hidden">
+                  <div className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-1 pt-0.5 px-0.5">
+                    {favoriteChips.map((chip) => (
+                      <button
+                        key={chip.id}
+                        type="button"
+                        onClick={() => handleApplyFavoriteChip(chip)}
+                        className="min-h-[34px] px-3 py-1 rounded-xl bg-primary/5 hover:bg-primary/12 border border-primary/15 hover:border-primary/35 text-xs font-semibold text-foreground hover:text-primary transition-all inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+                      >
+                        {chip.category === 'exercise' ? (
+                          <Dumbbell className="size-3.5 text-emerald-600 shrink-0" />
+                        ) : chip.category === 'manual' ? (
+                          <Hand className="size-3.5 text-sky-600 shrink-0" />
+                        ) : (
+                          <Zap className="size-3.5 text-amber-500 shrink-0" />
+                        )}
+                        <span>+ {bi(chip.labelAr, chip.labelEn)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>
         )}
 
         {/* 1. SUBJECTIVE AXIS (المحور الذاتي — الألم والشكوى وتغير الأعراض) */}
-        <div className="p-5 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-4">
-          <h2 className="text-sm font-bold text-foreground border-b border-card-divider pb-2.5">
-            {language === 'en' ? (
-              '1. Subjective (S): Pre/Post Pain NPRS, Chief Complaint & Symptom Changes'
-            ) : (
-              <>
-                {bi(
-                  '1. المحور الذاتي والألم والشكوى الرئيسية',
-                  '1. Subjective (S): Pre/Post Pain NPRS, Chief Complaint & Symptom Changes',
-                  '١. تەوەرەی خودی، ئازار و سکاڵای سەرەکی'
-                )}{' '}
-                <ClinicalAbbr code="SOAP" className="text-xs text-muted-foreground-1 ms-1" />
-              </>
-            )}
-          </h2>
+        <div className="p-4 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-4">
+          <div className="flex items-center gap-2.5 border-b border-card-divider pb-3">
+            <span className="size-7 rounded-xl bg-primary/10 text-primary font-black text-xs flex items-center justify-center shrink-0">
+              1
+            </span>
+            <h2 className="text-sm font-bold text-foreground">
+              {language === 'en' ? (
+                'Subjective (S): Pre/Post Pain NPRS, Chief Complaint & Symptom Changes'
+              ) : (
+                <>
+                  {bi(
+                    'المحور الذاتي والألم والشكوى الرئيسية',
+                    'Subjective (S): Pre/Post Pain NPRS, Chief Complaint & Symptom Changes',
+                    'تەوەرەی خودی، ئازار و سکاڵای سەرەکی'
+                  )}{' '}
+                  <ClinicalAbbr code="SOAP" className="text-xs text-muted-foreground-1 ms-1" />
+                </>
+              )}
+            </h2>
+          </div>
 
           {/* Pre & Post Session Pain NPRS (Single-row 0-10 segmented control on desktop, slider on mobile; colored by severity) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2286,15 +2339,17 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         </div>
 
         {/* 2. OBJECTIVE AXIS — Structured Exercise Flowsheet */}
-        <div className="p-5 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-4">
+        <div className="p-4 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-card-divider pb-3">
-            <div className="flex items-center gap-2">
-              <Dumbbell className="size-4 text-primary" />
+            <div className="flex items-center gap-2.5">
+              <span className="size-7 rounded-xl bg-primary/10 text-primary font-black text-xs flex items-center justify-center shrink-0">
+                2
+              </span>
               <h2 className="text-sm font-bold text-foreground">
                 {bi(
-                  '2. جدول التمارين العلاجية المنفذة في الجلسة',
-                  '2. Therapeutic Exercise Flowsheet (Sets × Reps × Hold × Load)',
-                  '٢. خشتەی ڕاهێنانە چارەسەرییە ئەنجامدراوەکانی دانیشتن'
+                  'جدول التمارين العلاجية المنفذة في الجلسة',
+                  'Therapeutic Exercise Flowsheet (Sets × Reps × Hold × Load)',
+                  'خشتەی ڕاهێنانە چارەسەرییە ئەنجامدراوەکانی دانیشتن'
                 )}
               </h2>
             </div>
@@ -2314,13 +2369,38 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                   value={selectedCatalogExId}
                   onChange={(e) => setSelectedCatalogExId(e.target.value)}
                   aria-label={bi('اختر تمريناً من الكتالوج', 'Select exercise from catalog', 'ڕاهێنانێک لە کەتەلۆگ هەڵبژێرە')}
-                  className="py-1.5 px-2.5 rounded-xl text-xs bg-layer border border-layer-line text-foreground max-w-[220px]"
+                  className="py-1.5 px-2.5 rounded-xl text-xs bg-layer border border-layer-line text-foreground min-w-[200px] max-w-full sm:max-w-sm"
                 >
-                  {PT_EXERCISE_CATALOG.map((ex) => (
-                    <option key={ex.id} value={ex.id}>
-                      {bi(ex.nameAr, ex.nameEn)}
-                    </option>
-                  ))}
+                  {(() => {
+                    const REGION_LABELS: Record<string, { ar: string; en: string }> = {
+                      cervical: { ar: 'العنق والفقرات العنقية', en: 'Cervical Spine' },
+                      shoulder: { ar: 'الكتف ولوح الكتف', en: 'Shoulder & Scapula' },
+                      elbow_wrist: { ar: 'المرفق والرسغ واليد', en: 'Elbow & Wrist' },
+                      thoracic_lumbar: { ar: 'الظهر والفقرات القطنية', en: 'Thoracic & Lumbar' },
+                      hip_pelvis: { ar: 'الحوض والورك', en: 'Hip & Pelvis' },
+                      knee: { ar: 'الركبة', en: 'Knee' },
+                      ankle_foot: { ar: 'الكاحل والقدم', en: 'Ankle & Foot' },
+                      neuro_balance: { ar: 'التوازن والأعصاب والوظائف', en: 'Balance & Functional' },
+                    };
+                    const grouped = PT_EXERCISE_CATALOG.reduce<Record<string, typeof PT_EXERCISE_CATALOG>>((acc, item) => {
+                      const reg = item.region || 'neuro_balance';
+                      if (!acc[reg]) acc[reg] = [];
+                      acc[reg].push(item);
+                      return acc;
+                    }, {});
+                    return Object.entries(grouped).map(([reg, items]) => {
+                      const label = REGION_LABELS[reg] || { ar: reg, en: reg };
+                      return (
+                        <optgroup key={reg} label={bi(label.ar, label.en)}>
+                          {items.map((ex) => (
+                            <option key={ex.id} value={ex.id}>
+                              {bi(ex.nameAr, ex.nameEn)}
+                            </option>
+                          ))}
+                        </optgroup>
+                      );
+                    });
+                  })()}
                 </select>
 
                 <button
@@ -2330,6 +2410,29 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 >
                   <Plus className="size-3.5" />
                   <span>{bi('إدراج تمرين', 'Add Exercise', 'زیادکردنی ڕاهێنان')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isLocked) return;
+                    const entry: FlowsheetExerciseEntry = {
+                      id: crypto.randomUUID(),
+                      exerciseId: undefined,
+                      nameAr: '',
+                      nameEn: '',
+                      region: 'neuro_balance',
+                      sets: 3,
+                      reps: 10,
+                      holdSeconds: 0,
+                      loadOrBand: 'Bodyweight',
+                      rpeOrPainResponse: 'pain_free',
+                    };
+                    updateField('exercises', [...formState.exercises, entry]);
+                  }}
+                  className="py-1.5 px-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="size-3.5" />
+                  <span>{bi('إضافة يدوي', 'Manual Exercise', 'زیادکردنی دەستی')}</span>
                 </button>
               </div>
             )}
@@ -2349,7 +2452,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
               aria-label={bi('جدول التمارين العلاجية', 'Therapeutic exercise flowsheet table')}
               className="overflow-x-auto -mx-2 px-2 focus:outline-none"
             >
-              <table className="w-full min-w-[660px] text-start text-xs border-collapse">
+              <table className="pr-responsive-table w-full text-start text-xs border-collapse">
                 <thead>
                   <tr className="bg-muted/50 border-b border-card-divider text-muted-foreground-1 font-semibold">
                     <th className="py-2.5 px-3 text-start">{bi('التمرين العلاجي', 'Exercise', 'ڕاهێنانی چارەسەری')}</th>
@@ -2378,10 +2481,33 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                     const holdKey = `${ex.id}_hold`;
                     return (
                       <tr key={ex.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="py-2.5 px-3 font-bold text-foreground align-top">
-                          {bi(ex.nameAr, ex.nameEn)}
+                        <td
+                          data-label={bi('التمرين العلاجي', 'Exercise', 'ڕاهێنانی چارەسەری')}
+                          className="py-2.5 px-3 font-bold text-foreground align-top pr-cell-primary md:table-cell"
+                        >
+                          {ex.exerciseId === undefined && !isLocked ? (
+                            <input
+                              type="text"
+                              value={language !== 'en' ? ex.nameAr : ex.nameEn}
+                              onChange={(e) => {
+                                const updated = formState.exercises.map((x) =>
+                                  x.id === ex.id
+                                    ? { ...x, nameAr: e.target.value, nameEn: e.target.value }
+                                    : x
+                                );
+                                updateField('exercises', updated);
+                              }}
+                              placeholder={bi('اسم التمرين', 'Exercise name', 'ناوی ڕاهێنان')}
+                              className="w-full px-2 py-0.5 rounded-lg bg-layer border border-line-2 text-xs font-bold text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          ) : (
+                            bi(ex.nameAr, ex.nameEn)
+                          )}
                         </td>
-                        <td className="py-2.5 px-3 align-top">
+                        <td
+                          data-label={bi('جولات (1–20)', 'Sets (1–20)', 'گەڕ (١–٢٠)')}
+                          className="py-2.5 px-3 align-top"
+                        >
                           <input
                             type="number"
                             min={1}
@@ -2410,7 +2536,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                                 setIsDirty(true);
                               }
                             }}
-                            className={`w-18 px-2 py-1 rounded-lg bg-surface border font-mono text-center text-foreground ${
+                            className={`w-24 sm:w-18 px-2 py-1 rounded-lg bg-surface border font-mono text-center text-foreground ${
                               numericErrors[setsKey]
                                 ? 'border-rose-500 text-rose-600'
                                 : 'border-layer-line'
@@ -2422,7 +2548,10 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                             </p>
                           )}
                         </td>
-                        <td className="py-2.5 px-3 align-top">
+                        <td
+                          data-label={bi('تكرار (1–200)', 'Reps (1–200)', 'دووبارەبوونەوە (١–٢٠٠)')}
+                          className="py-2.5 px-3 align-top"
+                        >
                           <input
                             type="number"
                             min={1}
@@ -2451,7 +2580,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                                 setIsDirty(true);
                               }
                             }}
-                            className={`w-18 px-2 py-1 rounded-lg bg-surface border font-mono text-center text-foreground ${
+                            className={`w-24 sm:w-18 px-2 py-1 rounded-lg bg-surface border font-mono text-center text-foreground ${
                               numericErrors[repsKey]
                                 ? 'border-rose-500 text-rose-600'
                                 : 'border-layer-line'
@@ -2463,7 +2592,10 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                             </p>
                           )}
                         </td>
-                        <td className="py-2.5 px-3 align-top">
+                        <td
+                          data-label={bi('ثبات ث (0–600)', 'Hold s (0–600)', 'مانەوە چرکە (٠–٦٠٠)')}
+                          className="py-2.5 px-3 align-top"
+                        >
                           <input
                             type="number"
                             min={0}
@@ -2492,7 +2624,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                                 setIsDirty(true);
                               }
                             }}
-                            className={`w-18 px-2 py-1 rounded-lg bg-surface border font-mono text-center text-foreground ${
+                            className={`w-24 sm:w-18 px-2 py-1 rounded-lg bg-surface border font-mono text-center text-foreground ${
                               numericErrors[holdKey]
                                 ? 'border-rose-500 text-rose-600'
                                 : 'border-layer-line'
@@ -2504,7 +2636,10 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                             </p>
                           )}
                         </td>
-                        <td className="py-2.5 px-3 align-top">
+                        <td
+                          data-label={bi('المقاومة / الوزن', 'Load / Band', 'بەرگری / کێش')}
+                          className="py-2.5 px-3 align-top"
+                        >
                           <input
                             type="text"
                             disabled={isLocked}
@@ -2515,10 +2650,13 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                               next[idx] = { ...ex, loadOrBand: e.target.value };
                               updateField('exercises', next);
                             }}
-                            className="w-full px-2 py-1 rounded-lg bg-surface border border-layer-line font-mono text-foreground"
+                            className="w-40 max-w-full sm:w-full px-2 py-1 rounded-lg bg-surface border border-layer-line font-mono text-foreground"
                           />
                         </td>
-                        <td className="py-2.5 px-3 align-top">
+                        <td
+                          data-label={bi('الاستجابة', 'Response', 'وەڵامدانەوە')}
+                          className="py-2.5 px-3 align-top"
+                        >
                           <select
                             disabled={isLocked}
                             aria-label={`${bi(ex.nameAr, ex.nameEn)} — ${bi('الاستجابة', 'Response')}`}
@@ -2532,7 +2670,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                               };
                               updateField('exercises', next);
                             }}
-                            className="w-full px-2 py-1 rounded-lg bg-surface border border-layer-line text-foreground"
+                            className="w-44 max-w-full sm:w-full px-2 py-1 rounded-lg bg-surface border border-layer-line text-foreground"
                           >
                             <option value="pain_free">{bi('دون ألم', 'Pain-free', 'بێ ئازار')}</option>
                             <option value="mild_discomfort">
@@ -2630,7 +2768,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                     )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     <div>
                       <label htmlFor={`mt-target-${mt.id}`} className="text-xs text-muted-foreground-1 block mb-0.5">
                         {bi('المفصل / النسيج المستهدف', 'Target Joint/Tissue', 'جومگە / شانەی ئامانج')}
@@ -2739,76 +2877,84 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
             </div>
 
             {!isLocked && (
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  {
-                    mod: 'TENS' as const,
-                    ar: 'تحفيز كهربائي مسكن TENS',
-                    ckb: 'وریاکردنەوەی کارەبایی ئازارشکێن TENS',
-                    params: '100Hz, 150µs',
-                  },
-                  {
-                    mod: 'Ultrasound' as const,
-                    ar: 'أمواج فوق صوتية',
-                    ckb: 'شەپۆلی سەروودەنگ',
-                    params: '1MHz, 1.2 W/cm²',
-                  },
-                  {
-                    mod: 'NMES' as const,
-                    ar: 'تحفيز عضلي كهربائي NMES',
-                    ckb: 'وریاکردنەوەی ماسولکەیی کارەبایی NMES',
-                    params: '50Hz, 10s/30s',
-                  },
-                  {
-                    mod: 'HotPack' as const,
-                    ar: 'كمادات ساخنة (حرارة سطحية)',
-                    ckb: 'پەستانی گەرم (گەرمی ڕووکەش)',
-                    params: 'Hydrocollator 15m',
-                  },
-                  {
-                    mod: 'Shortwave' as const,
-                    ar: 'موجات قصيرة (SWD)',
-                    ckb: 'شەپۆلی کورت (SWD)',
-                    params: 'Pulsed / Continuous',
-                  },
-                  {
-                    mod: 'DryNeedling' as const,
-                    ar: 'وخز بالإبر الجافة',
-                    ckb: 'دەرزی وشک (Dry Needling)',
-                    params: 'Trigger Points',
-                  },
-                  {
-                    mod: 'Cryotherapy' as const,
-                    ar: 'كمادات باردة',
-                    ckb: 'پەستانی سارد',
-                    params: 'Cold pack',
-                  },
-                  {
-                    mod: 'Traction' as const,
-                    ar: 'شد فقري / ميكانيكي',
-                    ckb: 'کێشانی بڕبڕە / میکانیکی',
-                    params: 'Intermittent traction',
-                  },
-                ].map((btn) => (
+              <div className="rounded-2xl border border-line-2 bg-surface/60 p-1 overflow-hidden">
+                <div className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-1 pt-0.5 px-0.5">
+                  {[
+                    {
+                      mod: 'TENS' as const,
+                      ar: 'تحفيز كهربائي مسكن TENS',
+                      ckb: 'وریاکردنەوەی کارەبایی ئازارشکێن TENS',
+                      params: '100Hz, 150µs',
+                    },
+                    {
+                      mod: 'Ultrasound' as const,
+                      ar: 'أمواج فوق صوتية',
+                      ckb: 'شەپۆلی سەروودەنگ',
+                      params: '1MHz, 1.2 W/cm²',
+                    },
+                    {
+                      mod: 'NMES' as const,
+                      ar: 'تحفيز عضلي كهربائي NMES',
+                      ckb: 'وریاکردنەوەی ماسولکەیی کارەبایی NMES',
+                      params: '50Hz, 10s/30s',
+                    },
+                    {
+                      mod: 'HotPack' as const,
+                      ar: 'كمادات ساخنة (حرارة سطحية)',
+                      ckb: 'پەستانی گەرم (گەرمی ڕووکەش)',
+                      params: 'Hydrocollator 15m',
+                    },
+                    {
+                      mod: 'Shortwave' as const,
+                      ar: 'موجات قصيرة (SWD)',
+                      ckb: 'شەپۆلی کورت (SWD)',
+                      params: 'Pulsed / Continuous',
+                    },
+                    {
+                      mod: 'DryNeedling' as const,
+                      ar: 'وخز بالإبر الجافة',
+                      ckb: 'دەرزی وشک (Dry Needling)',
+                      params: 'Trigger Points',
+                    },
+                    {
+                      mod: 'Cryotherapy' as const,
+                      ar: 'كمادات باردة',
+                      ckb: 'پەستانی سارد',
+                      params: 'Cold pack',
+                    },
+                    {
+                      mod: 'Traction' as const,
+                      ar: 'شد فقري / ميكانيكي',
+                      ckb: 'کێشانی بڕبڕە / میکانیکی',
+                      params: 'Intermittent traction',
+                    },
+                  ].map((btn) => (
+                    <button
+                      key={btn.mod}
+                      type="button"
+                      data-testid={`add-modality-${btn.mod}`}
+                      onClick={() => handleAddPhysicalAgent(btn.mod, btn.ar, btn.params)}
+                      className="px-3 py-1.5 rounded-xl bg-card hover:bg-primary/10 hover:text-primary border border-line-2/70 text-xs font-semibold text-foreground transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      + {bi(btn.ar, btn.mod, btn.ckb)}
+                    </button>
+                  ))}
                   <button
-                    key={btn.mod}
                     type="button"
-                    data-testid={`add-modality-${btn.mod}`}
-                    onClick={() => handleAddPhysicalAgent(btn.mod, btn.ar, btn.params)}
-                    className="px-2.5 py-1 rounded-lg bg-layer hover:bg-primary/10 hover:text-primary border border-layer-line text-xs font-semibold text-foreground transition-colors cursor-pointer"
+                    onClick={handleAddManualPhysicalAgent}
+                    className="px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0"
                   >
-                    + {bi(btn.ar, btn.mod, btn.ckb)}
+                    + {bi('إضافة يدوي', 'Manual Entry', 'زیادکردنی دەستی')}
                   </button>
-                ))}
+                </div>
               </div>
             )}
-
             {formState.modalitySafetyOverrides.length > 0 && (
               <div
                 data-testid="session-modality-overrides-list"
-                className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1 text-xs"
+                className="p-2.5 rounded-xl bg-card shadow-2xs space-y-1 text-xs"
               >
-                <div className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                <div className="font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
                   <AlertTriangle className="size-3.5 shrink-0" />
                   <span>
                     {bi(
@@ -2838,11 +2984,26 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-bold text-primary">
-                      {bi(pa.modalityAr, pa.modality)}
+                      {pa.modality === 'Other' && !isLocked ? (
+                        <input
+                          type="text"
+                          value={pa.modalityAr}
+                          onChange={(e) => {
+                            const updated = formState.physicalAgents.map((p) =>
+                              p.id === pa.id ? { ...p, modalityAr: e.target.value } : p
+                            );
+                            updateField('physicalAgents', updated);
+                          }}
+                          placeholder={bi('اسم الجهاز / الوسيلة', 'Modality name', 'ناوی ئامێر')}
+                          className="w-full px-2 py-0.5 rounded-lg bg-layer border border-line-2 text-xs font-bold text-primary placeholder:text-muted-foreground-2 focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                      ) : (
+                        bi(pa.modalityAr || pa.modality, pa.modality)
+                      )}
                     </span>
                     <div className="flex items-center gap-2">
                       {isDefaultPrefill && (
-                        <span className="px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-xs font-bold">
+                        <span className="text-amber-700 dark:text-amber-400 text-xs font-bold">
                           {bi('افتراضي — يرجى التحقق (default - verify)', 'default - verify', 'بنەڕەتی — تکایە دڵنیابە (default - verify)')}
                         </span>
                       )}
@@ -2864,7 +3025,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     <div>
                       <label htmlFor={`pa-site-${pa.id}`} className="text-xs text-muted-foreground-1 block mb-0.5">
                         {bi('المنطقة المستهدفة (Site)', 'Target Site', 'شوێنی ئامانج (Site)')}
@@ -2954,14 +3115,19 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         </div>
 
         {/* 3. OBJECTIVE FREE-TEXT & DERIVED FLOWSHEET SUMMARY */}
-        <div className="p-5 rounded-xl bg-card border border-card-line shadow-2xs space-y-4">
-          <h2 className="text-sm font-bold text-foreground border-b border-card-divider pb-2.5">
-            {bi(
-              '3. الملاحظات الموضوعية وملخص التدخلات الحر',
-              '3. Objective (O): Clinical Observations & Therapist Free-Text Interventions',
-              '٣. تێبینییە بابەتییەکان و پوختەی ئازادی دەستێوەردانەکان'
-            )}
-          </h2>
+        <div className="p-4 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-4">
+          <div className="flex items-center gap-2.5 border-b border-card-divider pb-3">
+            <span className="size-7 rounded-xl bg-primary/10 text-primary font-black text-xs flex items-center justify-center shrink-0">
+              3
+            </span>
+            <h2 className="text-sm font-bold text-foreground">
+              {bi(
+                'الملاحظات الموضوعية وملخص التدخلات الحر',
+                'Objective (O): Clinical Observations & Therapist Free-Text Interventions',
+                'تێبینییە بابەتییەکان و پوختەی ئازادی دەستێوەردانەکان'
+              )}
+            </h2>
+          </div>
 
           {derivedFlowsheetSummary && (
             <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-xs space-y-1">
@@ -3075,14 +3241,19 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         </div>
 
         {/* 4. ASSESSMENT & PLAN AXES (التقييم والانطباع السريري والخطة القادمة) */}
-        <div className="p-5 rounded-xl bg-card border border-card-line shadow-2xs space-y-4">
-          <h2 className="text-sm font-bold text-foreground border-b border-card-divider pb-2.5">
-            {bi(
-              '4. التقييم السريري والخطة العلاجية القادمة',
-              '4. Assessment (A) & Plan (P)',
-              '٤. هەڵسەنگاندنی کلینیکی و پلانی چارەسەری داهاتوو'
-            )}
-          </h2>
+        <div className="p-4 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-4">
+          <div className="flex items-center gap-2.5 border-b border-card-divider pb-3">
+            <span className="size-7 rounded-xl bg-primary/10 text-primary font-black text-xs flex items-center justify-center shrink-0">
+              4
+            </span>
+            <h2 className="text-sm font-bold text-foreground">
+              {bi(
+                'التقييم السريري والخطة العلاجية القادمة',
+                'Assessment (A) & Plan (P)',
+                'هەڵسەنگاندنی کلینیکی و پلانی چارەسەری داهاتوو'
+              )}
+            </h2>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-1">
@@ -3433,12 +3604,12 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
       {/* Mobile Sticky Bottom Thumb-Reach Action Bar (2.7) */}
       {!isLocked && (
-        <div className="md:hidden shrink-0 px-4 py-2.5 bg-card/95 backdrop-blur-xs border-t border-card-line flex items-center justify-between gap-2 z-20">
+        <div className="md:hidden shrink-0 px-4 py-3 bg-card/95 backdrop-blur-md border-t border-card-line shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.08)] flex items-center justify-between gap-2.5 z-20">
           <button
             type="button"
             onClick={() => void persistDraftSoap(false)}
             disabled={isSaving}
-            className="flex-1 min-h-[44px] px-3 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+            className="flex-1 min-h-[44px] px-3 py-2 rounded-xl bg-primary/10 hover:bg-primary/15 text-primary border border-primary/25 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
           >
             <Save className="size-4" />
             <span>{bi('حفظ المسودة', 'Save Draft', 'پاشەکەوتکردنی ڕەشنووس')}</span>
@@ -3448,7 +3619,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
               type="button"
               onClick={handleRequestSignAndLock}
               disabled={isSaving}
-              className="flex-1 min-h-[44px] px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex-1 min-h-[44px] px-3 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold shadow-md shadow-primary/20 inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all"
             >
               <Lock className="size-4" />
               <span>{bi('إنهاء واعتماد', 'Finish & Sign', 'تەواوکردن و پەسەندکردن')}</span>
@@ -3468,7 +3639,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 ClinicOperationsService.undoFinishSequenceBillingAndBooking(localUndoToast.snapshot);
                 setLocalUndoToast(null);
               }}
-              className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground font-bold cursor-pointer"
             >
               {bi('تراجع (الدفع/الموعد)', 'Undo Billing/Appt', 'پاشگەزبوونەوە (پارە/وادە)')}
             </button>
@@ -3491,6 +3662,8 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         session={session}
         episodeTitle={episodeTitle}
         completenessReport={completenessReport}
+        advisoryWarnings={missingLockFields}
+        finalizeError={saveError}
         onFinalizeStep={executeFinalizeSessionAsync}
         onFinishCompleted={(undoSnapshot, summaryAr, summaryEn) => {
           if (onFinishCompleted) {
@@ -3805,7 +3978,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                 type="button"
                 data-testid="modality-safety-confirm-override-btn"
                 onClick={handleConfirmModalityOverride}
-                className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 dark:bg-amber-700 dark:hover:bg-amber-600 text-white font-bold cursor-pointer"
               >
                 {bi('تأكيد التجاوز وإضافة الجهاز', 'Override & Add Modality', 'پشتڕاستکردنەوە و زیادکردنی ئامێر')}
               </button>

@@ -5,7 +5,11 @@
 // =======================================================================
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
+import {
+  Dialog as AriaDialog,
+  Modal,
+  ModalOverlay,
+} from 'react-aria-components';
 import { useLanguage } from '../../context/LanguageContext';
 import { useVault } from '../../context/VaultContext';
 import { usePatients } from '../../context/PatientContext';
@@ -59,6 +63,7 @@ import {
   AccessibleTabPanel,
   AccessibleTabs,
 } from '../ui/Tabs';
+import { GeometricHeaderBackdrop } from '../ui/Dialog';
 import { ModalDialog } from '../ui/Dialog';
 import {
   AutoResizeTextarea,
@@ -207,101 +212,122 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
     }
   };
 
-  const modalContent = (
-    <div
-      id="physiorecord-print-portal"
-      role="dialog"
-      aria-modal="true"
-      aria-label={bi(
-        'معاينة تقرير المتابعة للطبيب المحيل',
-        'Referring Doctor Report-Back Letter',
-        'پێشبینینی ڕاپۆرتی بەدواداچوون بۆ پزیشکی نێردەر'
-      )}
-      className="fixed inset-0 z-[90] bg-slate-950/65 backdrop-blur-xs overflow-y-auto p-3 sm:p-6 flex flex-col items-center"
-      dir={isRtl ? 'rtl' : 'ltr'}
-      onClick={onClose}
+  return (
+    <ModalOverlay
+      isOpen={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      isDismissable
+      className="fixed inset-0 z-[90] bg-slate-950/65 backdrop-blur-xs flex flex-col outline-none"
     >
-      {/* Screen-only Toolbar */}
-      <div
-        className="print-modal-chrome w-full max-w-[210mm] mb-4 bg-card border border-card-line rounded-2xl p-3.5 shadow-lg flex flex-wrap items-center justify-between gap-3"
-        onClick={(e) => e.stopPropagation()}
+      <Modal
+        dir={isRtl ? 'rtl' : 'ltr'}
+        className="w-full h-full max-h-[100dvh] flex flex-col outline-none print:h-auto print:max-h-none"
       >
-        <div className="flex items-center gap-2.5">
-          <span className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <Stethoscope className="size-4" />
-          </span>
-          <div>
-            <h2 className="text-sm font-bold text-foreground">
-              {bi(
-                'تقرير متابعة للطبيب المحيل',
-                'Report-Back Letter to Referring Doctor',
-                'ڕاپۆرتی بەدواداچوون بۆ پزیشکی نێردەر'
-              )}
-            </h2>
-            <p className="text-xs text-muted-foreground-1">
-              {bi(
-                'قابل للتعديل والنسخ أو الطباعة وحفظ PDF دون إنترنت',
-                'Editable, copyable, and offline A4 printable',
-                'شیاوی دەستکاری، لەبەرگرتنەوە یان چاپکردن و پاشەکەوتکردنی PDF بەبێ ئینتەرنێت'
-              )}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setLetterLang(letterLang === 'ar' ? 'en' : 'ar')}
-            className="min-h-[36px] px-3 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+        <AriaDialog
+          aria-label={bi(
+            'معاينة تقرير المتابعة للطبيب المحيل',
+            'Referring Doctor Report-Back Letter',
+            'پێشبینینی ڕاپۆرتی بەدواداچوون بۆ پزیشکی نێردەر'
+          )}
+          className="w-full h-full flex flex-col min-h-0 outline-none print:h-auto overflow-hidden"
+        >
+          {/* Pinned Screen-only Top Header & Action Strip (Non-shrinking, Always Visible, Zero Clipping) */}
+          <header
+            className="print-modal-chrome w-full bg-card border-b border-card-line shadow-md shrink-0 print:hidden z-30"
+            onClick={(e) => e.stopPropagation()}
           >
-            <Languages className="size-3.5 text-primary" />
-            <span>
-              {isLetterAr
-                ? bi('التحويل للإنجليزية (EN)', 'Switch to English (EN)', 'گۆڕین بۆ ئینگلیزی (EN)')
-                : bi('التحويل للعربية (AR)', 'Switch to Arabic (AR)', 'گۆڕین بۆ عەرەبی (AR)')}
-            </span>
-          </button>
+            <div className="relative overflow-hidden px-4 sm:px-6 py-3 bg-primary text-primary-foreground">
+              <GeometricHeaderBackdrop />
+              <div className="relative z-10 max-w-[210mm] mx-auto flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="size-9 rounded-xl bg-primary-foreground/15 text-primary-foreground border border-primary-foreground/25 flex items-center justify-center shrink-0">
+                    <Stethoscope className="size-4.5" />
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="text-sm font-black text-primary-foreground truncate">
+                      {bi(
+                        'تقرير متابعة للطبيب المحيل',
+                        'Report-Back Letter to Referring Doctor',
+                        'ڕاپۆرتی بەدواداچوون بۆ پزیشکی نێردەر'
+                      )}
+                    </h2>
+                    <p className="text-xs text-primary-foreground/85 truncate">
+                      {bi(
+                        'قابل للتعديل والنسخ أو الطباعة وحفظ PDF دون إنترنت',
+                        'Editable, copyable, and offline A4 printable',
+                        'شیاوی دەستکاری، لەبەرگرتنەوە یان چاپکردن و پاشەکەوتکردنی PDF بەبێ ئینتەرنێت'
+                      )}
+                    </p>
+                  </div>
+                </div>
 
-          <button
-            type="button"
-            onClick={() => void handleCopy()}
-            className="min-h-[36px] px-3 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
-          >
-            {copied ? (
-              <Check className="size-3.5 text-emerald-700 dark:text-emerald-400" />
-            ) : (
-              <Copy className="size-3.5 text-primary" />
-            )}
-            <span>
-              {copied
-                ? bi('تم النسخ', 'Copied', 'لەبەرگیرا')
-                : bi('نسخ النص', 'Copy', 'لەبەرگرتنەوە')}
-            </span>
-          </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label={bi('إغلاق', 'Close', 'داخستن')}
+                  className="size-9 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground inline-flex items-center justify-center cursor-pointer shrink-0 transition-colors"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            </div>
 
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="min-h-[36px] px-4 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
-          >
-            <Printer className="size-3.5" />
-            <span>{bi('طباعة / حفظ PDF', 'Print / Save PDF', 'چاپ / پاشەکەوتکردنی PDF')}</span>
-          </button>
+            {/* Unified Horizontally Scrollable Print Action Strip */}
+            <div className="px-4 sm:px-6 py-2.5 bg-surface/90 border-t border-card-line/80">
+              <div className="max-w-[210mm] mx-auto pr-hscroll overflow-x-auto flex items-center gap-2 whitespace-nowrap">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="min-h-[36px] px-4 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors shrink-0"
+                >
+                  <Printer className="size-3.5" />
+                  <span>{bi('طباعة / حفظ PDF', 'Print / Save PDF', 'چاپ / پاشەکەوتکردنی PDF')}</span>
+                </button>
 
-          <button
-            type="button"
+                <button
+                  type="button"
+                  onClick={() => setLetterLang(letterLang === 'ar' ? 'en' : 'ar')}
+                  className="min-h-[36px] px-3 py-1.5 rounded-xl border border-line-2 bg-card hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                >
+                  <Languages className="size-3.5 text-primary" />
+                  <span>
+                    {isLetterAr
+                      ? bi('التحويل للإنجليزية (EN)', 'Switch to English (EN)', 'گۆڕین بۆ ئینگلیزی (EN)')
+                      : bi('التحويل للعربية (AR)', 'Switch to Arabic (AR)', 'گۆڕین بۆ عەرەبی (AR)')}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void handleCopy()}
+                  className="min-h-[36px] px-3 py-1.5 rounded-xl border border-line-2 bg-card hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                >
+                  {copied ? (
+                    <Check className="size-3.5 text-emerald-700 dark:text-emerald-400" />
+                  ) : (
+                    <Copy className="size-3.5 text-primary" />
+                  )}
+                  <span>
+                    {copied
+                      ? bi('تم النسخ', 'Copied', 'لەبەرگیرا')
+                      : bi('نسخ النص', 'Copy', 'لەبەرگرتنەوە')}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <div
+            id="physiorecord-print-portal"
+            tabIndex={0}
             onClick={onClose}
-            aria-label={bi('إغلاق', 'Close', 'داخستن')}
-            className="min-h-[36px] min-w-[36px] p-2 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer"
+            className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain touch-pan-y p-3 sm:p-6 flex flex-col items-center focus:outline-none print:overflow-visible print:p-0 print:block"
           >
-            <X className="size-4" />
-          </button>
-        </div>
-      </div>
-
       {/* Screen-only Subject & Body Quick Editor */}
       <div
-        className="print-modal-chrome w-full max-w-[210mm] mb-4 bg-card border border-card-line rounded-2xl p-4 shadow-sm space-y-3"
+        className="print-modal-chrome w-full max-w-[210mm] mb-4 bg-card border border-card-line rounded-2xl p-4 shadow-sm space-y-3 shrink-0 print:hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div>
@@ -332,19 +358,22 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
         </div>
       </div>
 
-      {/* Printable A4 Letter Sheet */}
+      {/* Printable A4 Letter Sheet (Full original width with smooth horizontal & vertical pan on mobile) */}
       <div
-        dir={isLetterAr ? 'rtl' : 'ltr'}
         onClick={(e) => e.stopPropagation()}
-        className="print-sheet-container w-full max-w-[210mm] bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-2xl p-6 sm:p-10 space-y-6 text-xs leading-relaxed"
+        className="w-full max-w-[210mm] overflow-x-auto overscroll-x-contain touch-auto rounded-2xl shadow-2xl shrink-0 print:overflow-visible print:max-w-none print:shadow-none"
       >
-        <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-slate-800 pb-4 print-break-inside-avoid">
+        <div
+          dir={isLetterAr ? 'rtl' : 'ltr'}
+          className="print-sheet-container w-[210mm] min-w-[210mm] print:w-full print:min-w-0 bg-white text-slate-900 rounded-2xl border border-slate-200 border-t-4 border-t-emerald-700 p-6 sm:p-10 space-y-6 text-xs leading-relaxed"
+        >
+        <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-emerald-700/20 pb-4 print-break-inside-avoid">
           <div className="flex items-start gap-3">
             {logoSafe && (
               <img
                 src={logoSafe}
                 alt="Clinic Logo"
-                className="h-14 w-14 object-contain rounded-lg border border-slate-200 p-1 bg-white shrink-0"
+                className="h-14 w-14 object-contain rounded-xl border border-emerald-200/80 p-1 bg-white shrink-0"
               />
             )}
             <div className="space-y-0.5">
@@ -353,7 +382,7 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
                   clinicProfile.clinicNameAr ||
                   clinicProfile.clinicNameEn}
               </h1>
-              <p className="text-xs font-semibold text-slate-700">
+              <p className="text-xs font-semibold text-emerald-800">
                 {(isLetterAr ? clinicProfile.therapistNameAr : clinicProfile.therapistNameEn) ||
                   clinicProfile.therapistNameAr ||
                   clinicProfile.therapistNameEn}
@@ -367,7 +396,7 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
           </div>
 
           <div className={isLetterAr ? 'text-left' : 'text-right'}>
-            <span className="inline-block px-3 py-1 rounded-lg bg-slate-900 text-white text-xs font-bold">
+            <span className="inline-block px-3.5 py-1.5 rounded-xl bg-emerald-700 text-white text-xs font-bold shadow-2xs">
               {isLetterAr ? 'تقرير متابعة للطبيب المحيل' : 'Referring Physician Report'}
             </span>
             <p className="text-xs text-slate-600 mt-1 tabular-nums">
@@ -377,7 +406,7 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
           </div>
         </header>
 
-        <div className="border border-slate-200 rounded-xl bg-slate-50 p-3.5 print-break-inside-avoid">
+        <div className="border border-emerald-200/70 rounded-2xl bg-emerald-50/45 p-4 print-break-inside-avoid">
           <div className="text-xs font-bold text-slate-900">{subjectText}</div>
         </div>
 
@@ -385,38 +414,44 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
           {bodyText}
         </div>
 
-        <footer className="border-t border-slate-200 pt-5 flex flex-wrap items-end justify-between gap-4 print-break-inside-avoid">
-          <p className="text-xs text-slate-500">
+        <footer className="border-t border-slate-200 pt-5 space-y-4 print-break-inside-avoid">
+          <div className="flex flex-col sm:flex-row items-end sm:items-end justify-between gap-4">
+            <p className="hidden sm:block text-xs text-slate-500">
+              {isLetterAr
+                ? 'صدر هذا التقرير محلياً من نظام PhysioRecord المشفر.'
+                : 'Generated locally inside PhysioRecord.'}
+            </p>
+            <div className="text-center min-w-[180px] space-y-1 ms-auto">
+              {stampSafe && (
+                <img
+                  src={stampSafe}
+                  alt="Clinic Stamp"
+                  className="h-14 mx-auto object-contain"
+                />
+              )}
+              <div className="border-t border-slate-400 pt-1 text-xs font-bold text-slate-900">
+                {(isLetterAr ? clinicProfile.therapistNameAr : clinicProfile.therapistNameEn) ||
+                  clinicProfile.therapistNameAr ||
+                  clinicProfile.therapistNameEn}
+              </div>
+              <div className="text-xs text-slate-500">
+                {isLetterAr ? 'التوقيع والختم' : 'Signature & Stamp'}
+              </div>
+            </div>
+          </div>
+          <div className="sm:hidden text-center text-[10px] text-slate-400 pt-2 border-t border-slate-100">
             {isLetterAr
               ? 'صدر هذا التقرير محلياً من نظام PhysioRecord المشفر.'
               : 'Generated locally inside PhysioRecord.'}
-          </p>
-          <div className="text-center min-w-[160px] space-y-1">
-            {stampSafe && (
-              <img
-                src={stampSafe}
-                alt="Clinic Stamp"
-                className="h-14 mx-auto object-contain"
-              />
-            )}
-            <div className="border-t border-slate-400 pt-1 text-xs font-semibold text-slate-800">
-              {(isLetterAr ? clinicProfile.therapistNameAr : clinicProfile.therapistNameEn) ||
-                clinicProfile.therapistNameAr ||
-                clinicProfile.therapistNameEn}
-            </div>
-            <div className="text-xs text-slate-500">
-              {isLetterAr ? 'التوقيع والختم' : 'Signature & Stamp'}
-            </div>
           </div>
         </footer>
       </div>
-    </div>
+      </div>
+          </div>
+        </AriaDialog>
+      </Modal>
+    </ModalOverlay>
   );
-
-  if (typeof document === 'undefined' || !document.body) {
-    return modalContent;
-  }
-  return createPortal(modalContent, document.body);
 };
 
 // -----------------------------------------------------------------------
@@ -1448,8 +1483,8 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                       )}
                     </h4>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 text-xs font-bold tabular-nums">
-                    <Num value={retentionLists.inactiveActivePlan.length} />
+                  <span className="text-amber-700 dark:text-amber-400 text-xs font-bold tabular-nums">
+                    (<Num value={retentionLists.inactiveActivePlan.length} />)
                   </span>
                 </div>
 
@@ -1708,8 +1743,8 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                       )}
                     </h4>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-800 dark:text-sky-300 text-xs font-bold tabular-nums">
-                    <Num value={retentionLists.packageExpiring.length} />
+                  <span className="text-sky-700 dark:text-sky-400 text-xs font-bold tabular-nums">
+                    (<Num value={retentionLists.packageExpiring.length} />)
                   </span>
                 </div>
 
@@ -1816,8 +1851,8 @@ export const ReferralsAndRetentionPanel: React.FC<ReferralsAndRetentionPanelProp
                       {bi('تذكيرات الأرصدة والذمم المستحقة', 'Unpaid Balance Reminders', 'یادخەرەوەکانی باڵانس و قەرزە ماوەکان')}
                     </h4>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 text-xs font-bold tabular-nums">
-                    <Num value={retentionLists.unpaidBalances.length} />
+                  <span className="text-rose-700 dark:text-rose-400 text-xs font-bold tabular-nums">
+                    (<Num value={retentionLists.unpaidBalances.length} />)
                   </span>
                 </div>
 

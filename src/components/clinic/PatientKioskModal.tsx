@@ -374,14 +374,14 @@ export const PatientKioskModal: React.FC<PatientKioskModalProps> = ({
               <button
                 type="submit"
                 disabled={verifyingExit}
-                className="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
               >
                 {verifyingExit ? (isEn ? 'Checking…' : 'جاري التحقق…') : isEn ? 'Unlock & Exit' : 'فتح والخروج'}
               </button>
               <button
                 type="button"
                 onClick={() => setShowUnlockPrompt(false)}
-                className="px-3 py-2.5 rounded-xl border border-card-stroke text-xs font-semibold text-muted-foreground-1 cursor-pointer"
+                className="px-3 py-2.5 rounded-xl border border-layer-line text-xs font-semibold text-muted-foreground-1 cursor-pointer"
               >
                 {isEn ? 'Cancel' : 'إلغاء'}
               </button>
@@ -403,7 +403,7 @@ export const PatientKioskModal: React.FC<PatientKioskModalProps> = ({
             <button
               type="button"
               onClick={() => setCompletedBanner(false)}
-              className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
             >
               {isEn ? 'Ready for Next Patient' : 'جاهز لمريض جديد'}
             </button>
@@ -419,7 +419,7 @@ export const PatientKioskModal: React.FC<PatientKioskModalProps> = ({
             {/* Demographics */}
             <div className="p-4 rounded-2xl bg-surface border border-card-divider space-y-3">
               <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-                <TabletSmartphone className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                <TabletSmartphone className="w-4 h-4 text-primary" />
                 <span>{isEn ? '1. Basic Information' : '١. المعلومات الأساسية'}</span>
               </div>
 
@@ -492,8 +492,8 @@ export const PatientKioskModal: React.FC<PatientKioskModalProps> = ({
               <div className="p-4 rounded-2xl bg-surface border border-card-divider space-y-3">
                 <div className="flex items-center justify-between text-sm font-bold text-foreground">
                   <span>{isEn ? '2. Current Pain Intensity (0–10)' : '٢. شدة الألم الحالية (0–10)'}</span>
-                  <span className="px-2.5 py-0.5 rounded-lg bg-teal-500/15 text-teal-700 dark:text-teal-300 text-sm font-extrabold">
-                    <Num value={painNrs} /> / 10
+                  <span className="px-2.5 py-0.5 rounded-lg bg-primary/15 text-primary text-sm font-extrabold">
+                    <bdi dir="ltr"><Num value={painNrs} /> / 10</bdi>
                   </span>
                 </div>
                 <input
@@ -503,7 +503,7 @@ export const PatientKioskModal: React.FC<PatientKioskModalProps> = ({
                   value={painNrs}
                   aria-label={isEn ? 'Pain intensity 0 to 10' : 'شدة الألم من 0 إلى 10'}
                   onChange={(e) => setPainNrs(Number(e.target.value))}
-                  className="w-full accent-teal-600 cursor-pointer"
+                  className="w-full accent-primary cursor-pointer"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground-1">
                   <span>{isEn ? '0 = No pain' : '0 = لا يوجد ألم'}</span>
@@ -573,7 +573,7 @@ export const PatientKioskModal: React.FC<PatientKioskModalProps> = ({
                   type="checkbox"
                   checked={consentAccepted}
                   onChange={(e) => setConsentAccepted(e.target.checked)}
-                  className="w-4 h-4 rounded accent-teal-600"
+                  className="w-4 h-4 rounded accent-primary"
                 />
                 <span>
                   {isEn
@@ -634,7 +634,7 @@ export const PatientKioskModal: React.FC<PatientKioskModalProps> = ({
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-3.5 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold shadow-sm disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full py-3.5 rounded-2xl bg-primary hover:bg-primary-hover text-primary-foreground text-sm font-bold shadow-sm disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
             >
               {submitting
                 ? isEn

@@ -240,3 +240,22 @@ npm run check:content     # أصول المحتوى
 - السطح والظلال والزوايا: الكتلة الأخيرة في `src/index.css`.
 - الزوايا القابلة للتخصيص من المستخدم: `getDisplayCssVariables()` في `src/utils/appearancePrefs.ts`.
 - لا تعدّل `src/crypto/*` أو تنسيقات العملة العراقية عند تغيير الشكل.
+
+---
+
+## 11. Minimalist Swiss Clinical Refinement & Adaptive Primitives (v2.1)
+
+تحديث معماري وتصميمي لتوحيد الأسطح، تقليل الضجيج البصري، وتحسين التكيف الكامل من `320px` حتى `1600px+`:
+
+- **تبسيط التدرجات والزخارف (`src/index.css`)**:
+  - إزالة الخلفيات الثابتة متعددة البقع (`background-attachment: fixed`) واستبدالها بغسيل خطي خفيف عالي الأداء.
+  - توحيد `.pr-page-header`، `.pr-hero`، `.pr-icon-chip`، `.pr-btn-primary`، `.pr-brand-mark`، و`.pr-avatar` باستخدام متغيرات `--primary` الدلالية بدون أشرطة تزيينية إضافية، مع احترام `@media (prefers-reduced-motion: reduce)`.
+- **حاويات وتخطيطات مرنة (`src/index.css`)**:
+  - `.pr-container`: حاوية متجاوبة بحشوة سائلة (`clamp(0.75rem, 2.5vw, 1.5rem)`).
+  - `.pr-toolbar`: شريط أدوات قابل للالتفاف الطبيعي بين السطر والسطر.
+  - `.pr-kpi-grid` و`.pr-card-grid`: شبكات CSS Grid تلقائية باستخدام `minmax(...)` بدل الأعمدة الصلبة.
+  - `.pr-main-safe`: مسافة أمان سفلية تلقائية لمواءمة شريط الجوال السفلي (`safe-area-inset-bottom`).
+  - `.pr-responsive-table`: تحوّل تلقائي لجداول البيانات إلى بطاقات مفاتيح/قيم متراصة (`max-width: 1023.98px`) لحماية الهواتف والأجهزة اللوحية ذات الشريط الجانبي المفتوح من التجاوز الأفقي.
+- **إزالة الفجوات الدلالية والألوان الصلبة**:
+  - استبدال تدرجات `teal-*` الثابتة بمتغيرات `primary` لضمان التناغم التام بين الثيمات الأربعة (`clinical-default`، `ocean-blue`، `royal-indigo`، `emerald-care`) والوضعين النهاري والليلي.
+  - ترقية النوافذ اليدوية (`ActivityLogView`، `IraqiFinancialLedgerView`، `InstallmentPlansAgingPanel`) إلى `ModalDialog` و`DrawerDialog` المعزولتين عبر React Aria Components، وإضافة `AccessibleTabPanel` في `FunctionalScalesWidget` وتسميات `aria-label` لأزرار الأيقونات لضمان توافق WCAG 2.1 AA.

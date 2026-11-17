@@ -115,7 +115,7 @@ export const PerformanceTestsPanel: React.FC<PerformanceTestsPanelProps> = ({
 
         <span
           data-testid="perf-expert-verification-badge"
-          className="px-2.5 py-1 rounded-full bg-amber-500/12 border border-amber-500/30 text-amber-800 dark:text-amber-300 font-bold inline-flex items-center gap-1"
+          className="text-amber-700 dark:text-amber-400 text-xs font-semibold inline-flex items-center gap-1"
         >
           <AlertCircle className="size-3.5" />
           <span>
@@ -124,26 +124,31 @@ export const PerformanceTestsPanel: React.FC<PerformanceTestsPanelProps> = ({
         </span>
       </div>
 
-      {/* Test selector pills */}
-      <div className="flex flex-wrap gap-1.5">
-        {PERFORMANCE_TESTS_CATALOG.map((t) => {
-          const active = t.id === selectedTestId;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              data-testid={`perf-test-tab-${t.id}`}
-              onClick={() => setSelectedTestId(t.id)}
-              className={`min-h-[34px] px-3 py-1 rounded-xl border font-bold cursor-pointer transition-colors ${
-                active
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-surface hover:bg-layer-hover text-foreground border-line-2'
-              }`}
-            >
-              {t.code}
-            </button>
-          );
-        })}
+      {/* Test selector pills (Horizontally scrollable strip) */}
+      <div className="rounded-2xl border border-line-2 bg-surface/60 p-1 overflow-hidden">
+        <div className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-1 pt-0.5 px-0.5">
+          {PERFORMANCE_TESTS_CATALOG.map((t) => {
+            const active = t.id === selectedTestId;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                data-testid={`perf-test-tab-${t.id}`}
+                onClick={(e) => {
+                  setSelectedTestId(t.id);
+                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }}
+                className={`min-h-[34px] px-3 py-1 rounded-xl border font-bold cursor-pointer transition-all whitespace-nowrap shrink-0 ${
+                  active
+                    ? 'bg-primary text-primary-foreground border-primary shadow-2xs'
+                    : 'bg-card hover:bg-layer-hover text-foreground border-line-2/70'
+                }`}
+              >
+                {t.code}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Active test procedure card + inputs */}

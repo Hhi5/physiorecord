@@ -386,7 +386,7 @@ export const CsvOnboardingModal: React.FC<CsvOnboardingModalProps> = ({
               }
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-card-stroke bg-layer hover:bg-layer-hover text-xs font-semibold text-foreground cursor-pointer"
             >
-              <Download className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+              <Download className="w-4 h-4 text-primary" />
               <span>{bi('تنزيل نموذج CSV', 'Download Sample CSV', 'داگرتنی قاڵبی CSV')}</span>
             </button>
 
@@ -394,14 +394,14 @@ export const CsvOnboardingModal: React.FC<CsvOnboardingModalProps> = ({
               type="button"
               data-testid="download-sample-xlsx-btn"
               onClick={handleDownloadSampleXlsx}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-card-stroke bg-layer hover:bg-layer-hover text-xs font-semibold text-foreground cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-xs font-semibold text-foreground cursor-pointer"
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>{bi('تنزيل نموذج XLSX', 'Download Sample XLSX', 'داگرتنی قاڵبی XLSX')}</span>
             </button>
           </div>
 
-          <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold cursor-pointer">
+          <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer">
             <Upload className="w-4 h-4" />
             <span>
               {bi(
@@ -421,9 +421,9 @@ export const CsvOnboardingModal: React.FC<CsvOnboardingModalProps> = ({
 
         {/* Loaded XLSX indicator */}
         {parsedMatrix !== null && uploadedFileName && (
-          <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-teal-500/10 border border-teal-500/30 text-xs text-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-primary/10 border border-primary/30 text-xs text-foreground">
             <div className="flex items-center gap-2 font-semibold">
-              <FileSpreadsheet className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+              <FileSpreadsheet className="w-4 h-4 text-primary shrink-0" />
               <span>
                 {`${bi('تمت قراءة ملف Excel:', 'Loaded Excel workbook:', 'فایلی Excel خوێندرایەوە:')} ${uploadedFileName} (${Math.max(
                   0,
@@ -437,7 +437,7 @@ export const CsvOnboardingModal: React.FC<CsvOnboardingModalProps> = ({
                 setParsedMatrix(null);
                 setUploadedFileName(null);
               }}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-teal-500/15 text-xs font-semibold text-teal-700 dark:text-teal-300 cursor-pointer"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-primary/15 text-xs font-semibold text-primary cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
               <span>{bi('مسح الملف', 'Clear File', 'سڕینەوەی فایل')}</span>
@@ -556,7 +556,7 @@ export const CsvOnboardingModal: React.FC<CsvOnboardingModalProps> = ({
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-                <Columns3 className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                <Columns3 className="w-4 h-4 text-primary" />
                 <span>
                   {bi(
                     'مطابقة أعمدة الملف مع حقول المريض',
@@ -568,7 +568,7 @@ export const CsvOnboardingModal: React.FC<CsvOnboardingModalProps> = ({
               <button
                 type="button"
                 onClick={() => setColumnMapping(autoGuessImportColumnMapping(headers))}
-                className="text-xs font-semibold text-teal-700 dark:text-teal-300 hover:underline cursor-pointer"
+                className="text-xs font-semibold text-primary hover:underline cursor-pointer"
               >
                 {bi('إعادة التخمين التلقائي', 'Auto-Guess Mapping', 'پێشبینیکردنی خۆکار')}
               </button>
@@ -628,7 +628,7 @@ export const CsvOnboardingModal: React.FC<CsvOnboardingModalProps> = ({
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <FileSpreadsheet className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                <FileSpreadsheet className="w-4 h-4 text-primary" />
                 <span>
                   {bi(
                     'نتائج الفحص التجريبي قبل الاستيراد (Dry-Run)',
@@ -639,7 +639,7 @@ export const CsvOnboardingModal: React.FC<CsvOnboardingModalProps> = ({
               </span>
 
               {dryRunReport.phoneNormalizedCount > 0 && (
-                <span className="px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 text-xs font-semibold">
+                <span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
                   {`${bi('توحيد', 'Normalized', 'ڕێکخستنی')} ${dryRunReport.phoneNormalizedCount} ${bi(
                     'رقم هاتف (+964)',
                     'phone(s) (+964)',
@@ -708,7 +708,7 @@ export const CsvOnboardingModal: React.FC<CsvOnboardingModalProps> = ({
                   data-testid="import-skip-duplicates-checkbox"
                   checked={skipDuplicates}
                   onChange={(e) => setSkipDuplicates(e.target.checked)}
-                  className="rounded border-card-stroke text-teal-600 focus:ring-teal-500"
+                  className="rounded border-card-stroke text-primary focus:ring-primary/35 accent-primary"
                 />
                 <span>
                   {bi(
@@ -777,7 +777,7 @@ export const CsvOnboardingModal: React.FC<CsvOnboardingModalProps> = ({
                         </td>
                         <td className="p-2">
                           {!row.isValid ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 font-medium">
+                            <span className="inline-flex items-center gap-1 text-xs text-rose-700 dark:text-rose-400 font-medium">
                               <AlertTriangle className="w-3 h-3" />
                               {bi(
                                 row.skipReasonAr || 'صف غير صالح',
@@ -786,12 +786,12 @@ export const CsvOnboardingModal: React.FC<CsvOnboardingModalProps> = ({
                               )}
                             </span>
                           ) : isDuplicate ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">
+                            <span className="inline-flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400 font-medium">
                               <AlertTriangle className="w-3 h-3" />
                               {getDuplicateBadgeText(row)}
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium">
+                            <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
                               <CheckCircle2 className="w-3 h-3" />
                               {bi('جاهز', 'Valid', 'دروستە')}
                             </span>
@@ -831,7 +831,7 @@ export const CsvOnboardingModal: React.FC<CsvOnboardingModalProps> = ({
             data-testid="commit-csv-import-btn"
             disabled={importing || rowsToCommit.length === 0}
             onClick={handleCommitImport}
-            className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
           >
             {importing
               ? bi(

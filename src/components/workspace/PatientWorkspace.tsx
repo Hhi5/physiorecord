@@ -124,12 +124,14 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({
     : sessions;
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-background transition-colors relative">
-      {/* Persistent Sticky Patient Banner across Desktop & Mobile (Never hidden in a drawer) */}
-      <PatientBanner patient={resolvedPatient} onBackToDirectory={onBackToDirectory} />
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-background-1 transition-colors relative">
+      {/* Sticky Patient Banner during active treatment session */}
+      {Boolean(activeSession) && (
+        <PatientBanner patient={resolvedPatient} onBackToDirectory={onBackToDirectory} />
+      )}
 
       {/* Single Patient Column Workspace */}
-      <div className="flex-1 flex flex-col overflow-hidden relative bg-background">
+      <div className="flex-1 flex flex-col overflow-hidden relative bg-transparent">
         {activeSession ? (
           <TreatmentSessionView
             session={activeSession}
@@ -161,7 +163,13 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({
             selectedEpisodeId={selectedEpisodeId}
             onSelectEpisode={(epId) => setSelectedEpisodeId(epId)}
             onOpenSession={(sessId) => setSelectedSessionId(sessId)}
-            onOpenNewSession={() => setIsSessionDrawerOpen(true)}
+            onOpenNewSession={() => {
+              if (activeEpisode) {
+                setIsSessionDrawerOpen(true);
+              } else {
+                setIsEpisodeDrawerOpen(true);
+              }
+            }}
             onOpenNewEpisode={() => setIsEpisodeDrawerOpen(true)}
             onBackToDirectory={onBackToDirectory}
             onPatientUpdated={loadPatientClinicalData}

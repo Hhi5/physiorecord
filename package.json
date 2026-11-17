@@ -47,6 +47,8 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/cli": "^8.6.2",
     "@playwright/test": "^1.65.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^22.14.0",

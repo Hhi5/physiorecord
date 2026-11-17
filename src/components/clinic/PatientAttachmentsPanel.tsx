@@ -109,9 +109,8 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
     useState<EncryptedAttachmentRecord | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  // Posture side-by-side comparator state
-  const [showPostureGrid, setShowPostureGrid] = useState(true);
-  const [showPlumbLine, setShowPlumbLine] = useState(true);
+  // Posture comparison modal state
+  const [showCompareModal, setShowCompareModal] = useState(false);
   const [studioTarget, setStudioTarget] = useState<EncryptedAttachmentRecord | null>(null);
   const [beforeId, setBeforeId] = useState<string>('');
   const [afterId, setAfterId] = useState<string>('');
@@ -195,9 +194,11 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
   }
 
   const resolvedBefore =
-    imageAttachments.find((a) => a.id === beforeId) || postureBeforeOptions[0];
+    imageAttachments.find((a) => a.id === beforeId) || postureBeforeOptions[0] || imageAttachments[0];
   const resolvedAfter =
-    imageAttachments.find((a) => a.id === afterId) || postureAfterOptions[0];
+    imageAttachments.find((a) => a.id === afterId) ||
+    postureAfterOptions[0] ||
+    (imageAttachments.length > 1 ? imageAttachments[1] : imageAttachments[0]);
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -299,14 +300,27 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowUploadForm((prev) => !prev)}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-colors cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          {bi('إضافة مرفق', 'Add Attachment', 'زیادکردنی هاوپێچ')}
-        </button>
+        <div className="flex items-center gap-2">
+          {imageAttachments.length >= 2 && (
+            <button
+              type="button"
+              data-testid="open-posture-compare-modal-btn"
+              onClick={() => setShowCompareModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-card-stroke bg-card hover:bg-layer-hover text-foreground text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+            >
+              <Columns2 className="w-4 h-4 text-primary" />
+              {bi('مقارنة الصور', 'Compare Photos', 'بەراوردکردنی وێنەکان')}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowUploadForm((prev) => !prev)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+          >
+            <Plus className="w-4 h-4" />
+            {bi('إضافة مرفق', 'Add Attachment', 'زیادکردنی هاوپێچ')}
+          </button>
+        </div>
       </div>
 
       {overTotalWarning && (
@@ -414,7 +428,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
                 type="file"
                 accept="image/*,.pdf,application/pdf"
                 onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                className="w-full text-xs text-foreground file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-teal-600/15 file:text-teal-700 dark:file:text-teal-300 file:font-semibold"
+                className="w-full text-xs text-foreground file:me-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-primary/15 file:text-primary file:font-semibold"
               />
             </div>
             <div>
@@ -446,7 +460,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5" />
               {saving
@@ -457,109 +471,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
         </form>
       )}
 
-      {/* Side-by-Side Posture Before / After Comparison */}
-      {imageAttachments.length >= 2 && (
-        <div className="p-4 rounded-xl bg-surface border border-card-divider space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-              <Columns2 className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-              <span>{t('attachments.postureCompare')}</span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                data-testid="toggle-posture-grid-btn"
-                onClick={() => setShowPostureGrid((v) => !v)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer ${
-                  showPostureGrid
-                    ? 'bg-teal-600/15 border-teal-500/40 text-teal-700 dark:text-teal-300'
-                    : 'bg-layer border-card-stroke text-muted-foreground-1'
-                }`}
-              >
-                <Grid3x3 className="w-3.5 h-3.5" />
-                {bi('شبكة التناظر', 'Alignment Grid', 'تۆڕی هاوسەنگی')}
-              </button>
-              <button
-                type="button"
-                data-testid="toggle-posture-plumb-line-btn"
-                onClick={() => setShowPlumbLine((v) => !v)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer ${
-                  showPlumbLine
-                    ? 'bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300'
-                    : 'bg-layer border-card-stroke text-muted-foreground-1'
-                }`}
-              >
-                <Ruler className="w-3.5 h-3.5" />
-                {bi('خط الشاقول', 'Plumb-Line', 'هێڵی شاقوڵی')}
-              </button>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {[
-              {
-                label: bi('قبل العلاج (الأساس)', 'Before / Baseline', 'پێش چارەسەر (بنەڕەت)'),
-                selectedId: resolvedBefore?.id || '',
-                onChange: setBeforeId,
-                item: resolvedBefore,
-              },
-              {
-                label: bi('بعد العلاج (إعادة التقييم)', 'After / Re-evaluation', 'دوای چارەسەر (دووبارە هەڵسەنگاندن)'),
-                selectedId: resolvedAfter?.id || '',
-                onChange: setAfterId,
-                item: resolvedAfter,
-              },
-            ].map((slot, idx) => (
-              <div key={idx} className="space-y-2">
-                <select
-                  aria-label={slot.label}
-                  value={slot.selectedId}
-                  onChange={(e) => slot.onChange(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg border border-card-stroke bg-layer text-xs text-foreground"
-                >
-                  {imageAttachments.map((img) => (
-                    <option key={img.id} value={img.id}>
-                      {img.capturedAt} — {img.title}
-                    </option>
-                  ))}
-                </select>
-                {slot.item && (
-                  <div className="relative rounded-xl overflow-hidden border border-card-stroke bg-slate-950 aspect-[4/3] flex items-center justify-center">
-                    <img
-                      src={slot.item.payloadDataUrl}
-                      alt={slot.item.title}
-                      className="max-h-full max-w-full object-contain"
-                    />
-                    {showPostureGrid && (
-                      <div
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 grid grid-cols-3 grid-rows-3"
-                      >
-                        {Array.from({ length: 9 }).map((_, cellIdx) => (
-                          <div
-                            key={cellIdx}
-                            className="border border-teal-400/35"
-                          />
-                        ))}
-                      </div>
-                    )}
-                    {showPlumbLine && (
-                      <div
-                        aria-hidden="true"
-                        data-testid="posture-plumb-line-overlay"
-                        className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 border-l-2 border-dashed border-amber-400/90"
-                      />
-                    )}
-                    <span className="absolute bottom-2 start-2 px-2 py-0.5 rounded bg-slate-950/75 text-white text-xs font-semibold">
-                      {slot.item.capturedAt}
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Attachments List */}
       {attachments.length === 0 ? (
@@ -630,7 +542,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
                         type="button"
                         data-testid={`open-photo-tools-btn-${att.id}`}
                         onClick={() => setStudioTarget(att)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-teal-600/10 hover:bg-teal-600/20 border border-teal-500/30 text-xs font-semibold text-teal-700 dark:text-teal-300 cursor-pointer transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 text-xs font-semibold text-primary cursor-pointer transition-colors"
                       >
                         <Ruler className="w-3.5 h-3.5" />
                         {bi('قياس الزوايا والقوام', 'Angle & Posture Tools', 'پێوانەی گۆشە و شێوەی وەستان')}
@@ -640,7 +552,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
                       type="button"
                       onClick={() => handleDownloadAttachment(att)}
                       aria-label={bi(`تنزيل ${att.title}`, `Download ${att.title}`, `داگرتنی ${att.title}`)}
-                      className="p-1.5 rounded-lg border border-card-stroke hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                      className="size-8 inline-flex items-center justify-center rounded-lg border border-card-stroke hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer shrink-0"
                     >
                       <Download className="w-3.5 h-3.5" />
                     </button>
@@ -662,7 +574,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
                       type="button"
                       onClick={() => setConfirmDeleteId(att.id)}
                       aria-label={bi(`حذف ${att.title}`, `Delete ${att.title}`, `سڕینەوەی ${att.title}`)}
-                      className="p-1.5 rounded-lg border border-card-stroke text-rose-600 hover:bg-rose-500/10 cursor-pointer"
+                      className="size-8 inline-flex items-center justify-center rounded-lg border border-card-stroke text-rose-600 hover:bg-rose-500/10 cursor-pointer shrink-0"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -672,6 +584,74 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
             );
           })}
         </div>
+      )}
+
+      {/* Photo Comparison Modal Dialog */}
+      {showCompareModal && (
+        <ModalDialog
+          isOpen={showCompareModal}
+          onOpenChange={(open) => {
+            if (!open) setShowCompareModal(false);
+          }}
+          title={bi('مقارنة الصور (قبل وبعد العلاج)', 'Photo Comparison (Before & After)', 'بەراوردکردنی وێنەکان (پێش و دوای چارەسەر)')}
+          subtitle={bi('اختر الصور المراد مقارنتها للعرض السريري المباشر', 'Select photos to compare side-by-side', 'وێنەکان هەڵبژێرە بۆ بەراوردکردنی ڕاستەوخۆ')}
+          size="xl"
+          closeLabel={bi('إغلاق', 'Close', 'داخستن')}
+        >
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                {
+                  label: bi('الصورة الأولى (الأساس / قبل العلاج)', 'Photo 1 (Baseline / Before)', 'وێنەی یەکەم (بنەڕەت / پێش چارەسەر)'),
+                  selectedId: resolvedBefore?.id || '',
+                  onChange: setBeforeId,
+                  item: resolvedBefore,
+                },
+                {
+                  label: bi('الصورة الثانية (المقارنة / بعد العلاج)', 'Photo 2 (Comparison / After)', 'وێنەی دووەم (بەراورد / دوای چارەسەر)'),
+                  selectedId: resolvedAfter?.id || '',
+                  onChange: setAfterId,
+                  item: resolvedAfter,
+                },
+              ].map((slot, idx) => (
+                <div key={idx} className="space-y-2 flex flex-col">
+                  <label className="block text-xs font-semibold text-foreground">
+                    {slot.label}
+                  </label>
+                  <select
+                    aria-label={slot.label}
+                    value={slot.selectedId}
+                    onChange={(e) => slot.onChange(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-card-stroke bg-layer text-xs text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    {imageAttachments.map((img) => (
+                      <option key={img.id} value={img.id}>
+                        {img.capturedAt} — {img.title}
+                      </option>
+                    ))}
+                  </select>
+                  {slot.item ? (
+                    <div className="relative rounded-2xl overflow-hidden border border-card-stroke bg-slate-950 min-h-[300px] max-h-[55vh] flex items-center justify-center p-2 shadow-inner">
+                      <img
+                        src={slot.item.payloadDataUrl}
+                        alt={slot.item.title}
+                        className="max-h-[50vh] max-w-full object-contain rounded-xl"
+                      />
+                      <div className="absolute bottom-3 start-3 end-3 flex items-center justify-between pointer-events-none px-2.5 py-1.5 rounded-lg bg-slate-950/80 backdrop-blur-xs text-white text-xs">
+                        <span className="truncate font-semibold">{slot.item.title}</span>
+                        <span className="shrink-0 tabular-nums text-slate-300 font-mono ms-2">{slot.item.capturedAt}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-64 rounded-2xl border border-dashed border-card-stroke flex items-center justify-center text-xs text-muted-foreground-1">
+                      {bi('لم يتم اختيار صورة', 'No photo selected', 'هیچ وێنەیەک دیاری نەکراوە')}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </ModalDialog>
       )}
 
       {/* Lightbox / PDF Viewer Modal */}
@@ -719,6 +699,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
             isOpen={Boolean(studioTarget)}
             onClose={() => setStudioTarget(null)}
             attachment={studioTarget}
+            onSavedCopy={(updated) => setStudioTarget(updated)}
           />
         </Suspense>
       )}

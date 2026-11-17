@@ -1243,7 +1243,8 @@ export class SessionService {
     database: PhysioRecordDatabase = defaultDb,
     expectedSessionUpdatedAt?: string,
     expectedSoapUpdatedAt?: string,
-    legacyReviewConfirmed = false
+    legacyReviewConfirmed = false,
+    options?: { allowIncompleteSoap?: boolean }
   ): Promise<SessionRecord> {
     if (!therapistName?.trim()) {
       throw new Error('اسم المعالج المسجّل (Recorded by) إلزامي لاعتماد السجل السريري.');
@@ -1340,19 +1341,20 @@ export class SessionService {
         );
       }
 
+      const enforceRequiredFields = !options?.allowIncompleteSoap;
       const sub = soap.data.subjective;
       const hasPrePain =
         sub?.painNrsScore !== undefined || sub?.painNotRecorded === true;
-      // Finding 4: Removed soapSchemaVersion === 1 bypass; post-session pain or explicit postPainNotRecorded is always required.
+      // Finding 4: Removed soapSchemaVersion === 1 bypass when strict validation is requested.
       const hasPostPain =
         sub?.postSessionPainNrs !== undefined || sub?.postPainNotRecorded === true;
 
-      if (!hasPrePain) {
+      if (enforceRequiredFields && !hasPrePain) {
         throw new Error(
           'يجب تسجيل شدة الألم قبل الجلسة (أو تحديد "لم يُسجّل") قبل اعتماد وقفل الجلسة.'
         );
       }
-      if (!hasPostPain) {
+      if (enforceRequiredFields && !hasPostPain) {
         throw new Error(
           'يجب تسجيل شدة الألم بعد الجلسة (أو تحديد "لم يُسجّل") قبل اعتماد وقفل الجلسة.'
         );
@@ -1384,19 +1386,19 @@ export class SessionService {
       const isExplicitlyNotAssessed =
         obj?.status === 'not_assessed' && Boolean(obj?.notAssessedReason?.trim());
 
-      if (!hasObjectiveFindings && !isExplicitlyNotAssessed) {
+      if (enforceRequiredFields && !hasObjectiveFindings && !isExplicitlyNotAssessed) {
         throw new Error(
           'يجب توثيق تدخل علاجي واحد على الأقل (تمرين، علاج يدوي، جهاز، أو ملخص تدخلات/ملاحظات موضوعية) قبل اعتماد وقفل الجلسة.'
         );
       }
 
-      // Check Axis A (Assessment): Clinical Impression and Progress Status are mandatory
-      if (!soap.data.assessment?.clinicalImpressionCurrent?.trim()) {
+      // Check Axis A (Assessment): Clinical Impression and Progress Status
+      if (enforceRequiredFields && !soap.data.assessment?.clinicalImpressionCurrent?.trim()) {
         throw new Error(
           'الانطباع والتفسير السريري (Clinical Impression) إلزامي في محور A لاعتماد الجلسة.'
         );
       }
-      if (!soap.data.assessment?.progressStatus) {
+      if (enforceRequiredFields && !soap.data.assessment?.progressStatus) {
         throw new Error(
           'تحديد مسار تقدم الحالة (Progress Status) إلزامي في محور A لاعتماد الجلسة.'
         );

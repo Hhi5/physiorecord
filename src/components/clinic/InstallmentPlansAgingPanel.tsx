@@ -22,6 +22,7 @@ import {
   MoneyInput,
   Num,
 } from '../ui/Primitives';
+import { ModalDialog } from '../ui/Dialog';
 import type { PatientRecord } from '../../types/clinical';
 import type {
   FinancialInvoiceIQD,
@@ -84,15 +85,6 @@ export const InstallmentPlanBuilderModal: React.FC<
       );
     }
   }, [invoice, useArabicScheduleLabels]);
-
-  useEffect(() => {
-    if (!invoice) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [invoice, onClose]);
 
   if (!invoice) return null;
 
@@ -200,48 +192,40 @@ export const InstallmentPlanBuilderModal: React.FC<
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="inst-builder-modal-title"
-      className="fixed inset-0 z-50 bg-slate-950/55 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+    <ModalDialog
+      isOpen={Boolean(invoice)}
+      onOpenChange={(open) => {
+        if (!open) onClose();
       }}
-    >
-      <form
-        onSubmit={handleSave}
-        dir={isRtl ? 'rtl' : 'ltr'}
-        className="w-full max-w-3xl max-h-[90vh] rounded-2xl bg-card border border-card-line shadow-2xl flex flex-col overflow-hidden text-xs"
-      >
-        <div className="px-5 py-4 border-b border-card-divider bg-muted/40 flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 id="inst-builder-modal-title" className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
-              <CalendarClock className="size-4 text-primary shrink-0" />
-              <span>
-                {bi(
-                  'إعداد وتعديل خطة الأقساط',
-                  'Installment Plan Builder',
-                  'ڕێکخستن و گۆڕینی پلانی قیستەکان'
-                )}
-              </span>
-            </h2>
-            <p className="text-xs text-muted-foreground-1 mt-0.5 truncate">
-              <bdi dir="ltr">{invoice.invoiceNumber}</bdi> · {invoice.patientName} ·{' '}
-              {bi(invoice.titleAr, invoice.titleEn)}
-            </p>
+      title={
+        <div className="min-w-0">
+          <div className="text-sm sm:text-base font-bold text-primary-foreground flex items-center gap-2">
+            <CalendarClock className="size-4 text-primary-foreground shrink-0" />
+            <span>
+              {bi(
+                'إعداد وتعديل خطة الأقساط',
+                'Installment Plan Builder',
+                'ڕێکخستن و گۆڕینی پلانی قیستەکان'
+              )}
+            </span>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={bi('إغلاق', 'Close', 'داخستن')}
-            className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover cursor-pointer"
-          >
-            <X className="size-4" />
-          </button>
+          <p className="text-xs text-primary-foreground/85 font-normal mt-0.5 truncate">
+            <bdi dir="ltr">{invoice.invoiceNumber}</bdi> · {invoice.patientName} ·{' '}
+            {bi(invoice.titleAr, invoice.titleEn)}
+          </p>
         </div>
-
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+      }
+      ariaLabel={bi(
+        'إعداد وتعديل خطة الأقساط',
+        'Installment Plan Builder',
+        'ڕێکخستن و گۆڕینی پلانی قیستەکان'
+      )}
+      closeLabel={bi('إغلاق', 'Close', 'داخستن')}
+      size="lg"
+      dir={isRtl ? 'rtl' : 'ltr'}
+    >
+      <form onSubmit={handleSave} className="space-y-4 text-xs">
+        <div className="space-y-4">
           {/* Invoice Balance Summary */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <div className="p-3 rounded-xl bg-surface border border-line-2">
@@ -470,12 +454,12 @@ export const InstallmentPlanBuilderModal: React.FC<
               disabled={!isBalanced || hasInvalidRow}
               className="py-2 px-5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold shadow-xs cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed"
             >
-              {bi('حفظ خطة الأقساط', 'Save Installment Plan', 'پاشەکەوتکردنی پلانی قیست')}
+              <span>{bi('حفظ خطة الأقساط', 'Save Installment Plan', 'پاشەکەوتکردنی پلانی قیست')}</span>
             </button>
           </div>
         </div>
       </form>
-    </div>
+    </ModalDialog>
   );
 };
 
@@ -601,7 +585,7 @@ export const InstallmentPlansAgingPanel: React.FC<
   const renderRowStatusBadge = (row: InstallmentAgingRow) => {
     if (row.overdueDays > 0) {
       return (
-        <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 font-bold text-xs inline-flex items-center gap-1 whitespace-nowrap">
+        <span className="text-rose-700 dark:text-rose-400 font-bold text-xs inline-flex items-center gap-1 whitespace-nowrap">
           <AlertCircle className="size-3.5" />
           <span>
             {bi(
@@ -614,7 +598,7 @@ export const InstallmentPlansAgingPanel: React.FC<
       );
     }
     return (
-      <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold text-xs inline-flex items-center gap-1 whitespace-nowrap">
+      <span className="text-emerald-700 dark:text-emerald-400 font-semibold text-xs inline-flex items-center gap-1 whitespace-nowrap">
         <CheckCircle2 className="size-3.5" />
         <span>{bi('مجدول / قادم', 'Scheduled', 'خشتەکراو / داهاتوو')}</span>
       </span>

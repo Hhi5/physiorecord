@@ -562,39 +562,16 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
       dir={isRtl ? 'rtl' : 'ltr'}
       maxWidthClassName="max-w-2xl"
       className="bg-card border-card-line"
+      title={bi('النسخ الاحتياطي والاستعادة', 'Backup & Restore', 'کۆپی یەدەگ و گەڕاندنەوە')}
+      subtitle={bi(
+        'تصدير واستعادة السجلات السريرية مشفرة بالكامل (.ptbackup)',
+        'Export & restore fully encrypted clinical archives (.ptbackup)',
+        'ناردنەدەرەوە و گەڕاندنەوەی تۆمارە کلینیکییە نهێنیکراوەکان (.ptbackup)'
+      )}
       ariaLabel={bi('النسخ الاحتياطي والاستعادة', 'Backup & Restore', 'کۆپی یەدەگ و گەڕاندنەوە')}
       closeLabel={bi('إغلاق نافذة النسخ الاحتياطي', 'Close backup modal', 'داخستنی پەنجەرەی کۆپی یەدەگ')}
       bodyClassName="flex-1 min-h-0 flex flex-col overflow-hidden"
     >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-card-divider flex items-center justify-between bg-muted/40 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
-              <Database className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-foreground">
-                {bi('النسخ الاحتياطي والاستعادة', 'Backup & Restore', 'کۆپی یەدەگ و گەڕاندنەوە')}
-              </h2>
-              <p className="text-xs text-muted-foreground-1">
-                {bi(
-                  'تصدير واستعادة السجلات السريرية مشفرة بالكامل (.ptbackup)',
-                  'Export & restore fully encrypted clinical archives (.ptbackup)',
-                  'ناردنەدەرەوە و گەڕاندنەوەی تۆمارە کلینیکییە نهێنیکراوەکان (.ptbackup)'
-                )}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={bi('إغلاق نافذة النسخ الاحتياطي', 'Close backup modal', 'داخستنی پەنجەرەی کۆپی یەدەگ')}
-            className="min-w-[36px] min-h-[36px] rounded-lg flex items-center justify-center text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
         {/* Tabs Bar */}
         <div role="tablist" aria-label={bi('أقسام النسخ الاحتياطي والاستعادة', 'Backup & Restore Tabs')} className="flex border-b border-card-divider bg-card px-6 pt-3">
           <button
@@ -634,8 +611,8 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
           {/* TAB 1: EXPORT */}
           {activeTab === 'export' && (
             <div>
-              <div className="p-4 bg-amber-500/10 border border-amber-500/35 rounded-xl text-foreground text-xs leading-relaxed mb-5 flex items-start gap-2.5">
-                <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
+              <div className="p-4 bg-card shadow-2xs rounded-xl text-foreground text-xs leading-relaxed mb-5 flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                 <p className="text-foreground font-medium">
                   {bi(
                     'تنبيه أمني: النسخة الاحتياطية محمية بكلمة المرور التي تختارها فقط. إذا فقدتها، لن تتمكن من فتح النسخة.',
@@ -646,15 +623,15 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
               </div>
 
               {exportError && (
-                <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2 mb-4">
+                <div className="p-3.5 bg-surface/75 rounded-xl text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2 mb-4">
                   <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-600 dark:text-rose-400" />
                   <span>{exportError}</span>
                 </div>
               )}
 
               {exportSuccess && (
-                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-xl text-emerald-800 dark:text-emerald-300 text-xs space-y-2 mb-4">
-                  <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-200">
+                <div className="p-4 bg-surface/75 rounded-xl text-emerald-700 dark:text-emerald-400 text-xs space-y-2 mb-4">
+                  <div className="flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-400">
                     <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>
                       {bi(
@@ -665,7 +642,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                     </span>
                   </div>
                   {exportVerification && (
-                    <div className="p-2.5 rounded-lg bg-surface/80 border border-emerald-200/80 dark:border-emerald-800 space-y-1 text-foreground">
+                    <div className="p-2.5 rounded-lg bg-surface/80 space-y-1 text-foreground">
                       <p className="font-semibold">
                         {bi(
                           'تقرير التحقق التلقائي بعد التصدير:',
@@ -898,14 +875,14 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
           {activeTab === 'restore' && (
             <div>
               {restoreError && (
-                <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2 mb-4">
+                <div className="p-3.5 bg-surface/75 rounded-xl text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2 mb-4">
                   <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-600 dark:text-rose-400" />
                   <span>{restoreError}</span>
                 </div>
               )}
 
               {restoreSuccess && (
-                <div className="p-5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-xl text-emerald-900 dark:text-emerald-200 text-xs space-y-3 mb-4 text-center">
+                <div className="p-5 bg-card shadow-2xs rounded-xl text-foreground text-xs space-y-3 mb-4 text-center">
                   <CheckCircle className="w-8 h-8 text-emerald-600 dark:text-emerald-400 mx-auto" />
                   <h3 className="font-bold text-sm">
                     {restoredSummary?.mode === 'merge'
@@ -920,7 +897,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                           'داتابەیس بە سەرکەوتوویی گەڕێنرایەوە و نوێکرایەوە!'
                         )}
                   </h3>
-                  <p className="text-emerald-700 dark:text-emerald-300 leading-relaxed">
+                  <p className="text-muted-foreground-1 leading-relaxed">
                     {bi(
                       'تم توليد مفتاح بيانات تشغيلي جديد تماماً (Non-Extractable DEK)، وإعادة تشفير كافة السجلات برقم إصدار مفتاح جديد (dekVersion)، وتثبيت استهلاك العداد المرحلي الفعلي (Staging Counter)، وتفعيل الخزينة بنجاح.',
                       'Generated a brand-new non-extractable DEK, re-encrypted all records under a new dekVersion, committed the staging counter, and unlocked the vault.',
@@ -929,8 +906,8 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                   </p>
 
                   {restoredSummary && restoredSummary.mode === 'merge' && (
-                    <div className="p-3 bg-surface border border-emerald-200 dark:border-emerald-900 rounded-xl text-foreground text-xs text-start space-y-2">
-                      <div className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-2">
+                    <div className="p-3 bg-surface rounded-xl text-foreground text-xs text-start space-y-2">
+                      <div className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center justify-between gap-2">
                         <span>
                           {bi(
                             'تقرير الدمج السريري (Merge Report)',
@@ -992,7 +969,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                   )}
 
                   {emergencyRecoverySnapshotId && (
-                    <div className="p-3 bg-surface border border-emerald-200 dark:border-emerald-900 rounded-xl text-foreground text-xs text-start space-y-1.5">
+                    <div className="p-3 bg-surface/75 rounded-xl text-foreground text-xs text-start space-y-1.5">
                       <p className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
                         <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         <span>
@@ -1024,7 +1001,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                           <strong>{bi('التصدير الخارجي:', 'External Export:', 'ناردنەدەرەوەی دەرەکی:')}</strong> {externalSaveMethod}.
                         </p>
                       )}
-                      <p className="text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 p-2 rounded-lg border border-amber-200 dark:border-amber-900">
+                      <p className="text-xs text-amber-700 dark:text-amber-400 bg-surface/75 p-2 rounded-lg">
                         {bi(
                           'تنبيه أمني: كلمة المرور لم تُحفظ في المتصفح نهائياً. يرجى استخدام كلمة مرور التعافي التي عينتها لفك تشفير هذه النسخة في حال الرجوع إليها.',
                           'Security notice: This password is never stored in the browser. Use your emergency recovery password to decrypt this snapshot if needed.',
@@ -1075,8 +1052,8 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
               {!restoreSuccess && !previewSummary && (
                 /* Step A: Select File and Enter Password to Preview */
                 <form onSubmit={handleInspectPreview} className="space-y-4">
-                  <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-xl text-amber-900 dark:text-amber-200 text-xs leading-relaxed space-y-1">
-                    <span className="font-bold">
+                  <div className="p-4 bg-card shadow-2xs rounded-xl text-foreground text-xs leading-relaxed space-y-1">
+                    <span className="font-bold text-amber-700 dark:text-amber-400">
                       {bi(
                         'المرحلة الأولى: فحص ومعاينة حزمة النسخ (Pre-Inspection)',
                         'Step 1: Inspect & Preview Backup Package (Pre-Inspection)',
@@ -1185,8 +1162,8 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                       onClick={() => setRestoreMode('replace')}
                       className={`p-3.5 rounded-xl border text-start transition-all cursor-pointer space-y-1 ${
                         restoreMode === 'replace'
-                          ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-400 dark:border-rose-700 ring-2 ring-rose-500/20'
-                          : 'bg-surface border-card-line hover:border-rose-300'
+                          ? 'bg-surface/90 border-primary text-foreground'
+                          : 'bg-surface border-card-line hover:border-layer-line'
                       }`}
                     >
                       <div className="font-bold text-foreground flex items-center gap-1.5">
@@ -1239,8 +1216,8 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
 
                   {/* Mode Notice Box */}
                   {restoreMode === 'replace' ? (
-                    <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border-2 border-rose-300 dark:border-rose-900 rounded-xl text-rose-900 dark:text-rose-200 text-xs space-y-2">
-                      <div className="flex items-center gap-2 font-bold text-rose-800 dark:text-rose-300 text-sm">
+                    <div className="p-4 bg-card shadow-2xs rounded-xl text-rose-700 dark:text-rose-400 text-xs space-y-2">
+                      <div className="flex items-center gap-2 font-bold text-rose-700 dark:text-rose-400 text-sm">
                         <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 flex-shrink-0" />
                         <span>
                           {bi(
@@ -1348,7 +1325,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                               : bi('لا توجد سجلات بعد', 'No records yet', 'هێشتا هیچ تۆمارێک نییە')}
                           </strong>
                         </p>
-                        <p className="text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 p-2 rounded-lg border border-amber-200 dark:border-amber-900 mt-2">
+                        <p className="text-xs text-amber-700 dark:text-amber-400 bg-surface/75 p-2 rounded-lg mt-2">
                           {bi(
                             'سيتم حفظ نسخة تعافٍ تلقائية (Safety Backup) للبيانات الحالية قبل التنفيذ.',
                             'An automatic Safety Backup of existing data will be saved before execution.',
@@ -1511,15 +1488,15 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                     </div>
 
                     {/* Explicit Acknowledgment of External Recovery */}
-                    <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900">
+                    <div className="p-3 bg-card shadow-2xs rounded-xl">
                       <label className="flex items-start gap-2.5 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={acknowledgedExternalRecovery}
                           onChange={(e) => setAcknowledgedExternalRecovery(e.target.checked)}
-                          className="w-4 h-4 mt-0.5 rounded text-amber-600 focus:ring-amber-500 border-amber-300"
+                          className="w-4 h-4 mt-0.5 rounded text-primary focus:ring-primary border-layer-line cursor-pointer"
                         />
-                        <span className="text-xs font-bold text-amber-900 dark:text-amber-300 leading-relaxed">
+                        <span className="text-xs font-bold text-amber-700 dark:text-amber-400 leading-relaxed">
                           {bi(
                             'أقر بأنني قمت بضبط كلمة مرور نسخة التعافي الطارئة وسأقوم بتأكيد حفظ الملف الخارجي (.ptbackup)، وأدرك أن التخزين الداخلي للمتصفح لا يحمي من مسح بيانات الموقع أو حذف المتصفح.',
                             'I confirm that I set the emergency recovery password, will save the external (.ptbackup) file, and understand that browser storage does not protect against clearing site data or deleting the browser.',

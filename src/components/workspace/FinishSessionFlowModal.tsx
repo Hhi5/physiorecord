@@ -45,6 +45,8 @@ interface FinishSessionFlowModalProps {
   session: SessionRecord;
   episodeTitle?: string;
   completenessReport?: NoteCompletenessReport | null;
+  advisoryWarnings?: string[];
+  finalizeError?: string | null;
   onFinalizeStep: () => Promise<boolean>;
   onFinishCompleted: (undoSnapshot: FinishUndoSnapshot, summaryLabelAr: string, summaryLabelEn: string) => void;
 }
@@ -55,6 +57,8 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
   session,
   episodeTitle,
   completenessReport,
+  advisoryWarnings = [],
+  finalizeError = null,
   onFinalizeStep,
   onFinishCompleted,
 }) => {
@@ -219,11 +223,12 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
       const ok = await onFinalizeStep();
       if (!ok) {
         setStepError(
-          bi(
-            'تعذر الاعتماد — يرجى إكمال الحقول الإلزامية للملاحظة أولاً.',
-            'Cannot finalize — please complete required clinical fields first.',
-            'ناتوانرێت پەسەند بکرێت — تکایە سەرەتا خانە پێویستەکانی تۆمار تەواو بکە.'
-          )
+          finalizeError ||
+            bi(
+              'تعذر اعتماد الجلسة حالياً — يرجى التحقق من التنبيه أعلاه أو المحاولة مجدداً.',
+              'Could not finalize session right now — please check any warning above or retry.',
+              'ناتوانرێت دانیشتن پەسەند بکرێت لە ئێستادا — تکایە دووبارە هەوڵبدەرەوە.'
+            )
         );
         return;
       }
@@ -437,7 +442,7 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
     >
       <div className="space-y-4 text-xs">
         {/* Stepper Indicator */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {[
             { num: 1 as const, ar: '1. اعتماد الملاحظة', en: '1. Sign Note', ckb: '١. پەسەندکردنی تۆمار', icon: Lock },
             { num: 2 as const, ar: '2. التحصيل المالي', en: '2. Payment', ckb: '٢. پارەوەرگرتن', icon: Banknote },
@@ -449,12 +454,12 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
             return (
               <div
                 key={item.num}
-                className={`px-3 py-2 rounded-xl border flex items-center gap-2 font-bold ${
+                className={`px-3 py-2 rounded-xl flex items-center gap-2 font-bold ${
                   active
-                    ? 'bg-primary/10 border-primary text-primary'
+                    ? 'bg-primary/10 text-primary'
                     : done
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
-                    : 'bg-surface border-line-2 text-muted-foreground-1'
+                    ? 'bg-surface text-emerald-700 dark:text-emerald-400'
+                    : 'bg-surface text-muted-foreground-1'
                 }`}
               >
                 <Icon className="size-4 shrink-0" />
@@ -467,10 +472,10 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
         {/* STEP 1: Confirm Finalize */}
         {step === 1 && (
           <div className="space-y-4">
-            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
-              <ShieldAlert className="size-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="p-4 rounded-2xl bg-surface/85 flex items-start gap-3">
+              <ShieldAlert className="size-5 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <p className="font-extrabold text-foreground">
+                <p className="font-extrabold text-amber-800 dark:text-amber-300">
                   {bi(
                     'تأكيد الاعتماد النهائي (ختم تكامل دائم SHA-256)',
                     'Confirm Permanent Sign & Lock (SHA-256 Integrity Seal)',
@@ -487,24 +492,44 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
               </div>
             </div>
 
+            {advisoryWarnings.length > 0 && (
+              <div className="p-3.5 rounded-2xl bg-surface/75 space-y-1.5">
+                <div className="flex items-center gap-2 font-extrabold text-amber-700 dark:text-amber-300 text-xs">
+                  <AlertCircle className="size-4 shrink-0" />
+                  <span>
+                    {bi(
+                      'تنبيه إرشادي (غير مانع للاعتماد) — يفضّل إكمال الحقول التالية:',
+                      'Advisory Notice (Non-Blocking) — optional recommended fields:',
+                      'ئاگاداری ڕێنمایی (ڕێگر نییە) — پێشنیار دەکرێت ئەم خانانە پڕبکرێنەوە:'
+                    )}
+                  </span>
+                </div>
+                <ul className="list-disc list-inside space-y-0.5 text-xs text-muted-foreground-1 font-medium">
+                  {advisoryWarnings.map((w) => (
+                    <li key={w}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {completenessReport && (
               <div
                 data-testid="note-completeness-checklist"
-                className="p-3.5 rounded-xl bg-surface border border-line-2 space-y-2"
+                className="p-3.5 rounded-2xl bg-surface/75 space-y-2"
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-bold text-foreground">
                     {bi(
-                      'فحص اكتمال الملاحظة (غير مانع للاعتماد):',
-                      'Note Completeness Check (Non-Blocking):',
-                      'پشکنینی تەواوبوونی تۆمار (ڕێگر نییە لە پەسەندکردن):'
+                      'فحص اكتمال الملاحظة (تنبيه فقط — غير مانع):',
+                      'Note Completeness Check (Advisory Only):',
+                      'پشکنینی تەواوبوونی تۆمار (تەنها ئاگاداری):'
                     )}
                   </span>
                   <span
-                    className={`px-2 py-0.5 rounded-full font-bold ${
+                    className={`font-extrabold ${
                       completenessReport.allComplete
-                        ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300'
-                        : 'bg-amber-500/12 text-amber-800 dark:text-amber-300'
+                        ? 'text-emerald-700 dark:text-emerald-300'
+                        : 'text-amber-700 dark:text-amber-300'
                     }`}
                   >
                     {completenessReport.allComplete
@@ -522,10 +547,10 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
                       key={item.id}
                       data-testid={`completeness-item-${item.id}`}
                       data-completed={String(item.completed)}
-                      className={`px-2.5 py-1.5 rounded-lg border flex items-center gap-2 ${
+                      className={`px-2.5 py-1.5 rounded-xl bg-card/80 flex items-center gap-2 ${
                         item.completed
-                          ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-800 dark:text-emerald-300'
-                          : 'bg-amber-500/10 border-amber-500/25 text-amber-900 dark:text-amber-200'
+                          ? 'text-emerald-700 dark:text-emerald-300'
+                          : 'text-amber-700 dark:text-amber-300'
                       }`}
                     >
                       {item.completed ? (
@@ -542,10 +567,10 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
               </div>
             )}
 
-            {stepError && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 font-semibold">
-                {stepError}
-              </div>
+            {(stepError || finalizeError) && (
+              <p className="px-1 text-xs text-rose-700 dark:text-rose-300 font-bold">
+                {finalizeError || stepError}
+              </p>
             )}
 
             <div className="flex justify-end gap-2">
@@ -567,7 +592,7 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
                 <span>
                   {isFinalizing
                     ? bi('جاري الختم...', 'Sealing...', 'مۆرکردن...')
-                    : completenessReport && !completenessReport.allComplete
+                    : (completenessReport && !completenessReport.allComplete) || advisoryWarnings.length > 0
                     ? bi('اعتماد على أي حال (Finalize anyway)', 'Finalize anyway', 'بە هەر حاڵ پەسەندی بکە')
                     : bi('تأكيد الاعتماد والمتابعة', 'Confirm Seal & Continue', 'پشتڕاستکردنەوە و بەردەوامبوون')}
                 </span>
@@ -581,7 +606,7 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
         {step === 2 && (
           <div className="space-y-3.5">
             {activePackage && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-2">
+              <div className="p-3 rounded-xl bg-surface/75 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Package className="size-4 text-emerald-600 dark:text-emerald-400" />
                   <div>
@@ -613,10 +638,10 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
                     setBillingMode('package_deduct');
                     setPaymentAmount(0);
                   }}
-                  className={`py-2 px-2 rounded-xl border text-xs font-bold cursor-pointer ${
+                  className={`py-2 px-2 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
                     billingMode === 'package_deduct'
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-layer text-foreground border-layer-line'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-layer text-foreground hover:bg-layer-hover'
                   }`}
                 >
                   {bi('خصم من الباقة', 'Use Package', 'لە کۆرس داببڕە')}
@@ -630,10 +655,10 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
                     setBillingMode('existing_invoice');
                     setPaymentAmount(inv ? inv.balanceDueIQD : 0);
                   }}
-                  className={`py-2 px-2 rounded-xl border text-xs font-bold cursor-pointer ${
+                  className={`py-2 px-2 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
                     billingMode === 'existing_invoice'
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-layer text-foreground border-layer-line'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-layer text-foreground hover:bg-layer-hover'
                   }`}
                 >
                   {bi('تسديد متبقي', 'Pay Balance', 'دانی پارەی ماوە')}
@@ -644,10 +669,10 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
                 onClick={() => {
                   setBillingMode('new_charge');
                 }}
-                className={`py-2 px-2 rounded-xl border text-xs font-bold cursor-pointer ${
+                className={`py-2 px-2 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
                   billingMode === 'new_charge'
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-layer text-foreground border-layer-line'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-layer text-foreground hover:bg-layer-hover'
                 }`}
               >
                 {bi('فاتورة / قبض جديد', 'New Charge', 'پسوولە / وەرگرتنی نوێ')}
@@ -659,10 +684,10 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
                   setPaymentAmount(0);
                   setChargeTotal(0);
                 }}
-                className={`py-2 px-2 rounded-xl border text-xs font-bold cursor-pointer ${
+                className={`py-2 px-2 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
                   billingMode === 'none'
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-layer text-foreground border-layer-line'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-layer text-foreground hover:bg-layer-hover'
                 }`}
               >
                 {bi('تخطي الدفع الآن', 'Skip Payment', 'تێپەڕاندنی پارەدان ئێستا')}
@@ -670,7 +695,7 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
             </div>
 
             {billingMode === 'new_charge' && (
-              <div className="space-y-3 p-3.5 rounded-xl bg-surface border border-line-2">
+              <div className="space-y-3 p-3.5 rounded-xl bg-surface/75">
                 {services.length > 0 && (
                   <div>
                     <label className="text-xs font-bold text-foreground block mb-1">
@@ -697,7 +722,7 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
                   </div>
                 )}
 
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
                   {(
                     [
                       { id: 'single_session', ar: 'جلسة مفردة', en: 'Single Session', ckb: 'دانیشتنی تاک' },
@@ -709,10 +734,10 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
                       key={t.id}
                       type="button"
                       onClick={() => setInvoiceType(t.id)}
-                      className={`py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                      className={`py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
                         invoiceType === t.id
-                          ? 'bg-primary/15 text-primary border-primary/40'
-                          : 'bg-layer text-muted-foreground-1 border-layer-line'
+                          ? 'bg-primary/15 text-primary'
+                          : 'bg-layer text-muted-foreground-1 hover:bg-layer-hover'
                       }`}
                     >
                       {bi(t.ar, t.en, t.ckb)}
@@ -744,7 +769,7 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
             )}
 
             {billingMode === 'existing_invoice' && (
-              <div className="p-3.5 rounded-xl bg-surface border border-line-2">
+              <div className="p-3.5 rounded-xl bg-surface/75">
                 <label className="text-xs font-bold text-foreground block mb-1">
                   {bi('المبلغ المحصّل على المتبقي:', 'Payment Collected:', 'بڕی پارەی وەرگیراو لەسەر ماوە:')}
                 </label>
@@ -770,10 +795,10 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
                       key={m.id}
                       type="button"
                       onClick={() => setPaymentMethod(m.id)}
-                      className={`py-2 px-2 rounded-xl border text-xs font-bold cursor-pointer ${
+                      className={`py-2 px-2 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
                         paymentMethod === m.id
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-layer text-foreground border-layer-line'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-layer text-foreground hover:bg-layer-hover'
                       }`}
                     >
                       {bi(m.ar, m.en, m.ckb)}
@@ -813,12 +838,12 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
         {/* STEP 3: Book Next Visit */}
         {step === 3 && (
           <div className="space-y-3.5">
-            <label className="flex items-center gap-2.5 p-3 rounded-xl bg-surface border border-line-2 cursor-pointer">
+            <label className="flex items-center gap-2.5 p-3 rounded-xl bg-surface/75 cursor-pointer">
               <input
                 type="checkbox"
                 checked={bookNextVisit}
                 onChange={(e) => setBookNextVisit(e.target.checked)}
-                className="size-4 accent-teal-600 rounded cursor-pointer"
+                className="size-4 accent-primary rounded cursor-pointer"
               />
               <div>
                 <span className="font-bold text-foreground block">
@@ -837,7 +862,7 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
             </label>
 
             {bookNextVisit && (
-              <div className="p-3.5 rounded-xl bg-surface border border-line-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3.5 rounded-xl bg-surface/75 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-foreground block mb-1">
                     {bi('تاريخ الموعد القادم:', 'Next Visit Date:', 'ڕێکەوتی وادەی داهاتوو:')}

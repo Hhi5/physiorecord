@@ -64,19 +64,19 @@ const RECYCLE_ITEM_TYPE_LABELS: Record<
     ar: 'موعد',
     en: 'Appointment',
     ckb: 'نۆرە',
-    badgeClass: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30',
+    badgeClass: 'text-sky-700 dark:text-sky-300 font-bold',
   },
   waiting_list: {
     ar: 'قائمة انتظار',
     en: 'Waiting List',
     ckb: 'لیستی چاوەڕوانی',
-    badgeClass: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30',
+    badgeClass: 'text-amber-800 dark:text-amber-300 font-bold',
   },
   expense: {
     ar: 'مصروف',
     en: 'Expense',
     ckb: 'خەرجی',
-    badgeClass: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30',
+    badgeClass: 'text-rose-700 dark:text-rose-300 font-bold',
   },
 };
 
@@ -118,21 +118,21 @@ function getCategoryToneClasses(severity: DataHealthCategoryItem['severity']): {
 } {
   if (severity === 'critical') {
     return {
-      card: 'border-rose-500/35 bg-rose-500/5',
-      pill: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/35',
+      card: 'bg-card shadow-2xs',
+      pill: 'text-rose-700 dark:text-rose-300 font-bold',
       icon: 'text-rose-700 dark:text-rose-400',
     };
   }
   if (severity === 'warning') {
     return {
-      card: 'border-amber-500/35 bg-amber-500/5',
-      pill: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/35',
+      card: 'bg-card shadow-2xs',
+      pill: 'text-amber-800 dark:text-amber-300 font-bold',
       icon: 'text-amber-700 dark:text-amber-400',
     };
   }
   return {
-    card: 'border-line-2 bg-surface',
-    pill: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+    card: 'bg-card shadow-2xs',
+    pill: 'text-emerald-700 dark:text-emerald-300 font-bold',
     icon: 'text-emerald-700 dark:text-emerald-400',
   };
 }
@@ -471,10 +471,10 @@ export const DataHealthAndTrashPanel: React.FC<DataHealthAndTrashPanelProps> = (
       {feedback && (
         <div
           role="status"
-          className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between gap-2 ${
+          className={`p-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 ${
             feedback.kind === 'error'
-              ? 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'
-              : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+              ? 'bg-surface/75 text-rose-700 dark:text-rose-300'
+              : 'bg-surface/75 text-emerald-700 dark:text-emerald-300'
           }`}
         >
           <span>{feedback.text}</span>
@@ -509,12 +509,12 @@ export const DataHealthAndTrashPanel: React.FC<DataHealthAndTrashPanelProps> = (
                 </h2>
                 <span
                   data-testid="data-health-score-badge"
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold border ${
+                  className={`text-xs font-extrabold ${
                     healthScore >= 90
-                      ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                      ? 'text-emerald-700 dark:text-emerald-300'
                       : healthScore >= 70
-                      ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/35'
-                      : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/35'
+                      ? 'text-amber-800 dark:text-amber-300'
+                      : 'text-rose-700 dark:text-rose-300'
                   }`}
                 >
                   <Num value={healthScore} suffix="%" />
@@ -653,7 +653,7 @@ export const DataHealthAndTrashPanel: React.FC<DataHealthAndTrashPanelProps> = (
                                 {orphan && (
                                   <div className="flex flex-wrap items-center gap-1.5 shrink-0">
                                     {orphan.isClinicalRecord && (
-                                      <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 text-xs font-bold">
+                                      <span className="text-amber-800 dark:text-amber-300 text-xs font-bold">
                                         {bi('سريري محمي', 'Clinical', 'کلینیکیی پارێزراو')}
                                       </span>
                                     )}
@@ -802,7 +802,7 @@ export const DataHealthAndTrashPanel: React.FC<DataHealthAndTrashPanelProps> = (
           {/* Clinical Immutability Protection Notice */}
           <div
             data-testid="recycle-bin-clinical-immutability-notice"
-            className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/35 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200"
+            className="p-3.5 rounded-xl bg-surface/75 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200"
           >
             <ShieldAlert className="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div className="space-y-0.5">
@@ -855,7 +855,7 @@ export const DataHealthAndTrashPanel: React.FC<DataHealthAndTrashPanelProps> = (
                     <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span
-                          className={`px-2 py-0.5 rounded-md border text-xs font-bold ${typeMeta.badgeClass}`}
+                          className={`text-xs font-bold ${typeMeta.badgeClass}`}
                         >
                           {bi(typeMeta.ar, typeMeta.en, typeMeta.ckb)}
                         </span>
@@ -890,7 +890,7 @@ export const DataHealthAndTrashPanel: React.FC<DataHealthAndTrashPanelProps> = (
                         type="button"
                         data-testid={`recycle-bin-purge-btn-${item.id}`}
                         onClick={() => handlePurgeTrashItem(item)}
-                        className="min-h-[36px] px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                        className="min-h-[36px] px-3 py-1.5 rounded-xl bg-layer hover:bg-layer-hover text-rose-700 dark:text-rose-300 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
                       >
                         <Trash2 className="size-3.5" />
                         <span>{bi('حذف نهائي', 'Purge Permanently', 'سڕینەوەی هەمیشەیی')}</span>

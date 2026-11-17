@@ -67,6 +67,8 @@ interface ThemeContextType {
   setTheme: (theme: ThemeMode) => void;
   themePalette: ThemePaletteId;
   setThemePalette: (themeId: ThemePaletteId) => void;
+  customPrimaryColor: string;
+  setCustomPrimaryColor: (hex: string) => void;
   fontScale: FontScaleOption;
   setFontScale: (scale: FontScaleOption) => void;
   reduceMotion: boolean;
@@ -87,9 +89,110 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'physiorecord_theme_mode';
 const THEME_PALETTE_STORAGE_KEY = 'physiorecord_theme_palette';
+const CUSTOM_PRIMARY_COLOR_STORAGE_KEY = 'physiorecord_custom_primary_color';
 const LEGACY_THEME_STORAGE_KEY = 'physiorecord_preline_theme';
 const FONT_SCALE_STORAGE_KEY = 'physiorecord_font_scale';
 const REDUCE_MOTION_STORAGE_KEY = 'physiorecord_reduce_motion';
+
+const PRIMARY_CSS_VARS = [
+  '--primary-50',
+  '--primary-100',
+  '--primary-200',
+  '--primary-300',
+  '--primary-400',
+  '--primary-500',
+  '--primary-600',
+  '--primary-700',
+  '--primary-800',
+  '--primary-900',
+  '--primary-950',
+  '--primary',
+  '--primary-hover',
+  '--primary-focus',
+  '--primary-active',
+  '--primary-checked',
+  '--primary-foreground',
+] as const;
+
+function parseHexRgb(hex: string): { r: number; g: number; b: number } | null {
+  const m = /^#([0-9a-fA-F]{6})$/.exec(hex.trim());
+  if (!m) return null;
+  const raw = m[1];
+  return {
+    r: parseInt(raw.slice(0, 2), 16),
+    g: parseInt(raw.slice(2, 4), 16),
+    b: parseInt(raw.slice(4, 6), 16),
+  };
+}
+
+function mixRgbToHex(
+  a: { r: number; g: number; b: number },
+  b: { r: number; g: number; b: number },
+  weightB: number
+): string {
+  const clamp = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
+  const r = clamp(a.r * (1 - weightB) + b.r * weightB);
+  const g = clamp(a.g * (1 - weightB) + b.g * weightB);
+  const bl = clamp(a.b * (1 - weightB) + b.b * weightB);
+  return `#${[r, g, bl].map((v) => v.toString(16).padStart(2, '0')).join('').toUpperCase()}`;
+}
+
+function relativeLuminance(rgb: { r: number; g: number; b: number }): number {
+  const toLin = (c: number) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * toLin(rgb.r) + 0.7152 * toLin(rgb.g) + 0.0722 * toLin(rgb.b);
+}
+
+function applyCustomPrimaryCssVars(hex: string, mode: ThemeMode): void {
+  const root = document.documentElement;
+  const baseRgb = parseHexRgb(hex);
+  if (!baseRgb) {
+    for (const key of PRIMARY_CSS_VARS) {
+      root.style.removeProperty(key);
+    }
+    return;
+  }
+
+  const white = { r: 255, g: 255, b: 255 };
+  const black = { r: 0, g: 0, b: 0 };
+
+  const shade50 = mixRgbToHex(baseRgb, white, 0.9);
+  const shade100 = mixRgbToHex(baseRgb, white, 0.82);
+  const shade200 = mixRgbToHex(baseRgb, white, 0.65);
+  const shade300 = mixRgbToHex(baseRgb, white, 0.45);
+  const shade400 = mixRgbToHex(baseRgb, white, 0.22);
+  const shade500 = mixRgbToHex(baseRgb, white, 0.08);
+  const shade600 = hex.toUpperCase();
+  const shade700 = mixRgbToHex(baseRgb, black, 0.16);
+  const shade800 = mixRgbToHex(baseRgb, black, 0.3);
+  const shade900 = mixRgbToHex(baseRgb, black, 0.44);
+  const shade950 = mixRgbToHex(baseRgb, black, 0.58);
+
+  const primaryHex = mode === 'dark' ? shade500 : shade600;
+  const hoverHex = mode === 'dark' ? shade400 : shade700;
+  const primaryRgb = parseHexRgb(primaryHex) || baseRgb;
+  const fgHex = relativeLuminance(primaryRgb) > 0.44 ? '#0F172A' : '#FFFFFF';
+
+  root.style.setProperty('--primary-50', shade50);
+  root.style.setProperty('--primary-100', shade100);
+  root.style.setProperty('--primary-200', shade200);
+  root.style.setProperty('--primary-300', shade300);
+  root.style.setProperty('--primary-400', shade400);
+  root.style.setProperty('--primary-500', shade500);
+  root.style.setProperty('--primary-600', shade600);
+  root.style.setProperty('--primary-700', shade700);
+  root.style.setProperty('--primary-800', shade800);
+  root.style.setProperty('--primary-900', shade900);
+  root.style.setProperty('--primary-950', shade950);
+  root.style.setProperty('--primary', primaryHex);
+  root.style.setProperty('--primary-hover', hoverHex);
+  root.style.setProperty('--primary-focus', hoverHex);
+  root.style.setProperty('--primary-active', hoverHex);
+  root.style.setProperty('--primary-checked', primaryHex);
+  root.style.setProperty('--primary-foreground', fgHex);
+}
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<ThemeMode>(() => {
@@ -126,6 +229,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return 'theme-clinical-default';
   });
 
+  const [customPrimaryColor, setCustomPrimaryColorState] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(CUSTOM_PRIMARY_COLOR_STORAGE_KEY) || '';
+      return parseHexRgb(saved) ? saved.toUpperCase() : '';
+    } catch {
+      return '';
+    }
+  });
+
   useEffect(() => {
     const root = document.documentElement;
     if (theme === 'dark') {
@@ -151,6 +263,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [themePalette]);
 
+  useEffect(() => {
+    applyCustomPrimaryCssVars(customPrimaryColor, theme);
+    try {
+      if (customPrimaryColor) {
+        localStorage.setItem(CUSTOM_PRIMARY_COLOR_STORAGE_KEY, customPrimaryColor);
+      } else {
+        localStorage.removeItem(CUSTOM_PRIMARY_COLOR_STORAGE_KEY);
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [customPrimaryColor, theme]);
+
   const toggleTheme = () => {
     setThemeState((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
@@ -161,7 +286,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const setThemePalette = (themeId: ThemePaletteId) => {
     setThemePaletteState(themeId);
+    setCustomPrimaryColorState('');
   };
+
+  const setCustomPrimaryColor = useCallback((hex: string) => {
+    const clean = hex.trim().toUpperCase();
+    setCustomPrimaryColorState(parseHexRgb(clean) ? clean : '');
+  }, []);
 
   const [fontScale, setFontScaleState] = useState<FontScaleOption>(() => {
     try {
@@ -216,6 +347,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       }
     });
+    // Load system fonts (gracefully handle unsupported platforms like Android WebView)
+    queryInstalledDeviceFonts()
+      .then((fonts) => {
+        if (active) setSystemFontFamilies(fonts);
+      })
+      .catch(() => {
+        if (active) setSystemFontFamilies([]);
+      });
     return () => {
       active = false;
     };
@@ -307,9 +446,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const scanSystemFonts = useCallback(async (): Promise<string[]> => {
-    const found = await queryInstalledDeviceFonts();
-    setSystemFontFamilies(found);
-    return found;
+    try {
+      const found = await queryInstalledDeviceFonts();
+      setSystemFontFamilies(found);
+      return found;
+    } catch (err) {
+      // Local Font Access API not supported on Android WebView / some browsers — fail silently
+      console.warn('[ThemeContext] scanSystemFonts failed (API likely unsupported):', err);
+      setSystemFontFamilies([]);
+      return [];
+    }
   }, []);
 
   return (
@@ -320,6 +466,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setTheme,
         themePalette,
         setThemePalette,
+        customPrimaryColor,
+        setCustomPrimaryColor,
         fontScale,
         setFontScale,
         reduceMotion,

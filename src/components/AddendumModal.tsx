@@ -20,6 +20,7 @@ import {
   type SessionRecord 
 } from '../types/clinical';
 import { useLanguage } from '../context/LanguageContext';
+import { GeometricHeaderBackdrop } from './ui/Dialog';
 
 interface AddendumModalProps {
   isOpen: boolean;
@@ -98,7 +99,7 @@ export const AddendumModal: React.FC<AddendumModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="addendum-modal-title"
-      className="fixed inset-0 z-60 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-60 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto"
       dir={isRtl ? 'rtl' : 'ltr'}
       onKeyDown={(e) => {
         if (e.key === 'Escape') onClose();
@@ -108,43 +109,47 @@ export const AddendumModal: React.FC<AddendumModalProps> = ({
       }}
     >
       <div
-        className="bg-card rounded-3xl max-w-2xl w-full shadow-2xl border border-card-line overflow-hidden my-4 max-h-[90vh] flex flex-col"
+        className="bg-card rounded-t-2xl sm:rounded-2xl max-w-2xl w-full shadow-2xl border border-card-line overflow-hidden sm:my-4 max-h-[92dvh] sm:max-h-[88dvh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         
         {/* Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 text-white flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center">
-              <FileEdit className="w-5 h-5" />
+        <div className="relative overflow-hidden px-5 sm:px-6 pt-3 sm:pt-4 pb-4 bg-primary text-primary-foreground flex flex-col gap-2.5 flex-shrink-0 shadow-xs">
+          <GeometricHeaderBackdrop />
+          <div className="relative z-10 w-10 h-1 bg-primary-foreground/40 rounded-full mx-auto sm:hidden shrink-0" aria-hidden="true" />
+          <div className="relative z-10 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-2xl bg-primary-foreground/15 text-primary-foreground flex items-center justify-center shrink-0">
+                <FileEdit className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 id="addendum-modal-title" className="text-base sm:text-lg font-bold text-primary-foreground truncate">
+                  {bi('إضافة ملحق وتصحيح سريري (Clinical Addendum)', 'Add Clinical Addendum')}
+                </h3>
+                <p className="text-xs text-primary-foreground/85 truncate">
+                  {bi(
+                    `للجلسة المعتمدة #${session.sessionNumber} بتاريخ ${session.sessionDate}`,
+                    `For finalized Session #${session.sessionNumber} (${session.sessionDate})`
+                  )}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 id="addendum-modal-title" className="text-base sm:text-lg font-bold">
-                {bi('إضافة ملحق وتصحيح سريري (Clinical Addendum)', 'Add Clinical Addendum')}
-              </h3>
-              <p className="text-xs text-amber-200/80">
-                {bi(
-                  `للجلسة المعتمدة #${session.sessionNumber} بتاريخ ${session.sessionDate}`,
-                  `For finalized Session #${session.sessionNumber} (${session.sessionDate})`
-                )}
-              </p>
-            </div>
-          </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={bi('إغلاق الملحق', 'Close addendum modal')}
-            className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={bi('إغلاق الملحق', 'Close addendum modal')}
+              className="size-9 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 space-y-6">
           
           {/* Legal & Architectural Context Notice */}
-          <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs text-foreground leading-relaxed flex items-start gap-2.5">
+          <div className="p-3.5 bg-card shadow-2xs rounded-2xl text-xs text-foreground leading-relaxed flex items-start gap-2.5">
             <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <div>
               <strong>{bi('مبدأ سلامة السجلات السريرية:', 'Clinical Record Immutability:')}</strong>{' '}
@@ -156,7 +161,7 @@ export const AddendumModal: React.FC<AddendumModalProps> = ({
           </div>
 
           {error && (
-            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-rose-800 dark:text-rose-300 text-xs flex items-center gap-2">
+            <div className="p-3 bg-surface/75 rounded-xl text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0" />
               <span>{error}</span>
             </div>
@@ -299,7 +304,7 @@ export const AddendumModal: React.FC<AddendumModalProps> = ({
                       className="p-3.5 bg-surface rounded-xl border border-line-2 text-xs space-y-1.5"
                     >
                       <div className="flex items-center justify-between text-xs text-muted-foreground-1">
-                        <span className="font-bold text-amber-800 dark:text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30">
+                        <span className="font-bold text-amber-700 dark:text-amber-400 text-xs">
                           {bi(reasonInfo.ar, reasonInfo.en)}
                         </span>
                         <span className="font-mono">{addendum.createdAt}</span>

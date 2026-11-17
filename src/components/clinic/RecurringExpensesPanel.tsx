@@ -13,9 +13,11 @@ import {
 } from '../../utils/iraqFinanceC4C5';
 import {
   DatePickerInput,
+  Money,
   MoneyInput,
   Num,
 } from '../ui/Primitives';
+import { ModalDialog } from '../ui/Dialog';
 import type {
   ClinicExpenseIQD,
   ExpenseCategoryIQD,
@@ -23,7 +25,10 @@ import type {
 } from '../../types/clinicManagement';
 import {
   CalendarCheck2,
+  Check,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Edit3,
   Pause,
   Play,
@@ -75,6 +80,13 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
   const [drafts, setDrafts] = useState<Record<string, DueDraftState>>({});
   const [showManager, setShowManager] = useState(false);
 
+  // Add Card Modal & Details Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedCardTemplateId, setSelectedCardTemplateId] = useState<string | null>(null);
+  const [addInitialAmountIQD, setAddInitialAmountIQD] = useState<number>(0);
+  const [addInitialDate, setAddInitialDate] = useState<string>(() => localDate());
+  const [addInitialNotes, setAddInitialNotes] = useState<string>('');
+
   // Add / Edit Template Form State (always zero default amount per R2)
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(
     null
@@ -102,6 +114,49 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
   const dueSuggestions = useMemo(
     () => getDueRecurringExpenseSuggestions(templates, expenses),
     [templates, expenses]
+  );
+
+  const currentMonthKey = localDate().slice(0, 7);
+
+  const activeTemplateCards = useMemo(() => {
+    const monthExpenses = expenses.filter((exp) =>
+      (exp.date || '').startsWith(currentMonthKey)
+    );
+    return templates
+      .filter((t) => t.isActive)
+      .map((tpl) => {
+        const clampedDay = Math.max(
+          1,
+          Math.min(28, Math.round(Number(tpl.dayOfMonth) || 1))
+        );
+        const suggestedDueDate = `${currentMonthKey}-${String(clampedDay).padStart(2, '0')}`;
+        const loggedThisMonth = monthExpenses.filter(
+          (exp) =>
+            exp.recurringTemplateId === tpl.id ||
+            (exp.category === tpl.category &&
+              ((tpl.titleAr && exp.titleAr.trim() === tpl.titleAr.trim()) ||
+                (tpl.titleEn && exp.titleEn.trim() === tpl.titleEn.trim())))
+        );
+        const totalPaidThisMonth = loggedThisMonth.reduce(
+          (sum, e) => sum + (e.amountIQD || 0),
+          0
+        );
+        return {
+          tpl,
+          suggestedDueDate,
+          loggedThisMonth,
+          totalPaidThisMonth,
+          isPaidThisMonth: loggedThisMonth.length > 0,
+        };
+      });
+  }, [templates, expenses, currentMonthKey]);
+
+  const selectedCardInfo = useMemo(
+    () =>
+      selectedCardTemplateId
+        ? activeTemplateCards.find((c) => c.tpl.id === selectedCardTemplateId) || null
+        : null,
+    [activeTemplateCards, selectedCardTemplateId]
   );
 
   const getDraft = (tplId: string): DueDraftState =>
@@ -160,6 +215,14 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
     setTplTitleAr('');
     setTplTitleEn('');
     setTplDayOfMonth(1);
+    setAddInitialAmountIQD(0);
+    setAddInitialDate(localDate());
+    setAddInitialNotes('');
+  };
+
+  const openAddCardModal = () => {
+    resetTemplateForm();
+    setIsAddModalOpen(true);
   };
 
   const startEditTemplate = (tpl: RecurringExpenseTemplate) => {
@@ -169,7 +232,11 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
     setTplTitleAr(tpl.titleAr);
     setTplTitleEn(tpl.titleEn);
     setTplDayOfMonth(Math.max(1, Math.min(28, tpl.dayOfMonth || 1)));
-    setShowManager(true);
+    setAddInitialAmountIQD(0);
+    setAddInitialDate(localDate());
+    setAddInitialNotes('');
+    setSelectedCardTemplateId(null);
+    setIsAddModalOpen(true);
   };
 
   const handleSaveTemplate = (e: React.FormEvent) => {
@@ -185,6 +252,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
     const cleanCustomLabel = tplCustomCategoryLabel.trim() || undefined;
 
     let nextList: RecurringExpenseTemplate[];
+    let targetTemplateId = editingTemplateId;
     if (editingTemplateId) {
       nextList = templates.map((item) =>
         item.id === editingTemplateId
@@ -200,8 +268,10 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
           : item
       );
     } else {
+      const createdId = `rec_exp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      targetTemplateId = createdId;
       const created: RecurringExpenseTemplate = {
-        id: `rec_exp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        id: createdId,
         category: tplCategory,
         customCategoryLabel: cleanCustomLabel,
         titleAr: cleanAr,
@@ -214,7 +284,21 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
     }
 
     setTemplates(ClinicOperationsService.saveRecurringExpenseTemplates(nextList));
+
+    if (!editingTemplateId && addInitialAmountIQD > 0 && targetTemplateId) {
+      const updatedExpenses = ClinicOperationsService.logRecurringExpenseForMonth({
+        templateId: targetTemplateId,
+        amountIQD: addInitialAmountIQD,
+        date: addInitialDate || localDate(),
+        customCategoryLabel: cleanCustomLabel,
+        notes: addInitialNotes.trim() || undefined,
+      });
+      onExpensesUpdated(updatedExpenses);
+      setTemplates(ClinicOperationsService.getRecurringExpenseTemplates());
+    }
+
     resetTemplateForm();
+    setIsAddModalOpen(false);
   };
 
   const handleToggleActive = (tplId: string) => {
@@ -234,84 +318,79 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
 
   return (
     <div
-      className="p-4 sm:p-5 border-b border-card-divider bg-surface/40 space-y-4 text-xs"
+      className="p-4 sm:p-5 border-b border-card-divider bg-surface/40 space-y-3.5 text-xs"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Header Row */}
       <div className="flex flex-wrap items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <div className="size-8 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
             <Repeat className="size-4" />
           </div>
           <div>
             <h2 className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-2">
-              <span>{bi('مستحق هذا الشهر', 'Due this month', 'شایستەی ئەم مانگە')}</span>
+              <span>{bi('المصاريف المتكررة', 'Recurring Expenses', 'خەرجییە دووبارەبووەکان')}</span>
               <span className="px-2 py-0.5 rounded-full bg-primary/15 text-primary font-bold text-xs tabular-nums">
-                <Num value={dueSuggestions.length} />
+                {dueSuggestions.length > 0
+                  ? `${dueSuggestions.length} ${bi('مستحق', 'due', 'شایستە')}`
+                  : bi('مكتمل', 'All paid', 'تەواو')}
               </span>
             </h2>
             <p className="text-xs text-muted-foreground-1">
               {bi(
-                'تسجيل سريع للمصاريف الشهرية المتكررة (أدخل المبلغ الفعلي عند الدفع)',
-                'Quick-log monthly recurring expenses (enter actual amount when paid)',
-                'تۆمارکردنی خێرای خەرجییە مانگانە دووبارەبووەکان (بڕی ڕاستەقینە بنووسە لە کاتی پارەداندا)'
+                'أضف بطاقة مصروف بالضغط على + أو اضغط على أي بطاقة لعرض التفاصيل والدفع',
+                'Tap + to add a recurring card or tap any card for details and payment',
+                'بۆ زیادکردنی کارت کرتە لە + بکە یان کرتە لە هەر کارتێک بکە بۆ وردەکاری و پارەدان'
               )}
             </p>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowManager((v) => !v)}
-          className="px-3 py-1.5 min-h-[36px] rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
-        >
-          <Settings2 className="size-3.5 text-primary" />
-          <span>
-            {showManager
-              ? bi(
-                  'إخفاء إدارة القوالب',
-                  'Hide Template Manager',
-                  'شاردنەوەی بەڕێوەبەری قاڵبەکان'
-                )
-              : bi(
-                  'إدارة القوالب والفئات',
-                  'Manage Templates & Categories',
-                  'بەڕێوەبردنی قاڵب و پۆلەکان'
-                )}
-          </span>
-        </button>
-      </div>
-
-      {formNotice && (
-        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 flex items-center justify-between gap-2">
-          <span>{formNotice}</span>
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
-            onClick={() => setFormNotice(null)}
-            className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg hover:bg-black/5 cursor-pointer"
-            aria-label={bi('إغلاق', 'Dismiss', 'داخستن')}
+            onClick={openAddCardModal}
+            aria-label={bi('إضافة بطاقة مصروف', 'Add recurring expense card', 'زیادکردنی کارتی خەرجی')}
+            className="min-h-[36px] px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
           >
-            <X className="size-3.5" />
+            <Plus className="size-4" />
+            <span>{bi('إضافة', 'Add', 'زیادکردن')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowManager((v) => !v)}
+            aria-label={bi('إدارة القوالب والفئات', 'Manage Templates & Categories', 'بەڕێوەبردنی قاڵب و پۆلەکان')}
+            title={bi('إدارة القوالب والفئات', 'Manage Templates & Categories', 'بەڕێوەبردنی قاڵب و پۆلەکان')}
+            className={`min-h-[36px] min-w-[36px] px-2.5 py-1.5 rounded-xl border text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
+              showManager
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-layer-line bg-layer hover:bg-layer-hover text-foreground'
+            }`}
+          >
+            <Settings2 className="size-3.5 text-primary" />
+            <span className="hidden sm:inline">
+              {bi('إدارة القوالب', 'Manage', 'بەڕێوەبردن')}
+            </span>
           </button>
         </div>
-      )}
+      </div>
 
-      {/* Due This Month Suggestion Cards */}
-      {dueSuggestions.length === 0 ? (
-        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 dark:text-emerald-200 flex items-center gap-2">
-          <CheckCircle2 className="size-4 shrink-0" />
-          <span className="font-semibold">
+      {/* Compact Small Cards Grid */}
+      {activeTemplateCards.length === 0 ? (
+        <div className="p-4 rounded-2xl bg-card border border-dashed border-line-2 text-center text-muted-foreground-1 space-y-2">
+          <p className="text-xs font-medium">
             {bi(
-              'تم تسجيل جميع المصاريف المتكررة النشطة لهذا الشهر.',
-              'All active recurring expenses for this month have been logged.',
-              'هەموو خەرجییە دووبارەبووە چالاکەکانی ئەم مانگە تۆمارکراون.'
+              'لا توجد مصاريف متكررة مضافة بعد. اضغط على زر (+) لإضافة بطاقة مصروف جديدة.',
+              'No recurring expense cards yet. Tap (+) to add one.',
+              'هێشتا هیچ کارتێکی خەرجیی دووبارەبووەوە نییە. کرتە لە (+) بکە بۆ زیادکردن.'
             )}
-          </span>
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          {dueSuggestions.map((tpl) => {
-            const draft = getDraft(tpl.id);
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+          {activeTemplateCards.map((card) => {
+            const { tpl, suggestedDueDate, loggedThisMonth, totalPaidThisMonth, isPaidThisMonth } = card;
             const catLabel =
               tpl.customCategoryLabel?.trim() ||
               bi(
@@ -319,238 +398,95 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
                 EXPENSE_CATEGORY_LABELS[tpl.category].en,
                 EXPENSE_CATEGORY_CKB[tpl.category]
               );
+            const lastPayDate = loggedThisMonth[loggedThisMonth.length - 1]?.date || suggestedDueDate;
+
             return (
-              <div
+              <button
                 key={tpl.id}
-                className="p-3.5 rounded-2xl bg-card border border-card-line shadow-2xs space-y-2.5 flex flex-col justify-between"
+                type="button"
+                onClick={() => {
+                  setFormNotice(null);
+                  setSelectedCardTemplateId(tpl.id);
+                }}
+                className={`w-full text-start p-3 rounded-2xl border transition-all cursor-pointer group flex flex-col justify-between gap-2 shadow-2xs hover:shadow-sm ${
+                  isPaidThisMonth
+                    ? 'bg-card border-emerald-500/25 hover:border-emerald-500/50'
+                    : 'bg-card border-card-line hover:border-primary/45'
+                }`}
               >
-                <div className="space-y-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="font-bold text-foreground">
+                <div className="flex items-start justify-between gap-2 w-full">
+                  <div className="min-w-0">
+                    <div className="font-bold text-foreground text-xs sm:text-sm truncate">
                       {bi(tpl.titleAr, tpl.titleEn)}
                     </div>
-                    <span className="px-2 py-0.5 rounded-full bg-surface border border-line-2 text-muted-foreground-1 text-xs shrink-0">
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-surface border border-line-2 text-muted-foreground-1 text-[11px]">
                       {catLabel}
                     </span>
                   </div>
-                  <div className="text-xs text-muted-foreground-1 flex items-center gap-1.5">
-                    <CalendarCheck2 className="size-3.5 text-primary shrink-0" />
-                    <span>
-                      {bi('تاريخ الاستحقاق المقترح: ', 'Suggested due: ', 'کاتی شایستەی پێشنیارکراو: ')}
-                      <bdi dir="ltr">
-                        {formatDateDDMMYYYY(tpl.suggestedDueDate)}
+
+                  {isPaidThisMonth ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/12 text-emerald-700 dark:text-emerald-400 text-[11px] font-bold shrink-0">
+                      <CheckCircle2 className="size-3" />
+                      <span>{bi('مدفوع', 'Paid', 'دراوە')}</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/12 text-amber-800 dark:text-amber-300 text-[11px] font-bold shrink-0">
+                      <span className="size-1.5 rounded-full bg-current shrink-0" aria-hidden="true" />
+                      <span>{bi('مستحق', 'Due', 'شایستە')}</span>
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-card-divider/70 w-full text-[11px] tabular-nums">
+                  {isPaidThisMonth ? (
+                    <span className="font-bold text-emerald-700 dark:text-emerald-400 truncate">
+                      <Money amount={totalPaidThisMonth} colorize={false} /> ·{' '}
+                      <bdi dir="ltr" className="font-normal text-muted-foreground-1">
+                        {formatDateDDMMYYYY(lastPayDate)}
                       </bdi>
                     </span>
-                  </div>
+                  ) : (
+                    <span className="text-muted-foreground-1 inline-flex items-center gap-1 truncate">
+                      <CalendarCheck2 className="size-3 text-primary shrink-0" />
+                      <span>
+                        {bi('الاستحقاق:', 'Due:', 'شایستە:')}{' '}
+                        <bdi dir="ltr">{formatDateDDMMYYYY(suggestedDueDate)}</bdi>
+                      </span>
+                    </span>
+                  )}
+
+                  <span className="inline-flex items-center gap-0.5 font-bold text-primary shrink-0">
+                    <span>{bi('التفاصيل', 'Details', 'وردەکاری')}</span>
+                    {isRtl ? <ChevronLeft className="size-3" /> : <ChevronRight className="size-3" />}
+                  </span>
                 </div>
-
-                <div className="space-y-2 pt-1">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label htmlFor={`rec-amt-${tpl.id}`} className="block font-semibold text-muted-foreground-1 mb-1">
-                        {bi('المبلغ:', 'Amount:', 'بڕ:')}
-                      </label>
-                      <MoneyInput
-                        id={`rec-amt-${tpl.id}`}
-                        ariaLabel={`${bi('المبلغ', 'Amount', 'بڕ')} — ${bi(tpl.titleAr, tpl.titleEn)}`}
-                        value={draft.amountIQD}
-                        onChange={(val) =>
-                          patchDraft(tpl.id, { amountIQD: val })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor={`rec-date-${tpl.id}`} className="block font-semibold text-muted-foreground-1 mb-1">
-                        {bi('التاريخ:', 'Date:', 'ڕێکەوت:')}
-                      </label>
-                      <DatePickerInput
-                        id={`rec-date-${tpl.id}`}
-                        ariaLabel={`${bi('التاريخ', 'Date', 'ڕێکەوت')} — ${bi(tpl.titleAr, tpl.titleEn)}`}
-                        value={draft.date}
-                        onChange={(val) => patchDraft(tpl.id, { date: val })}
-                      />
-                    </div>
-                  </div>
-
-                  <input
-                    type="text"
-                    value={draft.notes}
-                    onChange={(e) =>
-                      patchDraft(tpl.id, { notes: e.target.value })
-                    }
-                    aria-label={bi('ملاحظات المصروف المتكرر', 'Recurring expense notes', 'تێبینی خەرجیی دووبارەبووەوە')}
-                    placeholder={
-                      bi('ملاحظات (اختياري)...', 'Notes (optional)...', 'تێبینی (بژاردەیی)...')
-                    }
-                    className="w-full px-3 py-1.5 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary"
-                  />
-
-                  <button
-                    type="button"
-                    disabled={draft.amountIQD <= 0}
-                    onClick={() => handleLogDueExpense(tpl.id)}
-                    className="w-full py-2 px-3 min-h-[36px] rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="size-3.5" />
-                    <span>{bi('تسجيل المصروف', 'Log Expense', 'تۆمارکردنی خەرجی')}</span>
-                  </button>
-                </div>
-              </div>
+              </button>
             );
           })}
         </div>
       )}
 
-      {/* Template Manager Drawer/Section */}
+      {/* Template Manager Compact List (when toggled) */}
       {showManager && (
-        <div className="p-4 rounded-2xl bg-card border border-card-line space-y-4">
+        <div className="p-3.5 rounded-2xl bg-card border border-card-line space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-xs sm:text-sm font-bold text-foreground">
+            <h3 className="text-xs font-bold text-foreground">
               {bi(
-                'قوالب المصاريف المتكررة والفئات المخصصة',
-                'Recurring Expense Templates & Custom Categories',
-                'قاڵبەکانی خەرجیی دووبارەبووەوە و پۆلە تایبەتەکان'
+                'إدارة كافة القوالب (المفعّلة والمتوقفة)',
+                'All Recurring Templates (Active & Paused)',
+                'بەڕێوەبردنی هەموو قاڵبەکان (چالاک و وەستاو)'
               )}
             </h3>
-            {editingTemplateId && (
-              <button
-                type="button"
-                onClick={resetTemplateForm}
-                className="text-xs font-semibold text-primary hover:underline min-h-[36px] inline-flex items-center cursor-pointer"
-              >
-                {bi('+ إضافة قالب جديد', '+ Add New Template', '+ زیادکردنی قاڵبێکی نوێ')}
-              </button>
-            )}
-          </div>
-
-          <form
-            onSubmit={handleSaveTemplate}
-            className="p-3.5 rounded-xl bg-surface border border-line-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end"
-          >
-            <div>
-              <label htmlFor="rec-tpl-cat" className="block font-semibold text-foreground mb-1">
-                {bi('الفئة الأساسية:', 'Category:', 'پۆلی سەرەکی:')}
-              </label>
-              <select
-                id="rec-tpl-cat"
-                value={tplCategory}
-                onChange={(e) =>
-                  setTplCategory(e.target.value as ExpenseCategoryIQD)
-                }
-                className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground"
-              >
-                {EXPENSE_CATEGORY_ORDER.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {bi(
-                      EXPENSE_CATEGORY_LABELS[cat].ar,
-                      EXPENSE_CATEGORY_LABELS[cat].en,
-                      EXPENSE_CATEGORY_CKB[cat]
-                    )}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="rec-tpl-custom-cat" className="block font-semibold text-foreground mb-1">
-                {bi(
-                  'تسمية فئة مخصصة (اختياري):',
-                  'Custom Category Label:',
-                  'ناوی پۆلی تایبەت (بژاردەیی):'
-                )}
-              </label>
-              <input
-                id="rec-tpl-custom-cat"
-                type="text"
-                value={tplCustomCategoryLabel}
-                onChange={(e) => setTplCustomCategoryLabel(e.target.value)}
-                placeholder={
-                  bi(
-                    'مثال: اشتراكات / نظافة...',
-                    'e.g., Subscriptions / Cleaning...',
-                    'نموونە: بەشداریکردن / پاککردنەوە...'
-                  )
-                }
-                className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="rec-tpl-title-ar" className="block font-semibold text-foreground mb-1">
-                {bi(
-                  'عنوان القالب (عربي) *:',
-                  'Title (Arabic / Primary) *:',
-                  'ناونیشانی قاڵب (سەرەکی) *:'
-                )}
-              </label>
-              <input
-                id="rec-tpl-title-ar"
-                type="text"
-                required
-                value={tplTitleAr}
-                onChange={(e) => setTplTitleAr(e.target.value)}
-                placeholder={
-                  bi('مثال: اشتراك الإنترنت', 'e.g., Internet Bill', 'نموونە: پارەی ئینتەرنێت')
-                }
-                className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="rec-tpl-title-en" className="block font-semibold text-foreground mb-1">
-                {bi(
-                  'العنوان (EN اختياري) ويوم الشهر:',
-                  'English Title & Day:',
-                  'ناونیشان (ئینگلیزی) و ڕۆژی مانگ:'
-                )}
-              </label>
-              <div className="flex gap-1.5">
-                <input
-                  id="rec-tpl-title-en"
-                  type="text"
-                  dir="ltr"
-                  value={tplTitleEn}
-                  onChange={(e) => setTplTitleEn(e.target.value)}
-                  aria-label={bi('عنوان القالب بالإنجليزية', 'English template title', 'ناونیشانی قاڵب بە ئینگلیزی')}
-                  placeholder="English title"
-                  className="flex-1 min-w-0 px-2.5 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground"
-                />
-                <input
-                  type="number"
-                  min={1}
-                  max={28}
-                  dir="ltr"
-                  value={tplDayOfMonth}
-                  onChange={(e) =>
-                    setTplDayOfMonth(
-                      Math.max(1, Math.min(28, Number(e.target.value) || 1))
-                    )
-                  }
-                  aria-label={bi('يوم الاستحقاق بالشهر (1–28)', 'Day of month (1–28)', 'ڕۆژی شایستەبوون لە مانگدا (١–٢٨)')}
-                  title={bi(
-                    'يوم الاستحقاق بالشهر (1–28)',
-                    'Day of month (1–28)',
-                    'ڕۆژی شایستەبوون لە مانگدا (١–٢٨)'
-                  )}
-                  className="w-16 px-2 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground tabular-nums text-center"
-                />
-              </div>
-            </div>
-
             <button
-              type="submit"
-              className="py-2 px-4 min-h-[36px] rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+              type="button"
+              onClick={openAddCardModal}
+              className="text-xs font-bold text-primary hover:underline cursor-pointer inline-flex items-center gap-1"
             >
               <Plus className="size-3.5" />
-              <span>
-                {editingTemplateId
-                  ? bi('تحديث القالب', 'Update Template', 'نوێکردنەوەی قاڵب')
-                  : bi('إضافة قالب', 'Add Template', 'زیادکردنی قاڵب')}
-              </span>
+              <span>{bi('إضافة قالب جديد', 'Add New Template', 'زیادکردنی قاڵبی نوێ')}</span>
             </button>
-          </form>
+          </div>
 
-          {/* Existing Templates List */}
           <div className="divide-y divide-card-divider rounded-xl border border-line-2 overflow-hidden">
             {templates.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground-1">
@@ -592,9 +528,9 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
                       <button
                         type="button"
                         onClick={() => handleToggleActive(tpl.id)}
-                        className={`px-2.5 py-1.5 min-h-[36px] rounded-lg border text-xs font-semibold inline-flex items-center gap-1 cursor-pointer ${
+                        className={`px-2.5 py-1.5 min-h-[34px] rounded-lg border text-xs font-semibold inline-flex items-center gap-1 cursor-pointer ${
                           tpl.isActive
-                            ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                            ? 'border-layer-line bg-layer text-emerald-700 dark:text-emerald-300'
                             : 'border-layer-line bg-layer text-muted-foreground-1'
                         }`}
                       >
@@ -614,7 +550,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
                       <button
                         type="button"
                         onClick={() => startEditTemplate(tpl)}
-                        className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground cursor-pointer"
+                        className="p-1.5 min-h-[34px] min-w-[34px] inline-flex items-center justify-center rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground cursor-pointer"
                         title={bi('تعديل القالب', 'Edit Template', 'دەستکاریکردنی قاڵب')}
                         aria-label={bi('تعديل القالب', 'Edit Template', 'دەستکاریکردنی قاڵب')}
                       >
@@ -624,7 +560,7 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
                       <button
                         type="button"
                         onClick={() => handleDeleteTemplate(tpl.id)}
-                        className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg border border-layer-line bg-layer hover:bg-rose-500/10 text-muted-foreground-1 hover:text-rose-700 cursor-pointer"
+                        className="p-1.5 min-h-[34px] min-w-[34px] inline-flex items-center justify-center rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-muted-foreground-1 hover:text-rose-700 cursor-pointer"
                         title={bi('حذف القالب', 'Delete Template', 'سڕینەوەی قاڵب')}
                         aria-label={bi('حذف القالب', 'Delete Template', 'سڕینەوەی قاڵب')}
                       >
@@ -638,6 +574,375 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
           </div>
         </div>
       )}
+
+      {/* Add / Edit Recurring Expense Card Modal */}
+      <ModalDialog
+        isOpen={isAddModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsAddModalOpen(false);
+            resetTemplateForm();
+          }
+        }}
+        title={
+          editingTemplateId
+            ? bi('تعديل بطاقة المصروف', 'Edit Expense Card', 'دەستکاریکردنی کارتی خەرجی')
+            : bi('إضافة بطاقة مصروف متكرر', 'Add Recurring Expense Card', 'زیادکردنی کارتی خەرجیی دووبارەبووەوە')
+        }
+        ariaLabel={bi('إضافة أو تعديل بطاقة مصروف', 'Add or Edit Expense Card', 'زیادکردن یان دەستکاریکردنی کارتی خەرجی')}
+        closeLabel={bi('إغلاق', 'Close', 'داخستن')}
+        size="md"
+        dir={isRtl ? 'rtl' : 'ltr'}
+      >
+        <form onSubmit={handleSaveTemplate} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2">
+              <label htmlFor="rec-tpl-title-ar" className="block text-xs font-bold text-foreground mb-1">
+                {bi('اسم البطاقة / المصروف *:', 'Card / Expense Name *:', 'ناوی کارت / خەرجی *:')}
+              </label>
+              <input
+                id="rec-tpl-title-ar"
+                type="text"
+                required
+                value={tplTitleAr}
+                onChange={(e) => setTplTitleAr(e.target.value)}
+                placeholder={bi('مثال: إيجار العيادة، اشتراك الإنترنت...', 'e.g., Clinic Rent, Internet Bill...', 'نموونە: کرێی کلینیک، پارەی ئینتەرنێت...')}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-layer-line text-foreground focus:outline-none focus:border-primary"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="rec-tpl-cat" className="block text-xs font-bold text-foreground mb-1">
+                {bi('الفئة:', 'Category:', 'پۆل:')}
+              </label>
+              <select
+                id="rec-tpl-cat"
+                value={tplCategory}
+                onChange={(e) => setTplCategory(e.target.value as ExpenseCategoryIQD)}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-layer-line text-foreground"
+              >
+                {EXPENSE_CATEGORY_ORDER.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {bi(
+                      EXPENSE_CATEGORY_LABELS[cat].ar,
+                      EXPENSE_CATEGORY_LABELS[cat].en,
+                      EXPENSE_CATEGORY_CKB[cat]
+                    )}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="rec-tpl-day" className="block text-xs font-bold text-foreground mb-1">
+                {bi('يوم الاستحقاق بالشهر (1–28):', 'Monthly Due Day (1–28):', 'ڕۆژی شایستەبوون (١–٢٨):')}
+              </label>
+              <input
+                id="rec-tpl-day"
+                type="number"
+                min={1}
+                max={28}
+                dir="ltr"
+                value={tplDayOfMonth}
+                onChange={(e) =>
+                  setTplDayOfMonth(Math.max(1, Math.min(28, Number(e.target.value) || 1)))
+                }
+                className="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-layer-line text-foreground tabular-nums"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="rec-tpl-custom-cat" className="block text-xs font-bold text-foreground mb-1">
+                {bi('تصنيف مخصص (اختياري):', 'Custom Label (Optional):', 'ناوی تایبەت (بژاردەیی):')}
+              </label>
+              <input
+                id="rec-tpl-custom-cat"
+                type="text"
+                value={tplCustomCategoryLabel}
+                onChange={(e) => setTplCustomCategoryLabel(e.target.value)}
+                placeholder={bi('مثال: اشتراكات / نظافة...', 'e.g., Subscriptions...', 'نموونە: بەشداریکردن...')}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-layer-line text-foreground"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="rec-tpl-title-en" className="block text-xs font-bold text-foreground mb-1">
+                {bi('الاسم بالإنجليزية (اختياري):', 'English Name (Optional):', 'ناو بە ئینگلیزی (بژاردەیی):')}
+              </label>
+              <input
+                id="rec-tpl-title-en"
+                type="text"
+                dir="ltr"
+                value={tplTitleEn}
+                onChange={(e) => setTplTitleEn(e.target.value)}
+                placeholder="English title"
+                className="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-layer-line text-foreground"
+              />
+            </div>
+          </div>
+
+          {!editingTemplateId && (
+            <div className="p-3.5 rounded-2xl bg-surface border border-line-2 space-y-3">
+              <div className="text-xs font-bold text-foreground">
+                {bi('تفاصيل الدفع لهذا الشهر (اختياري):', 'Payment Details for This Month (Optional):', 'وردەکاری پارەدانی ئەم مانگە (بژاردەیی):')}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="rec-add-amt" className="block text-xs font-semibold text-muted-foreground-1 mb-1">
+                    {bi('المبلغ المدفوع:', 'Amount Paid:', 'بڕی پارەدراو:')}
+                  </label>
+                  <MoneyInput
+                    id="rec-add-amt"
+                    ariaLabel={bi('المبلغ المدفوع', 'Amount Paid', 'بڕی پارەدراو')}
+                    value={addInitialAmountIQD}
+                    onChange={(val) => setAddInitialAmountIQD(val)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="rec-add-date" className="block text-xs font-semibold text-muted-foreground-1 mb-1">
+                    {bi('تاريخ الدفع:', 'Payment Date:', 'بەرواری پارەدان:')}
+                  </label>
+                  <DatePickerInput
+                    id="rec-add-date"
+                    ariaLabel={bi('تاريخ الدفع', 'Payment Date', 'بەرواری پارەدان')}
+                    value={addInitialDate}
+                    onChange={(val) => setAddInitialDate(val)}
+                  />
+                </div>
+              </div>
+              <input
+                type="text"
+                value={addInitialNotes}
+                onChange={(e) => setAddInitialNotes(e.target.value)}
+                placeholder={bi('ملاحظات الدفع (اختياري)...', 'Payment notes (optional)...', 'تێبینی پارەدان (بژاردەیی)...')}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-card border border-layer-line text-foreground focus:outline-none focus:border-primary"
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-card-divider">
+            <button
+              type="button"
+              onClick={() => {
+                setIsAddModalOpen(false);
+                resetTemplateForm();
+              }}
+              className="min-h-[38px] px-4 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground cursor-pointer"
+            >
+              {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
+            </button>
+            <button
+              type="submit"
+              className="min-h-[38px] px-5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <Check className="size-3.5" />
+              <span>{bi('تم', 'Done', 'تەواو')}</span>
+            </button>
+          </div>
+        </form>
+      </ModalDialog>
+
+      {/* Recurring Expense Card Details & Payment Modal */}
+      <ModalDialog
+        isOpen={Boolean(selectedCardInfo)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedCardTemplateId(null);
+            setFormNotice(null);
+          }
+        }}
+        title={
+          selectedCardInfo ? bi(selectedCardInfo.tpl.titleAr, selectedCardInfo.tpl.titleEn) : ''
+        }
+        subtitle={
+          selectedCardInfo
+            ? `${
+                selectedCardInfo.tpl.customCategoryLabel?.trim() ||
+                bi(
+                  EXPENSE_CATEGORY_LABELS[selectedCardInfo.tpl.category].ar,
+                  EXPENSE_CATEGORY_LABELS[selectedCardInfo.tpl.category].en,
+                  EXPENSE_CATEGORY_CKB[selectedCardInfo.tpl.category]
+                )
+              } · ${bi('استحقاق يوم', 'Monthly day', 'ڕۆژی')} ${selectedCardInfo.tpl.dayOfMonth}`
+            : undefined
+        }
+        ariaLabel={bi('تفاصيل المصروف المتكرر', 'Recurring Expense Details', 'وردەکاری خەرجیی دووبارەبووەوە')}
+        closeLabel={bi('إغلاق', 'Close', 'داخستن')}
+        size="md"
+        dir={isRtl ? 'rtl' : 'ltr'}
+      >
+        {selectedCardInfo && (() => {
+          const { tpl, suggestedDueDate, loggedThisMonth, totalPaidThisMonth, isPaidThisMonth } = selectedCardInfo;
+          const draft = getDraft(tpl.id);
+
+          return (
+            <div className="space-y-4">
+              {/* Current Month Summary Strip */}
+              <div className="p-3.5 rounded-2xl bg-surface border border-card-line flex flex-wrap items-center justify-between gap-2">
+                <div className="space-y-0.5">
+                  <div className="text-[11px] text-muted-foreground-1">
+                    {bi('حالة الدفع لهذا الشهر:', 'This Month Status:', 'باری پارەدانی ئەم مانگە:')}
+                  </div>
+                  {isPaidThisMonth ? (
+                    <div className="text-sm font-black text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                      <CheckCircle2 className="size-4" />
+                      <span>{bi('مدفوع:', 'Paid:', 'دراوە:')}</span>
+                      <Money amount={totalPaidThisMonth} colorize={false} />
+                    </div>
+                  ) : (
+                    <div className="text-sm font-black text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
+                      <CalendarCheck2 className="size-4" />
+                      <span>{bi('مستحق للدفع', 'Payment Due', 'شایستەی پارەدانە')}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="text-end text-xs text-muted-foreground-1 tabular-nums">
+                  <div>{bi('تاريخ الاستحقاق:', 'Due Date:', 'بەرواری شایستە:')}</div>
+                  <div className="font-bold text-foreground">
+                    <bdi dir="ltr">{formatDateDDMMYYYY(suggestedDueDate)}</bdi>
+                  </div>
+                </div>
+              </div>
+
+              {/* Logged Payments This Month */}
+              {loggedThisMonth.length > 0 && (
+                <div className="space-y-2">
+                  <div className="text-xs font-bold text-foreground">
+                    {bi('الدفعات المسجلة هذا الشهر:', 'Logged Payments This Month:', 'پارەدانە تۆمارکراوەکانی ئەم مانگە:')}
+                  </div>
+                  <div className="space-y-1.5">
+                    {loggedThisMonth.map((exp) => (
+                      <div
+                        key={exp.id}
+                        className="p-2.5 rounded-xl bg-surface border border-line-2 flex items-center justify-between gap-2 text-xs"
+                      >
+                        <div className="min-w-0">
+                          <div className="font-bold text-foreground tabular-nums">
+                            <bdi dir="ltr">{formatDateDDMMYYYY(exp.date)}</bdi> · {exp.paidBy}
+                          </div>
+                          {exp.notes && (
+                            <div className="text-[11px] text-muted-foreground-1 mt-0.5 truncate">
+                              {exp.notes}
+                            </div>
+                          )}
+                        </div>
+                        <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 shrink-0">
+                          <Money amount={exp.amountIQD} colorize={false} />
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {formNotice && (
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-800 dark:text-amber-200 flex items-center justify-between gap-2">
+                  <span>{formNotice}</span>
+                  <button
+                    type="button"
+                    onClick={() => setFormNotice(null)}
+                    className="p-1 rounded hover:bg-black/5 cursor-pointer"
+                    aria-label={bi('إغلاق', 'Dismiss', 'داخستن')}
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Log New Payment Section */}
+              <div className="p-3.5 rounded-2xl bg-surface border border-line-2 space-y-3">
+                <div className="text-xs font-bold text-foreground">
+                  {isPaidThisMonth
+                    ? bi('تسجيل دفعة إضافية:', 'Log Another Payment:', 'تۆمارکردنی پارەدانی زیاتر:')
+                    : bi('تسجيل الدفع الآن:', 'Log Payment Now:', 'تۆمارکردنی پارەدان ئێستا:')}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label htmlFor={`rec-amt-${tpl.id}`} className="block text-xs font-semibold text-muted-foreground-1 mb-1">
+                      {bi('المبلغ:', 'Amount:', 'بڕ:')}
+                    </label>
+                    <MoneyInput
+                      id={`rec-amt-${tpl.id}`}
+                      ariaLabel={`${bi('المبلغ', 'Amount', 'بڕ')} — ${bi(tpl.titleAr, tpl.titleEn)}`}
+                      value={draft.amountIQD}
+                      onChange={(val) => patchDraft(tpl.id, { amountIQD: val })}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`rec-date-${tpl.id}`} className="block text-xs font-semibold text-muted-foreground-1 mb-1">
+                      {bi('التاريخ:', 'Date:', 'ڕێکەوت:')}
+                    </label>
+                    <DatePickerInput
+                      id={`rec-date-${tpl.id}`}
+                      ariaLabel={`${bi('التاريخ', 'Date', 'ڕێکەوت')} — ${bi(tpl.titleAr, tpl.titleEn)}`}
+                      value={draft.date}
+                      onChange={(val) => patchDraft(tpl.id, { date: val })}
+                    />
+                  </div>
+                </div>
+
+                <input
+                  type="text"
+                  value={draft.notes}
+                  onChange={(e) => patchDraft(tpl.id, { notes: e.target.value })}
+                  aria-label={bi('ملاحظات المصروف المتكرر', 'Recurring expense notes', 'تێبینی خەرجیی دووبارەبووەوە')}
+                  placeholder={bi('ملاحظات (اختياري)...', 'Notes (optional)...', 'تێبینی (بژاردەیی)...')}
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-card border border-layer-line text-foreground focus:outline-none focus:border-primary"
+                />
+
+                <button
+                  type="button"
+                  disabled={draft.amountIQD <= 0}
+                  onClick={() => handleLogDueExpense(tpl.id)}
+                  className="w-full py-2.5 px-4 min-h-[38px] rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:bg-card disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed"
+                >
+                  <Check className="size-4" />
+                  <span>{bi('تم · تسجيل الدفع', 'Done · Log Payment', 'تەواو · تۆمارکردنی پارەدان')}</span>
+                </button>
+              </div>
+
+              {/* Card Management Actions */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-card-divider">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => startEditTemplate(tpl)}
+                    className="min-h-[34px] px-3 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Edit3 className="size-3.5" />
+                    <span>{bi('تعديل البطاقة', 'Edit Card', 'دەستکاریکردن')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleToggleActive(tpl.id);
+                      setSelectedCardTemplateId(null);
+                    }}
+                    className="min-h-[34px] px-3 py-1.5 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Pause className="size-3.5" />
+                    <span>{bi('إيقاف مؤقت', 'Pause', 'وەستاندن')}</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleDeleteTemplate(tpl.id);
+                    setSelectedCardTemplateId(null);
+                  }}
+                  className="min-h-[34px] px-3 py-1.5 rounded-xl border border-rose-500/25 bg-rose-500/10 hover:bg-rose-500/15 text-rose-700 dark:text-rose-300 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="size-3.5" />
+                  <span>{bi('حذف', 'Delete', 'سڕینەوە')}</span>
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+      </ModalDialog>
     </div>
   );
 };

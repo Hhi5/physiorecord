@@ -162,51 +162,60 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Sub-tab switcher */}
-      <div className="flex flex-wrap items-center justify-between gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700/80">
-        <div className="flex flex-wrap items-center gap-1">
+      {/* Sub-tab switcher (Horizontally scrollable strip) */}
+      <div className="rounded-2xl bg-surface/60 border border-line-2 p-1.5 space-y-1.5">
+        <div className="pr-hscroll overflow-x-auto flex items-center gap-1 whitespace-nowrap pb-1 pt-0.5 px-0.5">
           <button
             type="button"
-            onClick={() => setActiveTab('dermatomes')}
-            className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            onClick={(e) => {
+              setActiveTab('dermatomes');
+              e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }}
+            className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'dermatomes'
-                ? 'bg-teal-600 text-white shadow-2xs'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700'
+                ? 'bg-primary text-primary-foreground shadow-2xs'
+                : 'text-muted-foreground-1 hover:bg-card hover:text-foreground'
             }`}
           >
             {bi('خريطة القطاعات الجلدية (C2–S5)', 'Interactive Dermatomes (C2–S5)', 'نەخشەی دێرماتۆمەکان (C2–S5)')}
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('reflexes')}
-            className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            onClick={(e) => {
+              setActiveTab('reflexes');
+              e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }}
+            className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'reflexes'
-                ? 'bg-teal-600 text-white shadow-2xs'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700'
+                ? 'bg-primary text-primary-foreground shadow-2xs'
+                : 'text-muted-foreground-1 hover:bg-card hover:text-foreground'
             }`}
           >
             {bi('المنعكسات الوترية العميقة (DTR)', 'Deep Tendon Reflexes (DTR)', 'پەرچەکرداری ژێی قووڵ (DTR)')}
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('myotomes')}
-            className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            onClick={(e) => {
+              setActiveTab('myotomes');
+              e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }}
+            className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'myotomes'
-                ? 'bg-teal-600 text-white shadow-2xs'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700'
+                ? 'bg-primary text-primary-foreground shadow-2xs'
+                : 'text-muted-foreground-1 hover:bg-card hover:text-foreground'
             }`}
           >
             {bi('القطع العضلية العصبية (Myotomes)', 'Key Motor Myotomes', 'مایۆتۆمە سەرەکییەکان (Myotomes)')}
           </button>
         </div>
 
-        <span className="text-xs text-teal-700 dark:text-teal-400 font-semibold px-2">
+        <div className="text-[11px] text-primary font-semibold px-2">
           {activeTab === 'dermatomes'
             ? bi('معيار ASIA الحسي ثنائي الجانب', 'ASIA ISNCSCI Sensory Mapping', 'پێوانەی هەستەوەری ASIA لە هەردوو لا')
             : activeTab === 'reflexes'
             ? bi('2+ يمثل الاستجابة الطبيعية', '2+ represents normal reflex', '2+ نیشانەی پەرچەکرداری ئاساییە')
             : bi('فحص القوة العصبية للجذور C5-S1', 'Motor root screening C5-S1', 'پشکنینی هێزی ڕەگی دەمار C5-S1')}
-        </span>
+        </div>
       </div>
 
       {/* Tab 1: Table-First ASIA / ISNCSCI Sensory Screening (C2..S4-5) */}
@@ -233,16 +242,16 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
               >
                 <div className="min-w-[180px]">
                   <div className="flex items-center gap-2">
-                    <span className="px-1.5 py-0.5 rounded-md text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800 font-mono">
+                    <span className="px-1.5 py-0.5 rounded-md text-xs font-bold bg-primary/10 text-primary border border-primary/25 font-mono">
                       {ref.root}
                     </span>
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                    <h3 className="text-xs font-bold text-foreground">
                       {bi(ref.ar, ref.en)}
                     </h3>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
                   {/* Right */}
                   <div className="flex items-center justify-between gap-1 p-1.5 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-200/80 dark:border-slate-800">
                     <span className="text-xs font-bold text-slate-600 dark:text-slate-300 px-1">
@@ -259,8 +268,8 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
                             rGrade === g
                               ? g === '2+'
                                 ? 'bg-emerald-600 text-white'
-                                : 'bg-teal-600 text-white'
-                              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100'
+                                : 'bg-primary text-primary-foreground'
+                              : 'bg-card text-muted-foreground-1 hover:bg-layer-hover'
                           }`}
                         >
                           {g}
@@ -285,8 +294,8 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
                             lGrade === g
                               ? g === '2+'
                                 ? 'bg-emerald-600 text-white'
-                                : 'bg-teal-600 text-white'
-                              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100'
+                                : 'bg-primary text-primary-foreground'
+                              : 'bg-card text-muted-foreground-1 hover:bg-layer-hover'
                           }`}
                         >
                           {g}
@@ -311,33 +320,33 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
             return (
               <div
                 key={myo.root}
-                className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2"
+                className="p-3 rounded-xl border border-card-line bg-card space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="w-8 h-6 rounded-md font-bold font-mono text-xs flex items-center justify-center bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800">
+                    <span className="w-8 h-6 rounded-md font-bold font-mono text-xs flex items-center justify-center bg-primary/10 text-primary border border-primary/25">
                       {myo.root}
                     </span>
-                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    <span className="text-xs font-semibold text-foreground">
                       {bi(myo.ar, myo.en)}
                     </span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center justify-between p-1.5 bg-slate-50 dark:bg-slate-950 rounded-lg text-xs">
-                    <span className="text-xs font-bold text-slate-500">R:</span>
-                    <div className="flex items-center gap-1 font-mono tabular-nums">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="flex items-center justify-between gap-2 p-1.5 bg-surface rounded-lg text-xs">
+                    <span className="text-xs font-bold text-muted-foreground-1">R:</span>
+                    <div className="flex flex-wrap items-center gap-1 font-mono tabular-nums">
                       {(['5', '4', '3', '2', '1', '0', 'NT'] as Array<MmtGradeValue | 'NT'>).map((g) => (
                         <button
                           key={g}
                           type="button"
                           disabled={readOnly}
                           onClick={() => handleUpdateMyotome(myo.root, 'right', rGrade === g ? null : g)}
-                          className={`min-w-[22px] h-6 px-1 text-xs font-bold rounded cursor-pointer ${
+                          className={`compact-btn min-w-[28px] h-7 px-1.5 text-xs font-bold rounded cursor-pointer ${
                             rGrade === g
-                              ? 'bg-teal-600 text-white'
-                              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-card text-muted-foreground-1 hover:bg-layer-hover'
                           }`}
                         >
                           {g}
@@ -346,19 +355,19 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-1.5 bg-slate-50 dark:bg-slate-950 rounded-lg text-xs">
-                    <span className="text-xs font-bold text-slate-500">L:</span>
-                    <div className="flex items-center gap-1 font-mono tabular-nums">
+                  <div className="flex items-center justify-between gap-2 p-1.5 bg-surface rounded-lg text-xs">
+                    <span className="text-xs font-bold text-muted-foreground-1">L:</span>
+                    <div className="flex flex-wrap items-center gap-1 font-mono tabular-nums">
                       {(['5', '4', '3', '2', '1', '0', 'NT'] as Array<MmtGradeValue | 'NT'>).map((g) => (
                         <button
                           key={g}
                           type="button"
                           disabled={readOnly}
                           onClick={() => handleUpdateMyotome(myo.root, 'left', lGrade === g ? null : g)}
-                          className={`min-w-[22px] h-6 px-1 text-xs font-bold rounded cursor-pointer ${
+                          className={`compact-btn min-w-[28px] h-7 px-1.5 text-xs font-bold rounded cursor-pointer ${
                             lGrade === g
-                              ? 'bg-teal-600 text-white'
-                              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-card text-muted-foreground-1 hover:bg-layer-hover'
                           }`}
                         >
                           {g}
@@ -399,7 +408,7 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
             'e.g., Sensation intact across L4-S1 dermatomes, Babinski negative, no clonus detected...',
             'نموونە: هەستکردنی پێست ئاساییە لە L4-S1، پەرچەکرداری ئەژنۆ هاوسەنگە (+2)، بابینسکی نەرێنییە...'
           )}
-          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-teal-500"
+          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-primary"
         />
       </div>
     </div>

@@ -308,7 +308,7 @@ export const PatientBodyChart: React.FC<PatientBodyChartProps> = ({
             <Eye className="w-3.5 h-3.5 text-primary-600" />
             {bi('مخطط أعراض المريض السريري', 'Patient Body Chart Symptoms', 'هێڵکاری کلینیکی نیشانەکانی نەخۆش')}
           </span>
-          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-xs">
+          <span className="text-emerald-700 dark:text-emerald-400 font-bold text-xs">
             {markers.length} {bi('مواضع محددة', 'points marked', 'خاڵی دیاریکراو')}
           </span>
         </div>
@@ -394,12 +394,12 @@ export const PatientBodyChart: React.FC<PatientBodyChartProps> = ({
                 {bi('مخطط توثيق أعراض المريض', 'Patient Body Chart Symptoms Mapping', 'هێڵکاری تۆمارکردنی نیشانەکانی نەخۆش')}
               </span>
             </h3>
-            <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-              <ShieldCheck className="w-3 h-3 text-emerald-600" />
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+              <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
               100% Encrypted DEK
             </span>
             {readOnly && (
-              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+              <span className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground-1">
                 <Lock className="w-3 h-3" />
                 {bi('معتمد (للقراءة فقط)', 'Finalized (Read-Only)', 'پەسەندکراو (تەنها بۆ خوێندنەوە)')}
               </span>

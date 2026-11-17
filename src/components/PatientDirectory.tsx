@@ -86,6 +86,25 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
     patient: PatientRecord;
     index: number;
   } | null>(null);
+  const [isMobile, setIsMobile] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handlePatientCardClick = (patient: PatientRecord, index: number) => {
+    if (isMobile) {
+      onSelectPatient(patient);
+    } else {
+      setQuickViewEntry({ patient, index });
+    }
+  };
   const [pinnedIds, setPinnedIds] = useState<string[]>(() =>
     ClinicOperationsService.getPinnedPatientIds()
   );
@@ -222,7 +241,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
               {bi('ملف نشط', 'active', 'چالاک')}
             </span>
             {redFlagCount > 0 && (
-              <span className="py-0.5 px-2.5 rounded-full text-xs font-bold tabular-nums bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 inline-flex items-center gap-1">
+              <span className="text-xs font-bold tabular-nums text-rose-700 dark:text-rose-400 inline-flex items-center gap-1">
                 <AlertCircle className="size-3.5" />
                 <Num value={redFlagCount} /> {bi('علامات حمراء', 'red flags')}
               </span>
@@ -246,8 +265,8 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
             <GitMerge className="size-4 text-amber-700 dark:text-amber-400" />
             <span>{bi('دمج المكررين', 'Merge Duplicates')}</span>
             {duplicatePairCount > 0 && (
-              <span className="py-0.5 px-1.5 rounded-full text-xs font-mono font-bold tabular-nums bg-amber-500/15 text-amber-800 dark:text-amber-300">
-                {duplicatePairCount}
+              <span className="text-xs font-mono font-bold tabular-nums text-amber-700 dark:text-amber-300">
+                · {duplicatePairCount}
               </span>
             )}
           </button>
@@ -268,7 +287,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
       {undoArchivedPatient && (
         <div
           role="status"
-          className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-foreground"
+          className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-surface/75 text-xs text-foreground"
         >
           <span>
             {bi('تمت أرشفة ملف المريض:', 'Patient archived:')}{' '}
@@ -422,48 +441,50 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
         </div>
       </div>
 
-      {/* Pinned & Recent Patients Quick Access (Phase 2.6 Smart Memory) */}
+      {/* Pinned & Recent Patients Quick Access (Horizontally scrollable strip) */}
       {activeTab === 'active' && (pinnedPatients.length > 0 || recentPatients.length > 0) && (
-        <div className="pr-surface p-3 flex flex-wrap items-center gap-2 text-xs">
-          {pinnedPatients.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300 font-bold me-1">
-                <Star className="size-3.5 fill-amber-500 text-amber-500" />
-                <span>{bi('المثبتون:', 'Pinned:')}</span>
-              </span>
-              {pinnedPatients.map((p, idx) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setQuickViewEntry({ patient: p, index: idx })}
-                  className="px-2.5 py-1.5 min-h-[36px] rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-foreground font-bold inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  <span>{getPatientDisplayName(p.data, language)}</span>
-                  {isDemoPatient(p) && <DemoBadge />}
-                </button>
-              ))}
-            </div>
-          )}
+        <div className="pr-surface p-2 text-xs overflow-hidden">
+          <div className="pr-hscroll overflow-x-auto flex items-center gap-2 whitespace-nowrap pb-1 pt-0.5 px-1">
+            {pinnedPatients.length > 0 && (
+              <>
+                <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300 font-bold shrink-0">
+                  <Star className="size-3.5 fill-amber-500 text-amber-500" />
+                  <span>{bi('المثبتون:', 'Pinned:')}</span>
+                </span>
+                {pinnedPatients.map((p, idx) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => handlePatientCardClick(p, idx)}
+                    className="px-2.5 py-1.5 min-h-[34px] rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-foreground font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    <span>{getPatientDisplayName(p.data, language)}</span>
+                    {isDemoPatient(p) && <DemoBadge />}
+                  </button>
+                ))}
+              </>
+            )}
 
-          {recentPatients.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="inline-flex items-center gap-1 text-muted-foreground-1 font-bold ms-1 me-1">
-                <History className="size-3.5 text-primary" />
-                <span>{bi('الأخيرون:', 'Recent:')}</span>
-              </span>
-              {recentPatients.map((p, idx) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setQuickViewEntry({ patient: p, index: idx })}
-                  className="px-2.5 py-1.5 min-h-[36px] rounded-xl bg-surface hover:bg-primary/10 border border-line-2 hover:border-primary/40 text-foreground font-semibold inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  <span>{getPatientDisplayName(p.data, language)}</span>
-                  {isDemoPatient(p) && <DemoBadge />}
-                </button>
-              ))}
-            </div>
-          )}
+            {recentPatients.length > 0 && (
+              <>
+                <span className="inline-flex items-center gap-1 text-muted-foreground-1 font-bold ms-1 shrink-0">
+                  <History className="size-3.5 text-primary" />
+                  <span>{bi('الأخيرون:', 'Recent:')}</span>
+                </span>
+                {recentPatients.map((p, idx) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => handlePatientCardClick(p, idx)}
+                    className="px-2.5 py-1.5 min-h-[34px] rounded-xl bg-surface hover:bg-primary/10 border border-line-2 hover:border-primary/40 text-foreground font-semibold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    <span>{getPatientDisplayName(p.data, language)}</span>
+                    {isDemoPatient(p) && <DemoBadge />}
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
         </div>
       )}
 
@@ -493,7 +514,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                   : 'overflow-x-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-primary'
               }
             >
-              <table className="min-w-full divide-y divide-card-divider text-start text-xs">
+              <table className="min-w-full divide-y divide-card-divider text-start text-xs pr-responsive-table">
                 <thead className="bg-surface/70 sticky top-0 z-10 backdrop-blur-sm">
                   <tr className="text-muted-foreground-1 font-semibold text-xs">
                     <th scope="col" className="py-3.5 px-4 text-start">{bi('المريض', 'Patient')}</th>
@@ -525,10 +546,10 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                     return (
                       <tr
                         key={patient.id}
-                        onClick={() => setQuickViewEntry({ patient, index: idx })}
+                        onClick={() => handlePatientCardClick(patient, idx)}
                         className="hover:bg-muted/40 transition-colors cursor-pointer group"
                       >
-                        <td className="py-3.5 px-4 whitespace-nowrap">
+                        <td data-label={bi('المريض', 'Patient')} className="py-3.5 px-4 whitespace-nowrap pr-cell-primary">
                           <div className="flex items-center gap-3">
                             <span className="pr-avatar size-9 text-xs">
                               {(primaryName || 'P').charAt(0)}
@@ -545,9 +566,9 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                                 {isImported && (
                                   <span
                                     data-testid="patient-imported-badge"
-                                    className="py-0.5 px-2 rounded-md text-xs font-semibold bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 shrink-0"
+                                    className="text-xs font-semibold text-sky-700 dark:text-sky-300 shrink-0"
                                   >
-                                    {bi('مستورد', 'Imported')}
+                                    · {bi('مستورد', 'Imported')}
                                   </span>
                                 )}
                               </div>
@@ -557,12 +578,12 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                             </div>
                           </div>
                         </td>
-                        <td className="py-3.5 px-4 whitespace-nowrap tabular-nums">
+                        <td data-label={bi('الجنس / العمر', 'Demographics')} className="py-3.5 px-4 whitespace-nowrap tabular-nums">
                           <span
-                            className={`inline-flex items-center justify-center text-center py-0.5 px-2.5 rounded-full text-xs font-semibold border ${
+                            className={`inline-flex items-center text-xs font-semibold ${
                               p.gender === 'male'
-                                ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20'
-                                : 'bg-pink-500/10 text-pink-700 dark:text-pink-300 border-pink-500/20'
+                                ? 'text-sky-700 dark:text-sky-300'
+                                : 'text-rose-700 dark:text-rose-400'
                             }`}
                           >
                             {p.gender === 'male' ? bi('ذكر', 'Male') : bi('أنثى', 'Female')}{' '}
@@ -575,21 +596,21 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                             )}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 max-w-xs">
+                        <td data-label={bi('التاريخ المرضي والمحاذير', 'Clinical Summary & Alerts')} className="py-3.5 px-4 max-w-xs">
                           {hasRedFlags && (
-                            <span className="inline-flex items-center gap-1 py-0.5 px-2 rounded-md bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20 text-xs font-bold mb-1">
+                            <span className="inline-flex items-center gap-1 text-rose-700 dark:text-rose-400 text-xs font-bold mb-1">
                               <AlertCircle className="size-3" />
-                              {p.redFlags || p.contraindications || p.precautions}
+                              <span className="truncate">{p.redFlags || p.contraindications || p.precautions}</span>
                             </span>
                           )}
                           <p className="text-muted-foreground-1 truncate">
                             {p.medicalHistory || bi('لا يوجد تاريخ مرضي مسجل', 'No medical history')}
                           </p>
                         </td>
-                        <td className="py-3.5 px-4 whitespace-nowrap text-muted-foreground-1 tabular-nums">
+                        <td data-label={bi('الهاتف', 'Phone')} className="py-3.5 px-4 whitespace-nowrap text-muted-foreground-1 tabular-nums">
                           <bdi dir="ltr">{formatIraqiPhoneDisplay(p.phoneNumber || p.phone)}</bdi>
                         </td>
-                        <td className="py-3.5 px-4 whitespace-nowrap text-end">
+                        <td data-label={bi('الإجراء', 'Action')} className="py-3.5 px-4 whitespace-nowrap text-end">
                           <div className="inline-flex items-center gap-1.5">
                             <button
                               type="button"
@@ -616,7 +637,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setQuickViewEntry({ patient, index: idx });
+                                handlePatientCardClick(patient, idx);
                               }}
                               className="inline-flex items-center gap-1 py-1.5 px-3 min-h-[36px] rounded-lg bg-primary/10 text-primary font-semibold group-hover:bg-primary group-hover:text-primary-foreground transition-colors cursor-pointer"
                             >
@@ -678,13 +699,13 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                   className="pr-surface pr-surface-interactive p-5 flex flex-col justify-between group"
                 >
                   <div
-                    onClick={() => setQuickViewEntry({ patient, index: idx })}
+                    onClick={() => handlePatientCardClick(patient, idx)}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        setQuickViewEntry({ patient, index: idx });
+                        handlePatientCardClick(patient, idx);
                       }
                     }}
                     className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
@@ -709,9 +730,9 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                             {isImported && (
                               <span
                                 data-testid="patient-imported-badge"
-                                className="py-0.5 px-2 rounded-md text-xs font-semibold bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 shrink-0"
+                                className="text-xs font-semibold text-sky-700 dark:text-sky-300 shrink-0"
                               >
-                                {bi('مستورد', 'Imported')}
+                                · {bi('مستورد', 'Imported')}
                               </span>
                             )}
                           </div>
@@ -721,17 +742,17 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                         </div>
                       </div>
                       <div
-                        className={`min-w-[48px] h-10 px-2 rounded-xl border flex flex-col items-center justify-center text-center shrink-0 self-center tabular-nums shadow-2xs ${
+                        className={`text-center shrink-0 self-center tabular-nums text-xs font-bold ${
                           p.gender === 'male'
-                            ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20'
-                            : 'bg-pink-500/10 text-pink-700 dark:text-pink-300 border-pink-500/20'
+                            ? 'text-sky-700 dark:text-sky-300'
+                            : 'text-rose-700 dark:text-rose-400'
                         }`}
                       >
-                        <span className="text-xs font-bold leading-tight text-center">
+                        <span className="leading-tight text-center block">
                           {p.gender === 'male' ? bi('ذكر', 'Male') : bi('أنثى', 'Female')}
                         </span>
                         {computePatientAge(p.dateOfBirth, p.age) !== undefined && (
-                          <span className="text-xs font-semibold leading-tight text-center opacity-90 mt-0.5">
+                          <span className="text-xs font-semibold leading-tight text-center opacity-90 mt-0.5 block">
                             <bdi dir="ltr">({computePatientAge(p.dateOfBirth, p.age)})</bdi>
                           </span>
                         )}
@@ -740,7 +761,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
 
                     {/* Red Flags Alert Badge */}
                     {hasRedFlags && (
-                      <div className="mb-3 px-3 py-2 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2 font-semibold">
+                      <div className="mb-3 px-3 py-2 bg-surface/75 rounded-xl text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2 font-semibold">
                         <AlertCircle className="size-4 text-rose-700 dark:text-rose-400 shrink-0" />
                         <span className="truncate">{p.redFlags || p.contraindications || p.precautions}</span>
                       </div>

@@ -180,7 +180,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           ar: 'مجدول',
           en: 'Scheduled',
           ckb: 'تۆمارکراو',
-          cls: 'bg-surface text-surface-foreground border-layer-line',
+          cls: 'text-muted-foreground-1',
           dot: 'bg-slate-400',
         };
       case 'arrived':
@@ -188,7 +188,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           ar: 'وصل — بالانتظار',
           en: 'Arrived',
           ckb: 'گەیشت — لە چاوەڕوانیدا',
-          cls: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800',
+          cls: 'text-amber-700 dark:text-amber-300 font-bold',
           dot: 'bg-amber-500 animate-pulse',
         };
       case 'in_session':
@@ -196,7 +196,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           ar: 'داخل الجلسة',
           en: 'In Room',
           ckb: 'لەناو دانیشتندایە',
-          cls: 'bg-primary-50 text-primary-700 border-primary-200 dark:bg-primary-950/70 dark:text-primary-300 dark:border-primary-800',
+          cls: 'text-primary font-bold',
           dot: 'bg-primary animate-pulse',
         };
       case 'completed':
@@ -204,7 +204,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           ar: 'مكتمل',
           en: 'Completed',
           ckb: 'تەواوبوو',
-          cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800',
+          cls: 'text-emerald-700 dark:text-emerald-300 font-bold',
           dot: 'bg-emerald-500',
         };
       case 'no_show':
@@ -212,7 +212,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           ar: 'لم يحضر',
           en: 'No-Show',
           ckb: 'ئامادە نەبوو',
-          cls: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800',
+          cls: 'text-rose-700 dark:text-rose-400 font-bold',
           dot: 'bg-rose-500',
         };
       case 'cancelled':
@@ -220,7 +220,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           ar: 'ملغى',
           en: 'Cancelled',
           ckb: 'هەڵوەشاوە',
-          cls: 'bg-surface text-muted-foreground-1 border-layer-line',
+          cls: 'text-muted-foreground-1',
           dot: 'bg-slate-400',
         };
     }
@@ -256,7 +256,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
   return (
     <div className="p-3 sm:p-6 max-w-7xl mx-auto space-y-3 sm:space-y-4">
       {actionFeedback && (
-        <div className="p-2.5 sm:p-3 bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center justify-between gap-3 text-xs text-emerald-900 dark:text-emerald-200">
+        <div className="p-2.5 sm:p-3 bg-surface/75 rounded-2xl flex items-center justify-between gap-3 text-xs text-emerald-800 dark:text-emerald-300">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span className="font-bold">{actionFeedback}</span>
@@ -602,16 +602,16 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
         {/* Right Column: Waiting List & Unpaid IQD Balances */}
         <div className="xl:col-span-4 space-y-5">
           {/* Waiting List Card */}
-          <div className="bg-card border border-card-line rounded-2xl shadow-2xs overflow-hidden">
-            <div className="p-4 border-b border-card-divider flex items-center justify-between">
+          <div className="bg-card/95 rounded-2xl shadow-2xs overflow-hidden">
+            <div className="p-4 border-b border-card-divider/60 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                <Users className="w-4 h-4 text-primary" />
                 <h2 className="text-xs font-bold text-foreground">
                   {bi('قائمة الانتظار', 'Waiting List', 'لیستی چاوەڕوانی')}
                 </h2>
               </div>
-              <span className="px-2 py-0.5 rounded-full text-xs tabular-nums font-bold bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                <Num value={waitingListActive.length} />
+              <span className="text-xs tabular-nums font-bold text-primary">
+                · <Num value={waitingListActive.length} />
               </span>
             </div>
 
@@ -624,7 +624,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                 waitingListActive.map((w) => (
                   <div
                     key={w.id}
-                    className="p-3 rounded-xl bg-muted/60 border border-layer-line space-y-2"
+                    className="p-3 rounded-xl bg-surface/65 space-y-2"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
@@ -638,10 +638,10 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                         {w.isDemo && <DemoBadge />}
                       </div>
                       <span
-                        className={`px-2 py-0.5 rounded text-xs font-bold ${
+                        className={`text-xs font-bold ${
                           w.priority === 'urgent'
-                            ? 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950 dark:text-rose-300'
-                            : 'bg-surface text-muted-foreground-1'
+                            ? 'text-rose-700 dark:text-rose-400'
+                            : 'text-muted-foreground-2'
                         }`}
                       >
                         {w.priority === 'urgent'
@@ -653,7 +653,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                       <div className="flex items-center gap-1.5">
                         <span
                           data-testid="reception-waitlist-therapist"
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface border border-line-2 text-foreground font-semibold text-xs"
+                          className="inline-flex items-center gap-1 text-foreground font-semibold text-xs"
                         >
                           <Stethoscope className="size-3 text-primary" />
                           <span>{w.preferredTherapist}</span>
@@ -686,7 +686,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
 
           {/* Unpaid IQD Balances Card */}
           {!isReceptionRole && (
-            <div className="bg-card border border-card-line rounded-2xl shadow-2xs overflow-hidden">
+            <div className="bg-card/95 rounded-2xl shadow-2xs overflow-hidden">
               <div className="p-4 border-b border-card-divider flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Wallet className="w-4 h-4 text-rose-700 dark:text-rose-400" />

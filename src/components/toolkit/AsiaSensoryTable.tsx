@@ -211,8 +211,8 @@ export const AsiaSensoryTable: React.FC<AsiaSensoryTableProps> = ({
 
       {/* Explicit clinician recording-aid notice */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/70">
-        <div className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-200">
-          <Info className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2 text-xs text-foreground">
+          <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <p className="font-medium leading-relaxed">
             {bi(
               'التسجيل يتبع فحص المعالج نفسه؛ هذا الجدول أداة توثيق (0 = غائب، 1 = متغيّر، 2 = طبيعي، NT = غير مفحوص).',
@@ -234,58 +234,63 @@ export const AsiaSensoryTable: React.FC<AsiaSensoryTableProps> = ({
       </div>
 
       {/* Filter pills & batch recording actions */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {(
-            [
-              { id: 'all', ar: 'الكل (C2–S4-5)', en: 'All (C2–S4-5)' },
-              { id: 'cervical', ar: 'عنقي (C2–C8)', en: 'Cervical (C2–C8)' },
-              { id: 'thoracic', ar: 'صدري (T1–T12)', en: 'Thoracic (T1–T12)' },
-              { id: 'lumbar', ar: 'قطني (L1–L5)', en: 'Lumbar (L1–L5)' },
-              { id: 'sacral', ar: 'عجزي (S1–S4-5)', en: 'Sacral (S1–S4-5)' },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setRegionFilter(tab.id)}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
-                regionFilter === tab.id
-                  ? 'bg-teal-600 text-white border-teal-600'
-                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              {bi(tab.ar, tab.en)}
-            </button>
-          ))}
+      <div className="space-y-2">
+        <div className="rounded-2xl border border-line-2 bg-surface/60 p-1 overflow-hidden">
+          <div className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-1 pt-0.5 px-0.5">
+            {(
+              [
+                { id: 'all', ar: 'الكل (C2–S4-5)', en: 'All (C2–S4-5)' },
+                { id: 'cervical', ar: 'عنقي (C2–C8)', en: 'Cervical (C2–C8)' },
+                { id: 'thoracic', ar: 'صدري (T1–T12)', en: 'Thoracic (T1–T12)' },
+                { id: 'lumbar', ar: 'قطني (L1–L5)', en: 'Lumbar (L1–L5)' },
+                { id: 'sacral', ar: 'عجزي (S1–S4-5)', en: 'Sacral (S1–S4-5)' },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={(e) => {
+                  setRegionFilter(tab.id);
+                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }}
+                className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
+                  regionFilter === tab.id
+                    ? 'bg-primary text-primary-foreground border-primary shadow-2xs'
+                    : 'bg-card text-muted-foreground-1 border-layer-line hover:bg-layer-hover'
+                }`}
+              >
+                {bi(tab.ar, tab.en)}
+              </button>
+            ))}
+          </div>
         </div>
 
         {!readOnly && (
-          <div className="flex items-center gap-1.5">
+          <div className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-0.5">
             <button
               type="button"
               onClick={handleMarkVisibleNormal}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800 cursor-pointer"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800 cursor-pointer shrink-0 whitespace-nowrap transition-colors"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>{bi('تعيين المعروض = 2 (طبيعي)', 'Set Visible = 2')}</span>
             </button>
             {confirmClearVisible ? (
-              <div className="inline-flex items-center gap-1">
+              <div className="inline-flex items-center gap-1 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
                     handleClearVisible();
                     setConfirmClearVisible(false);
                   }}
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-rose-600 text-white cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-rose-600 text-white cursor-pointer shrink-0 whitespace-nowrap"
                 >
                   {bi('تأكيد المسح', 'Confirm Clear')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmClearVisible(false)}
-                  className="px-2.5 py-1.5 rounded-lg text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 cursor-pointer shrink-0 whitespace-nowrap"
                 >
                   {bi('إلغاء', 'Cancel')}
                 </button>
@@ -294,7 +299,7 @@ export const AsiaSensoryTable: React.FC<AsiaSensoryTableProps> = ({
               <button
                 type="button"
                 onClick={() => setConfirmClearVisible(true)}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 cursor-pointer"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 cursor-pointer shrink-0 whitespace-nowrap transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>{bi('مسح المعروض', 'Clear Visible')}</span>
@@ -309,8 +314,8 @@ export const AsiaSensoryTable: React.FC<AsiaSensoryTableProps> = ({
         <table className="w-full text-xs border-collapse">
           <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">
             <tr>
-              <th className="px-3 py-2.5 text-start font-bold">
-                {bi('المستوى العصبي ونقطة الفحص', 'Level & Key Sensory Point')}
+              <th className="px-2 py-2.5 text-center font-bold w-16">
+                {bi('المستوى', 'Level')}
               </th>
               <th className="px-2 py-2.5 text-center font-bold">
                 {bi('أيمن: لمس خفيف (R.LT)', 'Right Light Touch')}
@@ -335,24 +340,14 @@ export const AsiaSensoryTable: React.FC<AsiaSensoryTableProps> = ({
                   onClick={() => onSelectRoot?.(row.rootLevel)}
                   className={`transition-colors ${
                     isSelected
-                      ? 'bg-teal-50/70 dark:bg-teal-950/30'
+                      ? 'bg-primary/10'
                       : 'hover:bg-slate-50/70 dark:hover:bg-slate-800/40'
                   }`}
                 >
-                  <td className="px-3 py-2 min-w-[210px]">
-                    <div className="flex items-start gap-2">
-                      <span className="shrink-0 min-w-[44px] h-6 px-1.5 rounded-md font-mono font-bold text-xs flex items-center justify-center bg-teal-50 text-teal-800 border border-teal-200 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800">
-                        {row.rootLevel}
-                      </span>
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                          {bi(row.regionAr, row.regionEn)}
-                        </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                          {bi(row.keyPointAr, row.keyPointEn)}
-                        </div>
-                      </div>
-                    </div>
+                  <td className="px-2 py-2 text-center w-16">
+                    <span className="inline-flex min-w-[44px] h-6 px-1.5 rounded-md font-mono font-bold text-xs items-center justify-center bg-primary/10 text-primary border border-primary/25">
+                      {row.rootLevel}
+                    </span>
                   </td>
                   <td className="px-2 py-2 text-center whitespace-nowrap">
                     {renderGradeCell(row.rootLevel, 'R', 'LT')}

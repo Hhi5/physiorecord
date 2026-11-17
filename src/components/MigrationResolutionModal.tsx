@@ -234,7 +234,7 @@ export const MigrationResolutionModal: React.FC<MigrationResolutionModalProps> =
     >
       <div className="space-y-4">
         {statusError && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-700 dark:text-rose-300 font-semibold flex items-center justify-between gap-2">
+          <div className="p-3 rounded-xl bg-card shadow-2xs text-xs text-rose-700 dark:text-rose-400 font-semibold flex items-center justify-between gap-2">
             <span>{statusError}</span>
             <button type="button" onClick={() => setStatusError(null)} className="cursor-pointer">
               <X className="size-3.5" />
@@ -243,14 +243,14 @@ export const MigrationResolutionModal: React.FC<MigrationResolutionModalProps> =
         )}
 
         {statusSuccess && (
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-card shadow-2xs text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-2">
             <CheckCircle2 className="size-4 shrink-0" />
             <span>{statusSuccess}</span>
           </div>
         )}
 
         {items.length === 0 ? (
-          <div className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-center space-y-2">
+          <div className="p-6 rounded-2xl bg-card shadow-2xs text-center space-y-2">
             <CheckCircle2 className="size-8 text-emerald-600 dark:text-emerald-400 mx-auto" />
             <p className="text-sm font-bold text-foreground">
               {bi(
@@ -286,7 +286,7 @@ export const MigrationResolutionModal: React.FC<MigrationResolutionModalProps> =
                         <code dir="ltr" className="text-xs font-mono font-bold text-foreground break-all">
                           {item.key}
                         </code>
-                        <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 text-xs font-semibold">
+                        <span className="text-amber-700 dark:text-amber-400 text-xs font-semibold">
                           {categoryLabel(item.category)}
                         </span>
                       </div>
@@ -349,7 +349,7 @@ export const MigrationResolutionModal: React.FC<MigrationResolutionModalProps> =
                   )}
 
                   {isConfirmingDiscard ? (
-                    <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div className="p-3 rounded-xl bg-card shadow-2xs flex flex-wrap items-center justify-between gap-2 text-xs">
                       <span className="font-semibold text-rose-700 dark:text-rose-300">
                         {bi(
                           'تأكيد حذف هذا المفتاح نهائياً من المتصفح؟ لا يمكن التراجع بعد الحذف.',

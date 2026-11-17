@@ -6,14 +6,16 @@
 // directional arrows & non-destructive encrypted Dexie v9 export.
 // =======================================================================
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   ArrowUpRight,
   CheckCircle2,
   Crosshair,
+  Eye,
   Grid3x3,
   Hand,
+  LayoutGrid,
   Maximize2,
   MoveDiagonal,
   Plus,
@@ -188,8 +190,13 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
   const aspectWidth = hasNaturalDims ? attachment!.widthPx! : 800;
   const aspectHeight = hasNaturalDims ? attachment!.heightPx! : 600;
 
+  const [currentAttachment, setCurrentAttachment] = useState<EncryptedAttachmentRecord | null>(attachment);
+  const [savedAnnotations, setSavedAnnotations] = useState<PhotoAnnotationState | null>(
+    attachment?.annotations || null
+  );
+
   const [state, setState] = useState<PhotoAnnotationState>(() =>
-    buildInitialAnnotationState(starterLang, aspectWidth, aspectHeight)
+    attachment?.annotations || buildInitialAnnotationState(starterLang, aspectWidth, aspectHeight)
   );
   const [undoStack, setUndoStack] = useState<PhotoAnnotationState[]>([]);
   const [redoStack, setRedoStack] = useState<PhotoAnnotationState[]>([]);
@@ -213,7 +220,24 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
 
   const [zoomPercent, setZoomPercent] = useState(100);
   const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const emptyAnnotationState = useMemo<PhotoAnnotationState>(
+    () => ({
+      showPlumbLine: false,
+      plumbLineXPercent: 50,
+      showHorizontalLevel: false,
+      horizontalLevelYPercent: 50,
+      gridMode: 'none',
+      angles: [],
+      cobbAngles: [],
+      distances: [],
+      arrows: [],
+      calibration: null,
+    }),
+    []
+  );
 
   const canvasRef = useRef<KonvaMeasurementCanvasHandle | null>(null);
   const stateRef = useRef(state);
@@ -222,14 +246,24 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
 
   useEffect(() => {
     if (!isOpen || !attachment) return;
+    setCurrentAttachment(attachment);
     const natOk = Boolean(
       attachment.widthPx && attachment.widthPx > 16 && attachment.heightPx && attachment.heightPx > 16
     );
     const w = natOk ? attachment.widthPx! : 800;
     const h = natOk ? attachment.heightPx! : 600;
-    const initial = buildInitialAnnotationState(starterLang, w, h);
-    setState(initial);
-    lastCommittedRef.current = initial;
+
+    if (attachment.annotations) {
+      setState(attachment.annotations);
+      setSavedAnnotations(attachment.annotations);
+      lastCommittedRef.current = attachment.annotations;
+    } else {
+      const initial = buildInitialAnnotationState(starterLang, w, h);
+      setState(initial);
+      setSavedAnnotations(null);
+      lastCommittedRef.current = initial;
+    }
+
     setUndoStack([]);
     setRedoStack([]);
     setActiveTool('angle3');
@@ -248,6 +282,7 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
     setCalibUnit('cm');
     setZoomPercent(100);
     setSaving(false);
+    setSaveSuccess(false);
     setSaveError(null);
   }, [isOpen, attachment?.id, starterLang]);
 
@@ -306,6 +341,11 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
   const cobbAngles = state.cobbAngles || [];
   const distances = state.distances || [];
   const arrows = state.arrows || [];
+
+  const savedAngles = savedAnnotations?.angles || [];
+  const savedCobb = savedAnnotations?.cobbAngles || [];
+  const savedDist = savedAnnotations?.distances || [];
+  const savedArrows = (savedAnnotations?.arrows || []).filter((a) => a.label.trim());
 
   const safeAngleIdx = Math.max(0, Math.min(activeAngleIndex, Math.max(0, angles.length - 1)));
   const activeAngle = angles[safeAngleIdx] || angles[0];
@@ -576,41 +616,12 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
     setActiveAngleRole('A');
   };
 
-  const handleSaveAnnotatedCopy = async () => {
-    if (saving) return;
+  const handleSaveOnly = async () => {
+    if (saving || !currentAttachment) return;
     setSaving(true);
     setSaveError(null);
+    setSaveSuccess(false);
     try {
-      let payloadDataUrl = '';
-      let thumbnailDataUrl = '';
-      let widthPx = aspectWidth;
-      let heightPx = aspectHeight;
-      let storedBytes = 0;
-
-      // Primary export via Konva.Stage (WYSIWYG cropped image with crisp vector layers)
-      const konvaExport = canvasRef.current?.exportAnnotatedImage({ targetMaxDimPx: 1600 });
-      if (konvaExport?.dataUrl) {
-        payloadDataUrl = konvaExport.dataUrl;
-        widthPx = konvaExport.widthPx;
-        heightPx = konvaExport.heightPx;
-        thumbnailDataUrl = await createThumbnailFromDataUrl(payloadDataUrl, widthPx, heightPx);
-        storedBytes = estimateDataUrlBytes(payloadDataUrl);
-      } else {
-        const rendered = await renderAnnotatedPhotoDataUrl({
-          sourceDataUrl: attachment.payloadDataUrl,
-          widthPx: attachment.widthPx,
-          heightPx: attachment.heightPx,
-          annotations: state,
-        });
-        payloadDataUrl = rendered.payloadDataUrl;
-        thumbnailDataUrl = rendered.thumbnailDataUrl;
-        widthPx = rendered.widthPx;
-        heightPx = rendered.heightPx;
-        storedBytes = rendered.storedBytes;
-      }
-
-      const isSvgOutput = payloadDataUrl.startsWith('data:image/svg+xml');
-      const baseName = (attachment.fileName || 'posture-photo').replace(/\.[^.]+$/, '');
       const summaryParts: string[] = [
         ...state.angles.map((a) => `${a.label}: ${a.angleDegrees}°`),
         ...(state.cobbAngles || []).map((c) => `${c.label}: ${c.angleDegrees}°`),
@@ -619,26 +630,18 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
       ];
       const summary = summaryParts.join(' • ');
 
-      const saved = await ClinicOperationsService.saveAttachmentAsync({
-        patientId: attachment.patientId,
-        episodeId: attachment.episodeId,
-        category: attachment.category,
-        title: `${attachment.title} — ${bi('نسخة قياس', 'Measured Copy', 'کۆپی پێوانەکراو')}`,
-        notes: summary || attachment.notes,
-        fileName: `${baseName}-measured.${isSvgOutput ? 'svg' : 'jpg'}`,
-        mimeType: isSvgOutput ? 'image/svg+xml' : 'image/jpeg',
-        payloadDataUrl,
-        thumbnailDataUrl,
-        widthPx,
-        heightPx,
-        originalBytes: storedBytes,
-        storedBytes,
-        posturePairKey: attachment.posturePairKey,
-        capturedAt: attachment.capturedAt,
+      const { id, createdAt: _ca, updatedAt: _ua, version: _v, ...rest } = currentAttachment;
+      const updated = await ClinicOperationsService.saveAttachmentAsync({
+        ...rest,
+        id,
+        notes: summary || rest.notes,
+        annotations: state,
       });
 
-      onSavedCopy?.(saved);
-      onClose();
+      setCurrentAttachment(updated);
+      setSavedAnnotations(state);
+      setSaveSuccess(true);
+      onSavedCopy?.(updated);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -654,6 +657,14 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
     en: string;
     ckb: string;
   }> = [
+    {
+      id: 'all',
+      testId: 'photo-tool-all',
+      icon: LayoutGrid,
+      ar: 'جميع المقاييس',
+      en: 'All Measurements',
+      ckb: 'هەموو پێوانەکان',
+    },
     {
       id: 'angle3',
       testId: 'photo-tool-angle3',
@@ -674,9 +685,9 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
       id: 'distance',
       testId: 'photo-tool-distance',
       icon: Ruler,
-      ar: 'مسافة وأبعاد',
+      ar: 'المسافات والأبعاد',
       en: 'Distance',
-      ckb: 'مەودا',
+      ckb: 'مەودا و دووری',
     },
     {
       id: 'calibrate',
@@ -711,18 +722,59 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
         if (!open) onClose();
       }}
       title={bi(
-        'استوديو قياس الزوايا والقوام (Konva.js)',
-        'Angle & Posture Measurement Studio (Konva.js)',
-        'ستۆدیۆی پێوانەکردنی گۆشە و شێوەی وەستان (Konva.js)'
+        'استوديو قياس الزوايا والقوام',
+        'Angle & Posture Measurement Studio',
+        'ستۆدیۆی پێوانەکردنی گۆشە و شێوەی وەستان'
       )}
-      subtitle={`${attachment.title} • ${attachment.capturedAt}`}
+      subtitle={`${(currentAttachment || attachment).title} • ${(currentAttachment || attachment).capturedAt}`}
       size="xl"
       closeLabel={bi('إغلاق', 'Close', 'داخستن')}
+      footer={
+        <div className="w-full flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            {saveError && (
+              <div className="text-xs text-rose-700 dark:text-rose-300 flex items-center gap-1.5 min-w-0">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                <span className="truncate">{saveError}</span>
+              </div>
+            )}
+            {saveSuccess && !saveError && (
+              <div className="text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 min-w-0 font-semibold animate-in fade-in duration-200">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <span className="truncate">
+                  {bi('تم حفظ القياسات بنجاح في السجل المشفر', 'Measurements saved to encrypted record', 'پێوانەکان بە سەرکەوتوویی لە تۆماری نهێنیکراو پاشەکەوت کران')}
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-3.5 py-2 rounded-xl border border-card-stroke text-xs font-semibold text-muted-foreground-1 hover:bg-layer-hover cursor-pointer"
+            >
+              {bi('إغلاق', 'Close', 'داخستن')}
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              data-testid="photo-studio-save-only-btn"
+              onClick={handleSaveOnly}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
+            >
+              <Save className="w-4 h-4" />
+              {saving
+                ? bi('جاري الحفظ…', 'Saving…', 'پاشەکەوتکردن لە جێبەجێکردندایە…')
+                : bi('حفظ القياسات', 'Save Measurements', 'پاشەکەوتکردنی پێوانەکان')}
+            </button>
+          </div>
+        </div>
+      }
     >
       <div className="space-y-3">
-        {/* Unified Konva Measurement Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 p-2 rounded-xl bg-surface border border-card-divider">
-          <div className="flex flex-wrap items-center gap-1">
+        {/* Unified Measurement Toolbar (Horizontally Scrollable Strip) */}
+        <div className="rounded-2xl bg-surface/60 border border-line-2 p-1 overflow-hidden">
+          <div className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-1 pt-0.5 px-0.5">
             {toolButtons.map((btn) => {
               const Icon = btn.icon;
               const selected = activeTool === btn.id;
@@ -731,11 +783,14 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
                   key={btn.id}
                   type="button"
                   data-testid={btn.testId}
-                  onClick={() => handleSelectTool(btn.id)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition-colors ${
+                  onClick={(e) => {
+                    handleSelectTool(btn.id);
+                    e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border cursor-pointer transition-colors shrink-0 ${
                     selected
                       ? 'bg-primary text-primary-foreground border-primary shadow-2xs'
-                      : 'bg-layer border-card-stroke text-foreground hover:bg-layer-hover'
+                      : 'bg-card border-card-stroke text-foreground hover:bg-layer-hover'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5 shrink-0" />
@@ -743,10 +798,10 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
                 </button>
               );
             })}
-          </div>
 
-          {/* History (Undo/Redo) & Zoom Controls */}
-          <div className="flex flex-wrap items-center gap-1">
+            <span className="h-5 w-px bg-card-divider mx-0.5 shrink-0" aria-hidden="true" />
+
+            {/* History (Undo/Redo) & Zoom Controls */}
             <button
               type="button"
               onClick={handleUndo}
@@ -754,7 +809,7 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
               data-testid="photo-studio-undo-btn"
               title={bi('تراجع (Ctrl+Z)', 'Undo (Ctrl+Z)', 'گەڕانەوە (Ctrl+Z)')}
               aria-label={bi('تراجع', 'Undo', 'گەڕانەوە')}
-              className="p-1.5 rounded-lg border border-card-stroke bg-layer hover:bg-layer-hover text-foreground disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+              className="size-8 inline-flex items-center justify-center rounded-xl border border-card-stroke bg-card hover:bg-layer-hover text-foreground disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed shrink-0"
             >
               <Undo2 className="w-3.5 h-3.5" />
             </button>
@@ -765,12 +820,12 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
               data-testid="photo-studio-redo-btn"
               title={bi('إعادة (Ctrl+Shift+Z)', 'Redo (Ctrl+Shift+Z)', 'دووبارەکردنەوە')}
               aria-label={bi('إعادة', 'Redo', 'دووبارەکردنەوە')}
-              className="p-1.5 rounded-lg border border-card-stroke bg-layer hover:bg-layer-hover text-foreground disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+              className="size-8 inline-flex items-center justify-center rounded-xl border border-card-stroke bg-card hover:bg-layer-hover text-foreground disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed shrink-0"
             >
               <Redo2 className="w-3.5 h-3.5" />
             </button>
 
-            <span className="h-4 w-px bg-card-divider mx-0.5" aria-hidden="true" />
+            <span className="h-5 w-px bg-card-divider mx-0.5 shrink-0" aria-hidden="true" />
 
             <button
               type="button"
@@ -778,7 +833,7 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
               data-testid="photo-studio-zoom-in-btn"
               title={bi('تكبير', 'Zoom In', 'گەورەکردن')}
               aria-label={bi('تكبير', 'Zoom In', 'گەورەکردن')}
-              className="p-1.5 rounded-lg border border-card-stroke bg-layer hover:bg-layer-hover text-foreground cursor-pointer"
+              className="size-8 inline-flex items-center justify-center rounded-xl border border-card-stroke bg-card hover:bg-layer-hover text-foreground cursor-pointer shrink-0"
             >
               <ZoomIn className="w-3.5 h-3.5" />
             </button>
@@ -788,7 +843,7 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
               data-testid="photo-studio-zoom-out-btn"
               title={bi('تصغير', 'Zoom Out', 'بچووککردنەوە')}
               aria-label={bi('تصغير', 'Zoom Out', 'بچووککردنەوە')}
-              className="p-1.5 rounded-lg border border-card-stroke bg-layer hover:bg-layer-hover text-foreground cursor-pointer"
+              className="size-8 inline-flex items-center justify-center rounded-xl border border-card-stroke bg-card hover:bg-layer-hover text-foreground cursor-pointer shrink-0"
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
@@ -798,7 +853,7 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
               data-testid="photo-studio-zoom-reset-btn"
               title={bi('إعادة الضبط (100%)', 'Reset View (100%)', 'ڕێکخستنەوەی پیشاندان (100%)')}
               aria-label={bi('إعادة الضبط 100%', 'Reset view 100%', 'ڕێکخستنەوەی پیشاندان')}
-              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-card-stroke bg-layer hover:bg-layer-hover text-xs font-semibold text-foreground cursor-pointer tabular-nums"
+              className="h-8 inline-flex items-center justify-center gap-1 px-2.5 rounded-xl border border-card-stroke bg-card hover:bg-layer-hover text-xs font-semibold text-foreground cursor-pointer tabular-nums shrink-0"
             >
               <Maximize2 className="w-3 h-3" />
               <bdi dir="ltr">{zoomPercent}%</bdi>
@@ -816,7 +871,7 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
               attachmentWidthPx={attachment.widthPx}
               attachmentHeightPx={attachment.heightPx}
               activeTool={activeTool}
-              annotations={state}
+              annotations={activeTool === 'all' ? (savedAnnotations || emptyAnnotationState) : state}
               activeAngleIndex={safeAngleIdx}
               activeAnglePointRole={activeAngleRole}
               activeCobbIndex={safeCobbIdx}
@@ -873,9 +928,9 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
               levelLabel={bi('أفقي', 'Level', 'ئاسۆیی')}
               calibLabel={bi('معيار', 'Scale', 'پێوەر')}
               ariaLabel={bi(
-                'لوحة قياس زوايا الصورة وخط الشاقول (Konva.js)',
-                'Interactive Konva photo measurement canvas',
-                'تەختەی کارلێکی پێوانەی وێنە (Konva.js)'
+                'لوحة قياس زوايا الصورة وخط الشاقول',
+                'Interactive photo measurement canvas',
+                'تەختەی کارلێکی پێوانەی وێنە'
               )}
             />
 
@@ -900,6 +955,232 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
 
           {/* Right Inspector Panel Column */}
           <div className="lg:col-span-5 space-y-3">
+            {/* TOOL 0: ALL MEASUREMENTS (Read-Only Unified Overview) */}
+            {activeTool === 'all' && (
+              <div className="space-y-3">
+                <div className="p-3.5 rounded-xl bg-surface border border-card-divider space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-foreground inline-flex items-center gap-1.5">
+                      <LayoutGrid className="w-4 h-4 text-primary" />
+                      {bi(
+                        'جميع المقاييس المحفوظة (عرض فقط)',
+                        'All Saved Measurements (Read-Only)',
+                        'سەرجەم پێوانە پاشەکەوتکراوەکان (تەنها پیشاندان)'
+                      )}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                      {bi('وضع العرض الموحد', 'Unified View', 'پیشاندانی یەکگرتوو')}
+                    </span>
+                  </div>
+
+                  <div className="text-[11px] text-muted-foreground-1 flex items-start gap-1.5 p-2 rounded-lg bg-layer border border-card-stroke leading-relaxed">
+                    <Eye className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                    <span>
+                      {bi(
+                        'يُعرض هنا ملخص المقاييس التي تم تعديلها وحفظها على الصورة، هذا التبويب مخصص للعرض والمراجعة دون إمكانية التعديل.',
+                        'Summary of measurements modified and saved on this photo. This tab is for view and review only with no editing controls.',
+                        'لێرەدا پوختەی ئەو پێوانانە پیشان دەدرێت کە دەستکاریکراون و پاشەکەوتکراون، ئەم بەشە تەنها بۆ پیشاندان و پێداچوونەوەیە بەبێ دەستکاریکردن.'
+                      )}
+                    </span>
+                  </div>
+
+                  {(!savedAnnotations ||
+                    (savedAngles.length === 0 &&
+                      savedCobb.length === 0 &&
+                      savedDist.length === 0 &&
+                      savedArrows.length === 0 &&
+                      !savedAnnotations.calibration)) ? (
+                    <div className="p-4 rounded-xl bg-layer border border-dashed border-card-stroke text-center space-y-2">
+                      <div className="w-9 h-9 mx-auto rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <LayoutGrid className="w-4 h-4" />
+                      </div>
+                      <div className="text-xs font-bold text-foreground">
+                        {bi(
+                          'لا توجد مقاييس محفوظة للعرض حالياً',
+                          'No Saved Measurements To Display',
+                          'هیچ پێوانەیەکی پاشەکەوتکراو نییە بۆ پیشاندان'
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground-1 leading-relaxed max-w-xs mx-auto">
+                        {bi(
+                          'قم باختيار أداة القياس المطلوبة (زوايا، كوب، مسافات) ووضع النقاط على الصورة ثم اضغط على زر "حفظ القياسات" لتظهر جميعها هنا.',
+                          'Select any measurement tool (Angles, Cobb, Distances), position points, and click "Save Measurements" to display them here.',
+                          'ئامرازی پێوانەی داواکراو هەڵبژێرە، خاڵەکان دابنێ و پاشان کرتە لە "پاشەکەوتکردنی پێوانەکان" بکە بۆ ئەوەی لێرە پیشان بدرێن.'
+                        )}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {/* Saved Joint Angles */}
+                      {savedAngles.length > 0 && (
+                        <div className="p-2.5 rounded-lg bg-layer border border-card-stroke space-y-1.5">
+                          <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                            <Crosshair className="w-3.5 h-3.5 text-yellow-500" />
+                            <span>{bi('زوايا المفاصل (3 نقاط)', 'Joint Angles (3-Point)', 'گۆشەکانی جومگە (٣ خاڵ)')}</span>
+                            <span className="text-[10px] text-muted-foreground-1 font-normal">
+                              ({savedAngles.length})
+                            </span>
+                          </div>
+                          <div className="space-y-1.5">
+                            {savedAngles.map((ang) => (
+                              <div
+                                key={ang.id}
+                                className="flex items-center justify-between p-2 rounded-md bg-surface border border-card-stroke text-xs"
+                              >
+                                <span className="font-semibold text-foreground truncate">{ang.label}</span>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="text-[11px] text-muted-foreground-1">
+                                    {bi('المكملة:', 'Suppl:', 'تەواوکەر:')}{' '}
+                                    <bdi dir="ltr">{ang.supplementaryDegrees}°</bdi>
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded bg-yellow-500/15 border border-yellow-500/30 text-yellow-700 dark:text-yellow-300 font-extrabold tabular-nums">
+                                    <bdi dir="ltr">∠ {ang.angleDegrees}°</bdi>
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Saved Cobb Angles */}
+                      {savedCobb.length > 0 && (
+                        <div className="p-2.5 rounded-lg bg-layer border border-card-stroke space-y-1.5">
+                          <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                            <MoveDiagonal className="w-3.5 h-3.5 text-sky-500" />
+                            <span>{bi('زوايا كوب للعمود الفقري', 'Spinal Cobb Angles', 'گۆشەکانی کۆب بۆ بڕبڕەی پشت')}</span>
+                            <span className="text-[10px] text-muted-foreground-1 font-normal">
+                              ({savedCobb.length})
+                            </span>
+                          </div>
+                          <div className="space-y-1.5">
+                            {savedCobb.map((c) => (
+                              <div
+                                key={c.id}
+                                className="flex items-center justify-between p-2 rounded-md bg-surface border border-card-stroke text-xs"
+                              >
+                                <span className="font-semibold text-foreground truncate">{c.label}</span>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="text-[11px] text-muted-foreground-1">
+                                    {bi('المنفرجة:', 'Obtuse:', 'کراوە:')}{' '}
+                                    <bdi dir="ltr">{c.obtuseDegrees}°</bdi>
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded bg-sky-500/15 border border-sky-500/30 text-sky-700 dark:text-sky-300 font-extrabold tabular-nums">
+                                    <bdi dir="ltr">∠ {c.angleDegrees}°</bdi>
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Saved Distances */}
+                      {savedDist.length > 0 && (
+                        <div className="p-2.5 rounded-lg bg-layer border border-card-stroke space-y-1.5">
+                          <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                            <Ruler className="w-3.5 h-3.5 text-emerald-500" />
+                            <span>{bi('المسافات والأبعاد', 'Linear Distances', 'مەودا و درێژییەکان')}</span>
+                            <span className="text-[10px] text-muted-foreground-1 font-normal">
+                              ({savedDist.length})
+                            </span>
+                          </div>
+                          <div className="space-y-1.5">
+                            {savedDist.map((d) => (
+                              <div
+                                key={d.id}
+                                className="flex items-center justify-between p-2 rounded-md bg-surface border border-card-stroke text-xs"
+                              >
+                                <span className="font-semibold text-foreground truncate">{d.label}</span>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="text-[11px] text-muted-foreground-1">
+                                    {bi('الميل:', 'Tilt:', 'لاری:')}{' '}
+                                    <bdi dir="ltr">{d.tiltFromHorizontalDeg}°</bdi>
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold tabular-nums">
+                                    <bdi dir="ltr">{formatPhotoDistanceBadgeText(d)}</bdi>
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Saved Arrows & Notes */}
+                      {savedArrows.length > 0 && (
+                        <div className="p-2.5 rounded-lg bg-layer border border-card-stroke space-y-1.5">
+                          <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                            <ArrowUpRight className="w-3.5 h-3.5 text-amber-500" />
+                            <span>{bi('الملاحظات السريرية والتأشير', 'Clinical Arrows & Notes', 'تێبینییە پزیشکییەکان')}</span>
+                          </div>
+                          <div className="space-y-1.5">
+                            {savedArrows.map((a) => (
+                              <div
+                                key={a.id}
+                                className="flex items-center gap-2 p-2 rounded-md bg-surface border border-card-stroke text-xs"
+                              >
+                                <span
+                                  className="w-3 h-3 rounded-full shrink-0 border border-card-stroke"
+                                  style={{ backgroundColor: a.colorHex || '#f59e0b' }}
+                                />
+                                <span className="font-semibold text-foreground truncate">{a.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Saved Scale Calibration */}
+                      {savedAnnotations.calibration && (
+                        <div className="p-2.5 rounded-lg bg-layer border border-card-stroke space-y-1 text-xs">
+                          <div className="font-bold text-foreground flex items-center gap-1.5">
+                            <Scale className="w-3.5 h-3.5 text-purple-500" />
+                            <span>{bi('معايرة المقياس', 'Scale Calibration', 'ڕێکخستنی پێوەر')}</span>
+                          </div>
+                          <div className="text-[11px] text-purple-700 dark:text-purple-300 font-semibold tabular-nums">
+                            {bi('المعيار المحفوظ:', 'Saved Scale:', 'پێوەری پاشەکەوتکراو:')}{' '}
+                            <bdi dir="ltr">
+                              {savedAnnotations.calibration.knownLengthMm} mm (
+                              {savedAnnotations.calibration.pixelsPerMm} px/mm)
+                            </bdi>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Reference Grid & Plumb-Line Status */}
+                      {(savedAnnotations.showPlumbLine || savedAnnotations.showHorizontalLevel) && (
+                        <div className="p-2.5 rounded-lg bg-layer border border-card-stroke space-y-1 text-xs">
+                          <div className="font-bold text-foreground flex items-center gap-1.5">
+                            <Grid3x3 className="w-3.5 h-3.5 text-primary" />
+                            <span>{bi('الخطوط المرجعية المحفوظة', 'Saved Reference Lines', 'هێڵە سەرچاوەییە پاشەکەوتکراوەکان')}</span>
+                          </div>
+                          <div className="text-[11px] text-muted-foreground-1 flex flex-wrap gap-3 pt-0.5">
+                            {savedAnnotations.showPlumbLine && (
+                              <span>
+                                {bi('الشاقول العمودي:', 'Plumb:', 'شاقوڵ:')}{' '}
+                                <bdi dir="ltr" className="font-bold text-foreground">{savedAnnotations.plumbLineXPercent}%</bdi>
+                              </span>
+                            )}
+                            {savedAnnotations.showHorizontalLevel && (
+                              <span>
+                                {bi('المستوى الأفقي:', 'Level:', 'ئاسۆیی:')}{' '}
+                                <bdi dir="ltr" className="font-bold text-foreground">{savedAnnotations.horizontalLevelYPercent}%</bdi>
+                              </span>
+                            )}
+                            <span>
+                              {bi('الشبكة:', 'Grid:', 'تۆڕ:')}{' '}
+                              <bdi dir="ltr" className="font-bold text-foreground">{savedAnnotations.gridMode}</bdi>
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* TOOL 1: 3-Point Angles */}
             {(activeTool === 'angle3' || activeTool === 'pan') && (
               <div className="space-y-3">
@@ -1409,12 +1690,12 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
                     data-testid="photo-calib-length-input"
                     value={calibLengthInput}
                     onChange={(e) => setCalibLengthInput(e.target.value)}
-                    className="col-span-5 px-2.5 py-1.5 rounded-lg border border-card-stroke bg-layer text-xs text-foreground tabular-nums"
+                    className="col-span-5 px-2.5 py-1.5 rounded-lg border border-card-stroke bg-layer text-xs text-foreground tabular-nums text-center font-mono font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <select
                     value={calibUnit}
                     onChange={(e) => setCalibUnit(e.target.value as 'cm' | 'mm')}
-                    className="col-span-3 px-2 py-1.5 rounded-lg border border-card-stroke bg-layer text-xs text-foreground"
+                    className="col-span-3 px-1 py-1.5 rounded-lg border border-card-stroke bg-layer text-xs text-foreground font-bold text-center [text-align-last:center] cursor-pointer"
                   >
                     <option value="cm">cm</option>
                     <option value="mm">mm</option>
@@ -1688,36 +1969,6 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
                   <option value="12x12">{bi('شبكة 12×12 (دقيقة)', '12x12 (Fine)', 'تۆڕی ١٢×١٢ (ورد)')}</option>
                 </select>
               </div>
-            </div>
-
-            {saveError && (
-              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-700 dark:text-rose-300 flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{saveError}</span>
-              </div>
-            )}
-
-            {/* Save Annotated Encrypted Copy Action */}
-            <div className="flex items-center justify-end gap-2 pt-1">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-3 py-2 rounded-xl border border-card-stroke text-xs font-semibold text-muted-foreground-1 hover:bg-layer-hover cursor-pointer"
-              >
-                {bi('إلغاء', 'Cancel', 'پاشگەزبوونەوە')}
-              </button>
-              <button
-                type="button"
-                disabled={saving}
-                data-testid="photo-studio-save-encrypted-copy-btn"
-                onClick={handleSaveAnnotatedCopy}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-              >
-                <Save className="w-4 h-4" />
-                {saving
-                  ? bi('جاري التشفير والحفظ…', 'Encrypting Copy…', 'نهێنیکردنی کۆپی لە جێبەجێکردندایە…')
-                  : bi('حفظ نسخة قياس مشفرة', 'Save Annotated Encrypted Copy', 'پاشەکەوتکردنی کۆپیی پێوانەی نهێنیکراو')}
-              </button>
             </div>
           </div>
         </div>

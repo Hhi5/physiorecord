@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X, Sparkles, Database, CheckCircle2, Shield, Tag, Calendar } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
+import { GeometricHeaderBackdrop } from '../ui/Dialog';
 import {
   APP_SEMVER_VERSION,
   BUNDLED_CHANGELOG_RELEASES,
@@ -118,57 +119,61 @@ export const WhatsNewChangelogModal: React.FC<WhatsNewChangelogModalProps> = ({
     <div
       data-testid="whats-new-modal"
       dir={isRtl ? 'rtl' : 'ltr'}
-      className="fixed inset-0 z-[70] bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
+      className="fixed inset-0 z-[70] bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className="bg-card border border-card-line rounded-2xl shadow-2xl max-w-2xl w-full max-h-[88vh] flex flex-col overflow-hidden"
+        className="bg-card border border-card-line rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[92dvh] sm:max-h-[88dvh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-card-divider bg-muted/40 flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="size-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
-              <Sparkles className="size-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-sm font-bold text-foreground">
-                  {bi(
-                    'ما الجديد ودليل ترقيات قاعدة البيانات',
-                    "What's New & Database Migration Guide",
-                    'چی نوێ هەیە و ڕێبەری نوێکردنەوەی بنکەی داتا'
-                  )}
-                </h2>
-                <span
-                  data-testid="whats-new-semver-badge"
-                  dir="ltr"
-                  className="px-2 py-0.5 rounded-md bg-primary/15 text-primary border border-primary/30 text-xs font-mono font-bold"
-                >
-                  v{APP_SEMVER_VERSION} · SemVer
-                </span>
+        <div className="relative overflow-hidden px-5 pt-3 sm:pt-4 pb-4 bg-primary text-primary-foreground flex flex-col gap-2.5 shrink-0 shadow-xs">
+          <GeometricHeaderBackdrop />
+          <div className="relative z-10 w-10 h-1 bg-primary-foreground/40 rounded-full mx-auto sm:hidden shrink-0" aria-hidden="true" />
+          <div className="relative z-10 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="size-10 rounded-xl bg-primary-foreground/15 text-primary-foreground border border-primary-foreground/25 flex items-center justify-center shrink-0">
+                <Sparkles className="size-5" />
               </div>
-              <p className="text-xs text-muted-foreground-1 mt-0.5">
-                {bi(
-                  'سجل التحديثات المدمج (CHANGELOG.md) وسلسلة ترقيات الخزنة المشفرة (Dexie v1–v10)',
-                  'Bundled semantic release notes (CHANGELOG.md) & append-only Dexie v1–v10 schema lineage',
-                  'تۆماری نوێکارییە یەکخراوەکان (CHANGELOG.md) و ڕێڕەوی نوێکردنەوەی خەزێنەی نهێنیکراو (Dexie v1–v10)'
-                )}
-              </p>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-sm sm:text-base font-bold text-primary-foreground">
+                    {bi(
+                      'ما الجديد ودليل ترقيات قاعدة البيانات',
+                      "What's New & Database Migration Guide",
+                      'چی نوێ هەیە و ڕێبەری نوێکردنەوەی بنکەی داتا'
+                    )}
+                  </h2>
+                  <span
+                    data-testid="whats-new-semver-badge"
+                    dir="ltr"
+                    className="px-2 py-0.5 rounded-md bg-primary-foreground/15 text-primary-foreground border border-primary-foreground/25 text-xs font-mono font-bold"
+                  >
+                    v{APP_SEMVER_VERSION} · SemVer
+                  </span>
+                </div>
+                <p className="text-xs text-primary-foreground/85 mt-0.5">
+                  {bi(
+                    'سجل التحديثات المدمج (CHANGELOG.md) وسلسلة ترقيات الخزنة المشفرة (Dexie v1–v10)',
+                    'Bundled semantic release notes (CHANGELOG.md) & append-only Dexie v1–v10 schema lineage',
+                    'تۆماری نوێکارییە یەکخراوەکان (CHANGELOG.md) و ڕێڕەوی نوێکردنەوەی خەزێنەی نهێنیکراو (Dexie v1–v10)'
+                  )}
+                </p>
+              </div>
             </div>
-          </div>
 
-          <button
-            type="button"
-            data-testid="whats-new-close-btn"
-            onClick={onClose}
-            aria-label={bi('إغلاق', 'Close', 'داخستن')}
-            className="min-w-[36px] min-h-[36px] rounded-lg flex items-center justify-center text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover cursor-pointer shrink-0"
-          >
-            <X className="size-4" />
-          </button>
+            <button
+              type="button"
+              data-testid="whats-new-close-btn"
+              onClick={onClose}
+              aria-label={bi('إغلاق', 'Close', 'داخستن')}
+              className="size-9 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground inline-flex items-center justify-center cursor-pointer shrink-0 transition-colors"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
         </div>
 
         {/* Segmented Tab Bar */}

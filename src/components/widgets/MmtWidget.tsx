@@ -246,7 +246,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
       case '5':
         return 'bg-emerald-700 text-white font-bold shadow-xs';
       case '4':
-        return 'bg-teal-700 text-white font-bold shadow-xs';
+        return 'bg-primary text-primary-foreground font-bold shadow-xs';
       case '3':
         return 'bg-amber-500 text-slate-950 font-bold shadow-xs';
       case '2':
@@ -470,7 +470,7 @@ export const MmtWidget: React.FC<MmtWidgetProps> = ({
         <button
           type="button"
           onClick={handleAddRow}
-          className="w-full py-2.5 px-4 rounded-xl border border-dashed border-teal-500/40 bg-teal-500/5 hover:bg-teal-500/10 hover:border-teal-500/70 text-teal-700 dark:text-teal-300 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          className="w-full py-2.5 px-4 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary/70 text-primary text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
         >
           <Plus className="size-4" />
           <span>{bi('إضافة فحص عضلي جديد', 'Add New Muscle Test', 'زیادکردنی تاقیکردنەوەی ماسولکەی نوێ')}</span>

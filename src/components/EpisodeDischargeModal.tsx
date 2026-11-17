@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import type { EpisodeRecord } from '../types/clinical';
 import { localDate } from '../utils/date';
+import { GeometricHeaderBackdrop } from './ui/Dialog';
 import { X, CheckCircle, AlertTriangle } from 'lucide-react';
 
 interface EpisodeDischargeModalProps {
@@ -94,7 +95,7 @@ export const EpisodeDischargeModal: React.FC<EpisodeDischargeModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="episode-discharge-modal-title"
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4"
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-6"
       dir={isRtl ? 'rtl' : 'ltr'}
       onKeyDown={(e) => {
         if (e.key === 'Escape') onClose();
@@ -104,38 +105,42 @@ export const EpisodeDischargeModal: React.FC<EpisodeDischargeModalProps> = ({
       }}
     >
       <div
-        className="bg-card rounded-xl max-w-xl w-full shadow-2xl border border-card-line overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-card rounded-t-2xl sm:rounded-2xl max-w-xl w-full shadow-2xl border border-card-line overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[88dvh]"
         onClick={(e) => e.stopPropagation()}
       >
         
         {/* Header */}
-        <div className="px-6 py-4 bg-primary text-primary-foreground flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-primary-foreground/15 flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-primary-foreground" />
+        <div className="relative overflow-hidden px-5 sm:px-6 pt-3 sm:pt-4 pb-4 bg-primary text-primary-foreground flex flex-col gap-2.5 flex-shrink-0 shadow-xs">
+          <GeometricHeaderBackdrop />
+          <div className="relative z-10 w-10 h-1 bg-primary-foreground/40 rounded-full mx-auto sm:hidden shrink-0" aria-hidden="true" />
+          <div className="relative z-10 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-primary-foreground/15 flex items-center justify-center shrink-0">
+                <CheckCircle className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div className="min-w-0">
+                <h2 id="episode-discharge-modal-title" className="text-base font-bold text-primary-foreground truncate">
+                  {bi('إغلاق وتخريج حلقة الرعاية السريرية', 'Discharge & Close Episode of Care')}
+                </h2>
+                <p className="text-xs text-primary-foreground/85 truncate">{episode.data.title}</p>
+              </div>
             </div>
-            <div>
-              <h2 id="episode-discharge-modal-title" className="text-base font-bold">
-                {bi('إغلاق وتخريج حلقة الرعاية السريرية', 'Discharge & Close Episode of Care')}
-              </h2>
-              <p className="text-xs text-primary-foreground/85">{episode.data.title}</p>
-            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={bi('إغلاق', 'Close')}
+              className="size-9 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={bi('إغلاق', 'Close')}
-            className="w-8 h-8 rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/25 flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4 text-primary-foreground" />
-          </button>
         </div>
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 flex-1 overflow-y-auto">
           
           {error && (
-            <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-rose-800 dark:text-rose-300 text-xs flex items-center gap-2">
+            <div className="p-3.5 bg-surface/75 rounded-xl text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0" />
               <span>{error}</span>
             </div>
@@ -222,7 +227,7 @@ export const EpisodeDischargeModal: React.FC<EpisodeDischargeModalProps> = ({
         </form>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 bg-surface border-t border-card-divider flex items-center justify-end gap-2.5">
+        <div className="px-6 py-3.5 bg-surface border-t border-card-divider flex items-center justify-end gap-2.5 shrink-0">
           <button
             type="button"
             onClick={onClose}

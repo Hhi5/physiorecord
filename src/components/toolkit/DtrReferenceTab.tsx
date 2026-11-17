@@ -217,9 +217,9 @@ export const DtrReferenceTab: React.FC = () => {
         </div>
 
         {/* Clinical Significance Box */}
-        <div className="bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 space-y-1">
-          <div className="text-xs font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
-            <Activity className="w-3.5 h-3.5 text-emerald-600" />
+        <div className="bg-card shadow-2xs rounded-xl p-4 space-y-1">
+          <div className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+            <Activity className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>
               {bi(
                 'الأهمية السريرية والتفسير التشخيصي:',
@@ -228,7 +228,7 @@ export const DtrReferenceTab: React.FC = () => {
               )}
             </span>
           </div>
-          <p className="text-xs text-emerald-900 dark:text-emerald-100 leading-relaxed">
+          <p className="text-xs text-foreground leading-relaxed">
             {selectedReflex.clinicalSignificanceAr}
           </p>
         </div>

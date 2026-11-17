@@ -81,7 +81,7 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                 onClick={() => setMovementType(type)}
                 className={`min-h-[34px] px-3 py-1 rounded-md font-semibold transition-colors cursor-pointer text-center ${
                   movementType === type
-                    ? 'bg-teal-700 text-white shadow-xs'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
                     : 'text-muted-foreground-1 hover:text-foreground'
                 }`}
               >
@@ -102,41 +102,49 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
         </div>
       </div>
 
-      {/* Joint Tabs (Multi-line wrap so every joint including Ankle is always visible) */}
-      <div className="flex flex-wrap items-center gap-1.5 pb-1" role="tablist">
-        {ROM_JOINTS_CATALOG.map((joint) => {
-          const isSelected = selectedJointId === joint.jointId;
-          const jointEntriesCount = entries.filter((e) => e.jointId === joint.jointId).length;
+      {/* Joint Tabs (Horizontally scrollable strip) */}
+      <div className="rounded-2xl border border-line-2 bg-surface/60 p-1 overflow-hidden">
+        <div
+          className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-1 pt-0.5 px-0.5"
+          role="tablist"
+        >
+          {ROM_JOINTS_CATALOG.map((joint) => {
+            const isSelected = selectedJointId === joint.jointId;
+            const jointEntriesCount = entries.filter((e) => e.jointId === joint.jointId).length;
 
-          return (
-            <button
-              key={joint.jointId}
-              type="button"
-              role="tab"
-              aria-selected={isSelected}
-              onClick={() => setSelectedJointId(joint.jointId)}
-              style={{ minHeight: 'unset' }}
-              className={`compact-btn px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 border cursor-pointer ${
-                isSelected
-                  ? 'bg-teal-700 text-white border-teal-800 shadow-sm'
-                  : 'bg-layer text-foreground border-line-2 hover:bg-surface'
-              }`}
-            >
-              <span>{bi(joint.nameAr.split('(')[0], joint.nameEn)}</span>
-              {jointEntriesCount > 0 && (
-                <span
-                  className={`px-1.5 py-0.5 rounded-full text-xs font-mono tabular-nums ${
-                    isSelected
-                      ? 'bg-white/20 text-white'
-                      : 'bg-teal-500/15 text-teal-700 dark:text-teal-300'
-                  }`}
-                >
-                  <bdi dir="ltr">{jointEntriesCount}</bdi>
-                </span>
-              )}
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={joint.jointId}
+                type="button"
+                role="tab"
+                aria-selected={isSelected}
+                onClick={(e) => {
+                  setSelectedJointId(joint.jointId);
+                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }}
+                style={{ minHeight: 'unset' }}
+                className={`compact-btn px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5 border cursor-pointer ${
+                  isSelected
+                    ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                    : 'bg-card text-foreground border-line-2/70 hover:bg-layer-hover'
+                }`}
+              >
+                <span>{bi(joint.nameAr.split('(')[0], joint.nameEn)}</span>
+                {jointEntriesCount > 0 && (
+                  <span
+                    className={`px-1.5 py-0.5 rounded-full text-xs font-mono tabular-nums ${
+                      isSelected
+                        ? 'bg-white/20 text-white'
+                        : 'bg-primary/15 text-primary'
+                    }`}
+                  >
+                    <bdi dir="ltr">{jointEntriesCount}</bdi>
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Movements Table / Cards */}

@@ -18,6 +18,7 @@ import type {
   DailyAuditDigest,
 } from '../../types/clinicManagement';
 import { localDate } from '../../utils/date';
+import { ModalDialog } from '../ui/Dialog';
 import {
   UserCheck,
   FileText,
@@ -184,12 +185,12 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
 
   return (
     <div
-      className="max-w-[85rem] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6"
+      className="pr-container space-y-5"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Page Header: Title + 1 Status Chip */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg sm:text-xl font-bold text-foreground">
+      <div className="pr-page-header">
+        <h1 className="pr-page-title">
           {bi('سجل النشاط والكادر', 'Audit & Staff Roles', 'تۆماری چالاکی و ستاف')}
         </h1>
 
@@ -208,7 +209,7 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
       </div>
 
       {/* Security & Data Responsibility Notice (Collapsible to preserve fold ergonomics) */}
-      <details className="bg-amber-500/10 border border-amber-500/30 rounded-2xl px-4 py-3 text-amber-950 dark:text-amber-200 shadow-2xs">
+      <details className="bg-surface/75 rounded-2xl px-4 py-3 text-amber-950 dark:text-amber-200 shadow-2xs">
         <summary className="min-h-[40px] flex items-center gap-2.5 text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-100 cursor-pointer select-none">
           <ShieldAlert className="size-4 text-amber-700 dark:text-amber-400 shrink-0" />
           <span>
@@ -219,7 +220,7 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
             )}
           </span>
         </summary>
-        <p className="mt-2 pt-2 border-t border-amber-500/20 text-xs leading-relaxed text-amber-900/90 dark:text-amber-200/90">
+        <p className="mt-2 pt-2 border-t border-line-2 text-xs leading-relaxed text-amber-900/90 dark:text-amber-200/90">
           {bi(
             'يعمل PhysioRecord بنظام محلي كامل داخل متصفح هذا الجهاز. لا تخرج أي بيانات أو تشخيصات أو سجلات مرضى إلى خوادم سحابية. لا توجد أي نسخة احتياطية سحابية تلقائية، وفقدان كلمة مرور الخزينة ومفتاح الاسترداد يعني فقدان البيانات نهائياً وبشكل غير قابل للاسترجاع. تقع مسؤولية تصدير وحفظ النسخ الاحتياطية الدورية بصيغة (.ptbackup) على عاتق المعالج والعيادة بالكامل.',
             'PhysioRecord runs entirely client-side in this device’s browser (Local-First). No patient data, diagnoses, or records leave this device or touch cloud servers. No automatic cloud backup exists; losing both your vault password and recovery key results in permanent, irreversible data loss. Taking routine encrypted exports (.ptbackup) and keeping them secure is strictly the clinician’s and clinic’s responsibility.',
@@ -397,10 +398,10 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
 
         {chainVerification && (
           <div
-            className={`px-5 py-3 border-b border-card-divider text-xs flex flex-wrap items-center justify-between gap-2 ${
+            className={`px-5 py-3 border-b border-card-divider text-xs flex flex-wrap items-center justify-between gap-2 bg-surface/75 ${
               chainVerification.valid
-                ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
-                : 'bg-rose-500/10 text-rose-800 dark:text-rose-200'
+                ? 'text-emerald-800 dark:text-emerald-200'
+                : 'text-rose-800 dark:text-rose-200'
             }`}
           >
             <div className="flex items-center gap-2 font-bold">
@@ -476,7 +477,7 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
           aria-label={bi('جدول سجل النشاط', 'Activity log table', 'خشتەی تۆماری چالاکی')}
           className="overflow-x-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <table className="min-w-full divide-y divide-card-divider text-start text-xs">
+          <table className="pr-responsive-table min-w-full divide-y divide-card-divider text-start text-xs">
             <thead className="bg-muted/50">
               <tr className="text-muted-foreground-1 font-semibold text-xs">
                 <th className="py-3.5 px-4 text-start">{bi('التوقيت', 'Timestamp', 'کات')}</th>
@@ -487,7 +488,7 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
             </thead>
             <tbody className="divide-y divide-card-divider">
               {auditLogs.length === 0 ? (
-                <tr>
+                <tr className="pr-empty-row">
                   <td colSpan={4} className="py-8 text-center text-muted-foreground-1">
                     {bi(
                       'سيتم توثيق كافة العمليات السريرية والمالية هنا تلقائياً.',
@@ -499,21 +500,33 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
               ) : (
                 auditLogs.map((log) => (
                   <tr key={log.id} className="tabular-nums hover:bg-muted/30 transition-colors">
-                    <td className="py-3.5 px-4 text-muted-foreground-1 whitespace-nowrap">
+                    <td
+                      data-label={bi('التوقيت', 'Timestamp', 'کات')}
+                      className="py-3.5 px-4 text-muted-foreground-1 whitespace-nowrap"
+                    >
                       {formatClinicalDate(log.timestamp, language, { includeTime: true })}
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-foreground whitespace-nowrap">
+                    <td
+                      data-label={bi('الموثق / التصنيف', 'Actor / Label', 'بەکارهێنەر / پلە')}
+                      className="py-3.5 px-4 font-bold text-foreground whitespace-nowrap"
+                    >
                       {log.actorName}{' '}
                       <span className="text-xs font-normal text-muted-foreground-1">
                         ({log.actorRole})
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 whitespace-nowrap">
+                    <td
+                      data-label={bi('نوع الإجراء', 'Action Type', 'جۆری کار')}
+                      className="py-3.5 px-4 whitespace-nowrap"
+                    >
                       <span className="py-0.5 px-2 rounded-md font-mono text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
                         {log.actionType}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-muted-foreground-1">
+                    <td
+                      data-label={bi('تفاصيل النشاط', 'Summary', 'پوختە')}
+                      className="py-3.5 px-4 text-muted-foreground-1 pr-cell-primary md:table-cell"
+                    >
                       {bi(log.summaryAr, log.summaryEn)}
                     </td>
                   </tr>
@@ -524,77 +537,70 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
         </div>
       </div>
 
-      {pendingAdminStaffId && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="activity-log-admin-pin-title"
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              e.stopPropagation();
-              setPendingAdminStaffId(null);
-            }
-          }}
-          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
-        >
-          <form
-            onSubmit={handleConfirmAdminPin}
-            className="bg-card border border-card-line rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl"
-          >
-            <div className="flex items-center gap-2.5 text-sm font-bold text-foreground">
-              <KeyRound className="size-4 text-primary shrink-0" />
-              <h2 id="activity-log-admin-pin-title">
-                {bi('تأكيد رمز المدير السري', 'Enter Staff Admin PIN', 'دڵنیاکردنەوەی کۆدی PIN ـی بەڕێوەبەر')}
-              </h2>
-            </div>
-            <p className="text-xs text-muted-foreground-1 leading-relaxed">
-              {bi(
-                'أدخل رمز PIN المخصص لمدير العيادة. ملاحظة: تصنيفات الكادر لأغراض النسب الإداري فقط وليست نظام مصادقة مستقلاً.',
-                'Enter your configured Clinic Admin PIN. Note: staff roles provide staff attribution only, not independent authentication.',
-                'کۆدی نهێنیی PIN ـی بەڕێوەبەری کلینیک بنووسە. تێبینی: پلەکانی ستاف تەنها بۆ دەستنیشانکردنی کارگێڕین، نەک سەلماندنی سەربەخۆ.'
-              )}
-            </p>
-            <input
-              type="password"
-              autoComplete="current-password"
-              inputMode="numeric"
-              aria-label={bi('رمز المدير السري PIN', 'Staff Admin PIN', 'کۆدی PIN ـی بەڕێوەبەر')}
-              autoFocus
-              required
-              value={pinAttempt}
-              onChange={(e) => {
-                setPinAttempt(e.target.value);
-                setPinError(null);
-              }}
-              placeholder="••••"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-layer-line text-center font-mono text-base font-bold text-foreground focus:outline-none focus:border-primary"
-            />
-            {pinError && (
-              <p className="text-xs text-rose-700 dark:text-rose-400 font-semibold">
-                {pinError}
-              </p>
+      <ModalDialog
+        isOpen={Boolean(pendingAdminStaffId)}
+        onOpenChange={(open) => {
+          if (!open) setPendingAdminStaffId(null);
+        }}
+        title={
+          <span className="flex items-center gap-2 text-sm sm:text-base font-bold text-primary-foreground">
+            <KeyRound className="size-4 text-primary-foreground shrink-0" />
+            <span>{bi('تأكيد رمز المدير السري', 'Enter Staff Admin PIN', 'دڵنیاکردنەوەی کۆدی PIN ـی بەڕێوەبەر')}</span>
+          </span>
+        }
+        ariaLabel={bi('تأكيد رمز المدير السري', 'Enter Staff Admin PIN', 'دڵنیاکردنەوەی کۆدی PIN ـی بەڕێوەبەر')}
+        closeLabel={bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
+        size="sm"
+        dir={isRtl ? 'rtl' : 'ltr'}
+      >
+        <form onSubmit={handleConfirmAdminPin} className="space-y-4">
+          <p className="text-xs text-muted-foreground-1 leading-relaxed">
+            {bi(
+              'أدخل رمز PIN المخصص لمدير العيادة. ملاحظة: تصنيفات الكادر لأغراض النسب الإداري فقط وليست نظام مصادقة مستقلاً.',
+              'Enter your configured Clinic Admin PIN. Note: staff roles provide staff attribution only, not independent authentication.',
+              'کۆدی نهێنیی PIN ـی بەڕێوەبەری کلینیک بنووسە. تێبینی: پلەکانی ستاف تەنها بۆ دەستنیشانکردنی کارگێڕین، نەک سەلماندنی سەربەخۆ.'
             )}
-            <div className="flex items-center justify-end gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setPendingAdminStaffId(null)}
-                className="px-3.5 py-2 min-h-[36px] rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground cursor-pointer"
-              >
-                {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
-              </button>
-              <button
-                type="submit"
-                disabled={pinChecking}
-                className="px-4 py-2 min-h-[36px] rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {pinChecking
-                  ? bi('جاري التحقق...', 'Verifying...', 'خەریکی پشکنینە...')
-                  : bi('تأكيد التبديل', 'Verify & Switch', 'دڵنیاکردنەوەی گۆڕین')}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+          </p>
+          <input
+            type="password"
+            autoComplete="current-password"
+            inputMode="numeric"
+            aria-label={bi('رمز المدير السري PIN', 'Staff Admin PIN', 'کۆدی PIN ـی بەڕێوەبەر')}
+            autoFocus
+            required
+            value={pinAttempt}
+            onChange={(e) => {
+              setPinAttempt(e.target.value);
+              setPinError(null);
+            }}
+            placeholder="••••"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-layer-line text-center font-mono text-base font-bold text-foreground focus:outline-none focus:border-primary"
+          />
+          {pinError && (
+            <p className="text-xs text-rose-700 dark:text-rose-400 font-semibold">
+              {pinError}
+            </p>
+          )}
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setPendingAdminStaffId(null)}
+              className="px-3.5 py-2 min-h-[36px] rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground cursor-pointer"
+            >
+              {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
+            </button>
+            <button
+              type="submit"
+              disabled={pinChecking}
+              className="px-4 py-2 min-h-[36px] rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-line-2 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {pinChecking
+                ? bi('جاري التحقق...', 'Verifying...', 'خەریکی پشکنینە...')
+                : bi('تأكيد التبديل', 'Verify & Switch', 'دڵنیاکردنەوەی گۆڕین')}
+            </button>
+          </div>
+        </form>
+      </ModalDialog>
     </div>
   );
 };

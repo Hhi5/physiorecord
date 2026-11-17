@@ -12,11 +12,13 @@ import {
 
 interface LanguageSwitcherProps {
   compact?: boolean;
+  variant?: 'pill' | 'borderless';
   className?: string;
 }
 
 export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   compact = false,
+  variant = 'pill',
   className = '',
 }) => {
   const { language, setLanguage, bi } = useLanguage();
@@ -24,6 +26,44 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   const handleSelect = (code: SupportedLanguage) => {
     setLanguage(code);
   };
+
+  if (variant === 'borderless') {
+    return (
+      <div
+        role="group"
+        aria-label={bi('لغة الواجهة والاتجاه (RTL / LTR)', 'Interface Language')}
+        className={`inline-flex items-center ${compact ? 'gap-0.5' : 'gap-1.5'} ${className}`}
+      >
+        {!compact && <Globe className="size-4 text-muted-foreground-1 shrink-0" aria-hidden="true" />}
+        {LANGUAGE_SWITCHER_OPTIONS.map((opt, idx) => {
+          const active = language === opt.code;
+          return (
+            <React.Fragment key={opt.code}>
+              {idx > 0 && (
+                <span className="text-muted-foreground-1/50 select-none text-xs" aria-hidden="true">
+                  ·
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => handleSelect(opt.code)}
+                aria-pressed={active}
+                aria-label={opt.label}
+                title={opt.label}
+                className={`min-h-[36px] ${compact ? 'px-1' : 'px-1.5'} text-xs cursor-pointer transition-colors bg-transparent border-0 whitespace-nowrap ${
+                  active
+                    ? 'font-bold text-primary underline underline-offset-4 decoration-2'
+                    : 'font-medium text-muted-foreground-1 hover:text-foreground'
+                }`}
+              >
+                {compact ? opt.shortLabel : opt.label}
+              </button>
+            </React.Fragment>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div

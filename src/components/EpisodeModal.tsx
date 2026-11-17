@@ -24,7 +24,7 @@ import { ClinicOperationsService } from '../services/clinicOperationsService';
 import { localDate, computePatientAge } from '../utils/date';
 import { getPatientDisplayName } from '../utils/mrn';
 import { AutoResizeTextarea, DatePickerInput } from './ui/Primitives';
-import { ModalDialog } from './ui/Dialog';
+import { GeometricHeaderBackdrop, ModalDialog } from './ui/Dialog';
 
 const SmartGoalsGasPanel = React.lazy(() =>
   import('./workspace/SmartGoalsGasPanel').then((m) => ({ default: m.SmartGoalsGasPanel }))
@@ -288,47 +288,29 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
         if (!open) onClose();
       }}
       size="lg"
-      hideCloseButton
-      ariaLabel={
+      title={
         isEditing
           ? bi('تعديل حلقة الرعاية السريرية', 'Edit Episode of Care')
           : bi('بدء حلقة رعاية جديدة', 'Start New Episode of Care')
+      }
+      subtitle={
+        <span>
+          {bi('المريض:', 'Patient:')}{' '}
+          <span className="font-semibold">{getPatientDisplayName(p, language)}</span>{' '}
+          ({p.gender === 'male' ? bi('ذكر', 'Male') : bi('أنثى', 'Female')}،{' '}
+          <bdi dir="ltr">{displayAge ?? '—'}</bdi> {bi('سنة', 'yrs')})
+        </span>
       }
       closeLabel={bi('إغلاق', 'Close')}
       dir={isRtl ? 'rtl' : 'ltr'}
       className="bg-card border-card-line"
       bodyClassName="flex-1 min-h-0 flex flex-col overflow-hidden"
     >
-        {/* Header */}
-        <div className="px-6 py-5 bg-primary text-primary-foreground flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-foreground/15 flex items-center justify-center">
-              <Layers className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold">
-                {isEditing ? bi('تعديل حلقة الرعاية السريرية', 'Edit Episode of Care') : bi('بدء حلقة رعاية جديدة', 'Start New Episode of Care')}
-              </h2>
-              <p className="text-xs text-primary-foreground/85 mt-0.5">
-                {bi('المريض:', 'Patient:')} <span className="font-semibold">{getPatientDisplayName(p, language)}</span> ({p.gender === 'male' ? bi('ذكر', 'Male') : bi('أنثى', 'Female')}، <bdi dir="ltr">{displayAge ?? '—'}</bdi> {bi('سنة', 'yrs')})
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={bi('إغلاق', 'Close')}
-            className="w-8 h-8 rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/25 flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4 text-primary-foreground" />
-          </button>
-        </div>
-
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
           
           {error && (
-            <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl flex items-start gap-3 text-rose-800 dark:text-rose-300 text-sm">
+            <div className="p-4 bg-surface/75 rounded-xl flex items-start gap-3 text-rose-700 dark:text-rose-400 text-sm">
               <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 flex-shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -362,7 +344,7 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
                   </div>
                 </label>
 
-                <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${isOngoingLegacy ? 'bg-amber-500/10 border-amber-500/30 ring-2 ring-amber-500/20' : 'bg-surface border-layer-line hover:bg-layer-hover'}`}>
+                <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${isOngoingLegacy ? 'bg-card border-card-line ring-2 ring-primary' : 'bg-surface border-layer-line hover:bg-layer-hover'}`}>
                   <input
                     type="radio"
                     name="episodeKind"

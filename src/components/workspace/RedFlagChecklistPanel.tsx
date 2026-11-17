@@ -12,7 +12,7 @@ import {
   RED_FLAG_REGION_GROUPS,
   type RedFlagChecklistDefinition,
 } from '../../data/clinicalToolkit/redFlagsCatalog';
-import { ShieldAlert, CheckSquare, Square, Info, Clock } from 'lucide-react';
+import { ShieldAlert, CheckSquare, Square, Info, Clock, Plus, Trash2 } from 'lucide-react';
 
 export interface RedFlagChecklistPanelProps {
   checklist: PatientRedFlagChecklistItem[] | undefined;
@@ -20,6 +20,8 @@ export interface RedFlagChecklistPanelProps {
   redFlagsText: string;
   onRedFlagsTextChange?: (val: string) => void;
   readOnly?: boolean;
+  dismissedItemIds?: string[];
+  onDismissedItemIdsChange?: (ids: string[]) => void;
 }
 
 export const RedFlagChecklistPanel: React.FC<RedFlagChecklistPanelProps> = ({
@@ -28,10 +30,20 @@ export const RedFlagChecklistPanel: React.FC<RedFlagChecklistPanelProps> = ({
   redFlagsText,
   onRedFlagsTextChange,
   readOnly = false,
+  dismissedItemIds: propDismissedItemIds,
+  onDismissedItemIdsChange,
 }) => {
   const { bi } = useLanguage();
   const [activeRegion, setActiveRegion] =
     useState<RedFlagChecklistDefinition['regionId']>('lumbar_pelvis');
+  const [internalDismissedIds, setInternalDismissedIds] = useState<string[]>([]);
+  const [newFlagText, setNewFlagText] = useState('');
+
+  const dismissedItemIds = propDismissedItemIds ?? internalDismissedIds;
+  const setDismissedItemIds = (ids: string[]) => {
+    setInternalDismissedIds(ids);
+    onDismissedItemIdsChange?.(ids);
+  };
 
   const statusById = useMemo(() => {
     const map = new Map<string, PatientRedFlagChecklistItem>();
@@ -47,8 +59,16 @@ export const RedFlagChecklistPanel: React.FC<RedFlagChecklistPanelProps> = ({
   );
 
   const visibleCatalog = useMemo(
-    () => RED_FLAG_CHECKLIST_CATALOG.filter((item) => item.regionId === activeRegion),
-    [activeRegion]
+    () =>
+      RED_FLAG_CHECKLIST_CATALOG.filter(
+        (item) => item.regionId === activeRegion && !dismissedItemIds.includes(item.itemId)
+      ),
+    [activeRegion, dismissedItemIds]
+  );
+
+  const customItemsInRegion = useMemo(
+    () => checklist.filter((item) => item.regionId === activeRegion && item.isCustom),
+    [checklist, activeRegion]
   );
 
   const activeRegionMeta = useMemo(
@@ -56,7 +76,13 @@ export const RedFlagChecklistPanel: React.FC<RedFlagChecklistPanelProps> = ({
     [activeRegion]
   );
 
-  const handleToggleItem = (def: RedFlagChecklistDefinition) => {
+  const handleToggleItem = (def: {
+    itemId: string;
+    regionId: string;
+    labelAr: string;
+    labelEn: string;
+    citation?: string;
+  }) => {
     if (readOnly) return;
     const existing = statusById.get(def.itemId);
     const nextStatus: PatientRedFlagChecklistItem['status'] =
@@ -76,6 +102,33 @@ export const RedFlagChecklistPanel: React.FC<RedFlagChecklistPanelProps> = ({
     onChange(nextList);
   };
 
+  const handleAddCustomFlag = () => {
+    const trimmed = newFlagText.trim();
+    if (!trimmed || readOnly) return;
+    const newItem: PatientRedFlagChecklistItem = {
+      itemId: `custom_rf_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      regionId: activeRegion,
+      labelAr: trimmed,
+      labelEn: trimmed,
+      status: 'present',
+      screenedAt: new Date().toISOString(),
+      citation: bi('علامة سريرية مخصصة للعيادة', 'Custom clinic red flag'),
+      isCustom: true,
+    };
+    onChange([...checklist, newItem]);
+    setNewFlagText('');
+  };
+
+  const handleDeleteItem = (itemId: string, isCustom?: boolean) => {
+    if (readOnly) return;
+    if (isCustom || itemId.startsWith('custom_')) {
+      onChange(checklist.filter((c) => c.itemId !== itemId));
+    } else {
+      setDismissedItemIds([...dismissedItemIds, itemId]);
+      onChange(checklist.filter((c) => c.itemId !== itemId));
+    }
+  };
+
   return (
     <div className="space-y-3">
       {/* Header summary bar */}
@@ -93,84 +146,134 @@ export const RedFlagChecklistPanel: React.FC<RedFlagChecklistPanelProps> = ({
         </div>
 
         <span
-          className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border tabular-nums ${
+          className={`inline-flex items-center gap-1.5 text-xs tabular-nums ${
             presentCount > 0
-              ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30'
-              : 'bg-surface text-muted-foreground-1 border-line-2'
+              ? 'text-rose-700 dark:text-rose-400 font-bold'
+              : 'text-muted-foreground-1 font-semibold'
           }`}
         >
+          {presentCount > 0 && <span className="size-1.5 rounded-full bg-current shrink-0" />}
           {presentCount > 0
             ? bi(`تم رصد ${presentCount} علامات`, `${presentCount} Flagged`)
             : bi('0 علامات محددة في القائمة', '0 Checklist Flags')}
         </span>
       </div>
 
-      {/* Region Tabs */}
-      <div className="flex flex-wrap gap-1.5">
-        {RED_FLAG_REGION_GROUPS.map((group) => {
-          const countInGroup = checklist.filter(
-            (c) => c.regionId === group.regionId && c.status === 'present'
-          ).length;
-          const isSelected = activeRegion === group.regionId;
-          return (
-            <button
-              key={group.regionId}
-              type="button"
-              onClick={() => setActiveRegion(group.regionId)}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
-                isSelected
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-surface text-foreground border-layer-line hover:bg-layer-hover'
-              }`}
-            >
-              <span>{bi(group.titleAr.split(' (')[0], group.titleEn.split(' (')[0])}</span>
-              {countInGroup > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-xs font-mono">
-                  {countInGroup}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      {/* Region Tabs (Horizontally scrollable strip) */}
+      <div className="rounded-2xl border border-line-2 bg-surface/60 p-1 overflow-hidden">
+        <div className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-1 pt-0.5 px-0.5">
+          {RED_FLAG_REGION_GROUPS.map((group) => {
+            const countInGroup = checklist.filter(
+              (c) => c.regionId === group.regionId && c.status === 'present'
+            ).length;
+            const isSelected = activeRegion === group.regionId;
+            return (
+              <button
+                key={group.regionId}
+                type="button"
+                onClick={(e) => {
+                  setActiveRegion(group.regionId);
+                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                  isSelected
+                    ? 'bg-primary text-primary-foreground shadow-2xs'
+                    : 'bg-card text-foreground border border-line-2/70 hover:bg-layer-hover'
+                }`}
+              >
+                <span>{bi(group.titleAr.split(' (')[0], group.titleEn.split(' (')[0])}</span>
+                {countInGroup > 0 && (
+                  <span
+                    className={`text-xs font-mono font-bold ${
+                      isSelected ? 'text-primary-foreground' : 'text-rose-700 dark:text-rose-400'
+                    }`}
+                  >
+                    {countInGroup}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
+
+      {/* Quick Add Custom Red Flag Input */}
+      {!readOnly && (
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={newFlagText}
+            onChange={(e) => setNewFlagText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddCustomFlag();
+              }
+            }}
+            placeholder={bi(
+              'إضافة علامة حمراء جديدة لهذه المنطقة...',
+              'Add custom red flag for this region...'
+            )}
+            className="flex-1 px-3 py-1.5 text-xs bg-card border border-layer-line rounded-xl text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+          />
+          <button
+            type="button"
+            onClick={handleAddCustomFlag}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white transition-colors cursor-pointer shrink-0"
+          >
+            <Plus className="size-3.5" />
+            <span>{bi('إضافة علامة', 'Add Flag')}</span>
+          </button>
+        </div>
+      )}
 
       {/* Checklist items for selected region */}
       <div className="space-y-2">
         {visibleCatalog.map((def) => {
           const isChecked = statusById.get(def.itemId)?.status === 'present';
           return (
-            <button
+            <div
               key={def.itemId}
-              type="button"
-              disabled={readOnly}
               onClick={() => handleToggleItem(def)}
-              aria-pressed={isChecked}
-              className={`w-full text-start p-3 rounded-xl border transition-colors flex items-start gap-2.5 cursor-pointer disabled:cursor-default ${
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleToggleItem(def);
+                }
+              }}
+              className={`w-full text-start p-3 rounded-xl transition-colors flex items-start gap-2.5 cursor-pointer ${
                 isChecked
-                  ? 'bg-rose-500/10 border-rose-500/40'
-                  : 'bg-surface border-layer-line hover:bg-layer-hover'
+                  ? 'bg-surface/90 shadow-2xs border border-rose-500/30'
+                  : 'bg-surface/60 hover:bg-layer-hover border border-transparent'
               }`}
             >
               {isChecked ? (
-                <CheckSquare className="size-4 text-rose-600 shrink-0 mt-0.5" />
+                <CheckSquare className="size-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               ) : (
                 <Square className="size-4 text-muted-foreground-2 shrink-0 mt-0.5" />
               )}
               <div className="flex-1 min-w-0 space-y-1">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-foreground">
+                  <span
+                    className={`text-xs font-bold ${
+                      isChecked ? 'text-rose-700 dark:text-rose-400' : 'text-foreground'
+                    }`}
+                  >
                     {bi(def.labelAr, def.labelEn)}
                   </span>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     {def.urgency === 'immediate_emergency' && (
-                      <span className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-xs font-bold">
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 dark:text-rose-400">
+                        <span className="size-1.5 rounded-full bg-current shrink-0" />
                         {bi('طوارئ', 'Urgent')}
                       </span>
                     )}
                     {!def.governance.reviewedBy && (
                       <span
                         title={def.governance.source}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/25 text-xs font-medium"
+                        className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300 text-xs font-semibold"
                       >
                         <Clock className="size-3" />
                         <span>{bi('بانتظار المراجعة', 'Pending Review')}</span>
@@ -183,10 +286,93 @@ export const RedFlagChecklistPanel: React.FC<RedFlagChecklistPanelProps> = ({
                 </p>
                 <p className="text-xs font-mono text-muted-foreground-2">{def.citation}</p>
               </div>
-            </button>
+              {!readOnly && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteItem(def.itemId, false);
+                  }}
+                  title={bi('حذف هذه العلامة الحمراء', 'Delete this red flag')}
+                  className="p-1 text-muted-foreground-2 hover:text-rose-600 rounded-lg transition-colors cursor-pointer shrink-0 ms-1"
+                >
+                  <Trash2 className="size-3.5" />
+                </button>
+              )}
+            </div>
+          );
+        })}
+
+        {customItemsInRegion.map((item) => {
+          const isChecked = item.status === 'present';
+          return (
+            <div
+              key={item.itemId}
+              onClick={() => handleToggleItem(item)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleToggleItem(item);
+                }
+              }}
+              className={`w-full text-start p-3 rounded-xl transition-colors flex items-start gap-2.5 cursor-pointer ${
+                isChecked
+                  ? 'bg-rose-500/10 border border-rose-500/40 shadow-2xs'
+                  : 'bg-surface/60 hover:bg-layer-hover border border-transparent'
+              }`}
+            >
+              {isChecked ? (
+                <CheckSquare className="size-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+              ) : (
+                <Square className="size-4 text-muted-foreground-2 shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span
+                    className={`text-xs font-bold ${
+                      isChecked ? 'text-rose-700 dark:text-rose-400' : 'text-foreground'
+                    }`}
+                  >
+                    {item.labelAr}
+                  </span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
+                    {bi('مخصص', 'Custom')}
+                  </span>
+                </div>
+                <p className="text-xs font-mono text-muted-foreground-2">{item.citation}</p>
+              </div>
+              {!readOnly && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteItem(item.itemId, true);
+                  }}
+                  title={bi('حذف هذه العلامة المخصصة', 'Delete this custom red flag')}
+                  className="p-1 text-muted-foreground-2 hover:text-rose-600 rounded-lg transition-colors cursor-pointer shrink-0 ms-1"
+                >
+                  <Trash2 className="size-3.5" />
+                </button>
+              )}
+            </div>
           );
         })}
       </div>
+
+      {/* Restore dismissed items link */}
+      {dismissedItemIds.length > 0 && !readOnly && (
+        <div className="px-1">
+          <button
+            type="button"
+            onClick={() => setDismissedItemIds([])}
+            className="text-xs text-primary hover:underline font-semibold cursor-pointer"
+          >
+            {bi('استعادة العلامات الحمراء الافتراضية المحذوفة', 'Restore default red flags')}
+          </button>
+        </div>
+      )}
 
       {/* Regional Citation Footer */}
       {activeRegionMeta && (

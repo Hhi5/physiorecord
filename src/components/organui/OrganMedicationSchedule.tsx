@@ -221,7 +221,7 @@ export const OrganMedicationSchedule: React.FC<OrganMedicationScheduleProps> = (
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-950/80 border border-teal-200 dark:border-teal-800 flex items-center justify-center text-teal-600 dark:text-teal-400">
+          <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
             <Pill className="w-4 h-4" />
           </div>
           <div>
@@ -291,7 +291,8 @@ export const OrganMedicationSchedule: React.FC<OrganMedicationScheduleProps> = (
           <button
             type="button"
             onClick={handleAddMedication}
-            className="sm:col-span-1 px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center justify-center cursor-pointer"
+            aria-label={bi('إضافة للجدول الدوائي', 'Add medication', 'زیادکردن بۆ خشتەی دەرمان')}
+            className="sm:col-span-1 px-3 py-1.5 min-h-[36px] rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold flex items-center justify-center cursor-pointer transition-colors"
             title={bi('إضافة للجدول الدوائي', 'Add medication', 'زیادکردن بۆ خشتەی دەرمان')}
           >
             <Plus className="w-4 h-4" />
@@ -315,7 +316,7 @@ export const OrganMedicationSchedule: React.FC<OrganMedicationScheduleProps> = (
             return (
               <div
                 key={med.id}
-                className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 flex flex-wrap items-center justify-between gap-3 hover:border-teal-500/40 transition-colors"
+                className="p-3 rounded-xl border border-card-stroke bg-surface flex flex-wrap items-center justify-between gap-3 hover:border-primary/40 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <button
@@ -342,7 +343,7 @@ export const OrganMedicationSchedule: React.FC<OrganMedicationScheduleProps> = (
                       <span className="text-xs font-bold text-slate-900 dark:text-white">
                         {med.name}
                       </span>
-                      <span className="text-xs font-mono font-semibold text-teal-600 dark:text-teal-400 tabular-nums">
+                      <span className="text-xs font-mono font-semibold text-primary tabular-nums">
                         {med.dosage}
                       </span>
                       <span className={`px-2 py-0.5 rounded text-xs font-bold border ${meta.badgeClass}`}>

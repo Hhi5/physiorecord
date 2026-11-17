@@ -322,7 +322,7 @@ export const IcsExportModal: React.FC<IcsExportModalProps> = ({
     >
       <div dir={isRtl ? 'rtl' : 'ltr'} className="space-y-4 text-xs">
         {/* Local Privacy Banner */}
-        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-900 dark:text-emerald-200 flex items-start gap-2.5 leading-relaxed">
+        <div className="p-3 rounded-xl bg-surface/75 text-emerald-900 dark:text-emerald-200 flex items-start gap-2.5 leading-relaxed">
           <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
           <p className="font-medium">
             {bi(
@@ -517,7 +517,7 @@ export const IcsExportModal: React.FC<IcsExportModalProps> = ({
 
         {/* Empty Notice when scope has 0 active appointments */}
         {activeExportCount === 0 && (
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-900 dark:text-amber-200 text-xs font-medium">
+          <div className="p-3 rounded-xl bg-surface/75 text-amber-900 dark:text-amber-200 text-xs font-medium">
             {bi(
               'لا توجد مواعيد نشطة (غير ملغاة) في النطاق المحدد حالياً.',
               'There are no active (non-cancelled) appointments in the currently selected scope.',

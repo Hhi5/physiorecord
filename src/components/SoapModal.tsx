@@ -7,6 +7,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useVault } from '../context/VaultContext';
 import { DraftRecoveryService } from '../services/draftRecoveryService';
+import { GeometricHeaderBackdrop } from './ui/Dialog';
 import { 
   X, 
   Save, 
@@ -436,7 +437,7 @@ export const SoapModal: React.FC<SoapModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="soap-modal-title"
-      className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto"
       dir={isRtl ? 'rtl' : 'ltr'}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {
@@ -452,51 +453,51 @@ export const SoapModal: React.FC<SoapModalProps> = ({
       }}
     >
       <div
-        className="bg-card rounded-xl shadow-2xl border border-card-line w-full max-w-5xl flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        className="bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl border border-card-line w-full max-w-5xl flex flex-col max-h-[92dvh] sm:max-h-[88dvh] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         
         {/* Header Bar */}
-        <div className="px-5 py-4 bg-card border-b border-card-divider flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs">
-              #{session.sessionNumber}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 id="soap-modal-title" className="font-bold text-foreground text-sm sm:text-base">
-                  {bi(`توثيق الجلسة السريرية #${session.sessionNumber}`, `Clinical Session Documentation #${session.sessionNumber}`)}
-                </h3>
-                <span className={`px-2 py-0.5 rounded text-xs font-semibold border ${
-                  isFinalized
-                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
-                    : 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30'
-                }`}>
-                  {isFinalized ? bi('معتمدة', 'Finalized') : bi('مسودة', 'Draft')}
-                </span>
+        <div className="relative overflow-hidden px-5 pt-3 sm:pt-4 pb-4 bg-primary text-primary-foreground flex flex-col gap-2.5 flex-shrink-0 shadow-xs">
+          <GeometricHeaderBackdrop />
+          <div className="relative z-10 w-10 h-1 bg-primary-foreground/40 rounded-full mx-auto sm:hidden shrink-0" aria-hidden="true" />
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-primary-foreground/15 border border-primary-foreground/25 text-primary-foreground flex items-center justify-center font-bold text-xs shrink-0">
+                #{session.sessionNumber}
               </div>
-              <p className="text-xs text-muted-foreground-1">
-                {patient.data.fullNameAr || patient.data.fullName} • {bi(sessionTypeInfo.ar, sessionTypeInfo.en)} • {session.sessionDate}
-              </p>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 id="soap-modal-title" className="font-bold text-primary-foreground text-sm sm:text-base">
+                    {bi(`توثيق الجلسة السريرية #${session.sessionNumber}`, `Clinical Session Documentation #${session.sessionNumber}`)}
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-primary-foreground/15 text-primary-foreground border border-primary-foreground/25">
+                    {isFinalized ? bi('معتمدة', 'Finalized') : bi('مسودة', 'Draft')}
+                  </span>
+                </div>
+                <p className="text-xs text-primary-foreground/85 truncate mt-0.5">
+                  {patient.data.fullNameAr || patient.data.fullName} • {bi(sessionTypeInfo.ar, sessionTypeInfo.en)} • {session.sessionDate}
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-center">
-            {isFinalized && (
-              <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/25">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>{bi('سجل مشفر ومعتمد', 'Encrypted & Finalized')}</span>
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label={bi('إغلاق', 'Close')}
-              className="size-8 flex items-center justify-center text-muted-foreground-1 hover:text-foreground rounded-md hover:bg-layer-hover transition-colors cursor-pointer"
-              title={bi('إغلاق', 'Close')}
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+              {isFinalized && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-foreground/15 border border-primary-foreground/25 text-xs text-primary-foreground font-bold">
+                  <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                  <span>{bi('سجل مشفر ومعتمد', 'Encrypted & Finalized')}</span>
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={bi('إغلاق', 'Close')}
+                className="size-9 !p-0 inline-flex items-center justify-center text-primary-foreground rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 transition-colors cursor-pointer shrink-0"
+                title={bi('إغلاق', 'Close')}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -538,14 +539,14 @@ export const SoapModal: React.FC<SoapModalProps> = ({
 
         {/* Status Notices */}
         {error && (
-          <div className="mx-5 mt-3 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-lg flex items-start gap-2 text-rose-800 dark:text-rose-300 text-xs">
+          <div className="mx-5 mt-3 p-3 bg-surface/75 rounded-lg flex items-start gap-2 text-rose-700 dark:text-rose-400 text-xs">
             <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
         {successNotice && (
-          <div className="mx-5 mt-3 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-lg flex items-center gap-2 text-emerald-800 dark:text-emerald-300 text-xs">
+          <div className="mx-5 mt-3 p-3 bg-surface/75 rounded-lg flex items-center gap-2 text-emerald-700 dark:text-emerald-400 text-xs">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
             <span>{successNotice}</span>
           </div>
@@ -598,12 +599,12 @@ export const SoapModal: React.FC<SoapModalProps> = ({
                     <Sliders className="w-3.5 h-3.5 text-primary" />
                     <span>{bi('مقياس شدة الألم (0–10)', 'Pain Intensity Scale (0–10)')}</span>
                   </label>
-                  <span className={`px-2.5 py-0.5 rounded-md text-xs font-mono font-bold ${
+                  <span className={`text-xs font-mono font-bold ${
                     painNrsScore <= 3
-                      ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                      ? 'text-emerald-700 dark:text-emerald-400'
                       : painNrsScore <= 6
-                      ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300'
-                      : 'bg-rose-500/15 text-rose-700 dark:text-rose-300'
+                      ? 'text-amber-700 dark:text-amber-400'
+                      : 'text-rose-700 dark:text-rose-400'
                   }`}>
                     {painNrsScore} / 10
                   </span>
@@ -778,10 +779,10 @@ export const SoapModal: React.FC<SoapModalProps> = ({
                       : 'text-muted-foreground-1 hover:text-foreground'
                   }`}
                 >
-                  <Compass className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                  <Compass className="w-3.5 h-3.5 text-primary" />
                   <span>{bi('المدى الحركي', 'Range of Motion (ROM)')}</span>
                   {romBattery?.entries && romBattery.entries.length > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full text-xs font-mono font-bold bg-teal-500/15 text-teal-700 dark:text-teal-300">
+                    <span className="px-1.5 py-0.2 rounded-full text-xs font-mono font-bold bg-primary/15 text-primary">
                       {romBattery.entries.length}
                     </span>
                   )}
@@ -877,8 +878,8 @@ export const SoapModal: React.FC<SoapModalProps> = ({
                   </div>
 
                   {objectiveStatus === 'not_assessed' && (
-                    <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/30 space-y-1">
-                      <label htmlFor="soap-not-assessed-reason" className="block text-xs font-bold text-amber-800 dark:text-amber-300">
+                    <div className="p-3 bg-surface/75 rounded-lg space-y-1">
+                      <label htmlFor="soap-not-assessed-reason" className="block text-xs font-bold text-amber-700 dark:text-amber-400">
                         {bi('سبب عدم إجراء الفحص الموضوعي (إلزامي للاعتماد):', 'Reason for Not Assessing (Mandatory):')}
                       </label>
                       <input
@@ -888,13 +889,13 @@ export const SoapModal: React.FC<SoapModalProps> = ({
                         onChange={(e) => setNotAssessedReason(e.target.value)}
                         disabled={isFinalized}
                         placeholder={bi('ألم حاد يمنع الحركة، إجهاد شديد، أو جلسة استشارية...', 'Acute pain, extreme fatigue, or consultation visit...')}
-                        className="w-full px-3 py-1.5 text-xs border border-amber-500/40 rounded bg-layer text-foreground placeholder:text-muted-foreground-1 focus:ring-1 focus:ring-amber-500"
+                        className="w-full px-3 py-1.5 text-xs border border-line-2 rounded bg-layer text-foreground placeholder:text-muted-foreground-1 focus:ring-1 focus:ring-primary"
                       />
                     </div>
                   )}
 
                   {objectiveStatus === 'normal_findings' && (
-                    <div className="p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/30 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                    <div className="p-3 bg-surface/75 rounded-lg text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                       <span>{bi('تم توثيق نتائج الفحص السريري الموضوعي كسليمة وطبيعية بالكامل.', 'All objective examination findings documented as normal and within acceptable limits.')}</span>
                     </div>
@@ -1195,8 +1196,8 @@ export const SoapModal: React.FC<SoapModalProps> = ({
                     {bi('التاريخ:', 'Date:')} {session.sessionDate} • {bi('المعالج:', 'Clinician:')} {session.data.therapistName || bi('د. المعالج الطبيعي', 'Physical Therapist')}
                   </p>
                 </div>
-                <span className={`px-2 py-0.5 rounded text-xs font-semibold self-start sm:self-center ${
-                  isFinalized ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40' : 'bg-amber-500/20 text-amber-300 border border-amber-400/40'
+                <span className={`text-xs font-semibold self-start sm:self-center ${
+                  isFinalized ? 'text-emerald-700 dark:text-emerald-300 font-bold' : 'text-amber-700 dark:text-amber-300 font-bold'
                 }`}>
                   {isFinalized ? bi('سجل معتمد', 'Finalized') : bi('مسودة قيد التحرير', 'Draft')}
                 </span>
@@ -1327,7 +1328,7 @@ export const SoapModal: React.FC<SoapModalProps> = ({
               <button
                 type="button"
                 onClick={onOpenAddendumModal}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold text-amber-800 dark:text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-surface/80 transition-colors cursor-pointer"
               >
                 <FileEdit className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 <span>{bi('إضافة ملحق سريري', 'Add Addendum')}</span>
@@ -1370,31 +1371,48 @@ export const SoapModal: React.FC<SoapModalProps> = ({
           role="dialog"
           aria-modal="true"
           aria-labelledby="soap-finalize-confirm-title"
-          className="fixed inset-0 z-60 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-60 bg-slate-950/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6"
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowFinalizeConfirm(false);
           }}
         >
           <div
-            className="bg-card rounded-xl p-5 max-w-md w-full shadow-2xl border border-emerald-500/30 animate-in fade-in zoom-in-95 duration-150"
+            className="bg-card border border-card-line rounded-t-2xl sm:rounded-2xl max-w-md w-full max-h-[92dvh] sm:max-h-[88dvh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 flex items-center justify-center mb-3">
-              <ShieldCheck className="w-5 h-5" />
+            <div className="relative overflow-hidden px-5 pt-3 sm:pt-4 pb-4 bg-primary text-primary-foreground flex flex-col gap-2.5 shrink-0 shadow-xs">
+              <GeometricHeaderBackdrop />
+              <div className="relative z-10 w-10 h-1 bg-primary-foreground/40 rounded-full mx-auto sm:hidden shrink-0" aria-hidden="true" />
+              <div className="relative z-10 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-primary-foreground/15 border border-primary-foreground/25 text-primary-foreground flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <h4 id="soap-finalize-confirm-title" className="text-sm sm:text-base font-bold text-primary-foreground leading-snug">
+                    {bi('تأكيد الاعتماد السريري وإقرار المعالج', 'Clinician Attestation & Integrity Lock')}
+                  </h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowFinalizeConfirm(false)}
+                  aria-label={bi('إغلاق', 'Close')}
+                  className="size-9 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            <h4 id="soap-finalize-confirm-title" className="text-sm font-bold text-foreground mb-1">
-              {bi('تأكيد الاعتماد السريري وإقرار المعالج', 'Clinician Attestation & Integrity Lock')}
-            </h4>
+            <div className="p-5 overflow-y-auto space-y-3">
             
-            <p className="text-xs text-muted-foreground-1 leading-relaxed mb-3">
+            <p className="text-xs text-muted-foreground-1 leading-relaxed">
               {bi(
                 'باعتماد هذا السجل، فإنك تقر سريرياً بصحة ودقة البيانات المسجلة. سيتم حساب بصمة سلامة المحتوى (SHA-256 Digest) لتجميد السجل ضد أي تعديل مباشر، وأي تصحيح مستقبلي سيتطلب ملحقاً سريرياً.',
                 'By finalizing this record, you clinically attest to the accuracy of the documented findings. A SHA-256 integrity digest will lock the record against direct edits, and subsequent changes will require a clinical addendum.'
               )}
             </p>
 
-            <div className="mb-4">
+            <div>
               <label htmlFor="soap-therapist-signature-input" className="block text-xs font-semibold text-foreground mb-1">
                 {bi('اسم المعالج الطبيعي المعتمد:', 'Attesting Physical Therapist Name:')}
               </label>
@@ -1408,7 +1426,7 @@ export const SoapModal: React.FC<SoapModalProps> = ({
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-1">
               <button
                 type="button"
                 onClick={handleConfirmFinalize}
@@ -1424,6 +1442,7 @@ export const SoapModal: React.FC<SoapModalProps> = ({
               >
                 {bi('إلغاء', 'Cancel')}
               </button>
+            </div>
             </div>
           </div>
         </div>

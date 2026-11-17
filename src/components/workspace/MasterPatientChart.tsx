@@ -4,7 +4,7 @@
 // Longitudinal Comparison Matrix, HEP Prescription & Iraqi IQD Financial Summary
 // =======================================================================
 
-import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useVault } from '../../context/VaultContext';
 import { usePatients } from '../../context/PatientContext';
@@ -19,8 +19,13 @@ import {
   WEEKDAYS_IRAQI_ORDER,
   formatWeekdaysSummary,
   computePatientAge,
+  formatIraqiPhoneDisplay,
+  formatClinicalDate,
 } from '../../utils/date';
 import type {
+  RomAssessmentBatteryData,
+  MmtAssessmentBatteryData,
+  NeuroScreeningBatteryData,
   PatientRecord,
   EpisodeRecord,
   SessionRecord,
@@ -29,6 +34,7 @@ import type {
   PatientRedFlagChecklistItem,
   SoapNoteRecord,
   StructuredPrecautionId,
+  CustomPrecautionItem,
 } from '../../types/clinical';
 import type {
   EpisodeScopedClinicalStore,
@@ -39,7 +45,17 @@ import type {
   ReferringDoctorEntry,
   WeekdayIndex,
 } from '../../types/clinicManagement';
-import { isDemoPatient } from '../../utils/mrn';
+import type {
+  OrthopedicSpecialTestItem,
+  FunctionalScaleEntry,
+} from '../../types/clinicalWidgets';
+import {
+  isDemoPatient,
+  getPatientMrn,
+  getPatientDisplayName,
+  getPatientSecondaryName,
+} from '../../utils/mrn';
+import { EpisodeService } from '../../services/episodeService';
 import type { PrintableDocumentType } from '../print/PrintDocumentModal';
 import type { SessionPainPointInput } from '../organui/OrganClinicalCharts';
 import { RedFlagChecklistPanel } from './RedFlagChecklistPanel';
@@ -142,7 +158,48 @@ import {
   Stethoscope,
   ChevronDown,
   ChevronUp,
+  Sparkles,
+  History,
+  Star,
+  Activity,
+  ShieldCheck,
+  ChevronRight,
+  ChevronLeft,
+  LayoutGrid,
+  MoreVertical,
+  Award,
+  Zap,
+  Gauge,
+  Target,
+  Edit3,
+  MapPin,
+  Phone,
+  Shield,
+  Calendar,
+  User,
+  Camera,
+  Check,
+  Copy,
+  ArrowRight,
+  ArrowLeft,
 } from 'lucide-react';
+
+
+const RomWidget = lazy(() =>
+  import('../widgets/RomWidget').then((m) => ({ default: m.RomWidget }))
+);
+const MmtWidget = lazy(() =>
+  import('../widgets/MmtWidget').then((m) => ({ default: m.MmtWidget }))
+);
+const NeuroWidget = lazy(() =>
+  import('../widgets/NeuroWidget').then((m) => ({ default: m.NeuroWidget }))
+);
+const SpecialTestsWidget = lazy(() =>
+  import('../widgets/SpecialTestsWidget').then((m) => ({ default: m.SpecialTestsWidget }))
+);
+const FunctionalScalesWidget = lazy(() =>
+  import('../widgets/FunctionalScalesWidget').then((m) => ({ default: m.FunctionalScalesWidget }))
+);
 
 const DoctorReportBackLetterModal = lazy(() =>
   import('../clinic/ReferralsAndRetentionPanel').then((m) => ({
@@ -172,6 +229,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
   onOpenSession,
   onOpenNewSession,
   onOpenNewEpisode,
+  onBackToDirectory,
   onPatientUpdated,
 }) => {
   const { language, bi, t } = useLanguage();
@@ -180,19 +238,119 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
   const { savePatient } = usePatients();
 
   const [activeTab, setActiveTab] = useState<
-    'evaluation' | 'comparison' | 'hep' | 'sessions' | 'profile'
-  >('evaluation');
+    'overview' | 'history' | 'treatment' | 'sessions' | 'evaluation' | 'comparison' | 'profile' | 'hep'
+  >('overview');
   const [sessionPainPoints, setSessionPainPoints] = useState<SessionPainPointInput[]>([]);
   const [episodeSoaps, setEpisodeSoaps] = useState<SoapNoteRecord[]>([]);
   const [allPatientSoaps, setAllPatientSoaps] = useState<SoapNoteRecord[]>([]);
   const [activePrintDoc, setActivePrintDoc] = useState<PrintableDocumentType | null>(null);
   const [isCustomStudioOpen, setIsCustomStudioOpen] = useState(false);
   const [isExamShelfModalOpen, setIsExamShelfModalOpen] = useState(false);
-  const [clinicalSummaryExpanded, setClinicalSummaryExpanded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
+
+  const [isEditPersonalInfoOpen, setIsEditPersonalInfoOpen] = useState(false);
+  const [isEditClinicalSummaryOpen, setIsEditClinicalSummaryOpen] = useState(false);
+  const [isMmtModalOpen, setIsMmtModalOpen] = useState(false);
+  const [isRomModalOpen, setIsRomModalOpen] = useState(false);
+  const [isNeuroModalOpen, setIsNeuroModalOpen] = useState(false);
+  const [isSpecialTestsModalOpen, setIsSpecialTestsModalOpen] = useState(false);
+  const [mrnCopied, setMrnCopied] = useState(false);
+  const [isPinned, setIsPinned] = useState(() => ClinicOperationsService.isPatientPinned(patient.id));
+  const avatarFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (!dataUrl) return;
+
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 320;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.85);
+          const updatedClinicalData: PatientClinicalData = {
+            ...patient.data,
+            avatarUrl: compressed,
+            photoDataUrl: compressed,
+          };
+          void savePatient(updatedClinicalData, patient.id).then(() => {
+            patient.data.avatarUrl = compressed;
+            patient.data.photoDataUrl = compressed;
+            onPatientUpdated?.();
+          });
+        }
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  useEffect(() => {
+    setIsPinned(ClinicOperationsService.isPatientPinned(patient.id));
+  }, [patient.id]);
+
+  // Personal Info Form State
+  const [editFullName, setEditFullName] = useState(patient.data.fullName || patient.data.fullName || '');
+  const [editPhone, setEditPhone] = useState(patient.data.phone || '');
+  const [editDob, setEditDob] = useState(patient.data.dateOfBirth || '');
+  const [editGender, setEditGender] = useState<'male' | 'female' | 'other'>(patient.data.gender || 'male');
+  
+  const [editAddress, setEditAddress] = useState(patient.data.address || '');
+  const [editEmergencyName, setEditEmergencyName] = useState(patient.data.emergencyContactName || '');
+  const [editEmergencyPhone, setEditEmergencyPhone] = useState(patient.data.emergencyContactPhone || '');
+
+  useEffect(() => {
+    setEditFullName(patient.data.fullName || patient.data.fullName || '');
+    setEditPhone(patient.data.phone || '');
+    setEditDob(patient.data.dateOfBirth || '');
+    setEditGender(patient.data.gender || 'male');
+    
+    setEditAddress(patient.data.address || '');
+    setEditEmergencyName(patient.data.emergencyContactName || '');
+    setEditEmergencyPhone(patient.data.emergencyContactPhone || '');
+  }, [patient]);
+
+  // Clinical Summary Form State
+  const [editEpisodeTitle, setEditEpisodeTitle] = useState('');
+  const [editDiagnosis, setEditDiagnosis] = useState('');
+  const [editChiefComplaint, setEditChiefComplaint] = useState('');
+  const [editGoals, setEditGoals] = useState('');
+  const [editClinicalImpression, setEditClinicalImpression] = useState('');
+
+  const patientAge = computePatientAge(patient.data.dateOfBirth, patient.data.age);
+  const genderLabel =
+    patient.data.gender === 'male'
+      ? bi('ذكر', 'Male', 'نێر')
+      : patient.data.gender === 'female'
+      ? bi('أنثى', 'Female', 'مێ')
+      : bi('غير محدد', 'Unspecified', 'دیاری نەکراو');
+
 
   const activeEpisode =
     episodes.find((e) => e.id === selectedEpisodeId) || episodes[0] || null;
@@ -254,6 +412,16 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
   const [structuredPrecautions, setStructuredPrecautions] = useState<StructuredPrecautionId[]>(
     d.structuredPrecautions || []
   );
+  const [customPrecautions, setCustomPrecautions] = useState<CustomPrecautionItem[]>(
+    d.customPrecautions || []
+  );
+  const [dismissedPrecautionIds, setDismissedPrecautionIds] = useState<string[]>(
+    d.dismissedPrecautionIds || []
+  );
+  const [dismissedRedFlagIds, setDismissedRedFlagIds] = useState<string[]>(
+    d.dismissedRedFlagIds || []
+  );
+  const [newPrecautionText, setNewPrecautionText] = useState('');
   const [contraindications, setContraindications] = useState(d.contraindications || '');
   const [redFlags, setRedFlags] = useState(d.redFlags || '');
   const [redFlagChecklist, setRedFlagChecklist] = useState<PatientRedFlagChecklistItem[]>(
@@ -440,6 +608,9 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
     setAllergies(patient.data.allergies || '');
     setPrecautions(patient.data.precautions || '');
     setStructuredPrecautions(patient.data.structuredPrecautions || []);
+    setCustomPrecautions(patient.data.customPrecautions || []);
+    setDismissedPrecautionIds(patient.data.dismissedPrecautionIds || []);
+    setDismissedRedFlagIds(patient.data.dismissedRedFlagIds || []);
     setContraindications(patient.data.contraindications || '');
     setRedFlags(patient.data.redFlags || '');
     setRedFlagChecklist(patient.data.redFlagChecklist || []);
@@ -552,6 +723,9 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
     allergies,
     precautions,
     structuredPrecautions,
+    customPrecautions,
+    dismissedPrecautionIds,
+    dismissedRedFlagIds,
     contraindications,
     redFlags,
     redFlagChecklist,
@@ -590,6 +764,170 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
     reEvalConfig.afterSessions,
     reEvalConfig.afterDays,
   ]);
+
+
+  useEffect(() => {
+    setEditEpisodeTitle(activeEpisode?.data.title || '');
+    setEditDiagnosis(activeEpisode?.data.medicalDiagnosis || '');
+    setEditChiefComplaint(episodeStore.chiefComplaint || '');
+    setEditGoals(episodeStore.patientPersonalGoals || '');
+    setEditClinicalImpression(episodeStore.clinicalImpression || '');
+  }, [activeEpisode, episodeStore.chiefComplaint, episodeStore.patientPersonalGoals, episodeStore.clinicalImpression]);
+
+  const handleSavePersonalInfo = async () => {
+    if (!dek) return;
+    setIsSaving(true);
+    try {
+      const updatedClinicalData: PatientClinicalData = {
+        ...buildMasterClinicalData(),
+        fullName: editFullName.trim() || patient.data.fullName || "مريض",
+        
+        phone: editPhone.trim() || undefined,
+        dateOfBirth: editDob || undefined,
+        gender: editGender,
+        
+        address: editAddress.trim() || undefined,
+        emergencyContactName: editEmergencyName.trim() || undefined,
+        emergencyContactPhone: editEmergencyPhone.trim() || undefined,
+      };
+      await savePatient(updatedClinicalData, patient.id);
+      setIsEditPersonalInfoOpen(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+      onPatientUpdated();
+    } catch (err) {
+      console.error('Failed to save personal info:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveClinicalSummary = async () => {
+    if (!dek) return;
+    setIsSaving(true);
+    try {
+      if (activeEpisode) {
+        await EpisodeService.updateEpisode(
+          activeEpisode.id,
+          {
+            ...activeEpisode.data,
+            title: editEpisodeTitle.trim() || activeEpisode.data.title,
+            medicalDiagnosis: editDiagnosis.trim() || activeEpisode.data.medicalDiagnosis,
+          },
+          dek
+        );
+      }
+      setEpisodeStore((prev) => ({
+        ...prev,
+        chiefComplaint: editChiefComplaint.trim(),
+        patientPersonalGoals: editGoals.trim(),
+        clinicalImpression: editClinicalImpression.trim(),
+      }));
+      setIsDirty(true);
+      setIsEditClinicalSummaryOpen(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+      onPatientUpdated();
+    } catch (err) {
+      console.error('Failed to save clinical summary:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const updateObjectiveRom = (rom: RomAssessmentBatteryData) => {
+    setEpisodeStore((prev) => ({
+      ...prev,
+      objective: {
+        ...prev.objective,
+        romBattery: rom,
+      },
+    }));
+    setIsDirty(true);
+  };
+
+  const updateObjectiveMmt = (mmt: MmtAssessmentBatteryData) => {
+    setEpisodeStore((prev) => ({
+      ...prev,
+      objective: {
+        ...prev.objective,
+        mmtBattery: mmt,
+      },
+    }));
+    setIsDirty(true);
+  };
+
+  const updateObjectiveNeuro = (neuro: NeuroScreeningBatteryData) => {
+    setEpisodeStore((prev) => ({
+      ...prev,
+      objective: {
+        ...prev.objective,
+        neuroScreening: neuro,
+      },
+    }));
+    setIsDirty(true);
+  };
+
+  const updateSpecialTests = (specialTests: OrthopedicSpecialTestItem[]) => {
+    setEpisodeStore((prev) => ({
+      ...prev,
+      specialTests,
+    }));
+    setIsDirty(true);
+  };
+
+  const updateFunctionalScales = (functionalScales: FunctionalScaleEntry) => {
+    setEpisodeStore((prev) => ({
+      ...prev,
+      functionalScales,
+    }));
+    setIsDirty(true);
+  };
+
+
+  const navigationTabs = [
+    {
+      id: 'overview' as const,
+      label: bi('نظرة عامة', 'Overview', 'پوختە'),
+      icon: LayoutGrid,
+    },
+    {
+      id: 'history' as const,
+      label: bi('السجل المرضي', 'History', 'مێژوو'),
+      icon: History,
+    },
+    {
+      id: 'treatment' as const,
+      label: showExerciseLibrary
+        ? bi('العلاج والتمارين', 'Treatment', 'چارەسەر')
+        : bi('الخطة والأهداف', 'Plan & Goals', 'پلان و ئامانجەکان'),
+      icon: showExerciseLibrary ? Dumbbell : CheckCircle2,
+      count: showExerciseLibrary ? episodeStore.hepProgram.length : undefined,
+    },
+    {
+      id: 'sessions' as const,
+      label: bi('الجلسات', 'Sessions', 'دانیشتنەکان'),
+      icon: Clock,
+      count: episodeSessions.length,
+    },
+    {
+      id: 'evaluation' as const,
+      label: bi('التقييم السريري', 'Evaluation', 'هەڵسەنگاندن'),
+      icon: Layers,
+      count: episodeStore.activeWidgetIds.length,
+    },
+    {
+      id: 'comparison' as const,
+      label: bi('المقارنة', 'Progress', 'بەراورد'),
+      icon: TrendingUp,
+      count: episodeStore.snapshots.length,
+    },
+    {
+      id: 'profile' as const,
+      label: bi('الملف والمالية', 'Financial & Docs', 'دارایی و دۆکیومێنت'),
+      icon: Wallet,
+    },
+  ];
 
   const handleSaveMasterAndEpisode = async () => {
     if (!dek) return;
@@ -807,132 +1145,292 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden transition-colors">
-      {/* Scrollable Single-Line Tabs Navigation (Never wraps into multiple rows on mobile) */}
-      <div className="relative border-b border-card-line bg-card shrink-0">
-        <div
-          role="tablist"
-          aria-label={bi('أقسام الملف السريري للمريض', 'Patient Chart Sections')}
-          className="px-3 sm:px-5 flex flex-nowrap items-center gap-1 overflow-x-auto scroll-smooth touch-pan-x"
-          style={{ WebkitOverflowScrolling: 'touch' }}
-        >
-          {(
-            [
-              {
-                id: 'evaluation',
-                label: t('tabAssessment'),
-                icon: Layers,
-                count: episodeStore.activeWidgetIds.length,
-              },
-              {
-                id: 'sessions',
-                label: t('tabSessions'),
-                icon: Clock,
-                count: episodeSessions.length,
-              },
-              {
-                id: 'comparison',
-                label: t('tabProgress'),
-                icon: TrendingUp,
-                count: episodeStore.snapshots.length,
-              },
-              {
-                id: 'hep',
-                label: showExerciseLibrary
-                  ? t('tabPlanHep')
-                  : bi('الخطة والأهداف', 'Plan & Goals', 'پلان و ئامانجەکان'),
-                icon: showExerciseLibrary ? Dumbbell : CheckCircle2,
-                count: showExerciseLibrary ? episodeStore.hepProgram.length : undefined,
-              },
-              {
-                id: 'profile',
-                label: t('tabProfile'),
-                icon: FileText,
-              },
-            ] as const
-          ).map((tab) => {
-            const Icon = tab.icon;
-            const isSelected = activeTab === tab.id;
-
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={isSelected}
-                onClick={(e) => {
-                  setActiveTab(tab.id);
-                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                }}
-                title={tab.label}
-                style={{ minHeight: 'unset', minWidth: 'unset' }}
-                className={`compact-btn min-h-[36px] px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-semibold border-b-2 inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-                  isSelected
-                    ? 'text-primary border-primary bg-primary/5'
-                    : 'text-muted-foreground-1 border-transparent hover:text-foreground'
-                }`}
-              >
-                <Icon className="size-3.5 sm:size-4 shrink-0" />
-                <span>{tab.label}</span>
-                {'count' in tab && tab.count !== undefined && (
-                  <span className="py-0.5 px-1.5 rounded-full text-xs tabular-nums bg-primary/10 text-primary">
-                    <Num value={tab.count} />
-                  </span>
-                )}
-              </button>
-            );
-          })}
+      {/* Top Bar Header */}
+      <header className="px-4 py-3 sm:px-6 border-b border-card-line bg-card/90 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between gap-3 shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={onBackToDirectory}
+            title={bi('العودة إلى سجل المرضى', 'Back to Patient Directory', 'گەڕانەوە بۆ لیستی نەخۆشەکان')}
+            className="size-9 rounded-xl bg-surface hover:bg-muted/60 border border-line-2 flex items-center justify-center text-foreground hover:text-primary transition-colors cursor-pointer shrink-0"
+          >
+            <ChevronLeft className="size-5 rtl:rotate-0 ltr:rotate-180" />
+          </button>
+          <div className="min-w-0">
+            <h1 className="text-sm sm:text-base font-black text-foreground truncate">
+              {bi('ملف المريض', 'Patient Profile', 'پرۆفایلی نەخۆش')}
+            </h1>
+            <p className="text-[11px] sm:text-xs text-muted-foreground-1 truncate">
+              {bi('التفاصيل والمعلومات السريرية', 'Patient Details & Clinical Info', 'زانیاری ورد و کلینیکی')}
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Main Tab Content Canvas */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setActivePrintDoc('medical_report')}
+            title={bi('طباعة تقرير شامل', 'Print Comprehensive Report', 'چاپکردنی ڕاپۆرت')}
+            className="size-9 rounded-xl bg-surface hover:bg-muted/60 border border-line-2 flex items-center justify-center text-muted-foreground-1 hover:text-primary transition-colors cursor-pointer"
+          >
+            <Printer className="size-4.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const next = ClinicOperationsService.togglePinnedPatient(patient.id);
+              setIsPinned(next);
+            }}
+            title={isPinned ? bi('إلغاء التثبيت', 'Unpin Patient', 'لابردنی چەسپاندن') : bi('تثبيت المريض', 'Pin Patient', 'چەسپاندنی نەخۆش')}
+            className={`size-9 rounded-xl border flex items-center justify-center transition-colors cursor-pointer ${
+              isPinned
+                ? 'bg-amber-500/15 border-amber-500/30 text-amber-500'
+                : 'bg-surface hover:bg-muted/60 border-line-2 text-muted-foreground-1 hover:text-amber-500'
+            }`}
+          >
+            <Star className={`size-4.5 ${isPinned ? 'fill-amber-500 text-amber-500' : ''}`} />
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content Scroll Canvas */}
       <div
         tabIndex={0}
         aria-label={bi('محتوى الملف السريري للمريض', 'Patient clinical chart content', 'ناوەڕۆکی تۆماری کلینیکیی نەخۆش')}
-        className="flex-1 overflow-y-auto p-3 sm:p-5 pb-24 md:pb-6 space-y-3 sm:space-y-4 focus:outline-none"
+        className="flex-1 overflow-y-auto p-3 sm:p-5 pb-24 sm:pb-8 space-y-4 focus:outline-none"
       >
-        {/* Episode Selector & Action Strip (Hidden on Profile tab per V-05/V-10) */}
-        {activeTab !== 'profile' && (
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 rounded-xl bg-card border border-card-line flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
-            <label htmlFor="chart-episode-select" className="text-xs font-semibold text-primary whitespace-nowrap">
-              {bi('حلقة الرعاية:', 'Episode:', 'قۆناغی چاودێری:')}
-            </label>
-            {episodes.length > 0 ? (
-              <div className="flex flex-col gap-1 min-w-0 max-w-full">
-                <select
-                  id="chart-episode-select"
-                  value={activeEpisode?.id || ''}
-                  onChange={(e) => onSelectEpisode(e.target.value)}
-                  className="py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-primary/10 border border-primary/20 text-foreground focus:outline-none max-w-full"
-                >
-                {episodes.map((ep) => (
-                  <option key={ep.id} value={ep.id}>
-                    {ep.data.title || ep.data.medicalDiagnosis} ({formatDateDDMMYYYY(ep.data.startDate || ep.startDate)})
-                  </option>
-                ))}
-                </select>
-                {activeEpisode && (
-                  <p className="text-xs font-bold text-foreground leading-snug break-words sm:hidden">
-                    {activeEpisode.data.title || activeEpisode.data.medicalDiagnosis}
-                  </p>
-                )}
+        {/* Patient Hero Card */}
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="relative rounded-3xl p-4 sm:p-6 bg-gradient-to-br from-card via-card/95 to-primary/10 border border-primary/20 shadow-2xs overflow-hidden space-y-4">
+            {/* Pure Geometric Shapes Background (Circles, Rings, Diamonds, Rotated Squares, Dots, Crosses) */}
+            <div aria-hidden="true" className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+              {/* Concentric Circles & Rings */}
+              <div className="absolute -top-12 -end-12 size-48 rounded-full border-2 border-primary/10 dark:border-primary/15" />
+              <div className="absolute -top-6 -end-6 size-36 rounded-full border border-dashed border-primary/15 dark:border-primary/20" />
+              
+              {/* Floating Rotated Diamond */}
+              <div className="absolute top-4 end-1/3 size-12 rounded-xl border-2 border-primary/10 dark:border-primary/15 rotate-45" />
+
+              {/* Rotated Squares */}
+              <div className="absolute -bottom-10 start-8 size-28 rounded-2xl border-2 border-primary/10 dark:border-primary/15 -rotate-12" />
+              <div className="absolute -bottom-5 start-12 size-20 rounded-xl border border-dashed border-primary/15 dark:border-primary/20 -rotate-12" />
+
+              {/* Geometric Floating Circles */}
+              <div className="absolute top-4 start-1/3 size-8 rounded-full border border-primary/15" />
+              <div className="absolute bottom-3 end-12 size-5 rounded-full bg-primary/10" />
+
+              {/* Dot Grid */}
+              <div className="absolute bottom-4 end-1/4 flex gap-2 opacity-25">
+                <div className="size-1.5 rounded-full bg-primary" />
+                <div className="size-1.5 rounded-full bg-primary" />
+                <div className="size-1.5 rounded-full bg-primary" />
               </div>
-            ) : (
-              <span className="text-xs text-amber-800 dark:text-amber-300 font-semibold">
-                {bi('لا توجد حلقة رعاية مسجلة بعد', 'No Episode Created Yet', 'هێشتا هیچ قۆناغێکی چاودێری تۆمار نەکراوە')}
-              </span>
-            )}
+
+              {/* Geometric Cross */}
+              <div className="absolute top-6 end-16 opacity-20">
+                <div className="relative size-5">
+                  <div className="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-primary rounded-full" />
+                  <div className="absolute inset-y-0 start-1/2 w-0.5 -translate-x-1/2 bg-primary rounded-full" />
+                </div>
+              </div>
+            </div>
+
+            <div className="relative z-10 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+                {/* Circular Avatar with Camera Edit Icon on Corner */}
+                <div className="relative shrink-0 select-none">
+                  <input
+                    ref={avatarFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    aria-label={bi('رفع صورة المريض', 'Upload patient photo', 'بارکردنی وێنەی نەخۆش')}
+                    onChange={handleAvatarFileSelect}
+                  />
+                  <div className="size-16 rounded-full bg-gradient-to-br from-primary/20 via-sky-500/10 to-primary/5 border-2 border-primary/25 flex items-center justify-center text-primary font-black text-2xl shadow-inner select-none overflow-hidden">
+                    {patient.data.avatarUrl || patient.data.photoDataUrl ? (
+                      <img
+                        src={patient.data.avatarUrl || patient.data.photoDataUrl}
+                        alt={getPatientDisplayName(patient.data, language)}
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      getPatientDisplayName(patient.data, language).slice(0, 1) || <User className="size-7 text-primary" />
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => avatarFileInputRef.current?.click()}
+                    title={bi('اختيار صورة من المعرض', 'Pick Photo from Gallery', 'دیاریکردنی وێنە لە گەلەری')}
+                    style={{ width: '22px', height: '22px', minWidth: '22px', minHeight: '22px' }}
+                    className="compact-btn !w-[22px] !h-[22px] !min-w-[22px] !min-h-[22px] rounded-full bg-slate-900 text-white border-2 border-card flex items-center justify-center shadow-md absolute bottom-0 end-0 hover:scale-110 transition-transform cursor-pointer z-10 p-0"
+                  >
+                    <Camera className="size-3 text-white" />
+                  </button>
+                </div>
+
+                {/* Name, MRN & Chips */}
+                <div className="min-w-0 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-base sm:text-xl font-black text-foreground truncate">
+                      {getPatientDisplayName(patient.data, language)}
+                    </h2>
+                    <div className="size-5 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <User className="size-3" />
+                    </div>
+                    {isDemoPatient(patient) && (
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                        DEMO
+                      </span>
+                    )}
+                  </div>
+
+                  {/* MRN Code with Copy */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const mrn = getPatientMrn(patient);
+                        if (navigator?.clipboard?.writeText) {
+                          navigator.clipboard.writeText(mrn);
+                          setMrnCopied(true);
+                          setTimeout(() => setMrnCopied(false), 2000);
+                        }
+                      }}
+                      title={bi('نسخ كود المريض', 'Copy MRN', 'کۆپیکردنی کۆد')}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-surface/80 hover:bg-surface border border-line-2 text-xs font-mono text-muted-foreground-1 hover:text-foreground transition-colors cursor-pointer"
+                    >
+                      <span className="font-bold text-foreground">{getPatientMrn(patient)}</span>
+                      {mrnCopied ? (
+                        <Check className="size-3 text-emerald-600" />
+                      ) : (
+                        <Copy className="size-3" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Meta Chips: Age, Gender, DOB */}
+                  <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 text-xs text-muted-foreground-1 pt-0.5">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="size-3.5 text-primary/70" />
+                      <span className="font-semibold text-foreground/80">
+                        {patientAge ? `${patientAge} ${bi('سنة', 'Years', 'ساڵ')}` : '—'}
+                      </span>
+                    </div>
+                    <span>•</span>
+                    <div className="flex items-center gap-1">
+                      <User className="size-3.5 text-primary/70" />
+                      <span className="font-semibold text-foreground/80">{genderLabel}</span>
+                    </div>
+                    {patient.data.dateOfBirth && (
+                      <>
+                        <span>•</span>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="size-3.5 text-primary/70" />
+                          <span className="font-semibold text-foreground/80">
+                            {formatClinicalDate(patient.data.dateOfBirth)}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Status "نشط" placed at top without box */}
+              <div className="shrink-0 pt-1">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 select-none">
+                  <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>{bi('نشط', 'Active', 'چالاک')}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Pill Navigation Tabs Bar */}
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="bg-surface/60 rounded-2xl border border-line-2 p-1 overflow-hidden">
+            <div className="overflow-x-auto pr-hscroll mx-4 pb-1.5 pt-0.5">
+              <div className="flex items-center gap-1.5 min-w-max">
+                {navigationTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isSelected = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={isSelected}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-all shrink-0 cursor-pointer ${
+                        isSelected
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-muted-foreground-1 hover:text-foreground hover:bg-surface'
+                      }`}
+                    >
+                      <Icon className="size-3.5" />
+                      <span>{tab.label}</span>
+                      {'count' in tab && tab.count !== undefined && (
+                        <span
+                          className={`px-1.5 py-0.2 rounded-full text-[10px] tabular-nums ${
+                            isSelected ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-surface border border-line-2 text-muted-foreground-1'
+                          }`}
+                        >
+                          <Num value={tab.count} />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Consolidated Workspace Utility Strip (Hidden on Profile tab per V-05/V-10) */}
+        {activeTab !== 'profile' && activeTab !== 'history' && (
+        <div
+          data-testid="clinical-summary-collapsible"
+          className="max-w-7xl mx-auto px-3 sm:px-4 py-2 rounded-xl bg-card shadow-2xs border border-card-line/60 space-y-2"
+        >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 sm:flex-initial">
+              <label htmlFor="chart-episode-select" className="text-xs font-semibold text-muted-foreground-1 whitespace-nowrap shrink-0">
+                {bi('الحلقة:', 'Episode:', 'قۆناغ:')}
+              </label>
+              {episodes.length > 0 ? (
+                <div className="min-w-[140px] flex-1 sm:flex-initial max-w-full">
+                  <select
+                    id="chart-episode-select"
+                    value={activeEpisode?.id || ''}
+                    onChange={(e) => onSelectEpisode(e.target.value)}
+                    className="w-full sm:w-auto min-h-[34px] py-1 px-2.5 rounded-lg text-xs font-semibold bg-surface border border-line-2/60 hover:border-line-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 max-w-full truncate"
+                  >
+                  {episodes.map((ep) => (
+                    <option key={ep.id} value={ep.id}>
+                      {ep.data.title || ep.data.medicalDiagnosis} ({formatDateDDMMYYYY(ep.data.startDate || ep.startDate)})
+                    </option>
+                  ))}
+                  </select>
+                </div>
+              ) : (
+                <span className="text-xs text-muted-foreground-1 font-medium">
+                  {bi('بدون حلقة رعاية', 'No episode yet', 'بێ قۆناغ')}
+                </span>
+              )}
+            </div>
             <button
               type="button"
               onClick={onOpenNewEpisode}
-              className="min-h-[36px] py-1 px-2.5 rounded-lg bg-layer border border-layer-line text-xs font-semibold text-primary hover:bg-layer-hover cursor-pointer whitespace-nowrap"
+              className="min-h-[32px] py-1 px-2 rounded-lg text-xs font-semibold text-primary hover:bg-primary/10 cursor-pointer whitespace-nowrap transition-colors shrink-0"
             >
               {bi('+ حلقة جديدة', '+ New Episode', '+ قۆناغی نوێ')}
             </button>
 
             {financialSummary.totalDebtIQD > 0 && (
-              <span className="py-0.5 px-2.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-xs tabular-nums font-bold text-rose-700 dark:text-rose-300 whitespace-nowrap">
-                {bi('ذمة متبقية: ', 'Balance Due: ', 'بڕی ماوە: ')}
+              <span className="py-0.5 px-2 rounded-md bg-rose-500/10 text-xs tabular-nums font-bold text-rose-700 dark:text-rose-300 whitespace-nowrap">
+                {bi('ذمة: ', 'Due: ', 'ماوە: ')}
                 <Money amount={financialSummary.totalDebtIQD} />
               </span>
             )}
@@ -941,7 +1439,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
               <div className="flex flex-wrap items-center gap-1.5">
                 <span
                   data-testid="patient-referral-pill"
-                  className="inline-flex items-center gap-1 py-0.5 px-2.5 rounded-full bg-primary/10 border border-primary/25 text-xs font-semibold text-primary whitespace-nowrap"
+                  className="inline-flex items-center gap-1 py-0.5 px-2 rounded-md bg-primary/10 text-xs font-semibold text-primary whitespace-nowrap"
                 >
                   <Stethoscope className="size-3.5 shrink-0" />
                   <span>{bi('إحالة:', 'Referral:', 'ڕەوانەکردن:')}</span>
@@ -951,36 +1449,38 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                   type="button"
                   data-testid="open-report-back-btn"
                   onClick={() => setIsReportBackModalOpen(true)}
-                  className="min-h-[36px] inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold cursor-pointer whitespace-nowrap"
+                  className="min-h-[32px] inline-flex items-center gap-1 py-1 px-2.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold cursor-pointer whitespace-nowrap"
                 >
                   <Send className="size-3.5 shrink-0" />
-                  <span>{bi('إعداد تقرير للطبيب المحيل', 'Report Back to Doctor', 'ئامادەکردنی ڕاپۆرت بۆ پزیشکی ڕەوانەکەر')}</span>
+                  <span>{bi('تقرير للمحيل', 'Report Back', 'ڕاپۆرت')}</span>
                 </button>
               </div>
             )}
           </div>
 
-          {/* Action Controls: Live Autosave Status Badge, Assessment Tools, New Session */}
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          {/* Quiet Status + Compact Action Group */}
+          <div className="flex flex-wrap items-center gap-1.5">
             <span
               role="status"
               aria-live="polite"
-              className={`py-1 px-2.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 border whitespace-nowrap ${
+              className={`text-xs font-medium inline-flex items-center gap-1 px-1.5 whitespace-nowrap ${
                 isSaving || isDirty
-                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300'
-                  : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300'
+                  ? 'text-amber-700 dark:text-amber-300'
+                  : 'text-emerald-700 dark:text-emerald-400'
               }`}
             >
               {isSaving ? (
-                <span>{bi('جاري الحفظ...', 'Saving...', 'پاشەکەوت دەکرێت...')}</span>
+                <span>{bi('حفظ...', 'Saving...', 'پاشەکەوت...')}</span>
               ) : isDirty ? (
-                <span>{bi('جاري المزامنة التلقائية...', 'Auto-saving...', 'خەریکی پاشەکەوتکردنە...')}</span>
+                <span>{bi('مزامنة...', 'Auto-saving...', 'خەریکی پاشەکەوت...')}</span>
               ) : (
                 <>
                   <CheckCircle2 className="size-3.5 shrink-0" />
-                  <span>{bi('✓ محفوظ تلقائياً', '✓ Auto-saved', '✓ خۆکار پاشەکەوتکرا').replace('✓ ', '')}</span>
+                  <span className="hidden md:inline">
+                    {bi('محفوظ تلقائياً', 'Auto-saved', 'خۆکار پاشەکەوتکرا')}
+                  </span>
                   {lastSavedAt && (
-                    <bdi dir="ltr" className="font-mono tabular-nums opacity-85">{lastSavedAt}</bdi>
+                    <bdi dir="ltr" className="hidden lg:inline font-mono tabular-nums opacity-80">{lastSavedAt}</bdi>
                   )}
                 </>
               )}
@@ -990,11 +1490,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
               type="button"
               data-testid="open-exam-shelf-btn"
               onClick={() => setIsExamShelfModalOpen(true)}
-              className="min-h-[36px] py-1 px-2.5 rounded-lg bg-layer hover:bg-layer-hover text-primary font-semibold text-xs border border-layer-line inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+              className="min-h-[32px] py-1 px-2.5 rounded-lg bg-surface hover:bg-layer-hover text-foreground font-semibold text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
             >
-              <Layers className="size-3.5" />
-              <span>{bi('أدوات الفحص', 'Assessment Tools', 'ئامرازەکانی پشکنین')}</span>
-              <span className="py-0.5 px-1.5 rounded-full text-xs tabular-nums bg-primary/10 text-primary">
+              <Layers className="size-3.5 text-primary" />
+              <span>{bi('أدوات الفحص', 'Tools', 'ئامراز')}</span>
+              <span className="font-mono text-primary tabular-nums">
                 <Num value={episodeStore.activeWidgetIds.length} />
               </span>
             </button>
@@ -1003,7 +1503,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
               <button
                 type="button"
                 onClick={onOpenNewSession}
-                className="min-h-[36px] py-1 px-2.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+                className="hidden sm:inline-flex min-h-[32px] py-1 px-2.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-xs items-center gap-1 cursor-pointer whitespace-nowrap"
               >
                 <Plus className="size-3.5" />
                 <span>{bi('جلسة جديدة', 'New Session', 'دانیشتنی نوێ')}</span>
@@ -1011,166 +1511,8 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
             )}
           </div>
         </div>
-        )}
-
-        {/* Collapsible Plain-Text Clinical Summary */}
-        <section
-          data-testid="clinical-summary-collapsible"
-          className="max-w-7xl mx-auto border-b border-card-line pb-2 text-xs text-foreground"
-        >
-          <button
-            type="button"
-            data-testid="toggle-clinical-summary-btn"
-            onClick={() => setClinicalSummaryExpanded((prev) => !prev)}
-            aria-expanded={clinicalSummaryExpanded}
-            className="w-full min-h-[36px] py-1.5 flex items-center justify-between gap-2 text-start text-xs font-semibold text-muted-foreground-1 hover:text-foreground transition-colors cursor-pointer"
-          >
-            <span>
-              {bi(
-                'ملخص السجل السريري المختصر',
-                'Brief Clinical Record Summary',
-                'پوختەی تۆماری کلینیکی'
-              )}
-            </span>
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground-1">
-              <span>
-                {clinicalSummaryExpanded
-                  ? bi('طي', 'Collapse', 'داخستن')
-                  : bi('عرض', 'Show', 'پیشاندان')}
-              </span>
-              {clinicalSummaryExpanded ? (
-                <ChevronUp className="size-3.5" />
-              ) : (
-                <ChevronDown className="size-3.5" />
-              )}
-            </span>
-          </button>
-
-          {clinicalSummaryExpanded && (() => {
-            const activeProblems = (episodeStore.problemList || []).filter(
-              (p) => p.status !== 'resolved'
-            );
-            const goalsCount =
-              (episodeStore.outcomeGoals?.length || 0) +
-              (episodeStore.smartGoals?.length || 0);
-            const sortedSessions = [...episodeSessions].sort((a, b) => {
-              const dateDiff = (b.sessionDate || b.data?.sessionDate || '').localeCompare(
-                a.sessionDate || a.data?.sessionDate || ''
-              );
-              if (dateDiff !== 0) return dateDiff;
-              return (b.sessionNumber ?? b.data?.sessionNumber ?? 0) -
-                (a.sessionNumber ?? a.data?.sessionNumber ?? 0);
-            });
-            const latestSess = sortedSessions[0];
-            const latestSoap = latestSess
-              ? episodeSoaps.find((sn) => sn.sessionId === latestSess.id)
-              : undefined;
-            const soapExcerpt = [
-              latestSoap?.data?.assessment?.clinicalImpressionCurrent?.trim(),
-              latestSoap?.data?.plan?.nextSessionPlan?.trim(),
-            ]
-              .filter(Boolean)
-              .join(' — ');
-            const safetyHighlights = [
-              redFlags.trim()
-                ? `${bi('علامات حمراء', 'Red flags', 'ئاڵا سوورەکان')}: ${redFlags.trim()}`
-                : '',
-              contraindications.trim() || precautions.trim()
-                ? `${bi('محاذير', 'Precautions', 'وریابوونەکان')}: ${
-                    contraindications.trim() || precautions.trim()
-                  }`
-                : '',
-              currentMedications.trim()
-                ? `${bi('الأدوية', 'Medications', 'دەرمانەکان')}: ${currentMedications.trim()}`
-                : '',
-            ]
-              .filter(Boolean)
-              .join(' · ');
-
-            return (
-              <div className="mt-1.5 divide-y divide-card-divider text-xs leading-relaxed">
-                <div className="py-1 flex flex-wrap gap-x-2">
-                  <span className="text-muted-foreground-1 font-medium">
-                    {bi('التشخيص / الحلقة النشطة:', 'Diagnosis / Active Episode:', 'دەستنیشانکردن / قۆناغی چالاک:')}
-                  </span>
-                  <span className="text-foreground">
-                    {activeEpisode
-                      ? `${activeEpisode.data.title || activeEpisode.data.medicalDiagnosis} (${formatDateDDMMYYYY(
-                          activeEpisode.data.startDate || activeEpisode.startDate
-                        )})`
-                      : bi('لا توجد حلقة نشطة', 'No active episode', 'هیچ قۆناغێکی چالاک نییە')}
-                  </span>
-                </div>
-                <div className="py-1 flex flex-wrap gap-x-2">
-                  <span className="text-muted-foreground-1 font-medium">
-                    {bi('الشكوى الرئيسية:', 'Chief Complaint:', 'سکاڵای سەرەکی:')}
-                  </span>
-                  <span className="text-foreground">
-                    {episodeStore.chiefComplaint?.trim() ||
-                      bi('غير مسجل', 'Not recorded', 'تۆمارنەکراوە')}
-                  </span>
-                </div>
-                <div className="py-1 flex flex-wrap gap-x-2 tabular-nums">
-                  <span className="text-muted-foreground-1 font-medium">
-                    {bi('مستوى الألم (NPRS):', 'Pain Level (NPRS):', 'ئاستی ئازار (NPRS):')}
-                  </span>
-                  <span className="text-foreground inline-flex flex-wrap items-center gap-1.5">
-                    <span>
-                      {bi('الراحة', 'Rest', 'پشوو')}:{' '}
-                      <Fraction value={episodeStore.painAtRestNrs ?? 0} total={10} />
-                    </span>
-                    <span aria-hidden="true">·</span>
-                    <span>
-                      {bi('الحركة', 'Activity', 'جوڵە')}:{' '}
-                      <Fraction value={episodeStore.painOnActivityNrs ?? 0} total={10} />
-                    </span>
-                    <span aria-hidden="true">·</span>
-                    <span>
-                      {bi('أقصى 24 ساعة', 'Worst 24h', 'توندترینی ٢٤ کاتژمێر')}:{' '}
-                      <Fraction value={episodeStore.painWorst24hNrs ?? 0} total={10} />
-                    </span>
-                  </span>
-                </div>
-                <div className="py-1 flex flex-wrap gap-x-2">
-                  <span className="text-muted-foreground-1 font-medium">
-                    {bi('العلامات الحمراء / المحاذير / الأدوية:', 'Red Flags / Precautions / Medications:', 'ئاڵا سوورەکان / وریابوونەکان / دەرمانەکان:')}
-                  </span>
-                  <span className="text-foreground">
-                    {safetyHighlights ||
-                      bi('لا توجد تنبيهات أو أدوية مسجلة', 'None recorded', 'هیچ ئاگاداری یان دەرمانێک تۆمارنەکراوە')}
-                  </span>
-                </div>
-                <div className="py-1 flex flex-wrap gap-x-2 tabular-nums">
-                  <span className="text-muted-foreground-1 font-medium">
-                    {bi('قائمة المشاكل والأهداف:', 'Problems & Goals:', 'لیستی کێشە و ئامانجەکان:')}
-                  </span>
-                  <span className="text-foreground">
-                    {activeProblems.length}{' '}
-                    {bi('مشاكل نشطة', 'active problems', 'کێشەی چالاک')}
-                    {activeProblems[0]?.text ? ` (${activeProblems[0].text})` : ''} · {goalsCount}{' '}
-                    {bi('أهداف', 'goals', 'ئامانج')}
-                  </span>
-                </div>
-                <div className="py-1 flex flex-wrap gap-x-2">
-                  <span className="text-muted-foreground-1 font-medium">
-                    {bi('آخر جلسة وملخص SOAP:', 'Latest Session & SOAP:', 'دوایین دانیشتن و پوختەی SOAP:')}
-                  </span>
-                  <span className="text-foreground">
-                    {latestSess
-                      ? `${formatDateDDMMYYYY(
-                          latestSess.sessionDate || latestSess.data?.sessionDate
-                        )}${
-                          soapExcerpt
-                            ? ` — ${soapExcerpt.slice(0, 140)}${soapExcerpt.length > 140 ? '…' : ''}`
-                            : ''
-                        }`
-                      : bi('لا توجد جلسات مسجلة', 'No sessions recorded', 'هیچ دانیشتنێک تۆمارنەکراوە')}
-                  </span>
-                </div>
-              </div>
-            );
-          })()}
-        </section>
+      </div>
+      )}
 
         {reEvalStatus.isDue && (
           <div
@@ -1211,11 +1553,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
           (duePostDischargeItems.length > 0 || patientFollowUps.length > 0 || followUpFeedback) && (
             <div
               data-testid="post-discharge-followup-card"
-              className="max-w-7xl mx-auto p-3.5 sm:p-4 rounded-2xl bg-teal-500/8 border border-teal-500/30 space-y-3 text-xs"
+              className="max-w-7xl mx-auto p-3.5 sm:p-4 rounded-2xl bg-primary/5 border border-primary/25 space-y-3 text-xs"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 font-extrabold text-teal-900 dark:text-teal-200">
-                  <CalendarCheck2 className="size-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                <div className="flex items-center gap-2 font-extrabold text-foreground">
+                  <CalendarCheck2 className="size-4 text-primary shrink-0" />
                   <span>
                     {bi(
                       'متابعة ما بعد التخريج (4 أسابيع / 12 أسبوعاً)',
@@ -1226,12 +1568,12 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 </div>
                 <div className="flex items-center gap-2">
                   {duePostDischargeItems.length > 0 && (
-                    <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 font-bold tabular-nums">
+                    <span className="text-amber-700 dark:text-amber-400 font-bold tabular-nums">
                       {bi('مستحقة:', 'Due:', 'کاتەهاتوو:')} <Num value={duePostDischargeItems.length} />
                     </span>
                   )}
                   {patientFollowUps.length > 0 && (
-                    <span className="px-2.5 py-0.5 rounded-full bg-teal-500/15 border border-teal-500/30 text-teal-800 dark:text-teal-300 font-bold tabular-nums">
+                    <span className="text-primary font-bold tabular-nums">
                       {bi('مسجّلة:', 'Logged:', 'تۆمارکراو:')} <Num value={patientFollowUps.length} />
                     </span>
                   )}
@@ -1276,7 +1618,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="space-y-0.5">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 font-bold">
+                              <span className="text-primary font-bold">
                                 {intervalBadge}
                               </span>
                               <span className="font-bold text-foreground">{item.episodeTitle}</span>
@@ -1312,7 +1654,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                                 setFollowUpNotes('');
                               }
                             }}
-                            className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold cursor-pointer shrink-0"
+                            className="px-3 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold cursor-pointer shrink-0"
                           >
                             {isEditing
                               ? bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')
@@ -1407,7 +1749,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                         >
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-1.5 font-bold text-foreground">
-                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+                              <span className="text-emerald-700 dark:text-emerald-400">
                                 {rec.intervalWeeks === 4
                                   ? bi('4 أسابيع', '4w', '٤ هەفتە')
                                   : bi('12 أسبوعاً', '12w', '١٢ هەفتە')}
@@ -1443,6 +1785,438 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
           )}
 
         {/* TAB 1: EPISODE-SCOPED INITIAL EVALUATION & INTERACTIVE WIDGETS */}
+        
+        {/* TAB 0: OVERVIEW (Matching User Image media_1794843103766_1ad13515.jpg) */}
+        {activeTab === 'overview' && (
+          <div className="max-w-7xl mx-auto space-y-4">
+            {/* 3 Metric Cards */}
+            <div className="grid grid-cols-3 gap-3">
+              {/* Age Card */}
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-card border border-card-line shadow-2xs flex flex-col items-center justify-center text-center gap-1">
+                <div className="size-9 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center mb-0.5">
+                  <Calendar className="size-4.5" />
+                </div>
+                <span className="text-xl sm:text-2xl font-black text-foreground tabular-nums">
+                  {patientAge ? <Num value={patientAge} /> : '—'}
+                </span>
+                <span className="text-xs text-muted-foreground-1 font-medium">
+                  {bi('سنة', 'Years', 'ساڵ')}
+                </span>
+              </div>
+
+              {/* Gender Card */}
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-card border border-card-line shadow-2xs flex flex-col items-center justify-center text-center gap-1">
+                <div className="size-9 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center mb-0.5">
+                  <User className="size-4.5" />
+                </div>
+                <span className="text-base sm:text-lg font-bold text-foreground">
+                  {genderLabel}
+                </span>
+                <span className="text-xs text-muted-foreground-1 font-medium">
+                  {bi('الجنس', 'Gender', 'ڕەگەز')}
+                </span>
+              </div>
+
+              {/* Status Card */}
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-card border border-card-line shadow-2xs flex flex-col items-center justify-center text-center gap-1">
+                <div className="size-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center mb-0.5">
+                  <ShieldCheck className="size-4.5" />
+                </div>
+                <span className="text-base sm:text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                  {bi('نشط', 'Active', 'چالاک')}
+                </span>
+                <span className="text-xs text-muted-foreground-1 font-medium">
+                  {bi('الحالة', 'Status', 'دۆخ')}
+                </span>
+              </div>
+            </div>
+
+            {/* Interactive Grid Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              {/* Card 1: Personal Information */}
+              <div
+                onClick={() => setIsEditPersonalInfoOpen(true)}
+                className="relative p-4 sm:p-5 pt-6 rounded-2xl bg-card border border-card-line shadow-2xs hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer space-y-3.5 group overflow-hidden"
+              >
+                {/* Top Bookmark Ribbon */}
+                <div className="absolute top-0 end-5 z-10">
+                  <div className="bg-primary text-white text-[11px] font-bold px-3 py-1.5 rounded-b-xl shadow-xs flex items-center gap-1 cursor-pointer hover:bg-primary/90 transition-transform active:scale-95">
+                    <Edit3 className="size-3 text-white" />
+                    <span>{bi('تعديل', 'Edit', 'دەستکاری')}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <User className="size-4" />
+                  </div>
+                  <h3 className="text-sm font-bold text-foreground">
+                    {bi('المعلومات الشخصية', 'Personal Information', 'زانیاری کەسی')}
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs pt-1">
+                  <div className="space-y-1">
+                    <span className="text-muted-foreground-1 flex items-center gap-1 font-medium">
+                      <User className="size-3 text-muted-foreground-1" />
+                      {bi('الاسم الكامل', 'Full Name', 'ناوی تەواو')}
+                    </span>
+                    <span className="font-bold text-foreground block truncate">
+                      {getPatientDisplayName(patient.data, language)}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-muted-foreground-1 flex items-center gap-1 font-medium">
+                      <Phone className="size-3 text-muted-foreground-1" />
+                      {bi('رقم الهاتف', 'Phone', 'ژمارەی تەلەفۆن')}
+                    </span>
+                    <span className="font-bold text-foreground block dir-ltr text-right truncate">
+                      {patient.data.phone ? formatIraqiPhoneDisplay(patient.data.phone) : '—'}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-muted-foreground-1 flex items-center gap-1 font-medium">
+                      <Calendar className="size-3 text-muted-foreground-1" />
+                      {bi('تاريخ الميلاد', 'Date of Birth', 'بەرواری لەدایکبوون')}
+                    </span>
+                    <span className="font-bold text-foreground block">
+                      {patient.data.dateOfBirth ? formatClinicalDate(patient.data.dateOfBirth) : '—'}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-muted-foreground-1 flex items-center gap-1 font-medium">
+                      <MapPin className="size-3 text-muted-foreground-1" />
+                      {bi('العنوان والمدينة', 'Address', 'ناونیشان')}
+                    </span>
+                    <span className="font-bold text-foreground block truncate">
+                      {patient.data.address || bi('بغداد، العراق', 'Baghdad, Iraq', 'بەغدا، عێراق')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Clinical Summary */}
+              <div
+                onClick={() => setIsEditClinicalSummaryOpen(true)}
+                className="relative p-4 sm:p-5 pt-6 rounded-2xl bg-card border border-card-line shadow-2xs hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer space-y-3.5 group overflow-hidden"
+              >
+                {/* Top Bookmark Ribbon */}
+                <div className="absolute top-0 end-5 z-10">
+                  <div className="bg-primary text-white text-[11px] font-bold px-3 py-1.5 rounded-b-xl shadow-xs flex items-center gap-1 cursor-pointer hover:bg-primary/90 transition-transform active:scale-95">
+                    <Edit3 className="size-3 text-white" />
+                    <span>{bi('عرض وتعديل', 'View & Edit', 'بینین و دەستکاری')}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-lg bg-sky-500/10 text-sky-600 flex items-center justify-center">
+                    <Stethoscope className="size-4" />
+                  </div>
+                  <h3 className="text-sm font-bold text-foreground">
+                    {bi('ملخص الحالة السريرية', 'Clinical Summary', 'پوختەی کلینیکی')}
+                  </h3>
+                </div>
+
+                <div className="flex items-start gap-3.5 pt-1">
+                  <div className="size-14 rounded-2xl bg-gradient-to-br from-primary/15 to-sky-500/20 border border-primary/20 flex items-center justify-center shrink-0 text-primary">
+                    <Activity className="size-7" />
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div>
+                      <h4 className="text-sm font-bold text-foreground truncate">
+                        {activeEpisode?.data.title || activeEpisode?.data.medicalDiagnosis || episodeStore.chiefComplaint || bi('علاج تأهيلي', 'Physical Rehabilitation', 'چارەسەری سروشتی')}
+                      </h4>
+                      <p className="text-xs text-muted-foreground-1 truncate">
+                        {episodeStore.clinicalImpression || activeEpisode?.data.medicalDiagnosis || bi('تشخيص سريري معتمد', 'Clinical Impression', 'دەستنیشانکردنی کلینیکی')}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-xs text-foreground/90 font-medium">
+                      <Target className="size-3.5 text-primary shrink-0" />
+                      <span className="truncate">
+                        {episodeStore.patientPersonalGoals || bi('تقليل الألم واستعادة المدى الحركي', 'Reduce pain and improve ROM', 'کەمکردنەوەی ئازار و باشترکردنی جووڵە')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: MMT (Muscle Strength) */}
+              <div
+                onClick={() => setIsMmtModalOpen(true)}
+                className="relative p-4 sm:p-5 pt-6 rounded-2xl bg-card border border-card-line shadow-2xs hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer space-y-3 group overflow-hidden"
+              >
+                {/* Top Bookmark Ribbon */}
+                <div className="absolute top-0 end-5 z-10">
+                  <div className="bg-primary text-white text-[11px] font-bold px-3 py-1.5 rounded-b-xl shadow-xs flex items-center gap-1 cursor-pointer hover:bg-primary/90 transition-transform active:scale-95">
+                    <Edit3 className="size-3 text-white" />
+                    <span>{bi('عرض وتعديل', 'View & Edit', 'بینین و دەستکاری')}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                    <Dumbbell className="size-4" />
+                  </div>
+                  <h3 className="text-sm font-bold text-foreground">
+                    {bi('القوة العضلية (MMT)', 'Muscle Testing (MMT)', 'هێزی ماسولکەکان')}
+                  </h3>
+                </div>
+
+                <div className="pt-1">
+                  {episodeStore.objective?.mmtBattery?.entries && episodeStore.objective.mmtBattery.entries.length > 0 ? (
+                    <div className="space-y-1.5">
+                      <div className="pr-hscroll overflow-x-auto flex items-center gap-2 whitespace-nowrap pb-1.5 pt-0.5 px-0.5">
+                        {episodeStore.objective.mmtBattery.entries.slice(0, 3).map((entry: any, idx: number) => {
+                          const muscleLabel = bi(
+                            entry.label || entry.muscleNameAr || entry.actionNameAr || 'عضلة',
+                            entry.label || entry.muscleNameEn || entry.actionNameEn || 'Muscle'
+                          );
+                          const side = entry.laterality === 'right' ? bi('(يمين)', '(R)') : entry.laterality === 'left' ? bi('(يسار)', '(L)') : '';
+                          const grade = entry.gradeValue ?? entry.grade ?? '—';
+                          return (
+                            <span key={idx} className="px-2.5 py-1 rounded-lg bg-surface border border-line-2 text-xs font-semibold flex items-center gap-1.5">
+                              <span className="text-foreground">{muscleLabel} {side}:</span>
+                              <strong className="text-primary font-bold tabular-nums">{grade}/5</strong>
+                            </span>
+                          );
+                        })}
+                        {episodeStore.objective.mmtBattery.entries.length > 3 && (
+                          <span className="px-2 py-1 text-xs text-muted-foreground-1 font-medium">
+                            +{episodeStore.objective.mmtBattery.entries.length - 3} {bi('عضلات أخرى', 'more', 'زیاتر')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between text-xs text-muted-foreground-1 py-1">
+                      <span>{bi('لم يتم تسجيل قياسات قوة عضلية بعد', 'No MMT recorded yet', 'هێشتا تۆمار نەکراوە')}</span>
+                      <span className="text-primary font-bold">+ {bi('إضافة فحص', 'Add Test', 'زیادکردن')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Card 4: ROM (Range of Motion) */}
+              <div
+                onClick={() => setIsRomModalOpen(true)}
+                className="relative p-4 sm:p-5 pt-6 rounded-2xl bg-card border border-card-line shadow-2xs hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer space-y-3 group overflow-hidden"
+              >
+                {/* Top Bookmark Ribbon */}
+                <div className="absolute top-0 end-5 z-10">
+                  <div className="bg-primary text-white text-[11px] font-bold px-3 py-1.5 rounded-b-xl shadow-xs flex items-center gap-1 cursor-pointer hover:bg-primary/90 transition-transform active:scale-95">
+                    <Edit3 className="size-3 text-white" />
+                    <span>{bi('عرض وتعديل', 'View & Edit', 'بینین و دەستکاری')}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-lg bg-cyan-500/10 text-cyan-600 flex items-center justify-center">
+                    <Gauge className="size-4" />
+                  </div>
+                  <h3 className="text-sm font-bold text-foreground">
+                    {bi('المدى الحركي للمفاصل (ROM)', 'Range of Motion (ROM)', 'مەودای جووڵە')}
+                  </h3>
+                </div>
+
+                <div className="pt-1">
+                  {episodeStore.objective?.romBattery?.entries && episodeStore.objective.romBattery.entries.length > 0 ? (
+                    <div className="space-y-1.5">
+                      <div className="pr-hscroll overflow-x-auto flex items-center gap-2 whitespace-nowrap pb-1.5 pt-0.5 px-0.5">
+                        {episodeStore.objective.romBattery.entries.slice(0, 3).map((entry: any, idx: number) => {
+                          const jointLabel = bi(
+                            `${entry.jointNameAr || ''} ${entry.movementNameAr ? `(${entry.movementNameAr})` : ''}`.trim() || entry.label || 'مفصل',
+                            `${entry.jointNameEn || ''} ${entry.movementNameEn ? `(${entry.movementNameEn})` : ''}`.trim() || entry.label || 'Joint'
+                          );
+                          const side = entry.laterality === 'right' ? bi('يمين', 'R') : entry.laterality === 'left' ? bi('يسار', 'L') : '';
+                          const angle = entry.measuredAngleDegrees ?? entry.activeDegrees ?? entry.passiveDegrees;
+                          return (
+                            <span key={idx} className="px-2.5 py-1 rounded-lg bg-surface border border-line-2 text-xs font-semibold flex items-center gap-1.5">
+                              <span className="text-foreground">{jointLabel} {side ? `(${side})` : ''}:</span>
+                              <strong className="text-primary font-bold tabular-nums">{angle !== undefined && angle !== null ? `${angle}°` : '—'}</strong>
+                            </span>
+                          );
+                        })}
+                        {episodeStore.objective.romBattery.entries.length > 3 && (
+                          <span className="px-2 py-1 text-xs text-muted-foreground-1 font-medium">
+                            +{episodeStore.objective.romBattery.entries.length - 3} {bi('حركات أخرى', 'more', 'زیاتر')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between text-xs text-muted-foreground-1 py-1">
+                      <span>{bi('لم يتم توثيق مدى حركي للمفاصل بعد', 'No ROM recorded yet', 'هێشتا تۆمار نەکراوە')}</span>
+                      <span className="text-primary font-bold">+ {bi('إضافة قياس', 'Add Joint', 'زیادکردن')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Card 5: Neuro Screening */}
+              <div
+                onClick={() => setIsNeuroModalOpen(true)}
+                className="relative p-4 sm:p-5 pt-6 rounded-2xl bg-card border border-card-line shadow-2xs hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer space-y-3 group overflow-hidden"
+              >
+                {/* Top Bookmark Ribbon */}
+                <div className="absolute top-0 end-5 z-10">
+                  <div className="bg-primary text-white text-[11px] font-bold px-3 py-1.5 rounded-b-xl shadow-xs flex items-center gap-1 cursor-pointer hover:bg-primary/90 transition-transform active:scale-95">
+                    <Edit3 className="size-3 text-white" />
+                    <span>{bi('عرض وتعديل', 'View & Edit', 'بینین و دەستکاری')}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center">
+                    <Zap className="size-4" />
+                  </div>
+                  <h3 className="text-sm font-bold text-foreground">
+                    {bi('الفحص العصبي (Neuro)', 'Neurological Screening', 'پشکنینی دەماری')}
+                  </h3>
+                </div>
+
+                <div className="pt-1">
+                  {episodeStore.objective?.neuroScreening?.dermatomes || episodeStore.objective?.neuroScreening?.reflexes ? (
+                    <div className="text-xs text-foreground flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-md bg-surface border border-line-2 font-semibold">
+                        {bi('إحساس الجلد (Dermatomes)', 'Dermatomes', 'دەمارە هەستەوەرەکان')}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-surface border border-line-2 font-semibold">
+                        {bi('المنعكسات (Reflexes)', 'Reflexes', 'ڕەفڵەکس')}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between text-xs text-muted-foreground-1 py-1">
+                      <span>{bi('لم يتم توثيق الفحص العصبي بعد', 'No Neuro screening yet', 'هێشتا تۆمار نەکراوە')}</span>
+                      <span className="text-primary font-bold">+ {bi('فحص عصبي', 'Screen', 'پشکنین')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Card 6: Special Tests & Scales */}
+              <div
+                onClick={() => setIsSpecialTestsModalOpen(true)}
+                className="relative p-4 sm:p-5 pt-6 rounded-2xl bg-card border border-card-line shadow-2xs hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer space-y-3 group overflow-hidden"
+              >
+                {/* Top Bookmark Ribbon */}
+                <div className="absolute top-0 end-5 z-10">
+                  <div className="bg-primary text-white text-[11px] font-bold px-3 py-1.5 rounded-b-xl shadow-xs flex items-center gap-1 cursor-pointer hover:bg-primary/90 transition-transform active:scale-95">
+                    <Edit3 className="size-3 text-white" />
+                    <span>{bi('عرض وتعديل', 'View & Edit', 'بینین و دەستکاری')}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-lg bg-rose-500/10 text-rose-600 flex items-center justify-center">
+                    <Award className="size-4" />
+                  </div>
+                  <h3 className="text-sm font-bold text-foreground">
+                    {bi('الفحوصات الخاصة والمقاييس', 'Special Tests & Scales', 'پشکنینە تایبەتەکان و پێوەرەکان')}
+                  </h3>
+                </div>
+
+                <div className="pt-1">
+                  {episodeStore.specialTests && episodeStore.specialTests.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 text-xs">
+                      {episodeStore.specialTests.slice(0, 3).map((test, idx) => (
+                        <span
+                          key={idx}
+                          className={`px-2 py-0.5 rounded-md text-xs font-semibold border ${
+                            test.outcome === 'positive'
+                              ? 'bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-400'
+                              : 'bg-surface border-line-2 text-foreground'
+                          }`}
+                        >
+                          {bi(test.nameAr, test.nameEn)}: {test.outcome === 'positive' ? bi('إيجابي (+)', 'Positive (+)', 'پۆزەتیڤ') : bi('سلبي (-)', 'Negative (-)', 'نێگەتیڤ')}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between text-xs text-muted-foreground-1 py-1">
+                      <span>{bi('لا توجد فحوصات خاصة موثقة', 'No special tests recorded', 'هیچ پشکنینێک تۆمار نەکراوە')}</span>
+                      <span className="text-primary font-bold">+ {bi('إضافة فحص', 'Add Test', 'زیادکردن')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Card 7: Recent Sessions */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-card border border-card-line shadow-2xs space-y-3 md:col-span-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                      <CalendarCheck2 className="size-4" />
+                    </div>
+                    <h3 className="text-sm font-bold text-foreground">
+                      {bi('الجلسات الأخيرة', 'Recent Sessions', 'دانیشتنە نوێیەکان')}
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('sessions')}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline cursor-pointer"
+                  >
+                    <span>{bi('عرض الكل', 'View All', 'هەموو')}</span>
+                    <ChevronLeft className="size-3.5 rtl:rotate-0 ltr:rotate-180" />
+                  </button>
+                </div>
+
+                <div className="pt-1">
+                  {episodeSessions.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {episodeSessions.slice(-2).reverse().map((sess) => {
+                        const isCompleted = sess.data.status === 'finalized';
+                        return (
+                          <div
+                            key={sess.id}
+                            onClick={() => onOpenSession(sess.id)}
+                            className="p-3 rounded-xl bg-surface/70 border border-card-line hover:border-primary/30 flex items-center justify-between gap-3 cursor-pointer transition-colors"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className={`size-7 rounded-lg flex items-center justify-center shrink-0 ${
+                                isCompleted ? 'bg-emerald-500/15 text-emerald-600' : 'bg-primary/10 text-primary'
+                              }`}>
+                                <CheckCircle2 className="size-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-xs font-bold text-foreground truncate">
+                                  {bi('جلسة', 'Session', 'دانیشتن')} #{sess.data.sessionNumber || 1}
+                                </div>
+                                <div className="text-[11px] text-muted-foreground-1 flex items-center gap-1.5 tabular-nums">
+                                  <span>{formatClinicalDate(sess.data.sessionDate)}</span>
+                                  <span>•</span>
+                                  <span>{sess.data.sessionDurationMinutes || 45} {bi('دقيقة', 'min', 'خولەک')}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                              isCompleted
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
+                                : 'bg-primary/15 text-primary border border-primary/30'
+                            }`}>
+                              {isCompleted ? bi('مكتملة', 'Completed', 'تەواوکراو') : bi('مسودة', 'Draft', 'ڕەشنووس')}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-xs text-muted-foreground-1">
+                      <p>{bi('لا توجد جلسات مسجلة لهذه الحلقة بعد', 'No sessions recorded yet for this episode', 'هیچ دانیشتنێک تۆمار نەکراوە')}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        )}
+
         {activeTab === 'evaluation' && (
           <div className="space-y-6 max-w-7xl mx-auto">
             {/* Phase B1 (ESSENTIAL): One-Tap CC0-1.0 Regional Exam Presets */}
@@ -1695,7 +2469,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
         )}
 
         {/* TAB 3: GOALS, PLAN OF CARE, HEP BUILDER & DISCHARGE SUMMARY */}
-        {activeTab === 'hep' && (
+        {(activeTab === 'treatment' || activeTab === 'hep') && (
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Clinical Impression, Plan of Care & Goals Card */}
             <div className="p-5 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-4">
@@ -2223,61 +2997,9 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
           </div>
         )}
 
-        {/* TAB 5: CENTRAL PATIENT PROFILE HUB, ATTACHMENTS & IRAQI FINANCIAL SUMMARY */}
-        {activeTab === 'profile' && (
+        {/* TAB 2: CENTRAL PATIENT CLINICAL HISTORY */}
+        {activeTab === 'history' && (
           <div className="max-w-5xl mx-auto space-y-5">
-            {/* Patient Iraqi Financial Summary Strip (IQD) */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="flex items-center gap-2 text-xs font-bold text-foreground">
-                  <Wallet className="size-4 text-primary" />
-                  <span>
-                    {bi(
-                      'الملخص المالي للمريض بالدينار العراقي',
-                      'Patient Financial Summary (IQD)',
-                      'پوختەی دارایی نەخۆش بە دیناری عێراقی'
-                    )}
-                  </span>
-                </h2>
-                <span className="text-xs text-muted-foreground-1 tabular-nums">
-                  <Num value={financialSummary.invoices.length} /> {bi('فواتير', 'invoices', 'پسوولە')}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1 tabular-nums">
-                <div className="p-4 rounded-xl bg-surface border border-line-2">
-                  <span className="text-xs text-muted-foreground-1 block font-sans">
-                    {bi('إجمالي المبالغ المفوترة', 'Total Billed', 'کۆی گشتیی پسوولەکراو')}
-                  </span>
-                  <span className="text-base font-bold text-foreground mt-0.5 block">
-                    <Money amount={financialSummary.totalBilledIQD} />
-                  </span>
-                </div>
-                <div className="p-4 rounded-xl bg-surface border border-line-2">
-                  <span className="text-xs text-muted-foreground-1 block font-sans">
-                    {bi('إجمالي المدفوع نقداً / إلكترونياً', 'Total Paid', 'کۆی پارەی دراو (نەقد / ئەلیکترۆنی)')}
-                  </span>
-                  <span className="text-base font-bold text-emerald-700 dark:text-emerald-400 mt-0.5 block">
-                    <Money amount={financialSummary.totalPaidIQD} />
-                  </span>
-                </div>
-                <div className="p-4 rounded-xl bg-surface border border-line-2">
-                  <span className="text-xs text-muted-foreground-1 block font-sans">
-                    {bi('الرصيد المتبقي بذمة المريض (دين)', 'Balance Due (Debt)', 'پارەی ماوە لەسەر نەخۆش (قەرز)')}
-                  </span>
-                  <span
-                    className={`text-base font-bold mt-0.5 block ${
-                      financialSummary.totalDebtIQD > 0
-                        ? 'text-rose-700 dark:text-rose-400'
-                        : 'text-muted-foreground-1'
-                    }`}
-                  >
-                    <Money amount={financialSummary.totalDebtIQD} />
-                  </span>
-                </div>
-              </div>
-            </div>
-
             {/* Referral Physician & Emergency Contact Card */}
             <div className="p-5 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2485,8 +3207,8 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                     )}
                     className="w-full px-3 py-2 text-xs rounded-xl bg-rose-500/10 border border-rose-500/30 text-foreground focus:outline-none"
                   />
-                  <div className="mt-2.5 pt-2.5 border-t border-rose-500/20">
-                    <span className="text-xs font-semibold text-rose-700 dark:text-rose-400 block mb-1.5">
+                  <div className="mt-2.5 pt-2.5 border-t border-rose-500/20 space-y-2">
+                    <span className="text-xs font-semibold text-rose-700 dark:text-rose-400 block">
                       {bi(
                         'المحاذير السريرية المهيكلة (لتنبيهات سلامة الأجهزة):',
                         'Structured Clinical Precautions (Modality Safety Alerts):',
@@ -2494,37 +3216,153 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                       )}
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
-                      {STRUCTURED_PRECAUTIONS_CATALOG.map((item) => {
+                      {STRUCTURED_PRECAUTIONS_CATALOG.filter(
+                        (item) => !dismissedPrecautionIds.includes(item.id)
+                      ).map((item) => {
                         const checked = structuredPrecautions.includes(item.id);
                         return (
-                          <label
+                          <div
                             key={item.id}
                             data-testid={`chart-precaution-${item.id}`}
-                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs cursor-pointer transition-colors ${
+                            className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-xs transition-colors ${
                               checked
                                 ? 'bg-rose-500/20 border-rose-500 text-rose-800 dark:text-rose-200 font-bold'
                                 : 'bg-surface/70 border-layer-line text-foreground hover:bg-muted/40'
                             }`}
                           >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() =>
-                                setStructuredPrecautions((prev) =>
-                                  prev.includes(item.id)
-                                    ? prev.filter((id) => id !== item.id)
-                                    : [...prev, item.id]
-                                )
-                              }
-                              className="size-3.5 accent-rose-600 rounded"
-                            />
-                            <span>
-                              {bi(item.labelAr, item.labelEn, item.labelCkb)}
-                            </span>
-                          </label>
+                            <label className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() =>
+                                  setStructuredPrecautions((prev) =>
+                                    prev.includes(item.id)
+                                      ? prev.filter((id) => id !== item.id)
+                                      : [...prev, item.id]
+                                  )
+                                }
+                                className="size-3.5 accent-rose-600 rounded shrink-0"
+                              />
+                              <span className="truncate">
+                                {bi(item.labelAr, item.labelEn, item.labelCkb)}
+                              </span>
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDismissedPrecautionIds((prev) => [...prev, item.id]);
+                                setStructuredPrecautions((prev) => prev.filter((id) => id !== item.id));
+                              }}
+                              title={bi('حذف هذا المحذور', 'Delete this precaution', 'سڕینەوەی ئەم ئاگادارییە')}
+                              className="p-1 text-muted-foreground-2 hover:text-rose-600 rounded transition-colors shrink-0 cursor-pointer"
+                            >
+                              <Trash2 className="size-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+
+                      {customPrecautions.map((item) => {
+                        const checked = structuredPrecautions.includes(item.id);
+                        return (
+                          <div
+                            key={item.id}
+                            data-testid={`chart-precaution-${item.id}`}
+                            className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-xs transition-colors ${
+                              checked
+                                ? 'bg-rose-500/20 border-rose-500 text-rose-800 dark:text-rose-200 font-bold'
+                                : 'bg-surface/70 border-layer-line text-foreground hover:bg-muted/40'
+                            }`}
+                          >
+                            <label className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() =>
+                                  setStructuredPrecautions((prev) =>
+                                    prev.includes(item.id)
+                                      ? prev.filter((id) => id !== item.id)
+                                      : [...prev, item.id]
+                                  )
+                                }
+                                className="size-3.5 accent-rose-600 rounded shrink-0"
+                              />
+                              <span className="truncate">
+                                {bi(item.labelAr, item.labelEn || item.labelAr, item.labelCkb || item.labelAr)}
+                              </span>
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCustomPrecautions((prev) => prev.filter((p) => p.id !== item.id));
+                                setStructuredPrecautions((prev) => prev.filter((id) => id !== item.id));
+                              }}
+                              title={bi('حذف هذا المحذور المخصص', 'Delete this custom precaution', 'سڕینەوەی ئەم ئاگادارییە')}
+                              className="p-1 text-muted-foreground-2 hover:text-rose-600 rounded transition-colors shrink-0 cursor-pointer"
+                            >
+                              <Trash2 className="size-3" />
+                            </button>
+                          </div>
                         );
                       })}
                     </div>
+
+                    {/* Quick Add Custom Precaution */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="text"
+                        value={newPrecautionText}
+                        onChange={(e) => setNewPrecautionText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const trimmed = newPrecautionText.trim();
+                            if (!trimmed) return;
+                            const newId = `custom_prec_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+                            setCustomPrecautions((prev) => [
+                              ...prev,
+                              { id: newId, labelAr: trimmed, labelEn: trimmed, createdAt: new Date().toISOString() },
+                            ]);
+                            setStructuredPrecautions((prev) => [...prev, newId]);
+                            setNewPrecautionText('');
+                          }
+                        }}
+                        placeholder={bi(
+                          'إضافة محذور سريري مخصص جديد...',
+                          'Add new custom clinical precaution...',
+                          'زیادکردنی ئاگاداری کلینیکی نوێ...'
+                        )}
+                        className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-card border border-layer-line text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:border-rose-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const trimmed = newPrecautionText.trim();
+                          if (!trimmed) return;
+                          const newId = `custom_prec_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+                          setCustomPrecautions((prev) => [
+                            ...prev,
+                            { id: newId, labelAr: trimmed, labelEn: trimmed, createdAt: new Date().toISOString() },
+                          ]);
+                          setStructuredPrecautions((prev) => [...prev, newId]);
+                          setNewPrecautionText('');
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white transition-colors cursor-pointer shrink-0"
+                      >
+                        <Plus className="size-3.5" />
+                        <span>{bi('إضافة', 'Add', 'زیادکردن')}</span>
+                      </button>
+                    </div>
+
+                    {dismissedPrecautionIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setDismissedPrecautionIds([])}
+                        className="text-xs text-rose-700 dark:text-rose-400 hover:underline font-semibold block pt-1 cursor-pointer"
+                      >
+                        {bi('استعادة المحاذير الافتراضية المحذوفة', 'Restore default precautions', 'گەڕاندنەوەی ئاگادارییە سەرەتاییەکان')}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -2537,6 +3375,8 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 onChange={setRedFlagChecklist}
                 redFlagsText={redFlags}
                 onRedFlagsTextChange={setRedFlags}
+                dismissedItemIds={dismissedRedFlagIds}
+                onDismissedItemIdsChange={setDismissedRedFlagIds}
               />
             </div>
 
@@ -2616,6 +3456,63 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 onPersistAttachments={handlePersistAttachments}
               />
             </Suspense>
+          </div>
+        )}
+
+        {/* TAB 5: CENTRAL PATIENT PROFILE HUB, FINANCIAL SUMMARY & ATTACHMENTS */}
+        {activeTab === 'profile' && (
+          <div className="max-w-5xl mx-auto space-y-5">
+            {/* Patient Iraqi Financial Summary Strip (IQD) */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-card border border-card-line shadow-2xs space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-xs font-bold text-foreground">
+                  <Wallet className="size-4 text-primary" />
+                  <span>
+                    {bi(
+                      'الملخص المالي للمريض بالدينار العراقي',
+                      'Patient Financial Summary (IQD)',
+                      'پوختەی دارایی نەخۆش بە دیناری عێراقی'
+                    )}
+                  </span>
+                </h2>
+                <span className="text-xs text-muted-foreground-1 tabular-nums">
+                  <Num value={financialSummary.invoices.length} /> {bi('فواتير', 'invoices', 'پسوولە')}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1 tabular-nums">
+                <div className="p-4 rounded-xl bg-surface border border-line-2">
+                  <span className="text-xs text-muted-foreground-1 block font-sans">
+                    {bi('إجمالي المبالغ المفوترة', 'Total Billed', 'کۆی گشتیی پسوولەکراو')}
+                  </span>
+                  <span className="text-base font-bold text-foreground mt-0.5 block">
+                    <Money amount={financialSummary.totalBilledIQD} />
+                  </span>
+                </div>
+                <div className="p-4 rounded-xl bg-surface border border-line-2">
+                  <span className="text-xs text-muted-foreground-1 block font-sans">
+                    {bi('إجمالي المدفوع نقداً / إلكترونياً', 'Total Paid', 'کۆی پارەی دراو (نەقد / ئەلیکترۆنی)')}
+                  </span>
+                  <span className="text-base font-bold text-emerald-700 dark:text-emerald-400 mt-0.5 block">
+                    <Money amount={financialSummary.totalPaidIQD} />
+                  </span>
+                </div>
+                <div className="p-4 rounded-xl bg-surface border border-line-2">
+                  <span className="text-xs text-muted-foreground-1 block font-sans">
+                    {bi('الرصيد المتبقي بذمة المريض (دين)', 'Balance Due (Debt)', 'پارەی ماوە لەسەر نەخۆش (قەرز)')}
+                  </span>
+                  <span
+                    className={`text-base font-bold mt-0.5 block ${
+                      financialSummary.totalDebtIQD > 0
+                        ? 'text-rose-700 dark:text-rose-400'
+                        : 'text-muted-foreground-1'
+                    }`}
+                  >
+                    <Money amount={financialSummary.totalDebtIQD} />
+                  </span>
+                </div>
+              </div>
+            </div>
 
             {/* 4.6 Printable Clinical Reports Portal */}
             <div className="bg-card p-5 sm:p-6 rounded-2xl border border-card-line shadow-2xs space-y-3">
@@ -2639,7 +3536,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="pr-hscroll overflow-x-auto flex items-center gap-2 whitespace-nowrap pb-1.5 pt-0.5 px-0.5">
                 {(
                   [
                     {
@@ -2720,7 +3617,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                       }
                       setActivePrintDoc(item.type);
                     }}
-                    className="py-2 px-3.5 rounded-xl border border-gray-200 dark:border-neutral-700 bg-surface hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs font-semibold text-foreground inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                    className="py-2 px-3.5 rounded-xl border border-gray-200 dark:border-neutral-700 bg-surface hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs font-semibold text-foreground inline-flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"
                   >
                     <Printer className="size-3.5 text-primary" />
                     <span>{bi(item.ar, item.en, item.ckb)}</span>
@@ -2760,7 +3657,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                     document.body.removeChild(a);
                     setTimeout(() => URL.revokeObjectURL(url), 1000);
                   }}
-                  className="py-2 px-3.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-xs font-semibold text-indigo-700 dark:text-indigo-300 inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                  className="py-2 px-3.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-xs font-semibold text-indigo-700 dark:text-indigo-300 inline-flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"
                 >
                   <Download className="size-3.5" />
                   <span>{bi('تصدير HL7 FHIR R4 JSON', 'Export FHIR R4 JSON', 'هەناردەکردنی HL7 FHIR R4 JSON')}</span>
@@ -2847,6 +3744,366 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
         </Suspense>
       )}
 
+
+      {/* 1. Modal: Edit Personal Information */}
+      <ModalDialog
+        isOpen={isEditPersonalInfoOpen}
+        onOpenChange={setIsEditPersonalInfoOpen}
+        size="md"
+        title={bi('تعديل المعلومات الشخصية للمريض', 'Edit Patient Personal Information', 'دەستکاری زانیاری کەسیی نەخۆش')}
+      >
+        <div className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+          <div>
+            <label className="text-xs font-semibold text-foreground block mb-1">
+              {bi('الاسم الكامل', 'Full Name', 'ناوی تەواو')}
+            </label>
+            <input
+              type="text"
+              value={editFullName}
+              onChange={(e) => setEditFullName(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-surface border border-line-2 text-sm text-foreground focus:border-primary outline-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-foreground block mb-1">
+                {bi('رقم الهاتف', 'Phone Number', 'ژمارەی تەلەفۆن')}
+              </label>
+              <input
+                type="tel"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                dir="ltr"
+                className="w-full px-3 py-2 rounded-xl bg-surface border border-line-2 text-sm text-foreground focus:border-primary outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-foreground block mb-1">
+                {bi('الجنس', 'Gender', 'ڕەگەز')}
+              </label>
+              <select
+                value={editGender}
+                onChange={(e) => setEditGender(e.target.value as 'male' | 'female' | 'other')}
+                className="w-full px-3 py-2 rounded-xl bg-surface border border-line-2 text-sm text-foreground focus:border-primary outline-none"
+              >
+                <option value="male">{bi('ذكر', 'Male', 'نێر')}</option>
+                <option value="female">{bi('أنثى', 'Female', 'مێ')}</option>
+                <option value="other">{bi('أخرى', 'Other', 'هی تر')}</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-foreground block mb-1">
+              {bi('تاريخ الميلاد', 'Date of Birth', 'بەرواری لەدایکبوون')}
+            </label>
+            <input
+              type="date"
+              value={editDob}
+              onChange={(e) => setEditDob(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-surface border border-line-2 text-sm text-foreground focus:border-primary outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-foreground block mb-1">
+              {bi('العنوان التفصيلي', 'Detailed Address', 'ناونیشانی ورد')}
+            </label>
+            <input
+              type="text"
+              value={editAddress}
+              onChange={(e) => setEditAddress(e.target.value)}
+              placeholder={bi('المدينة، المنطقة، أقرب نقطة دالة', 'City, Area, Landmark', 'شار، ناوچە، نزیکترین خاڵ')}
+              className="w-full px-3 py-2 rounded-xl bg-surface border border-line-2 text-sm text-foreground focus:border-primary outline-none"
+            />
+          </div>
+
+          <div className="pt-2 border-t border-card-divider space-y-3">
+            <h4 className="text-xs font-bold text-primary">
+              {bi('جهة الاتصال للطوارئ', 'Emergency Contact', 'پەیوەندیی فریاگوزاری')}
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-foreground block mb-1">
+                  {bi('اسم جهة الطوارئ', 'Emergency Contact Name', 'ناوی کەسی پەیوەندی')}
+                </label>
+                <input
+                  type="text"
+                  value={editEmergencyName}
+                  onChange={(e) => setEditEmergencyName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-line-2 text-sm text-foreground focus:border-primary outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-foreground block mb-1">
+                  {bi('هاتف الطوارئ', 'Emergency Phone', 'تەلەفۆنی فریاگوزاری')}
+                </label>
+                <input
+                  type="tel"
+                  value={editEmergencyPhone}
+                  onChange={(e) => setEditEmergencyPhone(e.target.value)}
+                  dir="ltr"
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-line-2 text-sm text-foreground focus:border-primary outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-card-divider">
+            <button
+              type="button"
+              onClick={() => setIsEditPersonalInfoOpen(false)}
+              className="px-4 py-2 rounded-xl bg-surface border border-line-2 text-xs font-semibold hover:bg-muted/60 transition-colors"
+            >
+              {bi('إلغاء', 'Cancel', 'پاشگەزبوونەوە')}
+            </button>
+            <button
+              type="button"
+              onClick={handleSavePersonalInfo}
+              disabled={isSaving}
+              className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:opacity-95 transition-opacity disabled:opacity-50"
+            >
+              {isSaving ? bi('جاري الحفظ...', 'Saving...', 'پاشەکەوت دەکرێت...') : bi('حفظ التعديلات', 'Save Changes', 'پاشەکەوتی دەستکاری')}
+            </button>
+          </div>
+        </div>
+      </ModalDialog>
+
+      {/* 2. Modal: Edit Clinical Summary & Goals */}
+      <ModalDialog
+        isOpen={isEditClinicalSummaryOpen}
+        onOpenChange={setIsEditClinicalSummaryOpen}
+        size="md"
+        title={bi('ملخص الحالة السريرية والأهداف', 'Clinical Summary & Goals', 'پوختەی کلینیکی و ئامانجەکان')}
+      >
+        <div className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+          <div>
+            <label className="text-xs font-semibold text-foreground block mb-1">
+              {bi('عنوان الحلقة / الحالة الرئيسية', 'Condition / Episode Title', 'ناونیشانی حاڵەت')}
+            </label>
+            <input
+              type="text"
+              value={editEpisodeTitle}
+              onChange={(e) => setEditEpisodeTitle(e.target.value)}
+              placeholder={bi('مثال: التهاب محفظة الكتف اللاصق / الكتف المتجمد', 'e.g. Frozen Shoulder', 'وەک: شانی بەستوو')}
+              className="w-full px-3 py-2 rounded-xl bg-surface border border-line-2 text-sm text-foreground focus:border-primary outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-foreground block mb-1">
+              {bi('التشخيص الطبي الأولي', 'Medical Diagnosis', 'دەستنیشانکردنی پزیشکی')}
+            </label>
+            <input
+              type="text"
+              value={editDiagnosis}
+              onChange={(e) => setEditDiagnosis(e.target.value)}
+              placeholder={bi('مثال: Adhesive Capsulitis', 'e.g. Adhesive Capsulitis', 'دەستنیشانکردن')}
+              className="w-full px-3 py-2 rounded-xl bg-surface border border-line-2 text-sm text-foreground focus:border-primary outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-foreground block mb-1">
+              {bi('الشكوى الرئيسية للمريض', 'Chief Complaint', 'سکاڵای سەرەکی')}
+            </label>
+            <textarea
+              rows={2}
+              value={editChiefComplaint}
+              onChange={(e) => setEditChiefComplaint(e.target.value)}
+              placeholder={bi('وصف ألم المريض وموقع الإصابة وتأثيرها على الحركة', 'Patient complaint & pain description', 'وەسفی ئازار')}
+              className="w-full px-3 py-2 rounded-xl bg-surface border border-line-2 text-sm text-foreground focus:border-primary outline-none resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-foreground block mb-1">
+              {bi('الانطباع السريري للمعالج الطبيعي', 'Clinical Impression', 'تێگەیشتنی کلینیکی')}
+            </label>
+            <textarea
+              rows={2}
+              value={editClinicalImpression}
+              onChange={(e) => setEditClinicalImpression(e.target.value)}
+              placeholder={bi('الانطباع السريري والملاحظات الفسيولوجية', 'Physical therapist clinical impression', 'تێگەیشتن')}
+              className="w-full px-3 py-2 rounded-xl bg-surface border border-line-2 text-sm text-foreground focus:border-primary outline-none resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-foreground block mb-1">
+              {bi('الأهداف التأهيلية للمريض (Goals)', 'Rehabilitation Goals', 'ئامانجەکانی چارەسەر')}
+            </label>
+            <textarea
+              rows={2}
+              value={editGoals}
+              onChange={(e) => setEditGoals(e.target.value)}
+              placeholder={bi('مثال: تقليل الألم واستعادة المدى الحركي والقدرة على رفع الذراع', 'e.g. Reduce pain and improve ROM', 'ئامانجەکان')}
+              className="w-full px-3 py-2 rounded-xl bg-surface border border-line-2 text-sm text-foreground focus:border-primary outline-none resize-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-card-divider">
+            <button
+              type="button"
+              onClick={() => setIsEditClinicalSummaryOpen(false)}
+              className="px-4 py-2 rounded-xl bg-surface border border-line-2 text-xs font-semibold hover:bg-muted/60 transition-colors"
+            >
+              {bi('إلغاء', 'Cancel', 'پاشگەزبوونەوە')}
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveClinicalSummary}
+              disabled={isSaving}
+              className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:opacity-95 transition-opacity disabled:opacity-50"
+            >
+              {isSaving ? bi('جاري الحفظ...', 'Saving...', 'پاشەکەوت دەکرێت...') : bi('حفظ التعديلات', 'Save Changes', 'پاشەکەوتی دەستکاری')}
+            </button>
+          </div>
+        </div>
+      </ModalDialog>
+
+      {/* 3. Modal: MMT (Manual Muscle Testing) */}
+      <ModalDialog
+        isOpen={isMmtModalOpen}
+        onOpenChange={setIsMmtModalOpen}
+        size="lg"
+        title={bi('تقييم القوة العضلية اليدوي (MMT)', 'Manual Muscle Testing (MMT)', 'پشکنینی هێزی ماسولکەکان')}
+      >
+        <div className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+          <Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground-1">{bi('جاري تحميل وحدة فحص القوة العضلية...', 'Loading MMT widget...', 'باردەکرێت...')}</div>}>
+            <MmtWidget
+              value={episodeStore.objective?.mmtBattery}
+              onChange={updateObjectiveMmt}
+            />
+          </Suspense>
+
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-card-divider">
+            <button
+              type="button"
+              onClick={() => {
+                setIsMmtModalOpen(false);
+                handleSaveMasterAndEpisode();
+              }}
+              className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:opacity-95 transition-opacity"
+            >
+              {bi('إغلاق وتأكيد الحفظ', 'Save & Close', 'پاشەکەوت و داخستن')}
+            </button>
+          </div>
+        </div>
+      </ModalDialog>
+
+      {/* 4. Modal: ROM (Range of Motion) */}
+      <ModalDialog
+        isOpen={isRomModalOpen}
+        onOpenChange={setIsRomModalOpen}
+        size="lg"
+        title={bi('قياس المدى الحركي للمفاصل (ROM)', 'Range of Motion (ROM)', 'پێوانی مەودای جووڵەی جومگەکان')}
+      >
+        <div className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+          <Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground-1">{bi('جاري تحميل وحدة فحص المدى الحركي...', 'Loading ROM widget...', 'باردەکرێت...')}</div>}>
+            <RomWidget
+              value={episodeStore.objective?.romBattery}
+              onChange={updateObjectiveRom}
+            />
+          </Suspense>
+
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-card-divider">
+            <button
+              type="button"
+              onClick={() => {
+                setIsRomModalOpen(false);
+                handleSaveMasterAndEpisode();
+              }}
+              className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:opacity-95 transition-opacity"
+            >
+              {bi('إغلاق وتأكيد الحفظ', 'Save & Close', 'پاشەکەوت و داخستن')}
+            </button>
+          </div>
+        </div>
+      </ModalDialog>
+
+      {/* 5. Modal: Neuro Screening */}
+      <ModalDialog
+        isOpen={isNeuroModalOpen}
+        onOpenChange={setIsNeuroModalOpen}
+        size="lg"
+        title={bi('الفحص العصبي (الإحساس والمنعكسات)', 'Neurological Screening', 'پشکنینی دەمار و ڕەفڵەکس')}
+      >
+        <div className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+          <Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground-1">{bi('جاري تحميل وحدة الفحص العصبي...', 'Loading Neuro widget...', 'باردەکرێت...')}</div>}>
+            <NeuroWidget
+              value={episodeStore.objective?.neuroScreening}
+              onChange={updateObjectiveNeuro}
+            />
+          </Suspense>
+
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-card-divider">
+            <button
+              type="button"
+              onClick={() => {
+                setIsNeuroModalOpen(false);
+                handleSaveMasterAndEpisode();
+              }}
+              className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:opacity-95 transition-opacity"
+            >
+              {bi('إغلاق وتأكيد الحفظ', 'Save & Close', 'پاشەکەوت و داخستن')}
+            </button>
+          </div>
+        </div>
+      </ModalDialog>
+
+      {/* 6. Modal: Special Tests & Functional Scales */}
+      <ModalDialog
+        isOpen={isSpecialTestsModalOpen}
+        onOpenChange={setIsSpecialTestsModalOpen}
+        size="lg"
+        title={bi('الفحوصات السريرية الخاصة والمقاييس الوظيفية', 'Special Tests & Functional Scales', 'پشکنینە تایبەتەکان و پێوەرەکان')}
+      >
+        <div className="p-4 sm:p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+          <Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground-1">{bi('جاري تحميل الفحوصات الخاصة...', 'Loading Special Tests...', 'باردەکرێت...')}</div>}>
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-primary flex items-center gap-2">
+                <Award className="size-4" />
+                <span>{bi('الفحوصات السريرية الاستفزازية (Special Tests)', 'Orthopedic Special Tests', 'پشکنینە تایبەتەکان')}</span>
+              </h4>
+              <SpecialTestsWidget
+                value={episodeStore.specialTests}
+                onChange={updateSpecialTests}
+              />
+            </div>
+
+            <div className="pt-4 border-t border-card-divider space-y-3">
+              <h4 className="text-xs font-bold text-primary flex items-center gap-2">
+                <Target className="size-4" />
+                <span>{bi('المقاييس والدرجات الوظيفية (Functional Scales)', 'Functional Outcome Measures', 'پێوەرە فەنکشنەڵەکان')}</span>
+              </h4>
+              <FunctionalScalesWidget
+                value={episodeStore.functionalScales}
+                onChange={updateFunctionalScales}
+                patientAge={patientAge}
+                patientGender={patient.data.gender}
+              />
+            </div>
+          </Suspense>
+
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-card-divider">
+            <button
+              type="button"
+              onClick={() => {
+                setIsSpecialTestsModalOpen(false);
+                handleSaveMasterAndEpisode();
+              }}
+              className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:opacity-95 transition-opacity"
+            >
+              {bi('إغلاق وتأكيد الحفظ', 'Save & Close', 'پاشەکەوت و داخستن')}
+            </button>
+          </div>
+        </div>
+      </ModalDialog>
+
       {/* C6: Printable & Copyable Report-Back Letter to Referring Doctor */}
       {isReportBackModalOpen && (
         <Suspense fallback={null}>
@@ -2865,6 +4122,18 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
           />
         </Suspense>
       )}
+
+      {/* Mobile Floating Bottom Action Button (hidden on tablet/desktop where compact episode bar button is shown) */}
+      <div className="fixed bottom-4 inset-x-4 z-30 sm:hidden pointer-events-none">
+        <button
+          type="button"
+          onClick={onOpenNewSession}
+          className="pointer-events-auto w-full py-3.5 px-6 rounded-2xl bg-primary text-primary-foreground font-black text-sm shadow-xl shadow-primary/25 hover:bg-primary-hover active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <Plus className="size-5" />
+          <span>{bi('إضافة جلسة جديدة', 'Add New Session', 'زیادکردنی دانیشتنی نوێ')}</span>
+        </button>
+      </div>
     </div>
   );
 };

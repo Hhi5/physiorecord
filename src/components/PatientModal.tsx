@@ -11,6 +11,7 @@ import type {
   Gender,
   DominantHand,
   StructuredPrecautionId,
+  CustomPrecautionItem,
 } from '../types/clinical';
 import type {
   ReferralSourceType,
@@ -57,6 +58,8 @@ import {
   GitMerge,
   ExternalLink,
   BookOpen,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 
 export interface PatientModalProps {
@@ -122,6 +125,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({
   const [dismissedDuplicateBanner, setDismissedDuplicateBanner] = useState(false);
   const [glossaryQuery, setGlossaryQuery] = useState('');
   const [glossaryOpen, setGlossaryOpen] = useState(false);
+  const [newPrecautionText, setNewPrecautionText] = useState('');
 
   const patientToEditId = patientToEdit?.id ?? null;
 
@@ -342,37 +346,27 @@ export const PatientModal: React.FC<PatientModalProps> = ({
       dir={isRtl ? 'rtl' : 'ltr'}
       maxWidthClassName="max-w-lg"
       className="bg-card border-card-line"
+      title={
+        patientToEdit
+          ? bi('تعديل ملف المريض', 'Edit Patient', 'دەستکاریکردنی پەڕگەی نەخۆش')
+          : bi('تسجيل مريض جديد', 'New Patient', 'تۆمارکردنی نەخۆشی نوێ')
+      }
+      subtitle={bi(
+        'أدخل البيانات الأساسية أولاً، والتفاصيل السريرية اختيارية',
+        'Enter essential details first; clinical history is optional',
+        'سەرەتا زانیارییە سەرەکییەکان بنووسە، وردەکارییە کلینیکییەکان ئارەزوومەندانەیە'
+      )}
       ariaLabel={
         patientToEdit ? bi('تعديل ملف المريض', 'Edit Patient') : bi('تسجيل مريض جديد', 'New Patient')
       }
       closeLabel={bi('إغلاق', 'Close')}
       bodyClassName="flex-1 min-h-0 flex flex-col overflow-hidden"
     >
-        {/* Sheet Header */}
-        <div className="px-5 py-4 border-b border-card-divider flex items-center justify-between bg-muted/40 shrink-0">
-          <div>
-            <h2 className="text-base font-bold text-foreground">
-              {patientToEdit ? bi('تعديل ملف المريض', 'Edit Patient') : bi('تسجيل مريض جديد', 'New Patient')}
-            </h2>
-            <p className="text-xs text-muted-foreground-1">
-              {bi('أدخل البيانات الأساسية أولاً، والتفاصيل السريرية اختيارية', 'Enter essential details first; clinical history is optional')}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={bi('إغلاق', 'Close')}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
         {/* Sheet Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <div tabIndex={0} className="flex-1 overflow-y-auto p-5 space-y-4">
           {error && (
-            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+            <div className="p-3 bg-surface/75 rounded-xl text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 flex-shrink-0" />
               <span>{error}</span>
             </div>
@@ -452,12 +446,12 @@ export const PatientModal: React.FC<PatientModalProps> = ({
                 <div
                   data-testid="duplicate-patient-guard-banner"
                   role="alert"
-                  className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/40 text-amber-950 dark:text-amber-100 space-y-2.5"
+                  className="p-3.5 rounded-xl bg-card shadow-2xs space-y-2.5"
                 >
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                     <div className="min-w-0 space-y-1">
-                      <div className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                      <div className="text-xs font-bold text-amber-700 dark:text-amber-400">
                         {bi(
                           'تنبيه تطابق محتمل: يوجد ملف مريض مشابه مسجّل مسبقاً',
                           'Potential Duplicate Patient Detected'
@@ -467,13 +461,13 @@ export const PatientModal: React.FC<PatientModalProps> = ({
                         <span className="font-bold text-foreground">
                           {getPatientDisplayName(topMatch.patient.data, language)}
                         </span>
-                        <bdi dir="ltr" className="font-mono text-xs px-1.5 py-0.5 rounded bg-surface/80 border border-amber-500/30">
+                        <bdi dir="ltr" className="font-mono text-xs px-1.5 py-0.5 rounded bg-surface/80">
                           {getPatientMrn(topMatch.patient)}
                         </bdi>
                         <bdi dir="ltr" className="tabular-nums text-muted-foreground-1">
                           {matchPhone}
                         </bdi>
-                        <span className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-xs font-semibold text-amber-800 dark:text-amber-200">
+                        <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
                           {formatDuplicateReason(topMatch)}
                         </span>
                       </div>
@@ -563,9 +557,9 @@ export const PatientModal: React.FC<PatientModalProps> = ({
             {isPediatricMinor && (
               <div
                 data-testid="pediatric-guardian-section"
-                className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/35 space-y-2.5"
+                className="p-3.5 rounded-xl bg-card shadow-2xs space-y-2.5"
               >
-                <div className="flex items-center gap-2 text-xs font-bold text-amber-800 dark:text-amber-200">
+                <div className="flex items-center gap-2 text-xs font-bold text-amber-700 dark:text-amber-400">
                   <ShieldAlert className="w-4 h-4 shrink-0" />
                   <span>
                     {bi(
@@ -676,34 +670,36 @@ export const PatientModal: React.FC<PatientModalProps> = ({
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-1.5">
-                {REFERRAL_SOURCE_TYPES.map((sourceType: ReferralSourceType) => {
-                  const selected = formData.referralSourceType === sourceType;
-                  const label = bi(
-                    REFERRAL_SOURCE_LABELS[sourceType].ar,
-                    REFERRAL_SOURCE_LABELS[sourceType].en
-                  );
-                  return (
-                    <button
-                      key={sourceType}
-                      type="button"
-                      onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          referralSourceType:
-                            prev.referralSourceType === sourceType ? undefined : sourceType,
-                        }))
-                      }
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
-                        selected
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-layer border-layer-line text-foreground hover:bg-layer-hover'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
+              <div className="rounded-2xl border border-line-2 bg-surface/60 p-1 overflow-hidden">
+                <div className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-1 pt-0.5 px-0.5">
+                  {REFERRAL_SOURCE_TYPES.map((sourceType: ReferralSourceType) => {
+                    const selected = formData.referralSourceType === sourceType;
+                    const label = bi(
+                      REFERRAL_SOURCE_LABELS[sourceType].ar,
+                      REFERRAL_SOURCE_LABELS[sourceType].en
+                    );
+                    return (
+                      <button
+                        key={sourceType}
+                        type="button"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            referralSourceType:
+                              prev.referralSourceType === sourceType ? undefined : sourceType,
+                          }))
+                        }
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                          selected
+                            ? 'bg-primary text-primary-foreground border-primary shadow-2xs'
+                            : 'bg-card border-line-2/70 text-foreground hover:bg-layer-hover'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -949,20 +945,22 @@ export const PatientModal: React.FC<PatientModalProps> = ({
               />
 
               {(glossaryOpen || glossaryQuery.trim().length > 0) && glossarySuggestions.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  {glossarySuggestions.map((entry) => (
-                    <button
-                      key={entry.id}
-                      type="button"
-                      data-testid={`glossary-suggestion-${entry.id}`}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleSelectGlossarySuggestion(entry)}
-                      className="text-start px-2.5 py-1.5 rounded-lg bg-layer hover:bg-primary/10 border border-layer-line hover:border-primary/40 text-xs text-foreground transition-colors cursor-pointer"
-                    >
-                      <span className="font-semibold">{entry.ar}</span>
-                      <span className="text-muted-foreground-1"> · {entry.en}</span>
-                    </button>
-                  ))}
+                <div className="rounded-2xl border border-line-2 bg-surface/60 p-1 overflow-hidden">
+                  <div className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-1 pt-0.5 px-0.5">
+                    {glossarySuggestions.map((entry) => (
+                      <button
+                        key={entry.id}
+                        type="button"
+                        data-testid={`glossary-suggestion-${entry.id}`}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleSelectGlossarySuggestion(entry)}
+                        className="text-start px-3 py-1.5 rounded-xl bg-card hover:bg-primary/10 border border-line-2/70 hover:border-primary/40 text-xs text-foreground transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                      >
+                        <span className="font-semibold">{entry.ar}</span>
+                        <span className="text-muted-foreground-1"> · {entry.en}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -1064,8 +1062,8 @@ export const PatientModal: React.FC<PatientModalProps> = ({
           </details>
 
           {/* Accordion 3: Red Flags & Contraindications */}
-          <details className="group rounded-xl border border-rose-500/30 bg-rose-500/5 overflow-hidden">
-            <summary className="px-4 py-3 text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center justify-between cursor-pointer select-none hover:bg-rose-500/10">
+          <details className="group rounded-xl bg-card shadow-2xs overflow-hidden">
+            <summary className="px-4 py-3 text-xs font-bold text-rose-700 dark:text-rose-400 flex items-center justify-between cursor-pointer select-none hover:bg-surface/80">
               <span className="inline-flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                 <span>{bi('الأعلام الحمراء والمحاذير السريرية', 'Red flags & contraindications')}</span>
@@ -1075,12 +1073,14 @@ export const PatientModal: React.FC<PatientModalProps> = ({
               </span>
               <ChevronDown className="w-4 h-4 text-rose-600 dark:text-rose-400 transition-transform group-open:rotate-180" />
             </summary>
-            <div className="p-4 pt-2 border-t border-rose-500/20 space-y-3">
+            <div className="p-4 pt-2 border-t border-card-line space-y-3">
               <RedFlagChecklistPanel
                 checklist={formData.redFlagChecklist}
                 onChange={(next) => setFormData({ ...formData, redFlagChecklist: next })}
                 redFlagsText={formData.redFlags || ''}
                 onRedFlagsTextChange={(val) => setFormData({ ...formData, redFlags: val })}
+                dismissedItemIds={formData.dismissedRedFlagIds}
+                onDismissedItemIdsChange={(ids) => setFormData({ ...formData, dismissedRedFlagIds: ids })}
               />
 
               <div>
@@ -1095,43 +1095,179 @@ export const PatientModal: React.FC<PatientModalProps> = ({
                   placeholder={bi('مثال: قيود تحميل الوزن، محاذير التواء الكتف...', 'e.g., Weight-bearing restrictions, post-op precautions...')}
                   className="w-full px-3.5 py-2 rounded-lg bg-surface border border-layer-line text-foreground text-sm focus:outline-none focus:border-primary"
                 />
-                <div className="mt-2 pt-2 border-t border-rose-500/20">
-                  <span className="block text-xs font-semibold text-rose-700 dark:text-rose-300 mb-1.5">
+                <div className="mt-2 pt-2 border-t border-card-line space-y-2">
+                  <span className="block text-xs font-semibold text-rose-700 dark:text-rose-400">
                     {bi(
                       'المحاذير السريرية المهيكلة (لتنبيهات سلامة الأجهزة):',
                       'Structured Precautions (Modality Safety Alerts):'
                     )}
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                    {STRUCTURED_PRECAUTIONS_CATALOG.map((item) => {
+                    {STRUCTURED_PRECAUTIONS_CATALOG.filter(
+                      (item) => !(formData.dismissedPrecautionIds || []).includes(item.id)
+                    ).map((item) => {
                       const selected = (formData.structuredPrecautions || []).includes(item.id);
                       return (
-                        <label
+                        <div
                           key={item.id}
                           data-testid={`modal-precaution-${item.id}`}
-                          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs cursor-pointer transition-colors ${
+                          className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-xs transition-colors ${
                             selected
                               ? 'bg-rose-500/15 border-rose-500 text-rose-800 dark:text-rose-200 font-bold'
                               : 'bg-surface border-layer-line text-foreground hover:bg-muted/40'
                           }`}
                         >
-                          <input
-                            type="checkbox"
-                            checked={selected}
-                            onChange={() => {
-                              const curr = formData.structuredPrecautions || [];
-                              const next: StructuredPrecautionId[] = curr.includes(item.id)
-                                ? curr.filter((x) => x !== item.id)
-                                : [...curr, item.id];
-                              setFormData({ ...formData, structuredPrecautions: next });
+                          <label className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={() => {
+                                const curr = formData.structuredPrecautions || [];
+                                const next: StructuredPrecautionId[] = curr.includes(item.id)
+                                  ? curr.filter((x) => x !== item.id)
+                                  : [...curr, item.id];
+                                setFormData({ ...formData, structuredPrecautions: next });
+                              }}
+                              className="size-3.5 accent-rose-600 rounded shrink-0"
+                            />
+                            <span className="truncate">{bi(item.labelAr, item.labelEn, item.labelCkb)}</span>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currDismissed = formData.dismissedPrecautionIds || [];
+                              const currSelected = formData.structuredPrecautions || [];
+                              setFormData({
+                                ...formData,
+                                dismissedPrecautionIds: [...currDismissed, item.id],
+                                structuredPrecautions: currSelected.filter((x) => x !== item.id),
+                              });
                             }}
-                            className="size-3.5 accent-rose-600 rounded"
-                          />
-                          <span>{bi(item.labelAr, item.labelEn, item.labelCkb)}</span>
-                        </label>
+                            title={bi('حذف هذا المحذور', 'Delete this precaution')}
+                            className="p-1 text-muted-foreground-2 hover:text-rose-600 rounded transition-colors shrink-0 cursor-pointer"
+                          >
+                            <Trash2 className="size-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+
+                    {(formData.customPrecautions || []).map((item) => {
+                      const selected = (formData.structuredPrecautions || []).includes(item.id);
+                      return (
+                        <div
+                          key={item.id}
+                          data-testid={`modal-precaution-${item.id}`}
+                          className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-xs transition-colors ${
+                            selected
+                              ? 'bg-rose-500/15 border-rose-500 text-rose-800 dark:text-rose-200 font-bold'
+                              : 'bg-surface border-layer-line text-foreground hover:bg-muted/40'
+                          }`}
+                        >
+                          <label className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={() => {
+                                const curr = formData.structuredPrecautions || [];
+                                const next: StructuredPrecautionId[] = curr.includes(item.id)
+                                  ? curr.filter((x) => x !== item.id)
+                                  : [...curr, item.id];
+                                setFormData({ ...formData, structuredPrecautions: next });
+                              }}
+                              className="size-3.5 accent-rose-600 rounded shrink-0"
+                            />
+                            <span className="truncate font-semibold">{bi(item.labelAr, item.labelEn || item.labelAr, item.labelCkb || item.labelAr)}</span>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currCustom = formData.customPrecautions || [];
+                              const currSelected = formData.structuredPrecautions || [];
+                              setFormData({
+                                ...formData,
+                                customPrecautions: currCustom.filter((x) => x.id !== item.id),
+                                structuredPrecautions: currSelected.filter((x) => x !== item.id),
+                              });
+                            }}
+                            title={bi('حذف هذا المحذور المخصص', 'Delete this custom precaution')}
+                            className="p-1 text-muted-foreground-2 hover:text-rose-600 rounded transition-colors shrink-0 cursor-pointer"
+                          >
+                            <Trash2 className="size-3" />
+                          </button>
+                        </div>
                       );
                     })}
                   </div>
+
+                  {/* Add Custom Precaution row */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      type="text"
+                      value={newPrecautionText}
+                      onChange={(e) => setNewPrecautionText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const trimmed = newPrecautionText.trim();
+                          if (!trimmed) return;
+                          const newId = `custom_prec_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+                          const newItem: CustomPrecautionItem = {
+                            id: newId,
+                            labelAr: trimmed,
+                            labelEn: trimmed,
+                            createdAt: new Date().toISOString(),
+                          };
+                          const currCustom = formData.customPrecautions || [];
+                          const currSelected = formData.structuredPrecautions || [];
+                          setFormData({
+                            ...formData,
+                            customPrecautions: [...currCustom, newItem],
+                            structuredPrecautions: [...currSelected, newId],
+                          });
+                          setNewPrecautionText('');
+                        }
+                      }}
+                      placeholder={bi('إضافة محذور مخصص جديد...', 'Add new custom precaution...')}
+                      className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-surface border border-layer-line text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:border-rose-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const trimmed = newPrecautionText.trim();
+                        if (!trimmed) return;
+                        const newId = `custom_prec_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+                        const newItem: CustomPrecautionItem = {
+                          id: newId,
+                          labelAr: trimmed,
+                          labelEn: trimmed,
+                          createdAt: new Date().toISOString(),
+                        };
+                        const currCustom = formData.customPrecautions || [];
+                        const currSelected = formData.structuredPrecautions || [];
+                        setFormData({
+                          ...formData,
+                          customPrecautions: [...currCustom, newItem],
+                          structuredPrecautions: [...currSelected, newId],
+                        });
+                        setNewPrecautionText('');
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white transition-colors cursor-pointer shrink-0"
+                    >
+                      <Plus className="size-3.5" />
+                      <span>{bi('إضافة', 'Add')}</span>
+                    </button>
+                  </div>
+
+                  {(formData.dismissedPrecautionIds || []).length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, dismissedPrecautionIds: [] })}
+                      className="text-xs text-rose-700 dark:text-rose-400 hover:underline font-semibold block pt-1 cursor-pointer"
+                    >
+                      {bi('استعادة المحاذير الافتراضية المحذوفة', 'Restore default precautions')}
+                    </button>
+                  )}
                 </div>
               </div>
 

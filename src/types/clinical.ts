@@ -46,25 +46,25 @@ export const SESSION_TYPES: Record<SessionType, TerminologyInfo> = {
   initial_evaluation: {
     en: 'Initial Evaluation',
     ar: 'التقييم الأولي والشامل',
-    badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    badgeClass: 'text-indigo-700 dark:text-indigo-300',
     descriptionAr: 'الفحص والتقييم السريري الشامل ووضع الخطة العلاجية',
   },
   follow_up: {
     en: 'Follow-up Session',
     ar: 'جلسة متابعة علاجية',
-    badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    badgeClass: 'text-emerald-700 dark:text-emerald-300',
     descriptionAr: 'جلسة علاجية مستمرة وتنفيذ التدخلات والتمارين',
   },
   re_evaluation: {
     en: 'Re-evaluation',
     ar: 'إعادة تقييم سريري مرحلي',
-    badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+    badgeClass: 'text-amber-700 dark:text-amber-300',
     descriptionAr: 'قياس التقدم ومراجعة الأهداف وتعديل مسار الخطة',
   },
   discharge_summary: {
     en: 'Discharge Session',
     ar: 'جلسة التخريج والإنهاء',
-    badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
+    badgeClass: 'text-blue-700 dark:text-blue-300',
     descriptionAr: 'التقييم الختامي عند استيفاء الأهداف أو انتهاء دورة الرعاية',
   },
 };
@@ -73,19 +73,19 @@ export const SESSION_STATUSES: Record<SessionStatus, TerminologyInfo> = {
   draft: {
     en: 'Draft',
     ar: 'مسودة قيد التحرير',
-    badgeClass: 'bg-amber-50 text-amber-800 border-amber-200',
+    badgeClass: 'text-amber-700 dark:text-amber-300',
     descriptionAr: 'جلسة قيد الإعداد قابلة للتعديل والتوثيق',
   },
   finalized: {
     en: 'Finalized',
     ar: 'معتمدة ومغلقة',
-    badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    badgeClass: 'text-emerald-700 dark:text-emerald-300',
     descriptionAr: 'جلسة معتمدة نهائياً غير قابلة للتعديل إلا بملحق تصحيحي',
   },
   cancelled: {
     en: 'Cancelled',
     ar: 'ملغاة',
-    badgeClass: 'bg-rose-50 text-rose-800 border-rose-200',
+    badgeClass: 'text-rose-700 dark:text-rose-400',
     descriptionAr: 'جلسة ملغاة مع توثيق سبب الإلغاء',
   },
 };
@@ -94,22 +94,22 @@ export const ATTENDANCE_STATUSES: Record<AttendanceStatus, TerminologyInfo> = {
   attended: {
     en: 'Attended',
     ar: 'حضر وتلقى العلاج',
-    badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    badgeClass: 'text-emerald-700 dark:text-emerald-300',
   },
   cancelled_patient: {
     en: 'Cancelled by Patient',
     ar: 'ألغيت من قبل المريض',
-    badgeClass: 'bg-slate-50 text-slate-700 border-slate-200',
+    badgeClass: 'text-muted-foreground-1',
   },
   cancelled_clinic: {
     en: 'Cancelled by Clinic',
     ar: 'ألغيت من قبل العيادة',
-    badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+    badgeClass: 'text-amber-700 dark:text-amber-300',
   },
   no_show: {
     en: 'No Show',
     ar: 'تخلف عن الحضور دون إشعار',
-    badgeClass: 'bg-rose-50 text-rose-700 border-rose-200',
+    badgeClass: 'text-rose-700 dark:text-rose-400',
   },
 };
 
@@ -185,6 +185,8 @@ export interface PatientClinicalData {
   isDemo?: boolean;
   fullName: string;
   fullNameAr?: string;
+  avatarUrl?: string;
+  photoDataUrl?: string;
   dateOfBirth?: string; // YYYY-MM-DD
   age?: number;
   gender: Gender;
@@ -212,6 +214,9 @@ export interface PatientClinicalData {
   comorbidities?: string;
   precautions?: string;
   structuredPrecautions?: StructuredPrecautionId[];
+  customPrecautions?: CustomPrecautionItem[];
+  dismissedPrecautionIds?: string[];
+  dismissedRedFlagIds?: string[];
   contraindications?: string;
   redFlags?: string;
   redFlagChecklist?: PatientRedFlagChecklistItem[];
@@ -235,6 +240,14 @@ export interface PatientClinicalData {
   profileSummaryUpdatedAt?: string; // ISO 8601 timestamp of last profile edit
 }
 
+export interface CustomPrecautionItem {
+  id: string;
+  labelAr: string;
+  labelEn?: string;
+  labelCkb?: string;
+  createdAt?: string;
+}
+
 export type StructuredPrecautionId =
   | 'pacemaker_icd'
   | 'pregnancy'
@@ -246,7 +259,8 @@ export type StructuredPrecautionId =
   | 'epilepsy'
   | 'bleeding_anticoagulation'
   | 'vascular_insufficiency'
-  | 'acute_inflammation_trauma';
+  | 'acute_inflammation_trauma'
+  | (string & {});
 
 export interface SessionVitalsEntry {
   recordedAt: string;
@@ -656,7 +670,7 @@ export const BODY_SYMPTOM_TYPES: Record<
     ar: 'ألم حاد / طاعن',
     en: 'Sharp / Lancinating Pain',
     colorHex: '#EF4444',
-    badgeClass: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800',
+    badgeClass: 'text-red-700 dark:text-red-300',
     symbolLabel: '▲',
   },
   pain_dull: {
@@ -664,7 +678,7 @@ export const BODY_SYMPTOM_TYPES: Record<
     ar: 'ألم كليل / عميق',
     en: 'Dull / Aching Pain',
     colorHex: '#DC2626',
-    badgeClass: 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800',
+    badgeClass: 'text-rose-700 dark:text-rose-300',
     symbolLabel: '●',
   },
   numbness: {
@@ -672,7 +686,7 @@ export const BODY_SYMPTOM_TYPES: Record<
     ar: 'خدر / نقص إحساس',
     en: 'Numbness / Hypoesthesia',
     colorHex: '#3B82F6',
-    badgeClass: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800',
+    badgeClass: 'text-blue-700 dark:text-blue-300',
     symbolLabel: '■',
   },
   tingling: {
@@ -680,7 +694,7 @@ export const BODY_SYMPTOM_TYPES: Record<
     ar: 'وخز وتنميل عصبي',
     en: 'Tingling / Paresthesia',
     colorHex: '#F59E0B',
-    badgeClass: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800',
+    badgeClass: 'text-amber-700 dark:text-amber-300',
     symbolLabel: '◆',
   },
   burning: {
@@ -688,7 +702,7 @@ export const BODY_SYMPTOM_TYPES: Record<
     ar: 'ألم حارق',
     en: 'Burning / Dysesthesia',
     colorHex: '#F97316',
-    badgeClass: 'bg-orange-50 text-orange-800 border-orange-200 dark:bg-orange-950/60 dark:text-orange-300 dark:border-orange-800',
+    badgeClass: 'text-orange-700 dark:text-orange-300',
     symbolLabel: '★',
   },
   stiffness: {
@@ -696,7 +710,7 @@ export const BODY_SYMPTOM_TYPES: Record<
     ar: 'تيبّس وشد عضلي',
     en: 'Stiffness / Tightness',
     colorHex: '#8B5CF6',
-    badgeClass: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800',
+    badgeClass: 'text-purple-700 dark:text-purple-300',
     symbolLabel: '⬟',
   },
 };
@@ -748,7 +762,8 @@ export interface PhysicalAgentFlowsheetEntry {
     | 'Shortwave'
     | 'DryNeedling'
     | 'Shockwave'
-    | 'Traction';
+    | 'Traction'
+    | 'Other';
   modalityAr: string;
   site: string;
   parameters: string;

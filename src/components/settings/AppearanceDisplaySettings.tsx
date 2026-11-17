@@ -105,6 +105,9 @@ export const AppearanceDisplaySettings: React.FC = () => {
     setScanningSystemFonts(true);
     try {
       await scanSystemFonts();
+    } catch (err) {
+      // Local Font Access API not supported on Android WebView / some browsers — fail silently
+      console.warn('[AppearanceDisplaySettings] scanSystemFonts failed (API likely unsupported):', err);
     } finally {
       setScanningSystemFonts(false);
     }

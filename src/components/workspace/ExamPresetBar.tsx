@@ -70,7 +70,7 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
     } catch {
       // ignore
     }
-    return Boolean(episodeStore.appliedPresetIds && episodeStore.appliedPresetIds.length > 0);
+    return true;
   });
 
   const toggleCollapse = () => {
@@ -220,43 +220,65 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
     return (
       <div
         data-testid="exam-preset-bar"
-        className="px-3 py-2 rounded-xl bg-card border border-card-line flex flex-wrap items-center justify-between gap-2 transition-all shadow-2xs"
+        className="px-3 py-2 rounded-xl bg-card shadow-2xs border border-card-line/60 flex flex-wrap items-center justify-between gap-2 transition-all"
       >
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <Activity className="size-3.5 text-primary shrink-0" />
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground-1 min-w-0">
-            <span className="font-bold text-foreground">
-              {bi('ملخص الفحص السريري:', 'Clinical Exam Summary:', 'کورتەی پشکنینی کلینیکی:')}
-            </span>
-            {primaryAppliedPreset ? (
-              <span className="font-semibold text-primary">
-                {getTitle(primaryAppliedPreset)}
-              </span>
-            ) : (
-              <span>{bi('لم يُحدد قالب فحص بعد', 'No exam preset selected', 'هیچ تێمپلەیتێکی پشکنین دیاری نەکراوە')}</span>
-            )}
-            {episodeStore.chiefComplaint ? (
-              <span className="hidden sm:inline text-muted-foreground-1 truncate max-w-xs">
-                · {episodeStore.chiefComplaint}
-              </span>
-            ) : null}
-            {typeof episodeStore.painOnActivityNrs === 'number' && (
-              <span className="font-mono text-muted-foreground-1">
-                · NPRS: {episodeStore.painOnActivityNrs}/10
-              </span>
-            )}
+        <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground shrink-0">
+            <Sparkles className="size-3.5 text-primary shrink-0" />
+            <span>{bi('قالب الفحص:', 'Exam Preset:', 'تێمپلەیت:')}</span>
           </div>
+
+          <select
+            aria-label={bi('اختر قالب الفحص الإقليمي', 'Choose regional exam preset', 'هەڵبژاردنی تێمپلەیتی پشکنین')}
+            value={primaryAppliedPreset?.id || ''}
+            onChange={(e) => {
+              const target = mergedPresets.find((p) => p.id === e.target.value);
+              if (!target) return;
+              const updated = applyExamPresetToEpisodeStore(episodeStore, target);
+              setLastAppliedPreset(target);
+              setShowAllRegions(false);
+              onApplyStore(updated, target);
+            }}
+            className="min-h-[34px] py-1 px-2.5 rounded-lg text-xs font-semibold bg-surface border border-transparent hover:border-line-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 max-w-full sm:max-w-[260px] cursor-pointer"
+          >
+            <option value="">
+              {bi(`اختر منطقة (${mergedPresets.length})...`, `Select region (${mergedPresets.length})...`, `ناوچە هەڵبژێرە (${mergedPresets.length})...`)}
+            </option>
+            {mergedPresets.map((preset) => (
+              <option key={preset.id} value={preset.id}>
+                {getTitle(preset)}
+              </option>
+            ))}
+          </select>
+
+          {primaryAppliedPreset && (
+            <span className="hidden md:inline-flex items-center gap-1 text-xs font-semibold text-primary">
+              <Check className="size-3.5 shrink-0" />
+              <span>{getTitle(primaryAppliedPreset)}</span>
+            </span>
+          )}
         </div>
 
-        <button
-          type="button"
-          onClick={toggleCollapse}
-          data-testid="expand-exam-preset-btn"
-          className="min-h-[36px] px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-xs font-semibold text-foreground inline-flex items-center gap-1 cursor-pointer shrink-0"
-        >
-          <span>{bi('توسيع القوالب', 'Expand Presets', 'فراوانکردنی تێمپلەیتەکان')}</span>
-          <ChevronDown className="size-3 text-muted-foreground-1" />
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => handleOpenCustomize()}
+            aria-label={bi('تخصيص القوالب', 'Customize Presets', 'تایبەتکردنی تێمپلەیتەکان')}
+            className="min-h-[32px] px-2 py-1 rounded-lg hover:bg-layer-hover text-xs font-semibold text-muted-foreground-1 hover:text-foreground inline-flex items-center gap-1 cursor-pointer"
+          >
+            <Sliders className="size-3.5 text-primary" />
+            <span className="hidden sm:inline">{bi('تخصيص', 'Customize', 'تایبەتکردن')}</span>
+          </button>
+          <button
+            type="button"
+            onClick={toggleCollapse}
+            data-testid="expand-exam-preset-btn"
+            className="min-h-[32px] px-2 py-1 rounded-lg bg-surface hover:bg-layer-hover text-xs font-semibold text-foreground inline-flex items-center gap-1 cursor-pointer"
+          >
+            <span>{bi('القوالب', 'Presets', 'تێمپلەیتەکان')}</span>
+            <ChevronDown className="size-3.5 text-muted-foreground-1" />
+          </button>
+        </div>
       </div>
     );
   }
@@ -264,7 +286,7 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
   return (
     <div
       data-testid="exam-preset-bar"
-      className="px-3 py-2 rounded-xl bg-card border border-card-line space-y-2 shadow-2xs"
+      className="px-3 py-2.5 rounded-xl bg-card shadow-2xs border border-card-line/60 space-y-2"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">

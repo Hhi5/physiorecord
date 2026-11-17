@@ -32,7 +32,40 @@ import {
   Download,
   Printer,
   Fingerprint,
+  Globe,
 } from 'lucide-react';
+
+const MOTIVATIONAL_CLINICAL_QUOTES: ReadonlyArray<{
+  ar: string;
+  en: string;
+  ckb: string;
+}> = [
+  {
+    ar: 'كل خطوة علاجية تقرّب مريضك من حركته الطبيعية',
+    en: 'Every session brings someone closer to moving freely',
+    ckb: 'هەر هەنگاوێکی چارەسەر نەخۆشەکەت نزیکتر دەکاتەوە لە جووڵەی سروشتی',
+  },
+  {
+    ar: 'بلمسة رحيمة وعلم دقيق نصنع فرقاً في حياة الناس',
+    en: 'Compassion and precision heal more than muscle alone',
+    ckb: 'بە دەستێکی میهرەبان و زانستی ورد جیاوازی لە ژیانی خەڵکدا دروست دەکەین',
+  },
+  {
+    ar: 'تقدّم صغير اليوم يصنع تعافياً يدوم لسنوات',
+    en: 'Small daily progress builds lifelong recovery',
+    ckb: 'پێشکەوتنێکی بچووکی ئەمڕۆ چاکبوونەوەیەکی هەمیشەیی دروست دەکات',
+  },
+  {
+    ar: 'العناية الجيدة تبدأ دائماً بالإنصات الهادئ للمريض',
+    en: 'Great care begins with listening to every movement',
+    ckb: 'چاودێری باش هەمیشە بە گوێگرتنی هێمنانە لە نەخۆش دەست پێدەکات',
+  },
+  {
+    ar: 'يداك الثابتتان تعيدان الأمل خطوةً بعد خطوة',
+    en: 'Steady care restores confidence step by step',
+    ckb: 'دەستە بەهێزەکانت هیوا و متمانە هەنگاو بە هەنگاو دەگەڕێننەوە',
+  },
+];
 
 export const LockScreen: React.FC = () => {
   const {
@@ -48,8 +81,24 @@ export const LockScreen: React.FC = () => {
     resetPasswordWithRecovery,
     wipeDatabase,
   } = useVault();
-  const { isRtl, bi } = useLanguage();
+  const { language, isRtl, bi } = useLanguage();
   const { theme, toggleTheme } = useTheme();
+
+  const [motivationalQuote] = useState(() => {
+    try {
+      const prevIdxRaw = sessionStorage.getItem('physiorecord_quote_idx');
+      const prevIdx = prevIdxRaw !== null ? Number(prevIdxRaw) : -1;
+      const candidates = MOTIVATIONAL_CLINICAL_QUOTES.map((_, idx) => idx).filter(
+        (idx) => idx !== prevIdx
+      );
+      const pickedIdx =
+        candidates[Math.floor(Math.random() * candidates.length)] ?? 0;
+      sessionStorage.setItem('physiorecord_quote_idx', String(pickedIdx));
+      return MOTIVATIONAL_CLINICAL_QUOTES[pickedIdx];
+    } catch {
+      return MOTIVATIONAL_CLINICAL_QUOTES[0];
+    }
+  });
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -310,50 +359,157 @@ export const LockScreen: React.FC = () => {
 
   const displayError = localError;
 
+  const renderBannerArt = () => (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none"
+      style={{
+        background:
+          theme === 'dark'
+            ? 'linear-gradient(145deg, var(--primary-950) 0%, var(--primary-800) 58%, var(--primary-700) 100%)'
+            : 'linear-gradient(145deg, var(--primary-700) 0%, var(--primary-600) 55%, var(--primary-500) 100%)',
+      }}
+    >
+      <svg
+        viewBox="0 0 1200 800"
+        preserveAspectRatio="xMidYMid slice"
+        className="w-full h-full"
+        fill="none"
+      >
+        {/* Asymmetric Diagonal Ribbon Wave across top */}
+        <path
+          d="M-60 40 C 220 -20, 420 180, 780 95 C 980 48, 1140 12, 1260 -30 L 1260 220 C 1030 280, 790 160, 440 250 C 190 315, 30 210, -60 150 Z"
+          fill="#ffffff"
+          fillOpacity="0.07"
+        />
+        {/* Warm Saffron Crescent Sweep (bottom-start corner) */}
+        <path
+          d="M-60 820 C 40 540, 260 490, 440 650 C 540 738, 600 830, 600 830 Z"
+          fill="#e7b949"
+          fillOpacity="0.72"
+        />
+        {/* Soft Coral Organic Pill (end side) */}
+        <rect
+          x="940"
+          y="390"
+          width="320"
+          height="320"
+          rx="116"
+          transform="rotate(-18 940 390)"
+          fill="#eb9474"
+          fillOpacity="0.58"
+        />
+        {/* Translucent Sage Mint Wave (bottom-end) */}
+        <path
+          d="M620 820 C 710 590, 940 560, 1260 660 L 1260 820 Z"
+          fill="var(--primary-300)"
+          fillOpacity="0.55"
+        />
+        {/* Architectural Dashed & Solid Rings */}
+        <circle
+          cx="155"
+          cy="118"
+          r="112"
+          stroke="#ffffff"
+          strokeOpacity="0.14"
+          strokeWidth="2"
+          strokeDasharray="10 12"
+        />
+        <circle
+          cx="1040"
+          cy="110"
+          r="64"
+          fill="#ffffff"
+          fillOpacity="0.08"
+        />
+      </svg>
+    </div>
+  );
+
+  const renderBottomIconBar = () => (
+    <footer className="w-full max-w-sm mx-auto px-2 pt-5 pb-1 flex items-center justify-center gap-4">
+      <button
+        type="button"
+        onClick={toggleTheme}
+        aria-label={
+          theme === 'dark'
+            ? bi('الوضع النهاري', 'Light Mode', 'دۆخی ڕۆژ')
+            : bi('الوضع الليلي', 'Dark Mode', 'دۆخی شەو')
+        }
+        title={
+          theme === 'dark'
+            ? bi('الوضع النهاري', 'Light Mode', 'دۆخی ڕۆژ')
+            : bi('الوضع الليلي', 'Dark Mode', 'دۆخی شەو')
+        }
+        className="min-w-[36px] min-h-[36px] p-2 rounded-full bg-transparent border-0 text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center transition-colors cursor-pointer"
+      >
+        {theme === 'dark' ? (
+          <Sun className="size-4 text-amber-400" />
+        ) : (
+          <Moon className="size-4" />
+        )}
+      </button>
+
+      <span className="h-3.5 w-px bg-card-divider" aria-hidden="true" />
+
+      <LanguageSwitcher compact variant="borderless" />
+    </footer>
+  );
+
   // Step 2 of Setup: Display One-Time Emergency Recovery Key
   if (generatedRecoveryKey) {
     return (
-      <main
-        className="min-h-screen bg-transparent flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8"
+      <div
+        className="min-h-dvh w-full text-foreground flex flex-col relative overflow-x-hidden md:px-6"
         dir={isRtl ? 'rtl' : 'ltr'}
       >
-        <div className="sm:mx-auto sm:w-full sm:max-w-lg">
-          <div className="pr-surface-2 py-6 px-6 space-y-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                <Key className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                  {bi('خطوة الأمان 2 من 2', 'Security Step 2 of 2', 'هەنگاوی سەلامەتی ٢ لە ٢')}
-                </span>
-                <h1 className="text-base font-extrabold text-foreground mt-0.5">
-                  {bi(
-                    'مفتاح الاسترداد الطارئ للخزينة',
-                    'Emergency Vault Recovery Key',
-                    'کلیلی فریاگوزاری گەڕاندنەوەی خەزێنە'
-                  )}
-                </h1>
-              </div>
-            </div>
+        {renderBannerArt()}
 
-            <div className="p-3.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
+        <div className="pr-auth-spacer" aria-hidden="true" />
+
+        {/* Motivational / Step Header sitting on the artistic backdrop */}
+        <header className="relative z-10 px-6 pt-9 pb-7 md:pt-4 md:pb-5 text-center shrink-0">
+          <div className="max-w-md mx-auto space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 text-white/90 text-xs font-semibold">
+              <Key className="size-3.5" />
+              <span>{bi('خطوة الأمان 2 من 2', 'Security Step 2 of 2', 'هەنگاوی سەلامەتی ٢ لە ٢')}</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
               {bi(
-                'انسخ هذا المفتاح أو حمّله واحتفظ به في مكان آمن خارج المتصفح. في حال نسيان كلمة المرور، يُعد هذا المفتاح الوسيلة الوحيدة لاستعادة سجلات المرضى.',
-                'Copy, download, or print this key and store it outside your browser. If you forget your password, this key is the only way to recover your records.',
-                'ئەم کلیلە کۆپی بکە یان دایبەزێنە و لە شوێنێکی سەلامەت لە دەرەوەی وێبگەڕەکە هەڵیبگرە. ئەگەر وشەی نهێنییەکەت لەبیرچووەوە، ئەم کلیلە تاکە ڕێگایە بۆ گەڕاندنەوەی تۆمارەکانی نەخۆش.'
+                'مفتاح الاسترداد الطارئ',
+                'Emergency Recovery Key',
+                'کلیلی فریاگوزاری گەڕاندنەوە'
               )}
+            </h1>
+          </div>
+        </header>
+
+        {/* Fluid Morphing Sheet (Edge-to-edge bottom sheet on mobile -> Centered floating card on tablet/desktop) */}
+        <main className="pr-auth-sheet pr-auth-sheet--wide relative z-10 mx-auto bg-card px-5 sm:px-8 pt-7 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] md:py-7 flex flex-col justify-between">
+          <div className="w-full space-y-4">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center gap-1.5 text-primary text-xs font-bold tracking-wide mb-1">
+                <Activity className="size-3.5" strokeWidth={2.4} />
+                <span>PhysioRecord</span>
+              </div>
+              <p className="text-xs text-muted-foreground-1 leading-relaxed">
+                {bi(
+                  'انسخ هذا المفتاح أو حمّله واحتفظ به خارج المتصفح — هو الوسيلة الوحيدة لاستعادة سجلاتك عند نسيان كلمة المرور.',
+                  'Save this key outside your browser. It is the only way to recover your records if you forget your password.',
+                  'ئەم کلیلە لە دەرەوەی وێبگەڕ هەڵبگرە — تاکە ڕێگایە بۆ گەڕاندنەوەی تۆمارەکان لە کاتی لەبیرچوونەوەی وشەی نهێنی.'
+                )}
+              </p>
             </div>
 
-            {/* Recovery Key Grouped Blocks (Never Orphan-Wraps) */}
+            {/* Recovery Key Grouped Blocks */}
             <div
               dir="ltr"
-              className="p-4 rounded-xl bg-muted border border-layer-line grid grid-cols-2 sm:grid-cols-4 gap-2 text-center select-all"
+              className="p-3.5 rounded-2xl bg-surface grid grid-cols-2 sm:grid-cols-4 gap-2 text-center select-all"
             >
               {recoveryGroups.map((grp, idx) => (
                 <div
                   key={idx}
-                  className="py-2 px-2 rounded-lg bg-card border border-card-line font-mono text-xs sm:text-sm font-bold text-primary whitespace-nowrap flex items-center justify-center gap-1.5"
+                  className="py-2 px-2 rounded-xl bg-card font-mono text-xs font-bold text-primary whitespace-nowrap flex items-center justify-center gap-1 shadow-2xs"
                 >
                   <span className="text-xs text-muted-foreground-1 select-none">
                     #{idx + 1}
@@ -364,16 +520,16 @@ export const LockScreen: React.FC = () => {
             </div>
 
             {/* Action Buttons: Copy / Download .txt / Print */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={handleCopyRecoveryKey}
-                className="py-2 px-3 rounded-xl bg-layer hover:bg-layer-hover text-foreground border border-layer-line text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                className="py-2.5 px-3 rounded-xl bg-surface hover:bg-layer-hover text-foreground text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
               >
                 {copiedRecoveryKey ? (
                   <>
                     <Check className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>{bi('تم النسخ (يُمسح بعد 60ث)', 'Copied (clears 60s)', 'کۆپی کرا (دوای ٦٠چ دەسڕدرێتەوە)')}</span>
+                    <span>{bi('تم النسخ', 'Copied', 'کۆپی کرا')}</span>
                   </>
                 ) : (
                   <>
@@ -386,7 +542,7 @@ export const LockScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={handleDownloadRecoveryKeyTxt}
-                className="py-2 px-3 rounded-xl bg-layer hover:bg-layer-hover text-foreground border border-layer-line text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                className="py-2.5 px-3 rounded-xl bg-surface hover:bg-layer-hover text-foreground text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
               >
                 <Download className="w-3.5 h-3.5 text-primary" />
                 <span>{bi('تحميل', 'Download', 'داگرتن')} <bdi dir="ltr">.txt</bdi></span>
@@ -395,7 +551,7 @@ export const LockScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={handlePrintRecoveryKey}
-                className="py-2 px-3 rounded-xl bg-layer hover:bg-layer-hover text-foreground border border-layer-line text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                className="py-2.5 px-3 rounded-xl bg-surface hover:bg-layer-hover text-foreground text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
               >
                 <Printer className="w-3.5 h-3.5 text-primary" />
                 <span>{bi('طباعة', 'Print', 'چاپکردن')}</span>
@@ -403,12 +559,12 @@ export const LockScreen: React.FC = () => {
             </div>
 
             {/* Re-type Random Group Verification */}
-            <div className="p-3.5 rounded-xl bg-surface border border-line-2 space-y-2">
-              <label htmlFor="challenge-group-input" className="block text-xs font-bold text-foreground">
+            <div className="space-y-1.5">
+              <label htmlFor="challenge-group-input" className="block text-xs font-semibold text-foreground text-center">
                 {bi(
-                  `لتأكيد حفظك للمفتاح، أعد كتابة المجموعة رقم #${challengeGroupIndex + 1}:`,
-                  `To verify backup, re-type Group #${challengeGroupIndex + 1}:`,
-                  `بۆ دڵنیاکردنەوەی هەڵگرتنی کلیلەکە، کۆمەڵەی ژمارە #${challengeGroupIndex + 1} دووبارە بنووسەرەوە:`
+                  `لتأكيد الحفظ، أعد كتابة المجموعة رقم #${challengeGroupIndex + 1}:`,
+                  `Verify backup — type Group #${challengeGroupIndex + 1}:`,
+                  `بۆ دڵنیاکردنەوە، کۆمەڵەی ژمارە #${challengeGroupIndex + 1} بنووسەرەوە:`
                 )}
               </label>
               <input
@@ -418,16 +574,16 @@ export const LockScreen: React.FC = () => {
                 value={challengeGroupInput}
                 onChange={(e) => setChallengeGroupInput(e.target.value)}
                 placeholder={expectedChallengeGroup}
-                className="w-full px-3 py-2 rounded-lg bg-card border border-layer-line font-mono text-sm font-bold text-center uppercase tracking-widest text-foreground placeholder:text-muted-foreground-2 placeholder:opacity-80 focus:outline-none focus:border-primary"
+                className="w-full px-4 py-3 rounded-2xl bg-surface border border-card-line/50 focus:border-primary/45 focus:bg-layer font-mono text-sm font-bold text-center uppercase tracking-widest text-foreground placeholder:text-muted-foreground-1/75 focus:outline-none transition-all"
               />
             </div>
 
-            <label className="flex items-start gap-2.5 p-3 rounded-xl bg-muted/60 border border-layer-line cursor-pointer">
+            <label className="flex items-start gap-2.5 p-3 rounded-2xl bg-surface/70 cursor-pointer">
               <input
                 type="checkbox"
                 checked={confirmedSavedRecoveryKey}
                 onChange={(e) => setConfirmedSavedRecoveryKey(e.target.checked)}
-                className="w-4 h-4 mt-0.5 rounded text-primary focus:ring-primary"
+                className="w-4 h-4 mt-0.5 rounded accent-primary"
               />
               <span className="text-xs font-semibold text-foreground leading-relaxed">
                 {bi(
@@ -445,7 +601,7 @@ export const LockScreen: React.FC = () => {
                 setGeneratedRecoveryKey(null);
                 completeSetup();
               }}
-              className="w-full py-2.5 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-layer-line disabled:shadow-none disabled:cursor-not-allowed font-bold text-xs shadow-sm transition-all cursor-pointer"
+              className="w-full h-12 px-5 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground disabled:opacity-45 disabled:cursor-not-allowed font-bold text-sm transition-all cursor-pointer"
             >
               {bi(
                 'الدخول إلى مساحة العمل السريرية',
@@ -454,108 +610,104 @@ export const LockScreen: React.FC = () => {
               )}
             </button>
           </div>
-        </div>
-      </main>
+
+          {renderBottomIconBar()}
+        </main>
+
+        <div className="pr-auth-spacer" aria-hidden="true" />
+      </div>
     );
   }
 
   return (
     <div
-      className="min-h-screen bg-transparent text-foreground flex flex-col justify-between relative overflow-hidden transition-colors"
+      className="min-h-dvh w-full text-foreground flex flex-col relative overflow-x-hidden md:px-6"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
-      {/* Top Minimal Utility Bar */}
-      <header className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between z-10">
-        <div className="flex items-center gap-2.5">
-          <div className="pr-brand-mark">
-            <Activity className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="font-extrabold text-sm text-foreground tracking-tight block">
-              PhysioRecord
-            </span>
-            <p className="text-xs text-muted-foreground-1">
-              {bi(
-                'نظام السجلات الصحية للعلاج الطبيعي',
-                'Physical Therapy Clinical EHR',
-                'سیستەمی تۆماری تەندروستی بۆ چارەسەری سروشتی'
-              )}
-            </p>
-          </div>
-        </div>
+      {/* Full-Viewport Geometric Art Backdrop (stays visible behind the sheet & floating card) */}
+      {renderBannerArt()}
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label={
-              theme === 'dark'
-                ? bi('الوضع النهاري', 'Light Mode', 'دۆخی ڕۆژ')
-                : bi('الوضع الليلي', 'Dark Mode', 'دۆخی شەو')
-            }
-            className="p-2 rounded-xl bg-layer border border-layer-line text-foreground hover:bg-layer-hover transition-colors cursor-pointer shadow-2xs"
-            title={
-              theme === 'dark'
-                ? bi('الوضع النهاري', 'Light Mode', 'دۆخی ڕۆژ')
-                : bi('الوضع الليلي', 'Dark Mode', 'دۆخی شەو')
-            }
+      <div className="pr-auth-spacer" aria-hidden="true" />
+
+      {/* Handwritten Motivational Quote over the Artistic Backdrop */}
+      <header className="relative z-10 px-6 pt-12 pb-8 md:pt-4 md:pb-6 flex flex-col items-center justify-center text-center shrink-0">
+        <blockquote className="max-w-[300px] sm:max-w-md mx-auto space-y-2.5">
+          <p
+            data-testid="lock-motivational-quote"
+            className="text-xl sm:text-2xl font-medium text-white leading-relaxed drop-shadow-[0_1px_10px_rgba(0,0,0,0.22)]"
+            style={{
+              fontFamily:
+                language === 'en'
+                  ? "'Segoe Print', 'Bradley Hand', 'Apple Chancery', cursive"
+                  : "'Segoe Print', 'Traditional Arabic', 'Amiri', 'IBM Plex Sans Arabic', cursive",
+              fontStyle: language === 'en' ? 'italic' : 'normal',
+            }}
           >
-            {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-amber-400" />
-            ) : (
-              <Moon className="w-4 h-4 text-slate-600" />
-            )}
-          </button>
-
-          <LanguageSwitcher compact />
-        </div>
+            {language === 'en'
+              ? `“${motivationalQuote.en}”`
+              : language === 'ckb'
+                ? `«${motivationalQuote.ckb}»`
+                : `«${motivationalQuote.ar}»`}
+          </p>
+          <svg
+            viewBox="0 0 140 12"
+            className="w-24 h-2.5 mx-auto text-amber-200/85"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M4 8 C 42 2, 98 2, 136 7"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+            />
+          </svg>
+        </blockquote>
       </header>
 
-      {/* Minimal Centered Card */}
-      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-6">
-        <div className="w-full max-w-md">
-          <div className="pr-surface-2 py-7 px-6 sm:px-8">
-            <div className="flex items-center gap-3 pb-5 mb-5 border-b border-card-divider">
-              <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-xs shrink-0">
-                {isSetup ? <ShieldCheck className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
-              </div>
-              <div>
-                <h1 className="text-base font-extrabold text-foreground">
-                  {isSetup
-                    ? bi(
-                        'إعداد كلمة المرور الرئيسية',
-                        'Create Master Vault Password',
-                        'ڕێکخستنی وشەی نهێنی سەرەکی'
-                      )
-                    : bi('فتح الخزينة السريرية', 'Unlock Clinical Vault', 'کردنەوەی خەزێنەی کلینیکی')}
-                </h1>
-                <p className="text-xs text-muted-foreground-1">
-                  {isSetup
-                    ? bi(
-                        'الخطوة 1 من 2: تعيين كلمة مرور الخزينة',
-                        'Step 1 of 2: Set master password',
-                        'هەنگاوی ١ لە ٢: دیاریکردنی وشەی نهێنی خەزێنە'
-                      )
-                    : bi(
-                        'أدخل كلمة المرور للوصول إلى سجلات المرضى',
-                        'Enter your password to access patient records',
-                        'وشەی نهێنی بنووسە بۆ گەیشتن بە تۆمارەکانی نەخۆش'
-                      )}
-                </p>
-              </div>
+      {/* Fluid Morphing Sheet (Edge-to-edge full bottom sheet on phone -> Smooth motion detach into centered card on tablet/desktop) */}
+      <main className="pr-auth-sheet relative z-10 mx-auto bg-card px-6 sm:px-9 pt-8 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] md:py-8 flex flex-col justify-between">
+        <div className="w-full max-w-sm mx-auto">
+          <div className="text-center space-y-1.5 mb-6">
+            <div className="inline-flex items-center justify-center gap-1.5 text-primary text-xs font-bold tracking-wide">
+              <Activity className="size-4" strokeWidth={2.4} />
+              <span>PhysioRecord</span>
             </div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-foreground leading-tight tracking-tight">
+              {isSetup
+                ? bi(
+                    'إنشاء الخزينة المشفرة',
+                    'Create your vault',
+                    'دروستکردنی خەزێنە'
+                  )
+                : bi('فتح الخزينة السريرية', 'Unlock your vault', 'کردنەوەی خەزێنە')}
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground-1 leading-relaxed">
+              {isSetup
+                ? bi(
+                    'الخطوة 1 من 2: عيّن كلمة مرور رئيسية لحماية سجلات المرضى',
+                    'Step 1 of 2: Set a master password for patient records',
+                    'هەنگاوی ١ لە ٢: وشەی نهێنی سەرەکی دابنێ بۆ پاراستنی تۆمارەکان'
+                  )
+                : bi(
+                    'أدخل كلمة المرور للوصول إلى السجلات المشفرة',
+                    'Enter your password to access encrypted records',
+                    'وشەی نهێنی بنووسە بۆ کردنەوەی تۆمارە نهێنیکراوەکان'
+                  )}
+            </p>
+          </div>
 
-            {displayError && (
-              <div className="mb-5 p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 flex items-start gap-2.5 text-rose-800 dark:text-rose-200 text-xs">
-                <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-                <span>{displayError}</span>
-              </div>
-            )}
+          {displayError && (
+            <div className="mb-4 p-3 rounded-2xl bg-surface/75 flex items-start gap-2 text-rose-700 dark:text-rose-300 text-xs font-medium">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{displayError}</span>
+            </div>
+          )}
 
-            {schemaDowngradeError ? (
+          {schemaDowngradeError ? (
               <div
                 data-testid="schema-downgrade-blocked-card"
-                className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/35 text-xs space-y-2.5 text-foreground"
+                className="p-4 rounded-2xl bg-surface/75 text-xs space-y-2.5 text-foreground"
               >
                 <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300">
                   <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
@@ -569,34 +721,24 @@ export const LockScreen: React.FC = () => {
                 </div>
                 <p className="leading-relaxed text-muted-foreground-1">
                   {bi(
-                    'تم ترقية قاعدة البيانات المحلية على هذا الجهاز بواسطة إصدار أحدث من PhysioRecord. لحماية سجلات المرضى من التلف أو الاستبدال، تم إيقاف فتح القاعدة بهذا الإصدار القديم. يرجى تثبيت أحدث إصدار من التطبيق للمتابعة بأمان.',
-                    'The local database on this device was upgraded by a newer version of PhysioRecord. To protect patient records from corruption or accidental overwrite, opening with this older version is blocked. Please install the latest PhysioRecord release to continue safely.',
-                    'داتابەیسی ناوخۆیی لەسەر ئەم ئامێرە لەلایەن وەشانێکی نوێتری PhysioRecord نوێکراوەتەوە. بۆ پاراستنی تۆمارەکانی نەخۆش، تکایە نوێترین وەشانی بەرنامەکە دابەزێنە.'
+                    'تم ترقية قاعدة البيانات المحلية على هذا الجهاز بواسطة إصدار أحدث من PhysioRecord. يرجى تثبيت أحدث إصدار للمتابعة بأمان.',
+                    'The local database on this device was upgraded by a newer version of PhysioRecord. Please install the latest release to continue safely.',
+                    'داتابەیسی ناوخۆیی لەلایەن وەشانێکی نوێترەوە نوێکراوەتەوە. تکایە نوێترین وەشان دابەزێنە.'
                   )}
                 </p>
-                <p className="font-mono text-2xs text-muted-foreground-2 break-all" dir="ltr">
+                <p className="font-mono text-xs text-muted-foreground-2 break-all" dir="ltr">
                   {schemaDowngradeError.message}
                 </p>
               </div>
             ) : (
-            <form className="space-y-4" onSubmit={handleSubmit}>
+            <form className="space-y-3" onSubmit={handleSubmit}>
               <div>
-                <label
-                  htmlFor="password"
-                  className="block text-xs font-bold text-foreground mb-1.5"
-                >
+                <label htmlFor="password" className="sr-only">
                   {isSetup
-                    ? bi(
-                        'كلمة المرور الرئيسية الجديدة',
-                        'New Master Password',
-                        'وشەی نهێنی سەرەکی نوێ'
-                      )
+                    ? bi('كلمة المرور الرئيسية الجديدة', 'New Master Password', 'وشەی نهێنی سەرەکی نوێ')
                     : bi('كلمة المرور', 'Password', 'وشەی نهێنی')}
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 start-0 ps-3.5 flex items-center pointer-events-none text-muted-foreground-1">
-                    <KeyRound className="h-4 w-4" />
-                  </div>
+                <div className="pr-pill-input-wrap rounded-2xl bg-surface flex items-center overflow-hidden border border-card-line/50 focus-within:border-primary/45 focus-within:bg-layer transition-all">
                   <input
                     id="password"
                     name="password"
@@ -608,14 +750,15 @@ export const LockScreen: React.FC = () => {
                     placeholder={
                       isSetup
                         ? bi(
-                            'أدخل 10 خانات على الأقل...',
-                            'Enter at least 10 characters...',
-                            'لانی کەم ١٠ پیت بنووسە...'
+                            'كلمة المرور (10 خانات فأكثر)',
+                            'Password (10+ characters)',
+                            'وشەی نهێنی (١٠ پیت یان زیاتر)'
                           )
-                        : '••••••••••'
+                        : bi('كلمة المرور', 'Password', 'وشەی نهێنی')
                     }
-                    className="block w-full ps-10 pe-10 py-2.5 border border-layer-line rounded-xl text-foreground bg-layer placeholder:text-muted-foreground-1 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary text-sm transition-all"
+                    className="pr-input-bare flex-1 min-w-0 px-4 py-3.5 text-sm text-foreground placeholder:text-muted-foreground-1"
                   />
+                  <span className="w-px h-5 bg-card-divider shrink-0" aria-hidden="true" />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -625,7 +768,7 @@ export const LockScreen: React.FC = () => {
                         : bi('إظهار كلمة المرور', 'Show password', 'پیشاندانی وشەی نهێنی')
                     }
                     aria-pressed={showPassword}
-                    className="absolute inset-y-0 end-0 pe-3 flex items-center text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                    className="pr-eye-bare px-3.5 py-3.5 rounded-none text-muted-foreground-1 hover:text-foreground cursor-pointer flex items-center justify-center shrink-0 focus-visible:bg-layer-hover"
                   >
                     {showPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -636,30 +779,10 @@ export const LockScreen: React.FC = () => {
                 </div>
               </div>
 
-              {/* Setup Password Strength Bar & Live Checklist */}
-              {isSetup && (
-                <div className="space-y-2.5 p-3 rounded-xl bg-surface border border-line-2">
-                  <div className="flex items-center justify-between text-xs font-semibold">
-                    <span className="text-muted-foreground-1">
-                      {bi('قوة كلمة المرور:', 'Password strength:', 'هێزی وشەی نهێنی:')}
-                    </span>
-                    <span
-                      className={
-                        pwStrengthScore >= 3
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : pwStrengthScore === 2
-                            ? 'text-amber-600 dark:text-amber-400'
-                            : 'text-rose-600 dark:text-rose-400'
-                      }
-                    >
-                      {pwStrengthScore >= 3
-                        ? bi('قوية', 'Strong', 'بەهێز')
-                        : pwStrengthScore === 2
-                          ? bi('متوسطة', 'Fair', 'مامناوەند')
-                          : bi('ضعيفة', 'Weak', 'لاواز')}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-1.5 h-1.5" dir="ltr">
+              {/* Minimal Setup Password Strength Indicator */}
+              {isSetup && password.length > 0 && (
+                <div className="px-1 space-y-1.5">
+                  <div className="grid grid-cols-4 gap-1.5 h-1" dir="ltr">
                     {[1, 2, 3, 4].map((step) => (
                       <div
                         key={step}
@@ -675,80 +798,39 @@ export const LockScreen: React.FC = () => {
                       />
                     ))}
                   </div>
-                  <ul className="space-y-1 text-xs">
-                    <li
-                      className={`flex items-center gap-1.5 ${
-                        pwHasMinLen
-                          ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
-                          : 'text-muted-foreground-1'
+                  <div className="flex items-center justify-between text-xs text-muted-foreground-1">
+                    <span>
+                      {!pwHasMinLen
+                        ? bi('10 خانات على الأقل', 'At least 10 characters', 'لانی کەم ١٠ پیت')
+                        : !pwHasLetter || !pwHasNumberOrSymbol
+                          ? bi('أضف حرفاً ورقماً أو رمزاً', 'Mix letters & numbers/symbols', 'پیت و ژمارە تێکەڵ بکە')
+                          : bi('كلمة مرور صالحة وجاهزة', 'Ready & valid password', 'وشەی نهێنی گونجاوە')}
+                    </span>
+                    <span
+                      className={`font-semibold ${
+                        pwStrengthScore >= 3
+                          ? 'text-emerald-700 dark:text-emerald-400'
+                          : pwStrengthScore === 2
+                            ? 'text-amber-700 dark:text-amber-400'
+                            : 'text-rose-700 dark:text-rose-400'
                       }`}
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                      <span>
-                        {bi(
-                          '10 خانات على الأقل (إلزامي)',
-                          'At least 10 characters (required)',
-                          'لانی کەم ١٠ پیت (پێویستە)'
-                        )}
-                      </span>
-                    </li>
-                    <li
-                      className={`flex items-center gap-1.5 ${
-                        pwHasLetter
-                          ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
-                          : 'text-muted-foreground-1'
-                      }`}
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                      <span>{bi('تحتوي على أحرف', 'Contains letters', 'پیت لەخۆدەگرێت')}</span>
-                    </li>
-                    <li
-                      className={`flex items-center gap-1.5 ${
-                        pwHasNumberOrSymbol
-                          ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
-                          : 'text-muted-foreground-1'
-                      }`}
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                      <span>
-                        {bi(
-                          'تحتوي على رقم أو رمز',
-                          'Contains a number or symbol',
-                          'ژمارە یان هێمایەک لەخۆدەگرێت'
-                        )}
-                      </span>
-                    </li>
-                  </ul>
+                      {pwStrengthScore >= 3
+                        ? bi('قوية', 'Strong', 'بەهێز')
+                        : pwStrengthScore === 2
+                          ? bi('متوسطة', 'Fair', 'مامناوەند')
+                          : bi('ضعيفة', 'Weak', 'لاواز')}
+                    </span>
+                  </div>
                 </div>
               )}
 
               {isSetup && (
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label
-                      htmlFor="confirmPassword"
-                      className="block text-xs font-bold text-foreground"
-                    >
-                      {bi('تأكيد كلمة المرور', 'Confirm Password', 'دڵنیاکردنەوەی وشەی نهێنی')}
-                    </label>
-                    {confirmPassword.length > 0 && (
-                      <span
-                        className={`text-xs font-semibold ${
-                          pwMatches
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-rose-600 dark:text-rose-400'
-                        }`}
-                      >
-                        {pwMatches
-                          ? bi('متطابقتان ✓', 'Passwords match ✓', 'هاوتان ✓')
-                          : bi('غير متطابقتين', 'Do not match', 'وەک یەک نین')}
-                      </span>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 start-0 ps-3.5 flex items-center pointer-events-none text-muted-foreground-1">
-                      <CheckCircle2 className="h-4 w-4" />
-                    </div>
+                  <label htmlFor="confirmPassword" className="sr-only">
+                    {bi('تأكيد كلمة المرور', 'Confirm Password', 'دڵنیاکردنەوەی وشەی نهێنی')}
+                  </label>
+                  <div className="pr-pill-input-wrap rounded-2xl bg-surface flex items-center overflow-hidden border border-card-line/50 focus-within:border-primary/45 focus-within:bg-layer transition-all">
                     <input
                       id="confirmPassword"
                       name="confirmPassword"
@@ -758,40 +840,34 @@ export const LockScreen: React.FC = () => {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder={bi(
-                        'أعد كتابة كلمة المرور للتأكيد...',
-                        'Re-enter password...',
-                        'وشەی نهێنی دووبارە بنووسەرەوە...'
+                        'تأكيد كلمة المرور',
+                        'Confirm password',
+                        'دووبارەکردنەوەی وشەی نهێنی'
                       )}
-                      className="block w-full ps-10 pe-10 py-2.5 border border-layer-line rounded-xl text-foreground bg-layer placeholder:text-muted-foreground-1 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary text-sm transition-all"
+                      className="pr-input-bare flex-1 min-w-0 px-4 py-3.5 text-sm text-foreground placeholder:text-muted-foreground-1"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      aria-label={
-                        showPassword
-                          ? bi('إخفاء كلمة المرور', 'Hide password', 'شاردنەوەی وشەی نهێنی')
-                          : bi('إظهار كلمة المرور', 'Show password', 'پیشاندانی وشەی نهێنی')
-                      }
-                      aria-pressed={showPassword}
-                      className="absolute inset-y-0 end-0 pe-3 flex items-center text-muted-foreground-1 hover:text-foreground cursor-pointer"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
+                    {confirmPassword.length > 0 && (
+                      <span
+                        aria-label={pwMatches ? bi('متطابقتان', 'Matches') : bi('غير متطابقتين', 'Mismatch')}
+                        className={`pe-3.5 text-xs font-semibold shrink-0 ${
+                          pwMatches
+                            ? 'text-emerald-700 dark:text-emerald-400'
+                            : 'text-rose-700 dark:text-rose-400'
+                        }`}
+                      >
+                        {pwMatches ? '✓' : '×'}
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
 
-              <div className="pt-1">
+              <div className="pt-2">
                 <button
                   type="submit"
                   disabled={submitting || (isSetup && (!pwHasMinLen || !pwMatches))}
-                  className="w-full flex justify-center items-center gap-2 py-2.5 px-4 rounded-xl shadow-xs text-xs sm:text-sm font-bold text-primary-foreground bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-layer-line disabled:shadow-none disabled:cursor-not-allowed transition-all cursor-pointer"
+                  className="w-full h-12 px-5 rounded-full text-sm font-bold text-primary-foreground bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-45 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <Lock className="w-4 h-4" />
                   <span>
                     {submitting
                       ? bi(
@@ -801,16 +877,16 @@ export const LockScreen: React.FC = () => {
                         )
                       : isSetup
                         ? bi(
-                            'إنشاء الخزينة وتوليد مفتاح الاسترداد',
-                            'Create Vault & Generate Recovery Key',
-                            'دروستکردنی خەزێنە و کلیلی گەڕاندنەوە'
+                            'إنشاء الخزينة المشفرة',
+                            'Create Vault',
+                            'دروستکردنی خەزێنە'
                           )
-                        : bi('فتح القفل', 'Unlock', 'کردنەوەی قفڵ')}
+                        : bi('فتح الخزينة', 'Unlock', 'کردنەوەی قفڵ')}
                   </span>
                 </button>
 
                 {submitting && (
-                  <div className="mt-2.5 space-y-1" role="progressbar" aria-valuenow={kdfProgress} aria-valuemin={0} aria-valuemax={100}>
+                  <div className="mt-3 space-y-1" role="progressbar" aria-valuenow={kdfProgress} aria-valuemin={0} aria-valuemax={100}>
                     <div className="flex items-center justify-between text-xs text-muted-foreground-1">
                       <span>
                         {bi(
@@ -853,14 +929,14 @@ export const LockScreen: React.FC = () => {
                         setSubmitting(false);
                       }
                     }}
-                    className="mt-2.5 w-full flex justify-center items-center gap-2 py-2.5 px-4 rounded-xl border border-card-line bg-layer hover:bg-muted/60 text-xs font-bold text-foreground disabled:opacity-50 transition-all cursor-pointer"
+                    className="mt-2.5 w-full h-11 px-4 rounded-full bg-surface hover:bg-layer-hover text-xs font-semibold text-foreground disabled:opacity-50 transition-all cursor-pointer inline-flex items-center justify-center gap-2"
                   >
                     <Fingerprint className="w-4 h-4 text-primary" />
                     <span>
                       {bi(
-                        'فتح القفل بمفتاح المرور / البصمة',
-                        'Unlock with Passkey / Biometrics',
-                        'کردنەوەی قفڵ بە پەنجەمۆر / کلیلی تێپەڕبوون'
+                        'فتح بالبصمة / مفتاح المرور',
+                        'Unlock with Passkey',
+                        'کردنەوە بە پەنجەمۆر'
                       )}
                     </span>
                   </button>
@@ -869,36 +945,38 @@ export const LockScreen: React.FC = () => {
             </form>
             )}
 
-            {/* Recovery & Reset Options when Locked */}
-            {!isSetup && !schemaDowngradeError && (
-              <div className="mt-5 pt-4 border-t border-card-divider flex flex-wrap items-center justify-center gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLocalError(null);
-                    setShowRecoveryModal(true);
-                  }}
-                  className="text-primary hover:underline font-bold flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Key className="w-3.5 h-3.5" />
-                  <span>
-                    {bi('نسيت كلمة المرور؟', 'Forgot password?', 'وشەی نهێنیت لەبیرچووە؟')}
-                  </span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </main>
+            {/* Quiet Privacy Reassurance + Recovery Link */}
+            <div className="mt-6 text-center space-y-2.5">
+              <p className="text-xs text-muted-foreground-1 leading-relaxed">
+                {bi(
+                  'بياناتك مشفرة ومحفوظة على هذا الجهاز فقط',
+                  'Your clinical records remain encrypted on this device only',
+                  'داتاکانت نهێنیکراون و تەنها لەسەر ئەم ئامێرە هەڵدەگیرێن'
+                )}
+              </p>
 
-      {/* Footer */}
-      <footer className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-4 text-center text-xs text-muted-foreground-1">
-        {bi(
-          'بياناتك مشفرة ومحفوظة على هذا الجهاز فقط',
-          'Your data is encrypted and stored on this device only',
-          'داتاکانت نهێنیکراون و تەنها لەسەر ئەم ئامێرە هەڵدەگیرێن'
-        )}
-      </footer>
+              {!isSetup && !schemaDowngradeError && (
+                <div className="text-xs text-muted-foreground-1">
+                  <span>{bi('نسيت كلمة المرور؟', 'Forgot password?', 'وشەی نهێنیت لەبیرچووە؟')} </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLocalError(null);
+                      setShowRecoveryModal(true);
+                    }}
+                    className="font-bold text-foreground underline underline-offset-4 hover:text-primary cursor-pointer"
+                  >
+                    {bi('استعادة بمفتاح الطوارئ', 'Recover here', 'گەڕاندنەوە لێرە')}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {renderBottomIconBar()}
+        </main>
+
+        <div className="pr-auth-spacer" aria-hidden="true" />
 
       {/* Recovery Key Modal */}
       <ModalDialog
@@ -908,7 +986,18 @@ export const LockScreen: React.FC = () => {
         }}
         size="sm"
         dir={isRtl ? 'rtl' : 'ltr'}
-        hideCloseButton
+        title={
+          <span className="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-primary-foreground">
+            <Key className="w-4 h-4 shrink-0" />
+            <span>
+              {bi(
+                'استرداد الخزينة بمفتاح الطوارئ (Recovery Key)',
+                'Recover Vault with Emergency Key',
+                'گەڕاندنەوەی خەزێنە بە کلیلی فریاگوزاری (Recovery Key)'
+              )}
+            </span>
+          </span>
+        }
         ariaLabel={bi(
           'استرداد الخزينة بمفتاح الطوارئ (Recovery Key)',
           'Recover Vault with Emergency Key',
@@ -918,16 +1007,6 @@ export const LockScreen: React.FC = () => {
         className="bg-card border-card-line"
         bodyClassName="p-6 space-y-4 overflow-y-auto"
       >
-            <div className="flex items-center gap-2.5 text-primary font-bold text-sm">
-              <Key className="w-5 h-5" />
-              <h3>
-                {bi(
-                  'استرداد الخزينة بمفتاح الطوارئ (Recovery Key)',
-                  'Recover Vault with Emergency Key',
-                  'گەڕاندنەوەی خەزێنە بە کلیلی فریاگوزاری (Recovery Key)'
-                )}
-              </h3>
-            </div>
 
             <p className="text-xs text-muted-foreground-2 leading-relaxed">
               {bi(
@@ -938,7 +1017,7 @@ export const LockScreen: React.FC = () => {
             </p>
 
             {displayError && (
-              <div className="p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 rounded-xl text-xs text-rose-700 dark:text-rose-200">
+              <div className="p-3 bg-surface/75 rounded-xl text-xs text-rose-700 dark:text-rose-400">
                 {displayError}
               </div>
             )}
@@ -1070,26 +1149,27 @@ export const LockScreen: React.FC = () => {
         role="alertdialog"
         size="sm"
         dir={isRtl ? 'rtl' : 'ltr'}
-        hideCloseButton
+        title={
+          <span className="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-primary-foreground">
+            <Trash2 className="w-4 h-4 shrink-0" />
+            <span>
+              {bi(
+                'تحذير حاسم: إتلاف ومسح الخزينة بالكامل (Factory Wipe)',
+                'Critical Warning: Complete Vault Factory Wipe',
+                'ئاگاداری یەکلاکەرەوە: سڕینەوەی تەواوی خەزێنە (Factory Wipe)'
+              )}
+            </span>
+          </span>
+        }
         ariaLabel={bi(
           'تحذير حاسم: إتلاف ومسح الخزينة بالكامل (Factory Wipe)',
           'Critical Warning: Complete Vault Factory Wipe',
           'ئاگاداری یەکلاکەرەوە: سڕینەوەی تەواوی خەزێنە (Factory Wipe)'
         )}
         closeLabel={bi('إغلاق', 'Close', 'داخستن')}
-        className="bg-card border-rose-300 dark:border-rose-800"
+        className="bg-card"
         bodyClassName="p-6 space-y-4 overflow-y-auto"
       >
-            <div className="flex items-center gap-2.5 text-rose-600 font-bold text-sm">
-              <Trash2 className="w-5 h-5" />
-              <h3>
-                {bi(
-                  'تحذير حاسم: إتلاف ومسح الخزينة بالكامل (Factory Wipe)',
-                  'Critical Warning: Complete Vault Factory Wipe',
-                  'ئاگاداری یەکلاکەرەوە: سڕینەوەی تەواوی خەزێنە (Factory Wipe)'
-                )}
-              </h3>
-            </div>
 
             <p className="text-xs text-muted-foreground-2 leading-relaxed">
               {bi(

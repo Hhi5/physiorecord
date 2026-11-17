@@ -14,6 +14,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { useTheme, THEME_PALETTE_OPTIONS } from '../context/ThemeContext';
 import { AppearanceDisplaySettings } from './settings/AppearanceDisplaySettings';
 import { requestPersistentStorage } from '../db/db';
+import { GeometricHeaderBackdrop } from './ui/Dialog';
 import { ClinicOperationsService, ROLE_PERMISSIONS } from '../services/clinicOperationsService';
 import type {
   ClinicStaffMember,
@@ -62,6 +63,7 @@ import {
 import type { NoteTemplateCategory, NoteTemplateSnippet } from '../types/clinicManagement';
 import { hasAnyDemoPatients } from '../utils/mrn';
 import { DemoBadge, Money, MoneyInput, TimePickerInput } from './ui/Primitives';
+import { SpectrumColorPicker } from './ui/SpectrumColorPicker';
 import { processClinicImageUpload, isValidEncryptedImageDataUrl } from '../utils/imageUtils';
 import { copySecretWithAutoClear } from '../utils/clipboardPrivacy';
 import {
@@ -116,6 +118,7 @@ import {
   FileSpreadsheet,
   Upload,
   Share2,
+  Palette,
 } from 'lucide-react';
 
 const SETTINGS_CATALOG_CKB: Record<string, { title: string; desc: string; category: string }> = {
@@ -262,6 +265,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     toggleTheme,
     themePalette,
     setThemePalette,
+    customPrimaryColor,
+    setCustomPrimaryColor,
   } = useTheme();
   const {
     autoLockTimeoutMs,
@@ -957,7 +962,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="settings-modal-title"
-      className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex justify-end"
+      className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-stretch justify-center sm:justify-end"
       dir={isRtl ? 'rtl' : 'ltr'}
       onKeyDown={(e) => {
         if (e.key === 'Escape') onClose();
@@ -967,44 +972,54 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       }}
     >
       <div
-        className="bg-card border-s border-card-line max-w-2xl w-full h-full shadow-2xl overflow-hidden flex flex-col"
+        className="bg-card border-t sm:border-t-0 sm:border-s border-card-line rounded-t-2xl sm:rounded-none max-w-2xl w-full max-h-[92dvh] sm:max-h-none sm:h-full shadow-2xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header (Single-row compact bar on both mobile & desktop) */}
-        <div className="px-3.5 sm:px-5 py-2 border-b border-card-divider flex items-center justify-between gap-2 bg-muted/40 shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="size-7 sm:size-8 rounded-lg bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
-              <Settings className="size-4 shrink-0" />
-            </div>
-            <div className="min-w-0">
-              <h2 id="settings-modal-title" className="text-xs sm:text-sm font-bold text-foreground truncate">
-                <span className="sm:hidden">{bi('الإعدادات', 'Settings', 'ڕێکخستنەکان')}</span>
-                <span className="hidden sm:inline">
+        {/* Themed Geometric Header */}
+        <div className="relative overflow-hidden px-4 sm:px-5 pt-2.5 sm:pt-4 pb-3.5 bg-primary text-primary-foreground space-y-2.5 shrink-0 shadow-xs">
+          <GeometricHeaderBackdrop />
+          <div className="relative z-10 w-10 h-1 rounded-full bg-primary-foreground/40 mx-auto sm:hidden shrink-0" aria-hidden="true" />
+          <div className="relative z-10 flex items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              <div className="size-9 rounded-xl bg-primary-foreground/15 text-primary-foreground border border-primary-foreground/20 flex items-center justify-center shrink-0">
+                <Settings className="size-4.5 shrink-0" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 id="settings-modal-title" className="text-sm sm:text-base font-black text-primary-foreground truncate">
                   {bi('إعدادات العيادة والمطور', 'Clinic & Developer Settings', 'ڕێکخستنەکانی کلینیک و گەشەپێدەر')}
-                </span>
-              </h2>
-              <p className="hidden sm:block text-xs text-muted-foreground-1 truncate">
-                {bi(
-                  'العملة، أعضاء الكادر، الأمان، الأقسام، والبيانات التجريبية',
-                  'Currency, staff roster, security, modules, and demo data',
-                  'دراو، ئەندامانی ستاف، ئاسایش، بەشەکان، و داتای نموونەیی'
-                )}
-              </p>
+                </h2>
+                <p className="hidden sm:block text-xs text-primary-foreground/85 truncate">
+                  {bi(
+                    'العملة، أعضاء الكادر، الأمان، الأقسام، والبيانات التجريبية',
+                    'Currency, staff roster, security, modules, and demo data',
+                    'دراو، ئەندامانی ستاف، ئاسایش، بەشەکان، و داتای نموونەیی'
+                  )}
+                </p>
+              </div>
             </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={bi('إغلاق الإعدادات', 'Close settings', 'داخستنی ڕێکخستنەکان')}
+              className="size-9 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground inline-flex items-center justify-center cursor-pointer shrink-0 transition-colors"
+            >
+              <X className="size-4 shrink-0" />
+            </button>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 pt-0.5">
             {/* Simple / Advanced Segmented Switch */}
-            <div className="inline-flex items-center rounded-lg bg-layer border border-layer-line p-0.5 shrink-0">
+            <div className="inline-flex items-center rounded-xl bg-primary-foreground/15 border border-primary-foreground/20 p-0.5 shrink-0">
               <button
                 type="button"
                 data-testid="settings-mode-simple-btn"
                 aria-pressed={settingsViewMode === 'simple'}
                 onClick={() => handleSwitchSettingsMode('simple')}
-                className={`min-h-[36px] px-2.5 sm:px-3 py-1 rounded-md text-xs font-bold cursor-pointer transition-colors ${
+                className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
                   settingsViewMode === 'simple'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground-1 hover:text-foreground'
+                    ? 'bg-card text-primary shadow-2xs'
+                    : 'text-primary-foreground/85 hover:text-primary-foreground'
                 }`}
               >
                 {bi('مبسط', 'Simple', 'سادە')}
@@ -1014,10 +1029,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 data-testid="settings-mode-advanced-btn"
                 aria-pressed={settingsViewMode === 'advanced'}
                 onClick={() => handleSwitchSettingsMode('advanced')}
-                className={`min-h-[36px] px-2.5 sm:px-3 py-1 rounded-md text-xs font-bold cursor-pointer transition-colors ${
+                className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
                   settingsViewMode === 'advanced'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground-1 hover:text-foreground'
+                    ? 'bg-card text-primary shadow-2xs'
+                    : 'text-primary-foreground/85 hover:text-primary-foreground'
                 }`}
               >
                 {bi('متقدم', 'Advanced', 'پێشکەوتوو')}
@@ -1029,7 +1044,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               type="button"
               data-testid="open-whats-new-btn"
               onClick={() => setIsWhatsNewOpen(true)}
-              className="min-h-[36px] px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0"
+              className="min-h-[32px] px-3 py-1 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground border border-primary-foreground/25 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
               title={bi(
                 `ما الجديد v${APP_SEMVER_VERSION}`,
                 `What's New v${APP_SEMVER_VERSION}`,
@@ -1037,25 +1052,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               )}
             >
               <Sparkles className="size-3.5 shrink-0" />
-              <span className="hidden sm:inline">
-                {bi('ما الجديد', "What's New", 'نوێترین')}
-              </span>
+              <span>{bi('ما الجديد', "What's New", 'نوێترین')}</span>
               <span className="font-mono"><bdi dir="ltr">v{APP_SEMVER_VERSION}</bdi></span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label={bi('إغلاق الإعدادات', 'Close settings', 'داخستنی ڕێکخستنەکان')}
-              className="size-9 rounded-lg flex items-center justify-center text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover cursor-pointer shrink-0"
-            >
-              <X className="size-4 shrink-0" />
             </button>
           </div>
         </div>
 
-        {/* Compact Full-Width Search Input */}
-        <div className="px-3.5 sm:px-4 py-1.5 border-b border-card-divider bg-surface/70 shrink-0">
+        {/* Search & Navigation Sub-bar */}
+        <div className="px-4 sm:px-5 py-2.5 border-b border-card-divider bg-surface/60 space-y-2.5 shrink-0">
+
+          {/* Search Input */}
           <div className="relative flex items-center">
             <Search className="size-3.5 text-muted-foreground-1 absolute start-3 inset-y-0 my-auto pointer-events-none z-10 shrink-0" />
             <input
@@ -1069,7 +1075,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 'Search settings (backup, security, language, font, modules...)',
                 'گەڕان لە ڕێکخستنەکان (کۆپی یەدەگ، ئاسایش، زمان، فۆنت، بەشەکان...)'
               )}
-              className="w-full min-h-[36px] ps-9 pe-10 py-1.5 rounded-xl bg-layer border border-layer-line text-xs leading-normal text-foreground placeholder:text-muted-foreground-1 focus:outline-none focus:border-primary"
+              className="w-full min-h-[38px] ps-9 pe-10 py-1.5 rounded-xl bg-card border border-line-2 text-xs leading-normal text-foreground placeholder:text-muted-foreground-1 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
             />
             {settingsSearchQuery.trim().length > 0 && (
               <button
@@ -1083,161 +1089,157 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </button>
             )}
           </div>
-        </div>
 
-        {/* Tabs Bar (Single-line horizontally scrollable with clear bottom spacing so scrollbar never overlaps tab border) */}
-        <div
-          role="tablist"
-          aria-label={bi('أقسام الإعدادات', 'Settings categories', 'بەشەکانی ڕێکخستن')}
-          onWheel={(e) => {
-            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-              e.currentTarget.scrollLeft += e.deltaY;
-            }
-          }}
-          className={`border-b border-card-divider ${
-            settingsSearchQuery.trim().length > 0 ? 'hidden sm:flex' : 'flex'
-          } flex-nowrap items-center gap-1.5 px-3 pt-1.5 pb-2.5 bg-card shrink-0 overflow-x-auto scroll-smooth touch-pan-x`}
-          style={{
-            WebkitOverflowScrolling: 'touch',
-          }}
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'currency'}
-            data-testid="settings-tab-currency"
-            onClick={(e) => {
-              setActiveTab('currency');
-              e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }}
-            className={`min-h-[36px] px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
-              activeTab === 'currency'
-                ? 'border-primary text-primary bg-primary/5'
-                : 'border-transparent text-muted-foreground-1 hover:text-foreground'
-            }`}
+          {/* Horizontally Scrollable Rounded Tabs Strip */}
+          <div
+            className={`${
+              settingsSearchQuery.trim().length > 0 ? 'hidden sm:block' : 'block'
+            } rounded-2xl border border-line-2 bg-card p-1 overflow-hidden`}
           >
-            <Coins className="size-3.5 shrink-0" />
-            <span>{bi('العملة', 'Currency', 'دراو')}</span>
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'clinic'}
-            data-testid="settings-tab-clinic"
-            onClick={(e) => {
-              setActiveTab('clinic');
-              e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }}
-            className={`min-h-[36px] px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
-              activeTab === 'clinic'
-                ? 'border-primary text-primary bg-primary/5'
-                : 'border-transparent text-muted-foreground-1 hover:text-foreground'
-            }`}
-          >
-            <Building2 className="size-3.5 shrink-0" />
-            <span>{bi('العيادة', 'Clinic', 'کلینیک')}</span>
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'display'}
-            data-testid="settings-tab-display"
-            onClick={(e) => {
-              setActiveTab('display');
-              e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }}
-            className={`min-h-[36px] px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
-              activeTab === 'display'
-                ? 'border-primary text-primary bg-primary/5'
-                : 'border-transparent text-muted-foreground-1 hover:text-foreground'
-            }`}
-          >
-            <Type className="size-3.5 shrink-0" />
-            <span>{bi('اللغة والمظهر', 'Display', 'زمان و شێواز')}</span>
-          </button>
-
-          {!isSoloMode && settingsViewMode === 'advanced' && (
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'staff'}
-              data-testid="settings-tab-staff"
-              onClick={(e) => {
-                setActiveTab('staff');
-                e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-              }}
-              className={`min-h-[36px] px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
-                activeTab === 'staff'
-                  ? 'border-primary text-primary bg-primary/5'
-                  : 'border-transparent text-muted-foreground-1 hover:text-foreground'
-              }`}
+            <div
+              role="tablist"
+              aria-label={bi('أقسام الإعدادات', 'Settings categories', 'بەشەکانی ڕێکخستن')}
+              className="pr-hscroll overflow-x-auto flex items-center gap-1 whitespace-nowrap pb-1 pt-0.5 px-0.5"
             >
-              <Users className="size-3.5 shrink-0" />
-              <span>{bi('الكادر', 'Staff', 'ستاف')}</span>
-            </button>
-          )}
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'currency'}
+                data-testid="settings-tab-currency"
+                onClick={(e) => {
+                  setActiveTab('currency');
+                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }}
+                className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all ${
+                  activeTab === 'currency'
+                    ? 'bg-primary text-primary-foreground shadow-2xs'
+                    : 'text-muted-foreground-1 hover:text-foreground hover:bg-surface'
+                }`}
+              >
+                <Coins className="size-3.5 shrink-0" />
+                <span>{bi('العملة', 'Currency', 'دراو')}</span>
+              </button>
 
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'security'}
-            data-testid="settings-tab-security"
-            onClick={(e) => {
-              setActiveTab('security');
-              e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }}
-            className={`min-h-[36px] px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
-              activeTab === 'security'
-                ? 'border-primary text-primary bg-primary/5'
-                : 'border-transparent text-muted-foreground-1 hover:text-foreground'
-            }`}
-          >
-            <Shield className="size-3.5 shrink-0" />
-            <span>{bi('الأمان', 'Security', 'ئاسایش')}</span>
-          </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'clinic'}
+                data-testid="settings-tab-clinic"
+                onClick={(e) => {
+                  setActiveTab('clinic');
+                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }}
+                className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all ${
+                  activeTab === 'clinic'
+                    ? 'bg-primary text-primary-foreground shadow-2xs'
+                    : 'text-muted-foreground-1 hover:text-foreground hover:bg-surface'
+                }`}
+              >
+                <Building2 className="size-3.5 shrink-0" />
+                <span>{bi('العيادة', 'Clinic', 'کلینیک')}</span>
+              </button>
 
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'modules'}
-            data-testid="settings-tab-modules"
-            onClick={(e) => {
-              setActiveTab('modules');
-              e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }}
-            className={`min-h-[36px] px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
-              activeTab === 'modules'
-                ? 'border-primary text-primary bg-primary/5'
-                : 'border-transparent text-muted-foreground-1 hover:text-foreground'
-            }`}
-          >
-            <Dumbbell className="size-3.5 shrink-0" />
-            <span>{bi('الأقسام', 'Modules', 'بەشەکان')}</span>
-          </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'display'}
+                data-testid="settings-tab-display"
+                onClick={(e) => {
+                  setActiveTab('display');
+                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }}
+                className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all ${
+                  activeTab === 'display'
+                    ? 'bg-primary text-primary-foreground shadow-2xs'
+                    : 'text-muted-foreground-1 hover:text-foreground hover:bg-surface'
+                }`}
+              >
+                <Type className="size-3.5 shrink-0" />
+                <span>{bi('اللغة والمظهر', 'Display', 'زمان و شێواز')}</span>
+              </button>
 
-          {settingsViewMode === 'advanced' && (
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'developer'}
-              data-testid="settings-tab-developer"
-              onClick={(e) => {
-                setActiveTab('developer');
-                e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-              }}
-              className={`min-h-[36px] px-3 py-1.5 rounded-t-md text-xs font-bold border-b-2 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
-                activeTab === 'developer'
-                  ? 'border-primary text-primary bg-primary/5'
-                  : 'border-transparent text-muted-foreground-1 hover:text-foreground'
-              }`}
-            >
-              <Database className="size-3.5 shrink-0" />
-              <span>{bi('المطور', 'Developer', 'گەشەپێدەر')}</span>
-              {hasDemoRecords && <DemoBadge />}
-            </button>
-          )}
+              {!isSoloMode && settingsViewMode === 'advanced' && (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'staff'}
+                  data-testid="settings-tab-staff"
+                  onClick={(e) => {
+                    setActiveTab('staff');
+                    e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                  }}
+                  className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all ${
+                    activeTab === 'staff'
+                      ? 'bg-primary text-primary-foreground shadow-2xs'
+                      : 'text-muted-foreground-1 hover:text-foreground hover:bg-surface'
+                  }`}
+                >
+                  <Users className="size-3.5 shrink-0" />
+                  <span>{bi('الكادر', 'Staff', 'ستاف')}</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'security'}
+                data-testid="settings-tab-security"
+                onClick={(e) => {
+                  setActiveTab('security');
+                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }}
+                className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all ${
+                  activeTab === 'security'
+                    ? 'bg-primary text-primary-foreground shadow-2xs'
+                    : 'text-muted-foreground-1 hover:text-foreground hover:bg-surface'
+                }`}
+              >
+                <Shield className="size-3.5 shrink-0" />
+                <span>{bi('الأمان', 'Security', 'ئاسایش')}</span>
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'modules'}
+                data-testid="settings-tab-modules"
+                onClick={(e) => {
+                  setActiveTab('modules');
+                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }}
+                className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all ${
+                  activeTab === 'modules'
+                    ? 'bg-primary text-primary-foreground shadow-2xs'
+                    : 'text-muted-foreground-1 hover:text-foreground hover:bg-surface'
+                }`}
+              >
+                <Dumbbell className="size-3.5 shrink-0" />
+                <span>{bi('الأقسام', 'Modules', 'بەشەکان')}</span>
+              </button>
+
+              {settingsViewMode === 'advanced' && (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'developer'}
+                  data-testid="settings-tab-developer"
+                  onClick={(e) => {
+                    setActiveTab('developer');
+                    e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                  }}
+                  className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all ${
+                    activeTab === 'developer'
+                      ? 'bg-primary text-primary-foreground shadow-2xs'
+                      : 'text-muted-foreground-1 hover:text-foreground hover:bg-surface'
+                  }`}
+                >
+                  <Database className="size-3.5 shrink-0" />
+                  <span>{bi('المطور', 'Developer', 'گەشەپێدەر')}</span>
+                  {hasDemoRecords && <DemoBadge />}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Scrollable Body */}
@@ -1339,7 +1341,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </span>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {[
                     { code: 'ar' as const, label: 'العربية (RTL)' },
                     { code: 'ckb' as const, label: 'کوردی (RTL)' },
@@ -1403,7 +1405,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {THEME_PALETTE_OPTIONS.map((pal) => {
-                    const active = themePalette === pal.id;
+                    const active = !customPrimaryColor && themePalette === pal.id;
                     return (
                       <button
                         key={pal.id}
@@ -1426,6 +1428,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     );
                   })}
                 </div>
+
+                {/* Custom Color Spectrum Wheel (same picker as Body Chart) */}
+                <div className="p-3.5 rounded-2xl bg-card border border-line-2 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                      <Palette className="size-4 text-primary shrink-0" />
+                      <span>
+                        {bi(
+                          'تخصيص لون المنصة (عجلة الألوان)',
+                          'Custom Platform Accent Color',
+                          'دیاریکردنی ڕەنگی تایبەتی سەکۆ'
+                        )}
+                      </span>
+                    </div>
+                    {customPrimaryColor && (
+                      <span
+                        className="size-4 rounded-full border border-black/15 shrink-0"
+                        style={{ backgroundColor: customPrimaryColor }}
+                      />
+                    )}
+                  </div>
+                  <SpectrumColorPicker
+                    compact
+                    label={bi('اختر أي لون', 'Pick any color', 'هەر ڕەنگێک هەڵبژێرە')}
+                    value={customPrimaryColor}
+                    defaultColor={
+                      THEME_PALETTE_OPTIONS.find((p) => p.id === themePalette)?.swatchHex || '#0D9488'
+                    }
+                    onChange={(hex) => setCustomPrimaryColor(hex)}
+                    onReset={() => setCustomPrimaryColor('')}
+                  />
+                </div>
               </div>
 
               <AppearanceDisplaySettings />
@@ -1435,10 +1469,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {activeTab === 'currency' && (
             <div className="space-y-4">
               {/* World Currency Selector (ISO 4217 standard) */}
-              <div className="p-4 rounded-xl bg-surface border border-line-2 space-y-3">
+              <div className="p-4 sm:p-5 rounded-2xl bg-surface border border-line-2 space-y-3.5 shadow-2xs">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-                    <Coins className="size-4 text-primary" />
+                  <div className="flex items-center gap-2.5 text-xs font-bold text-foreground">
+                    <span className="size-7 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <Coins className="size-4" />
+                    </span>
                     <span>
                       {bi('اختر عملة العيادة المعتمدة', 'Select Active Clinic Currency', 'دراوی پەسەندکراوی کلینیک هەڵبژێرە')}{' '}
                       <bdi dir="ltr">(ISO 4217)</bdi>:
@@ -1448,13 +1484,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setCurrencyCode('IQD')}
-                      className="min-h-[36px] px-2.5 py-1 text-xs font-bold rounded-lg bg-layer border border-layer-line text-primary hover:bg-primary/10 inline-flex items-center gap-1 cursor-pointer"
+                      className="min-h-[34px] px-3 py-1 text-xs font-bold rounded-xl bg-card border border-line-2 text-primary hover:bg-primary/10 inline-flex items-center gap-1.5 cursor-pointer transition-colors"
                     >
                       <RotateCcw className="size-3" />
                       <span>{bi('استعادة الدينار العراقي', 'Reset to IQD', 'گەڕانەوە بۆ دیناری عێراقی')}</span>
                     </button>
                   ) : (
-                    <span className="px-2 py-0.5 text-xs font-bold rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/12 text-emerald-700 dark:text-emerald-400 text-[11px] font-bold">
                       {bi('الدينار العراقي (افتراضي)', 'IQD (Default)', 'دیناری عێراقی (بنەڕەتی)')}
                     </span>
                   )}
@@ -1482,7 +1518,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       'Search by currency name or code (e.g. USD, EUR, SAR)...',
                       'بە ناو یان کۆدی دراو بگەڕێ (نموونە: USD، دینار، یۆرۆ)...'
                     )}
-                    className="w-full min-h-[36px] ps-9 pe-3 py-1.5 text-xs leading-normal rounded-xl bg-layer border border-layer-line text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:border-primary"
+                    className="w-full min-h-[38px] ps-9 pe-3 py-1.5 text-xs leading-normal rounded-xl bg-card border border-line-2 text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
                   />
                 </div>
 
@@ -1499,14 +1535,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         key={c.code}
                         type="button"
                         onClick={() => setCurrencyCode(c.code)}
-                        className={`w-full p-2.5 rounded-xl border text-start flex items-center justify-between transition-colors cursor-pointer ${
+                        className={`w-full p-3 rounded-2xl border text-start flex items-center justify-between transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-primary/10 border-primary text-primary font-bold'
-                            : 'bg-card border-card-line hover:bg-layer-hover text-foreground'
+                            ? 'bg-primary/10 border-primary text-primary font-bold shadow-2xs'
+                            : 'bg-card border-card-line hover:border-line-2 hover:bg-layer-hover text-foreground'
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-xs">{c.code}</span>
+                        <div className="flex items-center gap-2.5">
+                          <span className="px-2 py-0.5 rounded-lg bg-surface border border-line-2/60 font-mono font-bold text-xs">{c.code}</span>
                           <span className="text-xs">
                             {bi(c.nameAr, c.nameEn, CURRENCY_NAME_CKB[c.code] || c.nameAr)}
                           </span>
@@ -2471,14 +2507,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             {bi(member.nameAr, member.nameEn, member.nameAr)}
                           </span>
                           <span
-                            className={`px-2 py-0.5 text-xs font-bold rounded-md ${
+                            className={`text-xs font-bold ${
                               member.role === 'admin'
-                                ? 'bg-primary/10 text-primary border border-primary/20'
+                                ? 'text-primary'
                                 : member.role === 'senior_pt'
-                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
+                                ? 'text-emerald-700 dark:text-emerald-400'
                                 : member.role === 'assistant_pt'
-                                ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20'
-                                : 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20'
+                                ? 'text-sky-700 dark:text-sky-400'
+                                : 'text-amber-700 dark:text-amber-400'
                             }`}
                           >
                             {bi(roleMeta.labelAr, roleMeta.labelEn, STAFF_ROLE_CKB[member.role])}
@@ -2695,10 +2731,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         </span>
                       </span>
                       <span
-                        className={`px-2 py-0.5 rounded-md text-xs font-bold border ${
+                        className={`text-xs font-bold ${
                           pinStatus.isConfigured
-                            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25'
-                            : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25'
+                            ? 'text-emerald-700 dark:text-emerald-400'
+                            : 'text-amber-700 dark:text-amber-400'
                         }`}
                       >
                         {pinStatus.isConfigured
@@ -3001,7 +3037,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   {lastRecoveryDrillAt ? (
                     <span
                       data-testid="settings-drill-verified-badge"
-                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold"
+                      className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 text-xs font-bold"
                     >
                       <CheckCircle2 className="size-3.5" />
                       <span>
@@ -3123,10 +3159,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </span>
                   </div>
                   <span
-                    className={`px-2 py-0.5 text-xs font-bold rounded-md border ${
+                    className={`text-xs font-bold ${
                       showExerciseLibrary
-                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
-                        : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20'
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : 'text-amber-700 dark:text-amber-400'
                     }`}
                   >
                     {showExerciseLibrary
@@ -3194,10 +3230,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </span>
                   </div>
                   <span
-                    className={`px-2 py-0.5 text-xs font-bold rounded-md border ${
+                    className={`text-xs font-bold ${
                       enableWidgetStudio
-                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
-                        : 'bg-muted text-muted-foreground-1 border-line-2'
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : 'text-muted-foreground-1'
                     }`}
                   >
                     {enableWidgetStudio
@@ -3301,10 +3337,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </span>
                   </div>
                   <span
-                    className={`px-2 py-0.5 text-xs font-bold rounded-md border ${
+                    className={`text-xs font-bold ${
                       enableSmartGoalsGas
-                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
-                        : 'bg-muted text-muted-foreground-1 border-line-2'
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : 'text-muted-foreground-1'
                     }`}
                   >
                     {enableSmartGoalsGas
@@ -3354,10 +3390,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </span>
                   </div>
                   <span
-                    className={`px-2 py-0.5 text-xs font-bold rounded-md border ${
+                    className={`text-xs font-bold ${
                       enableConsentModule
-                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
-                        : 'bg-muted text-muted-foreground-1 border-line-2'
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : 'text-muted-foreground-1'
                     }`}
                   >
                     {enableConsentModule
@@ -3599,10 +3635,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 {packImportStatus && (
                   <div
-                    className={`p-2.5 rounded-lg text-xs border ${
+                    className={`p-2.5 rounded-lg text-xs bg-card shadow-2xs font-bold ${
                       packImportStatus.ok
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
-                        : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : 'text-rose-700 dark:text-rose-400'
                     }`}
                   >
                     {packImportStatus.msg}
@@ -3826,10 +3862,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </span>
                   </div>
                   <span
-                    className={`px-2 py-0.5 text-xs font-bold rounded-md border ${
+                    className={`text-xs font-bold ${
                       tipsEnabled
-                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
-                        : 'bg-muted text-muted-foreground-1 border-line-2'
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : 'text-muted-foreground-1'
                     }`}
                   >
                     {tipsEnabled
@@ -4095,10 +4131,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                     <span
                       data-testid="modality-safety-status-badge"
-                      className={`px-2 py-0.5 rounded-md text-xs font-bold border ${
+                      className={`text-xs font-bold ${
                         modalityReviewStatus.enabled
-                          ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
-                          : 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30'
+                          ? 'text-emerald-700 dark:text-emerald-400'
+                          : 'text-amber-700 dark:text-amber-400'
                       }`}
                     >
                       {modalityReviewStatus.enabled
@@ -4477,7 +4513,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                   <span
                     data-testid="badge-duplicate-guard-essential"
-                    className="shrink-0 px-2.5 py-1 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-extrabold"
+                    className="shrink-0 text-emerald-700 dark:text-emerald-400 text-xs font-extrabold"
                   >
                     {bi('أساسي · مفعّل دائماً', 'ESSENTIAL · Always Active', 'بنەڕەتی · هەمیشە چالاکە')}
                   </span>
@@ -4888,12 +4924,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     {desktopUpdateStatus && (
                       <div
                         data-testid="desktop-update-status-banner"
-                        className={`p-3 rounded-xl border text-xs font-semibold flex flex-wrap items-center justify-between gap-2 ${
+                        className={`p-3 rounded-xl bg-card shadow-2xs text-xs font-semibold flex flex-wrap items-center justify-between gap-2 ${
                           desktopUpdateStatus.status === 'update-available'
-                            ? 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200'
+                            ? 'text-amber-700 dark:text-amber-400'
                             : desktopUpdateStatus.status === 'up-to-date'
-                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
-                              : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'
+                              ? 'text-emerald-700 dark:text-emerald-400'
+                              : 'text-rose-700 dark:text-rose-400'
                         }`}
                       >
                         <span>
@@ -4923,12 +4959,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3.5 bg-muted/40 border-t border-card-divider flex justify-end shrink-0">
+        <div className="px-4 sm:px-5 py-3 bg-surface/60 border-t border-card-divider flex justify-end shrink-0">
           <button
             type="button"
             onClick={onClose}
             data-testid="settings-modal-close-footer-btn"
-            className="px-4 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground hover:bg-layer-hover cursor-pointer"
+            className="min-h-[38px] px-5 py-2 rounded-xl bg-card border border-line-2 text-xs font-bold text-foreground hover:bg-layer-hover cursor-pointer transition-colors"
           >
             {bi('إغلاق', 'Close', 'داخستن')}
           </button>

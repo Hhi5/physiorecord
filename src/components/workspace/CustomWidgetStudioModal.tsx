@@ -10,6 +10,7 @@ import { DynamicCustomWidget } from '../widgets/DynamicCustomWidget';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
 import { validateCustomWidgetDefinition } from '../../services/clinicSecurityHelpers';
 import { canonicalizeCustomWidgetField } from '../../data/clinicalToolkit/canonicalKeysCatalog';
+import { GeometricHeaderBackdrop } from '../ui/Dialog';
 import {
   Sparkles,
   Copy,
@@ -242,36 +243,40 @@ export const CustomWidgetStudioModal: React.FC<CustomWidgetStudioModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="relative w-full max-w-4xl bg-card border border-card-line rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6">
+      <div className="relative w-full max-w-4xl bg-card border border-card-line rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[88dvh]">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-card-divider bg-muted/40 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-primary text-primary-foreground shadow-2xs">
-              <Sparkles className="w-5 h-5" />
+        <div className="relative overflow-hidden px-5 sm:px-6 pt-3 sm:pt-4 pb-4 bg-primary text-primary-foreground flex flex-col gap-2.5 shrink-0 shadow-xs">
+          <GeometricHeaderBackdrop />
+          <div className="relative z-10 w-10 h-1 bg-primary-foreground/40 rounded-full mx-auto sm:hidden shrink-0" aria-hidden="true" />
+          <div className="relative z-10 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-2 rounded-xl bg-primary-foreground/15 border border-primary-foreground/25 text-primary-foreground shadow-2xs shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-base font-bold text-primary-foreground truncate">
+                  {bi('استوديو بناء الفحوصات السريرية المخصصة', 'Custom Clinical Widget Studio', 'ستۆدیۆی دروستکردنی پشکنینی کلینیکیی تایبەت')}
+                </h3>
+                <p className="text-xs text-primary-foreground/85 truncate">
+                  {bi(
+                    'صمم أي فحص سريري مخصص وأضفه لرف أدوات الفحص في عيادتك',
+                    'Design custom clinical tests and import them into your clinic shelf',
+                    'هەر پشکنینێکی کلینیکیی تایبەت دیزاین بکە و بیخە سەر ڕەفەی ئامرازەکانی کلینیکەکەت'
+                  )}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-base font-bold text-foreground">
-                {bi('استوديو بناء الفحوصات السريرية المخصصة', 'Custom Clinical Widget Studio', 'ستۆدیۆی دروستکردنی پشکنینی کلینیکیی تایبەت')}
-              </h3>
-              <p className="text-xs text-muted-foreground-1">
-                {bi(
-                  'صمم أي فحص سريري مخصص وأضفه لرف أدوات الفحص في عيادتك',
-                  'Design custom clinical tests and import them into your clinic shelf',
-                  'هەر پشکنینێکی کلینیکیی تایبەت دیزاین بکە و بیخە سەر ڕەفەی ئامرازەکانی کلینیکەکەت'
-                )}
-              </p>
-            </div>
-          </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={bi('إغلاق', 'Close', 'داخستن')}
-            className="p-2 text-muted-foreground-1 hover:text-foreground rounded-lg hover:bg-layer-hover transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={bi('إغلاق', 'Close', 'داخستن')}
+              className="size-9 !p-0 text-primary-foreground rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Tab Switcher */}

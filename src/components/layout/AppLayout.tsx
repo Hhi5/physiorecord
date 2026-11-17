@@ -54,9 +54,6 @@ const SettingsModal = lazy(() =>
 const RecoveryDrillModal = lazy(() =>
   import('../clinic/RecoveryDrillModal').then((m) => ({ default: m.RecoveryDrillModal }))
 );
-const ClinicalToolkitModal = lazy(() =>
-  import('../toolkit/ClinicalToolkitModal').then((m) => ({ default: m.ClinicalToolkitModal }))
-);
 const MigrationResolutionModal = lazy(() =>
   import('../MigrationResolutionModal').then((m) => ({ default: m.MigrationResolutionModal }))
 );
@@ -104,8 +101,7 @@ import { SYNTHETIC_PATIENTS } from '../../data/syntheticPatients';
 import { usePatients } from '../../context/PatientContext';
 import { useVault } from '../../context/VaultContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { useTheme } from '../../context/ThemeContext';
-import { ClinicOperationsService, ROLE_PERMISSIONS } from '../../services/clinicOperationsService';
+import { ClinicOperationsService } from '../../services/clinicOperationsService';
 import { formatIraqiPhoneDisplay } from '../../utils/date';
 import type { PatientRecord } from '../../types/clinical';
 import type {
@@ -114,48 +110,29 @@ import type {
   FinishUndoSnapshot,
 } from '../../types/clinicManagement';
 import {
-  MonitorCheck,
-  Users,
+  Accessibility,
+  Activity,
   Calendar,
-  CalendarClock,
-  Wallet,
   Dumbbell,
-  ShieldAlert,
+  Footprints,
+  HandHeart,
+  HeartPulse,
+  Stethoscope,
+  Wallet,
   UserPlus,
-  Sun,
-  Moon,
-  Lock,
   AlertTriangle,
   X,
-  BookOpen,
   Database,
-  UserCheck,
-  ChevronRight,
-  ChevronLeft,
-  Settings,
   KeyRound,
   Trash2,
-  Search,
-  MoreHorizontal,
-  Languages,
   RefreshCw,
   Smartphone,
-  Compass,
   RotateCcw,
   BarChart3,
   TabletSmartphone,
   PlayCircle,
   Command,
-  EyeOff,
-  Activity,
 } from 'lucide-react';
-
-const ROLE_LABEL_CKB: Record<ClinicRoleId, string> = {
-  admin: 'بەڕێوەبەر',
-  senior_pt: 'پسپۆڕی باڵای چارەسەری سروشتی',
-  assistant_pt: 'یاریدەدەری چارەسەری سروشتی',
-  receptionist: 'پێشوازی و ڕێکخستنی نۆرە',
-};
 
 export const AppLayout: React.FC = () => {
   const { patients, savePatient, deleteAllDemoPatients, refreshPatients } = usePatients();
@@ -173,8 +150,7 @@ export const AppLayout: React.FC = () => {
     lastMigrationResult,
     dismissRepairNotice,
   } = useVault();
-  const { language, setLanguage, isRtl, bi } = useLanguage();
-  const { theme, toggleTheme } = useTheme();
+  const { language, isRtl, bi } = useLanguage();
 
   const [isSoloMode, setIsSoloMode] = useState<boolean>(() =>
     ClinicOperationsService.isSoloMode()
@@ -208,9 +184,7 @@ export const AppLayout: React.FC = () => {
   const [settingsInitialTab, setSettingsInitialTab] = useState<
     'currency' | 'clinic' | 'display' | 'staff' | 'security' | 'modules' | 'developer'
   >('currency');
-  const [isToolkitOpen, setIsToolkitOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Global Command Palette & Search (Ctrl/Cmd+K) State
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
@@ -338,6 +312,11 @@ export const AppLayout: React.FC = () => {
         lock();
       } else if (e.key === 'Escape') {
         const hasOpenDialog = Boolean(document.querySelector(ACTIVE_MODAL_DIALOG_SELECTOR));
+        if (isSidebarOpen && !hasOpenDialog && !isGlobalSearchOpen && !isPrivacyCoverOpen) {
+          e.preventDefault();
+          setIsSidebarOpen(false);
+          return;
+        }
         const decision = evaluateEscapeShortcut({
           isPrivacyCoverOpen,
           isGlobalSearchOpen,
@@ -355,7 +334,7 @@ export const AppLayout: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [isGlobalSearchOpen, isPrivacyCoverOpen, lock]);
+  }, [isSidebarOpen, isGlobalSearchOpen, isPrivacyCoverOpen, lock]);
 
   // Android Hardware Back Button / Gesture Handler (Closes open modals/menus or steps back in navigation)
   useEffect(() => {
@@ -365,14 +344,9 @@ export const AppLayout: React.FC = () => {
         setIsPrivacyCoverOpen(false);
         return;
       }
-      if (isUserMenuOpen) {
+      if (isSidebarOpen) {
         e.preventDefault();
-        setIsUserMenuOpen(false);
-        return;
-      }
-      if (isMobileMoreOpen) {
-        e.preventDefault();
-        setIsMobileMoreOpen(false);
+        setIsSidebarOpen(false);
         return;
       }
       if (isGlobalSearchOpen) {
@@ -398,11 +372,6 @@ export const AppLayout: React.FC = () => {
       if (isPatientModalOpen) {
         e.preventDefault();
         setIsPatientModalOpen(false);
-        return;
-      }
-      if (isToolkitOpen) {
-        e.preventDefault();
-        setIsToolkitOpen(false);
         return;
       }
       if (isTourOpen) {
@@ -447,14 +416,12 @@ export const AppLayout: React.FC = () => {
     return () => window.removeEventListener('physiorecord-hardware-back', handleHardwareBack);
   }, [
     isPrivacyCoverOpen,
-    isUserMenuOpen,
-    isMobileMoreOpen,
+    isSidebarOpen,
     isGlobalSearchOpen,
     isSettingsModalOpen,
     isBackupModalOpen,
     isSeedModalOpen,
     isPatientModalOpen,
-    isToolkitOpen,
     isTourOpen,
     isRecoveryDrillOpen,
     isMigrationModalOpen,
@@ -781,51 +748,6 @@ export const AppLayout: React.FC = () => {
     }
   };
 
-  // Short Page Titles (Desktop & Mobile)
-  const navTitleMap: Record<ClinicNavTab, { ar: string; en: string; ckb: string }> = {
-    today: {
-      ar: 'اليوم',
-      en: 'Today',
-      ckb: 'ئەمڕۆ',
-    },
-    reception: {
-      ar: 'الاستقبال والطابور',
-      en: 'Reception',
-      ckb: 'پێشوازی و ڕیز',
-    },
-    directory: {
-      ar: 'المرضى',
-      en: 'Patients',
-      ckb: 'نەخۆشان',
-    },
-    schedule: {
-      ar: 'المواعيد',
-      en: 'Schedule',
-      ckb: 'مۆڵەت و خشتە',
-    },
-    finance: {
-      ar: 'الحسابات',
-      en: 'Finance',
-      ckb: 'دارایی',
-    },
-    exercises: {
-      ar: 'التمارين (HEP)',
-      en: 'Exercise & HEP',
-      ckb: 'ڕاهێنان (HEP)',
-    },
-    analytics: {
-      ar: 'التحليلات المحلية',
-      en: 'Analytics',
-      ckb: 'شیکاری ناوخۆیی',
-    },
-    activity_log: {
-      ar: 'سجل النشاط والكادر',
-      en: 'Audit & Staff Roles',
-      ckb: 'تۆماری چالاکی و ستاف',
-    },
-  };
-
-  const currentNavMeta = navTitleMap[activeNav];
   const roleLabelMap: Record<string, { ar: string; en: string; ckb: string }> = {
     admin: { ar: 'المدير', en: 'Admin', ckb: 'بەڕێوەبەر' },
     senior_pt: { ar: 'أخصائي أقدم', en: 'Senior PT', ckb: 'پسپۆڕی باڵا' },
@@ -838,22 +760,20 @@ export const AppLayout: React.FC = () => {
         roleLabelMap[activeRole]?.en ?? 'Reception',
         roleLabelMap[activeRole]?.ckb ?? 'پێشوازی'
       );
-  const isMoreTabActive =
-    !selectedPatient &&
-    ((showExerciseLibrary && activeNav === 'exercises') ||
-      (showAnalyticsModule && activeNav === 'analytics') ||
-      activeNav === 'activity_log');
 
   return (
     <div
-      className="flex h-screen w-screen overflow-hidden bg-transparent text-foreground transition-colors"
+      className="relative h-dvh w-screen overflow-hidden bg-background-1 text-foreground"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
-      {/* Desktop Sidebar Navigation (Auto-collapses to icon rail on patient pages) */}
-      <div className={`hidden md:flex shrink-0 transition-all duration-200 ${isPrivacyCoverOpen ? 'filter blur-md pointer-events-none select-none' : ''}`}>
+      {/* Layer 1: Underneath Sidebar Panel (Revealed when main workspace slides sideways) */}
+      <div className={isPrivacyCoverOpen ? 'filter blur-md pointer-events-none select-none' : ''}>
         <Sidebar
+          isOpen={isSidebarOpen}
+          onCloseDrawer={() => setIsSidebarOpen(false)}
           activeNav={activeNav}
           onSelectNav={(nav) => {
+            setSelectedSessionLaunch(null);
             setSelectedPatientId(null);
             setActiveNav(nav);
           }}
@@ -862,17 +782,108 @@ export const AppLayout: React.FC = () => {
           showExerciseLibrary={showExerciseLibrary}
           showAnalyticsModule={showAnalyticsModule}
           isSoloMode={isSoloMode}
+          onOpenGlobalSearch={() => setIsGlobalSearchOpen(true)}
+          onNewPatient={handleOpenNewPatient}
           onOpenSettings={() => setIsSettingsModalOpen(true)}
+          onOpenBackup={() => setIsBackupModalOpen(true)}
+          onSwitchWorkspaceMode={(mode) => void ClinicOperationsService.switchWorkspaceModeAsync(mode)}
+          onOpenTour={() => setIsTourOpen(true)}
+          onOpenPrivacyCover={() => setIsPrivacyCoverOpen(true)}
+          onLockVault={lock}
+          onOpenKiosk={() => setIsKioskModalOpen(true)}
+          enableKioskModule={enableKioskModule}
+          canInstallPwa={pwa.canInstallPrompt}
+          onInstallPwa={() => void triggerPwaInstallPrompt()}
+          activeRole={activeRole}
+          staffRoster={staffRoster}
+          onSwitchRole={handleQuickRoleSwitch}
+          userMenuRoleLabel={userMenuRoleLabel}
+          formattedLastBackup={formattedLastBackup}
+          hasDemoRecords={hasDemoRecords}
         />
       </div>
 
-      {/* Main Content Area */}
-      <main className={`flex-1 flex flex-col min-w-0 h-screen overflow-hidden pb-[5.4rem] md:pb-0 transition-all duration-200 ${isPrivacyCoverOpen ? 'filter blur-md pointer-events-none select-none' : ''}`}>
+      {/* Layer 2: Floating Main Canvas (Slides horizontally to uncover underneath Sidebar) */}
+      <main
+        data-sidebar-open={isSidebarOpen ? 'true' : 'false'}
+        className={`pr-main-stage pr-main-canvas flex flex-col min-w-0 overflow-hidden ${
+          isPrivacyCoverOpen ? 'filter blur-md pointer-events-none select-none' : ''
+        }`}
+      >
+        {/* Subtle Physiotherapy Motif Layer + Insulating Frosted Blur Veil over Theme Gradient */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none select-none absolute inset-x-0 top-0 h-[28rem] z-0 overflow-hidden"
+        >
+          <div className="relative w-full h-full text-primary opacity-[0.20] dark:opacity-[0.16] blur-[0.85px]">
+            <Accessibility
+              strokeWidth={1.65}
+              className="absolute top-6 end-6 sm:end-16 size-24 sm:size-28 -rotate-12"
+            />
+            <HeartPulse
+              strokeWidth={1.65}
+              className="absolute top-12 start-[14%] size-16 sm:size-20 -rotate-6"
+            />
+            <Activity
+              strokeWidth={1.65}
+              className="hidden sm:block absolute top-10 start-[44%] size-20 rotate-6"
+            />
+            <Dumbbell
+              strokeWidth={1.65}
+              className="absolute top-36 start-6 sm:start-16 size-20 sm:size-24 rotate-12"
+            />
+            <Stethoscope
+              strokeWidth={1.65}
+              className="absolute top-44 end-6 sm:end-24 size-20 sm:size-24 -rotate-[18deg]"
+            />
+            <Footprints
+              strokeWidth={1.65}
+              className="hidden sm:block absolute top-64 start-[28%] size-16 rotate-[22deg] opacity-80"
+            />
+            <HandHeart
+              strokeWidth={1.65}
+              className="hidden sm:block absolute top-56 end-[28%] size-16 -rotate-12 opacity-80"
+            />
+          </div>
+          <div className="pr-backdrop-veil absolute inset-0" />
+        </div>
+        {/* Semicircular 3-Line Handle attached at top-start seam */}
+        <button
+          type="button"
+          data-testid="sidebar-handle-btn"
+          data-open={isSidebarOpen ? 'true' : 'false'}
+          aria-expanded={isSidebarOpen}
+          aria-label={
+            isSidebarOpen
+              ? bi('إغلاق القائمة الجانبية', 'Close sidebar', 'داخستنی لیستی لاوەکی')
+              : bi('فتح القائمة الجانبية', 'Open sidebar', 'کردنەوەی لیستی لاوەکی')
+          }
+          onClick={() => setIsSidebarOpen((prev) => !prev)}
+          className={`pr-drawer-ear focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+            selectedPatient ? 'hidden' : ''
+          }`}
+        >
+          <span className="pr-drawer-ear-line w-4" aria-hidden="true" />
+          <span className="pr-drawer-ear-line w-3" aria-hidden="true" />
+          <span className="pr-drawer-ear-line w-4" aria-hidden="true" />
+        </button>
+
+        {/* Unobtrusive click-anywhere overlay on the shifted main canvas to close drawer */}
+        {isSidebarOpen && (
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-label={bi('إغلاق القائمة الجانبية', 'Close sidebar', 'داخستنی لیستی لاوەکی')}
+            onClick={() => setIsSidebarOpen(false)}
+            className="absolute inset-0 z-40 bg-slate-950/[0.03] cursor-pointer focus:outline-none"
+          />
+        )}
+
         {/* Phase F4: Compact Public Demo Mode Banner */}
         {isPublicDemoActive && (
           <div
             data-testid="public-demo-mode-banner"
-            className="px-3 sm:px-5 py-1.5 bg-amber-800 text-white border-b border-amber-900 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 z-50"
+            className="ps-11 sm:ps-12 pe-3 sm:pe-5 py-1.5 bg-amber-800 text-white border-b border-amber-900 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 z-30"
           >
             <div className="flex items-center gap-2 min-w-0 flex-1 font-extrabold">
               <span className="px-2 py-0.5 rounded bg-black/30 text-white font-mono text-xs shrink-0">
@@ -911,384 +922,6 @@ export const AppLayout: React.FC = () => {
           </div>
         )}
 
-        {/* Global Top Header (Desktop & Mobile) */}
-        <header className="pr-topbar h-16 px-3 sm:px-5 lg:px-7 flex items-center justify-between gap-2 sm:gap-4 shrink-0 z-40 min-w-0">
-          {/* Start: Brand (mobile) + module / patient breadcrumb */}
-          <div className="flex items-center gap-2.5 min-w-0 flex-1 md:flex-none md:max-w-[40%] lg:max-w-[46%]">
-            <div className="md:hidden pr-brand-mark size-9" aria-hidden="true">
-              <Activity className="size-[1.05rem]" strokeWidth={2.4} />
-            </div>
-            <div className="min-w-0">
-              <div className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-muted-foreground-1 min-w-0">
-                <span className="shrink-0">{bi('مساحة العمل', 'Workspace')}</span>
-                {isRtl ? (
-                  <ChevronLeft className="size-3 shrink-0 opacity-60" />
-                ) : (
-                  <ChevronRight className="size-3 shrink-0 opacity-60" />
-                )}
-                <span className="truncate">
-                  {bi(currentNavMeta.ar, currentNavMeta.en, currentNavMeta.ckb)}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-1.5 min-w-0">
-                <button
-                  type="button"
-                  onClick={() => handleSelectPatient(null)}
-                  className={`transition-colors cursor-pointer truncate text-start ${
-                    selectedPatient
-                      ? 'text-xs sm:text-sm font-bold text-muted-foreground-1 hover:text-primary'
-                      : 'text-base sm:text-lg font-extrabold tracking-tight text-foreground'
-                  }`}
-                >
-                  {bi(currentNavMeta.ar, currentNavMeta.en, currentNavMeta.ckb)}
-                </button>
-
-                {selectedPatient && (
-                  <>
-                    {isRtl ? (
-                      <ChevronLeft className="size-4 text-muted-foreground-1 shrink-0" />
-                    ) : (
-                      <ChevronRight className="size-4 text-muted-foreground-1 shrink-0" />
-                    )}
-                    <span className="font-extrabold text-sm sm:text-base text-primary truncate">
-                      {getPatientDisplayName(selectedPatient.data, language)}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Center (Desktop & Tablet): Global Search Trigger (Ctrl/Cmd+K) */}
-          <div className="hidden md:flex flex-1 min-w-0 max-w-md mx-2 lg:mx-4">
-            <button
-              type="button"
-              onClick={() => setIsGlobalSearchOpen(true)}
-              className="pr-search"
-            >
-              <Search className="size-4 text-muted-foreground-1 shrink-0" />
-              <span className="truncate flex-1 text-start">
-                {bi(
-                  'ابحث عن مريض، رقم طبي، أو هاتف…',
-                  'Search patients, MRN, or phone…'
-                )}
-              </span>
-              <kbd
-                dir="ltr"
-                className="hidden lg:inline-block px-1.5 py-0.5 text-xs font-mono font-semibold bg-card border border-line-2 rounded-md text-muted-foreground-1 shrink-0"
-              >
-                Ctrl K
-              </kbd>
-            </button>
-          </div>
-
-          {/* End: quick actions + primary CTA + account menu */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Privacy Cover Quick Shield Button (Phase A5) — desktop/tablet; also in the mobile More sheet */}
-            <button
-              type="button"
-              onClick={() => setIsPrivacyCoverOpen(true)}
-              data-testid="privacy-cover-toggle"
-              title={bi(
-                'إخفاء الشاشة مؤقتاً (Esc مرتين)',
-                'Privacy Cover (Esc twice)',
-                'داپۆشەری نهێنی (دوو جار Esc)'
-              )}
-              aria-label={bi('ستار الخصوصية', 'Privacy cover', 'داپۆشەری نهێنی')}
-              className="pr-icon-btn hidden sm:inline-flex"
-            >
-              <EyeOff className="size-4 text-primary" />
-            </button>
-
-            {/* Mobile: Global Search */}
-            <button
-              type="button"
-              onClick={() => setIsGlobalSearchOpen(true)}
-              aria-label={bi('بحث شامل عن مريض', 'Search patients')}
-              className="pr-icon-btn md:hidden"
-            >
-              <Search className="size-4 text-primary" />
-            </button>
-
-            {/* Primary "New Patient" Button (icon-only on mobile, labelled on desktop) */}
-            <button
-              type="button"
-              onClick={handleOpenNewPatient}
-              aria-label={bi('مريض جديد', 'New Patient')}
-              className="pr-btn pr-btn-primary h-9 sm:h-10 px-0 sm:px-4 w-9 sm:w-auto inline-flex shrink-0"
-            >
-              <UserPlus className="size-4 shrink-0" />
-              <span className="hidden sm:inline">
-                {bi('مريض جديد', 'New Patient')}
-              </span>
-            </button>
-
-            {/* User / Clinic Menu (Holds: staff switch, language, theme light/dark, backup, clinical reference, settings, lock) */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsUserMenuOpen((prev) => !prev)}
-                aria-label={bi(
-                  `${userMenuRoleLabel} — قائمة المستخدم والإعدادات`,
-                  `${userMenuRoleLabel} — User & clinic menu`,
-                  `${userMenuRoleLabel} — لیستی بەکارهێنەر و ڕێکخستنەکان`
-                )}
-                aria-expanded={isUserMenuOpen}
-                aria-haspopup="dialog"
-                className="h-10 ps-1 pe-1.5 sm:pe-2.5 rounded-full bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-semibold inline-flex items-center gap-1.5 sm:gap-2 cursor-pointer transition-colors"
-              >
-                <span className="pr-avatar size-8" aria-hidden="true">
-                  {userMenuRoleLabel.trim().charAt(0)}
-                </span>
-                <span className="hidden lg:inline text-xs font-bold">
-                  {userMenuRoleLabel}
-                </span>
-                <ChevronLeft
-                  className={`hidden lg:inline size-3.5 text-muted-foreground-1 transition-transform ${
-                    isUserMenuOpen ? 'rotate-90' : ''
-                  } ${isRtl ? '' : '-rotate-180'}`}
-                />
-              </button>
-
-              {isUserMenuOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-30"
-                    onClick={() => setIsUserMenuOpen(false)}
-                  />
-                  <div
-                    role="dialog"
-                    aria-modal="false"
-                    aria-label={bi('قائمة المستخدم والإعدادات', 'User & clinic menu')}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Escape') {
-                        e.stopPropagation();
-                        setIsUserMenuOpen(false);
-                      }
-                    }}
-                    dir={isRtl ? 'rtl' : 'ltr'}
-                    className="absolute end-0 mt-2 w-72 rounded-2xl bg-card border border-card-line shadow-xl p-3 z-40 space-y-3 text-xs"
-                  >
-                    {/* 1. Staff Role Switcher (Team Mode only) */}
-                    {!isSoloMode && (
-                      <div className="space-y-1.5 pb-2.5 border-b border-card-divider">
-                        <span className="text-xs font-bold text-muted-foreground-1 block">
-                          {bi(
-                            'نسبة التوثيق للكادر (تبديل الموثق):',
-                            'Staff Attribution Label:',
-                            'ناونیشانی ستاف بۆ تۆمارکردن:'
-                          )}
-                        </span>
-                        <select
-                          value={activeRole}
-                          onChange={(e) => {
-                            handleQuickRoleSwitch(e.target.value as ClinicRoleId);
-                            setIsUserMenuOpen(false);
-                          }}
-                          aria-label={bi('تبديل دور الموظف', 'Switch staff role', 'گۆڕینی ڕۆڵی ستاف')}
-                          className="w-full px-2.5 py-2 rounded-xl bg-layer border border-layer-line text-xs font-bold text-foreground focus:outline-none focus:border-primary"
-                        >
-                          {staffRoster.map((member) => (
-                            <option key={member.id} value={member.role}>
-                              {bi(
-                                `${member.nameAr} (${ROLE_PERMISSIONS[member.role].labelAr})`,
-                                `${member.nameEn} (${ROLE_PERMISSIONS[member.role].labelEn})`,
-                                `${member.nameAr} (${ROLE_LABEL_CKB[member.role]})`
-                              )}
-                            </option>
-                          ))}
-                        </select>
-                        <p className="text-xs text-muted-foreground-1 leading-snug">
-                          {bi(
-                            'تحديد الكادر لغرض التوثيق فقط وليس مصادقة أمان مستقلة.',
-                            'Staff attribution for clinical logs only, not security authentication.',
-                            'دیاریکردنی ستاف تەنها بۆ تۆمارە کلینیکییەکانە، نەک پشتڕاستکردنەوەی ئاسایش.'
-                          )}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* 2. Language (AR / EN / CKB) & Theme (Light / Dark) */}
-                    <div className="space-y-1.5 pb-2.5 border-b border-card-divider">
-                      <div className="grid grid-cols-3 gap-1">
-                        {(
-                          [
-                            { code: 'ar', label: 'العربية' },
-                            { code: 'en', label: 'EN' },
-                            { code: 'ckb', label: 'کوردی' },
-                          ] as const
-                        ).map((opt) => (
-                          <button
-                            key={opt.code}
-                            type="button"
-                            onClick={() => {
-                              setLanguage(opt.code);
-                              setIsUserMenuOpen(false);
-                            }}
-                            className={`px-2 py-2 rounded-xl border text-xs font-bold cursor-pointer ${
-                              language === opt.code
-                                ? 'bg-primary text-primary-foreground border-primary'
-                                : 'bg-layer hover:bg-layer-hover border-layer-line text-foreground'
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          toggleTheme();
-                          setIsUserMenuOpen(false);
-                        }}
-                        className="w-full px-2.5 py-2 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-foreground font-bold flex items-center justify-center gap-1.5 cursor-pointer"
-                      >
-                        {theme === 'dark' ? (
-                          <Sun className="w-3.5 h-3.5 text-amber-400" />
-                        ) : (
-                          <Moon className="w-3.5 h-3.5 text-slate-600" />
-                        )}
-                        <span>
-                          {theme === 'dark'
-                            ? bi('الوضع النهاري', 'Light Mode', 'دۆخی ڕۆژ')
-                            : bi('الوضع الليلي', 'Dark Mode', 'دۆخی شەو')}
-                        </span>
-                      </button>
-                    </div>
-
-                    {enableKioskModule && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsUserMenuOpen(false);
-                          setIsKioskModalOpen(true);
-                        }}
-                        className="min-h-[36px] w-full px-2.5 py-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-800 dark:text-teal-300 font-bold flex items-center justify-center gap-1.5 cursor-pointer"
-                      >
-                        <TabletSmartphone className="w-4 h-4" />
-                        <span>
-                          {bi('وضع كشك المريض (مقفل)', 'Patient Kiosk Mode', 'دۆخی کیۆسکی نەخۆش (داخراو)')}
-                        </span>
-                      </button>
-                    )}
-
-                    {/* 3. Backup, Clinical Reference, Settings */}
-                    <div className="space-y-1 pb-2.5 border-b border-card-divider">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsUserMenuOpen(false);
-                          setIsBackupModalOpen(true);
-                        }}
-                        className="w-full px-2.5 py-2 rounded-xl hover:bg-layer-hover text-foreground font-semibold flex items-center justify-between cursor-pointer"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Database className="w-4 h-4 text-primary" />
-                          <span>
-                            {bi('النسخ الاحتياطي والاستعادة', 'Backup & Restore', 'کۆپی یەدەگ و گەڕاندنەوە')}
-                          </span>
-                        </span>
-                        <span
-                          dir="ltr"
-                          className="text-xs font-mono text-muted-foreground-1"
-                        >
-                          {formattedLastBackup}
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsUserMenuOpen(false);
-                          setIsSettingsModalOpen(true);
-                        }}
-                        className="w-full px-2.5 py-2 rounded-xl hover:bg-layer-hover text-foreground font-semibold flex items-center justify-between cursor-pointer"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Settings className="w-4 h-4 text-primary" />
-                          <span>{bi('الإعدادات والخيارات', 'Settings', 'ڕێکخستنەکان')}</span>
-                        </span>
-                        {hasDemoRecords && <DemoBadge />}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsUserMenuOpen(false);
-                          setIsTourOpen(true);
-                        }}
-                        className="w-full px-2.5 py-2 rounded-xl hover:bg-layer-hover text-foreground font-semibold flex items-center justify-between cursor-pointer"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Compass className="w-4 h-4 text-primary" />
-                          <span>{bi('جولة استخدام سريعة', 'Quick Guided Tour', 'گەشتی خێرای بەکارهێنان')}</span>
-                        </span>
-                      </button>
-
-                      {pwa.canInstallPrompt && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsUserMenuOpen(false);
-                            void triggerPwaInstallPrompt();
-                          }}
-                          className="w-full px-2.5 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-bold flex items-center gap-2 cursor-pointer"
-                        >
-                          <Smartphone className="w-4 h-4 shrink-0" />
-                          <span>
-                            {bi(
-                              'تثبيت التطبيق على الجهاز (PWA)',
-                              'Install App on Device',
-                              'دامەزراندنی بەرنامە لەسەر ئامێر (PWA)'
-                            )}
-                          </span>
-                        </button>
-                      )}
-                    </div>
-
-                    {/* 4. Privacy Cover & Lock Encrypted Vault */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsUserMenuOpen(false);
-                        setIsPrivacyCoverOpen(true);
-                      }}
-                      className="min-h-[36px] w-full px-2.5 py-2 rounded-xl hover:bg-layer-hover text-foreground font-semibold flex items-center justify-between cursor-pointer mb-1.5"
-                    >
-                      <span className="flex items-center gap-2">
-                        <EyeOff className="w-4 h-4 text-primary" />
-                        <span>{bi('ستار الخصوصية', 'Privacy Cover', 'داپۆشەری نهێنی')}</span>
-                      </span>
-                      <kbd dir="ltr" className="hidden md:inline-block text-xs font-mono text-muted-foreground-1">
-                        Esc×2
-                      </kbd>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsUserMenuOpen(false);
-                        lock();
-                      }}
-                      className="min-h-[36px] w-full px-2.5 py-2 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-foreground font-bold flex items-center justify-between gap-2 cursor-pointer"
-                    >
-                      <span className="flex items-center gap-2">
-                        <Lock className="w-3.5 h-3.5 text-muted-foreground-1" />
-                        <span>{bi('قفل الخزينة المشفرة', 'Lock Vault', 'قوفڵکردنی قاسە')}</span>
-                      </span>
-                      <kbd dir="ltr" className="hidden md:inline-block text-xs font-mono text-muted-foreground-1">
-                        Ctrl+L
-                      </kbd>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </header>
-
         {/* PWA Update Available Banner (1.8) */}
         <RecoveredWorkBanner
           drafts={recoveredDrafts}
@@ -1301,7 +934,7 @@ export const AppLayout: React.FC = () => {
         {isRecoveryDrillDue && !selectedPatient && (
           <div
             data-testid="recovery-drill-banner"
-            className="px-3 sm:px-4 py-1 bg-primary/10 border-b border-primary/25 flex flex-wrap items-center justify-between gap-2 text-xs text-foreground shrink-0"
+            className="relative z-10 ps-11 sm:ps-12 pe-3 sm:pe-4 py-1 bg-primary/10 border-b border-primary/25 flex flex-wrap items-center justify-between gap-2 text-xs text-foreground shrink-0"
           >
             <div className="flex items-center gap-2 min-w-0 flex-1 font-semibold">
               <Database className="size-4 text-primary shrink-0" />
@@ -1334,7 +967,7 @@ export const AppLayout: React.FC = () => {
         )}
 
         {pwa.updateReady && (
-          <div className="px-4 py-1.5 bg-primary/15 border-b border-primary/30 flex flex-wrap items-center justify-between gap-2 text-xs text-foreground shrink-0">
+          <div className="relative z-10 ps-11 sm:ps-12 pe-4 py-1.5 bg-primary/15 border-b border-primary/20 flex flex-wrap items-center justify-between gap-2 text-xs text-foreground shrink-0">
             <div className="flex items-center gap-2 font-semibold">
               <RefreshCw className="w-4 h-4 text-primary shrink-0" />
               <span>
@@ -1357,7 +990,7 @@ export const AppLayout: React.FC = () => {
 
         {/* iOS Safari Add-to-Home-Screen Installation Guidance (1.8) */}
         {pwa.isIosSafariInstallEligible && !iosInstallDismissed && (
-          <div className="px-4 py-1.5 bg-surface border-b border-card-divider flex items-center justify-between gap-2 text-xs text-foreground shrink-0">
+          <div className="relative z-10 ps-11 sm:ps-12 pe-4 py-1.5 bg-surface border-b border-card-divider flex items-center justify-between gap-2 text-xs text-foreground shrink-0">
             <div className="flex items-center gap-2">
               <Smartphone className="w-4 h-4 text-primary shrink-0" />
               <span>
@@ -1383,11 +1016,11 @@ export const AppLayout: React.FC = () => {
         {(isBackupOverdue || hasDemoRecords) && !selectedPatient && (
           <div
             data-testid="environment-status-strip"
-            className="px-3 sm:px-4 py-1 bg-amber-500/12 border-b border-amber-500/30 flex items-center justify-between gap-2 text-xs text-amber-950 dark:text-amber-200 shrink-0 min-h-[38px]"
+            className="relative z-10 ps-14 sm:ps-16 pe-3 sm:pe-5 pt-2.5 pb-1 flex items-center justify-between gap-2 text-xs text-amber-800 dark:text-amber-300 shrink-0 min-h-[42px]"
           >
             <div className="flex items-center gap-2 min-w-0 flex-1">
               {hasDemoRecords && <DemoBadge />}
-              <span className="font-semibold truncate">
+              <span className="font-bold truncate">
                 {isBackupOverdue ? (
                   !lastBackupIso ? (
                     <>
@@ -1411,12 +1044,12 @@ export const AppLayout: React.FC = () => {
                 )}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               {isBackupOverdue && (
                 <button
                   type="button"
                   onClick={() => setIsBackupModalOpen(true)}
-                  className="min-h-[36px] px-2.5 py-1 rounded-lg bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold cursor-pointer whitespace-nowrap"
+                  className="min-h-[34px] px-2.5 py-1 rounded-full bg-card/65 hover:bg-card text-amber-800 dark:text-amber-300 text-xs font-extrabold cursor-pointer whitespace-nowrap shadow-2xs transition-colors"
                 >
                   {bi('نسخ احتياطي', 'Backup Now', 'پاشەکەوت ئێستا')}
                 </button>
@@ -1426,7 +1059,7 @@ export const AppLayout: React.FC = () => {
                   type="button"
                   data-testid="manage-demo-data-strip-btn"
                   onClick={() => setIsSeedModalOpen(true)}
-                  className="min-h-[36px] px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-amber-600/35 text-amber-950 dark:text-amber-200 text-xs font-bold inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                  className="min-h-[34px] px-2.5 py-1 rounded-full bg-card/65 hover:bg-card text-amber-800 dark:text-amber-300 text-xs font-bold inline-flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-2xs transition-colors"
                 >
                   <Database className="size-3.5" />
                   <span>{bi('إدارة العرض', 'Manage Demo', 'بەڕێوەبردنی تاقیکاری')}</span>
@@ -1436,7 +1069,7 @@ export const AppLayout: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setBackupBannerDismissed(true)}
-                  className="size-9 rounded-lg hover:bg-amber-500/20 inline-flex items-center justify-center cursor-pointer shrink-0"
+                  className="size-8 rounded-full hover:bg-card/60 inline-flex items-center justify-center cursor-pointer shrink-0 text-amber-800 dark:text-amber-300"
                   aria-label={bi('إخفاء التنبيه', 'Dismiss backup reminder', 'شاردنەوەی ئاگاداری پاشەکەوت')}
                 >
                   <X className="w-4 h-4" />
@@ -1448,11 +1081,11 @@ export const AppLayout: React.FC = () => {
 
         {/* Phase 1.3: Dismissible Legacy Migration Warning -> Review & Resolve Modal */}
         {!migrationBannerDismissed && unmigratedCount > 0 && (
-          <div className="px-3 sm:px-4 py-1.5 bg-amber-50 dark:bg-amber-950/70 border-b border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 shrink-0">
+          <div className="relative z-10 ps-11 sm:ps-12 pe-3 sm:pe-4 py-1.5 text-xs text-amber-800 dark:text-amber-300 shrink-0">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
-                <span className="font-semibold truncate sm:whitespace-normal">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span className="font-bold truncate sm:whitespace-normal">
                   {bi(
                     `تحذير ترحيل البيانات: (${unmigratedCount}) سجل قديم يتطلب المراجعة.`,
                     `Migration notice: (${unmigratedCount}) legacy item(s) could not be auto-migrated.`,
@@ -1462,7 +1095,7 @@ export const AppLayout: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsMigrationModalOpen(true)}
-                  className="min-h-[36px] px-2.5 py-1 rounded-lg bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold cursor-pointer shrink-0"
+                  className="min-h-[34px] px-2.5 py-1 rounded-full bg-card/75 hover:bg-card text-amber-800 dark:text-amber-300 text-xs font-extrabold cursor-pointer shrink-0 shadow-2xs"
                 >
                   {bi('مراجعة ومعالجة', 'Review & resolve', 'پێداچوونەوە و چارەسەرکردن')}
                 </button>
@@ -1472,7 +1105,7 @@ export const AppLayout: React.FC = () => {
                 type="button"
                 onClick={() => setMigrationBannerDismissed(true)}
                 aria-label={bi('إغلاق تحذير الترحيل', 'Dismiss migration warning', 'داخستنی ئاگاداری گواستنەوە')}
-                className="size-9 rounded-lg hover:bg-amber-200/60 dark:hover:bg-amber-800/50 text-amber-900 dark:text-amber-200 inline-flex items-center justify-center cursor-pointer shrink-0"
+                className="size-8 rounded-full hover:bg-card/60 inline-flex items-center justify-center cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1485,10 +1118,10 @@ export const AppLayout: React.FC = () => {
           (lastRepairSummary &&
             (lastRepairSummary.repairedCount > 0 || lastRepairSummary.skippedCount > 0))) && (
           <div
-            className={`px-4 py-1.5 border-b flex items-center justify-between gap-2.5 text-xs shrink-0 ${
+            className={`relative z-10 ps-11 sm:ps-12 pe-4 py-1.5 flex items-center justify-between gap-2.5 text-xs shrink-0 ${
               repairError
-                ? 'bg-rose-50 dark:bg-rose-950/80 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200'
-                : 'bg-amber-50 dark:bg-amber-950/70 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200'
+                ? 'text-rose-700 dark:text-rose-300'
+                : 'text-amber-800 dark:text-amber-300'
             }`}
           >
             <div className="flex items-center gap-2.5">
@@ -1522,31 +1155,33 @@ export const AppLayout: React.FC = () => {
 
         {/* Active View Router */}
         {selectedPatient ? (
-          <Suspense
-            fallback={
-              <div className="flex-1 flex items-center justify-center p-8 text-xs text-muted-foreground-1">
-                {bi('جاري فتح الملف السريري...', 'Loading patient workspace...')}
-              </div>
-            }
-          >
-            <PatientWorkspace
-              patient={selectedPatient}
-              onBackToDirectory={() => {
-                setSelectedSessionLaunch(null);
-                setSelectedPatientId(null);
-              }}
-              initialSessionId={selectedSessionLaunch?.sessionId}
-              initialAutoOpenFinish={selectedSessionLaunch?.autoOpenFinish}
-              onFinishCompleted={(snap, summaryAr, summaryEn) =>
-                triggerFinishUndoToast(snap, bi(summaryAr, summaryEn))
+          <div className="relative z-10 flex-1 flex flex-col min-h-0 overflow-hidden">
+            <Suspense
+              fallback={
+                <div className="flex-1 flex items-center justify-center p-8 text-xs text-muted-foreground-1">
+                  {bi('جاري فتح الملف السريري...', 'Loading patient workspace...')}
+                </div>
               }
-            />
-          </Suspense>
+            >
+              <PatientWorkspace
+                patient={selectedPatient}
+                onBackToDirectory={() => {
+                  setSelectedSessionLaunch(null);
+                  setSelectedPatientId(null);
+                }}
+                initialSessionId={selectedSessionLaunch?.sessionId}
+                initialAutoOpenFinish={selectedSessionLaunch?.autoOpenFinish}
+                onFinishCompleted={(snap, summaryAr, summaryEn) =>
+                  triggerFinishUndoToast(snap, bi(summaryAr, summaryEn))
+                }
+              />
+            </Suspense>
+          </div>
         ) : (
           <div
             tabIndex={0}
             aria-label={bi('المحتوى الرئيسي', 'Main workspace content', 'ناوەڕۆکی سەرەکی')}
-            className="flex-1 overflow-y-auto focus:outline-none"
+            className="relative z-10 flex-1 overflow-y-auto focus:outline-none"
           >
             <div className="app-content-shell">
             <Suspense
@@ -1612,7 +1247,7 @@ export const AppLayout: React.FC = () => {
             )}
             </Suspense>
 
-            <footer className="py-4 px-6 text-center text-xs text-muted-foreground-1 border-t border-line-2/50 mt-8">
+            <footer className="py-5 px-6 text-center text-xs text-muted-foreground-2/85 mt-6">
               {bi(
                 'بياناتك مشفرة ومحفوظة على هذا الجهاز فقط',
                 'Your data is encrypted and stored on this device only'
@@ -1622,182 +1257,6 @@ export const AppLayout: React.FC = () => {
           </div>
         )}
       </main>
-
-      {/* Unified 5-Tab Mobile Bottom Navigation Bar (Consistent in both Solo and Team modes — V-11) */}
-      <nav
-        aria-label={bi(
-          isSoloMode ? 'التنقل السفلي للمعالج المنفرد' : 'التنقل السفلي للجوال',
-          isSoloMode ? 'Solo Mobile Bottom Navigation' : 'Mobile Bottom Navigation',
-          isSoloMode ? 'گەڕانی خوارەوەی چارەسەرکاری تاک' : 'گەڕانی خوارەوەی مۆبایل'
-        )}
-        className="pr-tabbar md:hidden"
-      >
-        {(isSoloMode
-          ? [
-              { id: 'today' as const, icon: CalendarClock, ar: 'اليوم', en: 'Today', ckb: 'ئەمڕۆ' },
-              { id: 'schedule' as const, icon: Calendar, ar: 'المواعيد', en: 'Schedule', ckb: 'خشتە' },
-              { id: 'directory' as const, icon: Users, ar: 'المرضى', en: 'Patients', ckb: 'نەخۆشان' },
-              { id: 'finance' as const, icon: Wallet, ar: 'المالية', en: 'Finance', ckb: 'دارایی' },
-            ]
-          : [
-              { id: 'reception' as const, icon: MonitorCheck, ar: 'الطابور', en: 'Queue', ckb: 'ڕیز' },
-              { id: 'schedule' as const, icon: Calendar, ar: 'المواعيد', en: 'Schedule', ckb: 'خشتە' },
-              { id: 'directory' as const, icon: Users, ar: 'المرضى', en: 'Patients', ckb: 'نەخۆشان' },
-              { id: 'finance' as const, icon: Wallet, ar: 'المالية', en: 'Finance', ckb: 'دارایی' },
-            ]
-        ).map((item) => {
-          const Icon = item.icon;
-          const isActive =
-            selectedPatient !== null
-              ? item.id === 'directory'
-              : activeNav === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              aria-label={bi(item.ar, item.en, item.ckb)}
-              aria-current={isActive ? 'page' : undefined}
-              onClick={() => {
-                setIsMobileMoreOpen(false);
-                setSelectedSessionLaunch(null);
-                setSelectedPatientId(null);
-                setActiveNav(item.id);
-              }}
-              data-active={isActive}
-              className="pr-tab"
-            >
-              <span className="pr-tab-icon">
-                <Icon className={isActive ? 'size-[1.15rem]' : 'size-5'} />
-              </span>
-              <span className="truncate max-w-full px-0.5">
-                {bi(item.ar, item.en, item.ckb)}
-              </span>
-            </button>
-          );
-        })}
-
-        {/* 5th Unified Tab: More -> HEP, Analytics, Audit (Team), Settings */}
-        <button
-          type="button"
-          aria-label={bi('المزيد', 'More', 'زیاتر')}
-          aria-expanded={isMobileMoreOpen}
-          onClick={() => setIsMobileMoreOpen((prev) => !prev)}
-          data-active={isMoreTabActive || isMobileMoreOpen}
-          className="pr-tab"
-        >
-          <span className="pr-tab-icon">
-            <MoreHorizontal className="size-5" />
-          </span>
-          <span className="truncate max-w-full px-0.5">
-            {bi('المزيد', 'More', 'زیاتر')}
-          </span>
-        </button>
-      </nav>
-
-      {/* Mobile "More" Popover Sheet (HEP, Analytics, Audit, Settings) */}
-      {isMobileMoreOpen && (
-        <div
-          className="md:hidden fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-xs"
-          onClick={() => setIsMobileMoreOpen(false)}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              e.stopPropagation();
-              setIsMobileMoreOpen(false);
-            }
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={bi('المزيد من الأقسام', 'More sections')}
-            onClick={(e) => e.stopPropagation()}
-            dir={isRtl ? 'rtl' : 'ltr'}
-            className="fixed bottom-0 inset-x-0 pr-surface-2 rounded-b-none rounded-t-3xl p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] space-y-1"
-          >
-            <div className="pr-sheet-handle mb-1.5" />
-            {showExerciseLibrary && (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileMoreOpen(false);
-                  setSelectedPatientId(null);
-                  setActiveNav('exercises');
-                }}
-                className={`min-h-[44px] w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 cursor-pointer ${
-                  activeNav === 'exercises' && !selectedPatient
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-foreground hover:bg-layer-hover'
-                }`}
-              >
-                <Dumbbell className="w-4 h-4 text-primary" />
-                <span>{bi('مكتبة التمارين (HEP)', 'Exercise & HEP', 'کتێبخانەی ڕاهێنانەکان (HEP)')}</span>
-              </button>
-            )}
-
-            {showAnalyticsModule && (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileMoreOpen(false);
-                  setSelectedPatientId(null);
-                  setActiveNav('analytics');
-                }}
-                className={`min-h-[44px] w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 cursor-pointer ${
-                  activeNav === 'analytics' && !selectedPatient
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-foreground hover:bg-layer-hover'
-                }`}
-              >
-                <BarChart3 className="w-4 h-4 text-primary" />
-                <span>{bi('التحليلات المحلية', 'Local Analytics', 'شیکارییە ناوخۆییەکان')}</span>
-              </button>
-            )}
-
-            {!isSoloMode && (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileMoreOpen(false);
-                  setSelectedPatientId(null);
-                  setActiveNav('activity_log');
-                }}
-                className={`min-h-[44px] w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 cursor-pointer ${
-                  activeNav === 'activity_log' && !selectedPatient
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-foreground hover:bg-layer-hover'
-                }`}
-              >
-                <ShieldAlert className="w-4 h-4 text-primary" />
-                <span>{bi('سجل النشاط والكادر', 'Audit & Staff Roles', 'تۆماری چالاکی و ستاف')}</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => {
-                setIsMobileMoreOpen(false);
-                setIsPrivacyCoverOpen(true);
-              }}
-              className="min-h-[44px] w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 text-foreground hover:bg-layer-hover cursor-pointer"
-            >
-              <EyeOff className="w-4 h-4 text-primary" />
-              <span>{bi('ستار الخصوصية الفوري', 'Privacy Cover', 'داپۆشەری نهێنی')}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setIsMobileMoreOpen(false);
-                setIsSettingsModalOpen(true);
-              }}
-              className="min-h-[44px] w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 text-foreground hover:bg-layer-hover cursor-pointer"
-            >
-              <Settings className="w-4 h-4 text-primary" />
-              <span>{bi('الإعدادات والمطور', 'Settings', 'ڕێکخستنەکان')}</span>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Global Command Palette & Arabic-Aware Patient Search (Ctrl/Cmd+K) */}
       <ModalDialog
@@ -2057,15 +1516,6 @@ export const AppLayout: React.FC = () => {
         </Suspense>
       )}
 
-      {isToolkitOpen && (
-        <Suspense fallback={null}>
-          <ClinicalToolkitModal
-            isOpen={isToolkitOpen}
-            onClose={() => setIsToolkitOpen(false)}
-          />
-        </Suspense>
-      )}
-
       {isMigrationModalOpen && (
         <Suspense fallback={null}>
           <MigrationResolutionModal
@@ -2176,6 +1626,18 @@ export const AppLayout: React.FC = () => {
         role="alertdialog"
         size="sm"
         dir={isRtl ? 'rtl' : 'ltr'}
+        title={
+          <span className="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-primary-foreground">
+            <KeyRound className="size-4 shrink-0" />
+            <span>
+              {bi(
+                'إعداد رمز مدير التوثيق المخصص (مطلوب في التشغيل الأول)',
+                'Set Custom Staff Admin PIN (First-Run Setup)',
+                'ڕێکخستنی کۆدی تایبەتی بەڕێوەبەر (پێویستە لە یەکەم کارپێکردندا)'
+              )}
+            </span>
+          </span>
+        }
         ariaLabel={bi(
           'إعداد رمز مدير التوثيق المخصص (مطلوب في التشغيل الأول)',
           'Set Custom Staff Admin PIN (First-Run Setup)',
@@ -2188,16 +1650,6 @@ export const AppLayout: React.FC = () => {
             onSubmit={(e) => void handleConfirmFirstRunPin(e)}
             className="space-y-4"
           >
-            <div className="flex items-center gap-2.5 text-sm font-bold text-foreground">
-              <KeyRound className="size-4 text-primary shrink-0" />
-              <h3>
-                {bi(
-                  'إعداد رمز مدير التوثيق المخصص (مطلوب في التشغيل الأول)',
-                  'Set Custom Staff Admin PIN (First-Run Setup)',
-                  'ڕێکخستنی کۆدی تایبەتی بەڕێوەبەر (پێویستە لە یەکەم کارپێکردندا)'
-                )}
-              </h3>
-            </div>
             <p className="text-xs text-muted-foreground-1 leading-relaxed">
               {bi(
                 'تم إلغاء الرموز الافتراضية نهائياً. أنشئ رمز PIN خاصاً بك (4 خانات على الأقل، دون 1234 أو 0000). يُستخدم هذا الرمز لنسبة التوثيق للكادر فقط وليس بديلاً عن كلمة المرور الرئيسية للخزينة.',
@@ -2267,7 +1719,18 @@ export const AppLayout: React.FC = () => {
         }}
         size="sm"
         dir={isRtl ? 'rtl' : 'ltr'}
-        hideCloseButton
+        title={
+          <span className="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-primary-foreground">
+            <KeyRound className="size-4 shrink-0" />
+            <span>
+              {bi(
+                'تأكيد رمز المدير (Admin PIN)',
+                'Enter Staff Admin PIN',
+                'پشتڕاستکردنەوەی کۆدی بەڕێوەبەر (Admin PIN)'
+              )}
+            </span>
+          </span>
+        }
         ariaLabel={bi(
           'تأكيد رمز المدير (Admin PIN)',
           'Enter Staff Admin PIN',
@@ -2281,16 +1744,6 @@ export const AppLayout: React.FC = () => {
             onSubmit={(e) => void handleConfirmAdminPin(e)}
             className="space-y-4"
           >
-            <div className="flex items-center gap-2.5 text-sm font-bold text-foreground">
-              <KeyRound className="size-4 text-primary shrink-0" />
-              <h3>
-                {bi(
-                  'تأكيد رمز المدير (Admin PIN)',
-                  'Enter Staff Admin PIN',
-                  'پشتڕاستکردنەوەی کۆدی بەڕێوەبەر (Admin PIN)'
-                )}
-              </h3>
-            </div>
             <p className="text-xs text-muted-foreground-1 leading-relaxed">
               {bi(
                 'يتطلب التبديل إلى صفة مدير العيادة إدخال رمز PIN المخصص (لأغراض نسبة التوثيق للكادر وليس مصادقة أمان مستقلة).',

@@ -61,7 +61,7 @@ export const ContextualTipBanner: React.FC<ContextualTipBannerProps> = ({
   return (
     <div
       role="note"
-      className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-amber-500/8 border border-amber-500/25 flex flex-wrap items-center justify-between gap-2 text-xs"
+      className="px-3.5 py-2 rounded-2xl bg-card/75 backdrop-blur-xs shadow-2xs flex flex-wrap items-center justify-between gap-2 text-xs"
     >
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <Lightbulb className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -84,7 +84,7 @@ export const ContextualTipBanner: React.FC<ContextualTipBannerProps> = ({
         <button
           type="button"
           onClick={() => void handleDismiss()}
-          className="px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-muted-foreground-1 font-semibold cursor-pointer inline-flex items-center gap-1"
+          className="px-2.5 py-1 rounded-lg bg-surface/70 hover:bg-surface text-muted-foreground-1 font-semibold cursor-pointer inline-flex items-center gap-1"
           aria-label={bi('إخفاء النصيحة', 'Dismiss tip', 'شاردنەوەی ئامۆژگاری')}
         >
           <X className="size-3.5" />

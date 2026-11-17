@@ -345,7 +345,7 @@ export const LongitudinalComparisonView: React.FC<LongitudinalComparisonViewProp
                         </bdi>
                       </span>
                       {painDelta >= 2 && (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-sans font-bold">
+                        <span className="text-emerald-700 dark:text-emerald-400 text-xs font-bold">
                           {bi('تغيّر ذو دلالة (MCID)', 'Meaningful Change', 'گۆڕانکاری مانادار (MCID)')}
                         </span>
                       )}
@@ -385,7 +385,7 @@ export const LongitudinalComparisonView: React.FC<LongitudinalComparisonViewProp
                         )}% Δ`}
                       </span>
                       {outcomeEval?.mcidMet && (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-sans font-bold">
+                        <span className="text-emerald-700 dark:text-emerald-400 text-xs font-bold">
                           {bi('تغيّر ذو دلالة (MCID)', 'Meaningful Change', 'گۆڕانکاری مانادار (MCID)')}
                         </span>
                       )}

@@ -27,6 +27,7 @@ import {
 import {
   AccessibleTab,
   AccessibleTabList,
+  AccessibleTabPanel,
   AccessibleTabs,
 } from '../ui/Tabs';
 import {
@@ -454,9 +455,9 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
             );
           })}
         </AccessibleTabList>
-      </AccessibleTabs>
 
-      {/* 2. Score Summary KPI Banner */}
+        <AccessibleTabPanel id={selectedId} className="space-y-4 pt-4">
+          {/* 2. Score Summary KPI Banner */}
       <div className="p-3.5 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm font-extrabold text-foreground">
@@ -1158,7 +1159,7 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
                   const y = 86 - (pt.scorePercentage / 100) * 60;
                   return (
                     <g key={pt.id}>
-                      <circle cx={x} cy={y} r="4" className="fill-teal-600 stroke-white dark:stroke-slate-900 stroke-1.5" />
+                      <circle cx={x} cy={y} r="4" className="fill-primary stroke-white dark:stroke-slate-900 stroke-1.5" />
                       <text x={x} y={y - 9} fontSize="13" textAnchor="middle" className="fill-foreground font-mono font-bold">
                         {pt.scorePercentage}%
                       </text>
@@ -1215,6 +1216,8 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
           />
         </Suspense>
       )}
+        </AccessibleTabPanel>
+      </AccessibleTabs>
     </div>
   );
 };

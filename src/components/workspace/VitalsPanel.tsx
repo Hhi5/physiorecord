@@ -98,7 +98,7 @@ export const VitalsPanel: React.FC<VitalsPanelProps> = ({
   return (
     <div
       data-testid="vitals-panel"
-      className="p-4 rounded-xl bg-surface border border-line-2 space-y-3 text-xs"
+      className="p-4 rounded-2xl bg-surface/60 space-y-3 text-xs"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 font-bold text-foreground">
@@ -112,7 +112,13 @@ export const VitalsPanel: React.FC<VitalsPanelProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 font-semibold inline-flex items-center gap-1">
+          <span
+            className={`font-semibold inline-flex items-center gap-1 ${
+              thresholds.verificationStatus === 'verified'
+                ? 'text-emerald-700 dark:text-emerald-300'
+                : 'text-amber-700 dark:text-amber-300'
+            }`}
+          >
             <Info className="size-3.5" />
             <span>
               {thresholds.verificationStatus === 'verified'
@@ -123,7 +129,7 @@ export const VitalsPanel: React.FC<VitalsPanelProps> = ({
           <button
             type="button"
             onClick={() => setShowThresholdConfig((v) => !v)}
-            className="min-h-[36px] px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line font-semibold inline-flex items-center gap-1 cursor-pointer"
+            className="min-h-[36px] px-2.5 py-1 rounded-lg bg-layer/80 hover:bg-layer-hover font-semibold inline-flex items-center gap-1 cursor-pointer"
           >
             <Settings2 className="size-3.5" />
             <span>{bi('تخصيص الحدود', 'Thresholds')}</span>
@@ -211,11 +217,11 @@ export const VitalsPanel: React.FC<VitalsPanelProps> = ({
       {alerts.length > 0 && (
         <div
           data-testid="vitals-alerts-banner"
-          className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 space-y-1 text-rose-800 dark:text-rose-200"
+          className="p-3 rounded-xl bg-surface/75 space-y-1 text-rose-700 dark:text-rose-400"
         >
           {alerts.map((a) => (
             <div key={a.code} className="flex items-start gap-2 font-bold">
-              <AlertTriangle className="size-4 text-rose-600 shrink-0 mt-0.5" />
+              <AlertTriangle className="size-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               <span>{language === 'en' ? a.labelEn : language === 'ckb' ? a.labelCkb : a.labelAr}</span>
             </div>
           ))}
@@ -230,7 +236,7 @@ export const VitalsPanel: React.FC<VitalsPanelProps> = ({
 
       {/* Lightweight Programmatic SVG Mini-Chart */}
       {chartPoints.length >= 2 && (
-        <div className="p-2.5 rounded-xl bg-layer border border-layer-line flex flex-wrap items-center justify-between gap-3">
+        <div className="p-2.5 rounded-xl bg-card/90 shadow-2xs flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1">
             <span className="font-bold text-foreground block">
               {bi('منحنى العلامات الحيوية خلال الجلسات', 'Vitals Trend Mini-Chart')}
@@ -264,7 +270,7 @@ export const VitalsPanel: React.FC<VitalsPanelProps> = ({
 
       {/* Inline Configurable Thresholds Drawer */}
       {showThresholdConfig && (
-        <div className="p-3 rounded-xl bg-layer border border-layer-line space-y-2">
+        <div className="p-3 rounded-xl bg-card/90 shadow-2xs space-y-2">
           <div className="flex items-center justify-between">
             <span className="font-bold text-foreground">
               {bi(

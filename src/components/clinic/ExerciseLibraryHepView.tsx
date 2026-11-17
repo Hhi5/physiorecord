@@ -189,14 +189,14 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
       className={
         embeddedHepProgram !== undefined
           ? 'space-y-5'
-          : 'max-w-[85rem] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6'
+          : 'pr-container space-y-5'
       }
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Page Header: Title + 1 Action */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className={embeddedHepProgram !== undefined ? 'flex flex-wrap items-center justify-between gap-3' : 'pr-page-header'}>
         {embeddedHepProgram !== undefined ? (
-          <h2 className="text-base sm:text-lg font-bold text-foreground">
+          <h2 className="pr-section-title text-base sm:text-lg">
             {bi(
               'مكتبة التمارين والبرنامج المنزلي',
               'Exercise Library & HEP Builder',
@@ -210,7 +210,7 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
             )}
           </h2>
         ) : (
-          <h1 className="text-base sm:text-lg font-bold text-foreground">
+          <h1 className="pr-page-title">
             {bi(
               'مكتبة التمارين والبرنامج المنزلي',
               'Exercise Library & HEP Builder',
@@ -495,7 +495,7 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
                         {!ex.governance?.reviewedBy && (
                           <span
                             title={ex.governance?.source}
-                            className="py-0.5 px-2 rounded-md bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-300 font-medium"
+                            className="text-amber-800 dark:text-amber-300 font-semibold text-xs"
                           >
                             {bi('بانتظار المراجعة', 'Pending Review', 'چاوەڕێی پێداچوونەوە')}
                           </span>
@@ -524,7 +524,7 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
                       )}
 
                       {ex.precautionsAr && (
-                        <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-1.5 text-xs text-amber-800 dark:text-amber-300">
+                        <div className="p-2 rounded-xl bg-surface/75 flex items-center gap-1.5 text-xs text-amber-800 dark:text-amber-300">
                           <AlertTriangle className="size-3.5 shrink-0" />
                           <span>{bi(ex.precautionsAr, ex.precautionsEn ?? ex.precautionsAr)}</span>
                         </div>
@@ -545,7 +545,7 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
                         onClick={() => handleAssignToHep(ex)}
                         className={`py-2 px-3 min-h-[36px] rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
                           isAdded
-                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                            ? 'bg-emerald-700 text-white shadow-2xs'
                             : 'bg-primary hover:bg-primary-hover text-primary-foreground shadow-2xs'
                         }`}
                       >
@@ -580,7 +580,7 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
                   {bi('وصفة التمارين المنزلية النشطة', 'Assigned HEP Prescription', 'ڕەچەتەی ڕاهێنانە چالاکەکانی ماڵەوە')}
                 </h2>
               )}
-              <span className="py-0.5 px-2.5 rounded-full text-xs font-bold bg-primary/10 text-primary tabular-nums">
+              <span className="text-xs font-bold text-primary tabular-nums">
                 <Num value={activeHepList.length} />
               </span>
             </div>
@@ -629,13 +629,13 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
                           `لابردنی ڕاهێنانی ${item.nameAr}`,
                         )}
                         title={bi('إزالة التمرين', 'Remove exercise', 'لابردنی ڕاهێنان')}
-                        className="text-muted-foreground-1 hover:text-rose-700 dark:hover:text-rose-400 p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg hover:bg-rose-500/10 cursor-pointer"
+                        className="text-muted-foreground-1 hover:text-rose-700 dark:hover:text-rose-400 p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg hover:bg-layer-hover cursor-pointer"
                       >
                         <Trash2 className="size-3.5" />
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-xs tabular-nums">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs tabular-nums">
                       <div>
                         <label htmlFor={`hep-sets-${item.id}`} className="text-xs text-muted-foreground-1 block mb-1">
                           {bi('الجولات', 'Sets', 'گەڕەکان')}

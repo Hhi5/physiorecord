@@ -23,7 +23,8 @@ import {
   TrendingUp,
   ChevronDown,
   ChevronUp,
-  Brain
+  Brain,
+  X
 } from 'lucide-react';
 import { 
   SESSION_TYPES, 
@@ -45,6 +46,7 @@ import { SessionModal } from './SessionModal';
 import { SoapModal } from './SoapModal';
 import { AddendumModal } from './AddendumModal';
 import { EpisodeDischargeModal } from './EpisodeDischargeModal';
+import { GeometricHeaderBackdrop } from './ui/Dialog';
 import { useEpisodes } from '../context/EpisodeContext';
 import { SessionService } from '../services/sessionService';
 import {
@@ -395,7 +397,7 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
       </div>
 
       {error && (
-        <div className="p-3 mb-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs flex items-center gap-2">
+        <div className="p-3 mb-3 bg-surface/75 rounded-lg text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
           <span>{error}</span>
         </div>
@@ -433,49 +435,49 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
         <div className="space-y-3">
           {/* Longitudinal Clinical Progress Tracking */}
           {(longitudinalRomComparisons.length > 0 || longitudinalMmtComparisons.length > 0) && (
-            <div className="rounded-xl border border-teal-200 bg-gradient-to-br from-teal-50/40 via-white to-indigo-50/20 p-4 shadow-2xs">
+            <div className="rounded-xl bg-card p-4 shadow-2xs">
               <button
                 type="button"
                 onClick={() => setIsLongitudinalOpen(!isLongitudinalOpen)}
-                className={`w-full flex items-center justify-between ${isRtl ? 'text-right' : 'text-left'}`}
+                className={`w-full flex items-center justify-between cursor-pointer ${isRtl ? 'text-right' : 'text-left'}`}
               >
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-teal-600 text-white shadow-2xs">
+                  <div className="p-2 rounded-lg bg-primary text-primary-foreground shadow-2xs">
                     <TrendingUp className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                       <span>{bi('تتبع التقدم الحركي والعضلي عبر الجلسات', 'Longitudinal Motor & ROM Progress')}</span>
-                      <span className="px-2 py-0.5 rounded-full text-xs bg-teal-100 text-teal-800 font-mono font-bold">
+                      <span className="text-xs text-primary font-mono font-bold">
                         {longitudinalRomComparisons.length + longitudinalMmtComparisons.length} {bi('مؤشرات', 'Metrics')}
                       </span>
                     </h4>
-                    <p className="text-xs text-slate-600">
+                    <p className="text-xs text-muted-foreground-1">
                       {bi('مقارنة تطور المدى الحركي والقوة العضلية بين الجلسة التقييمية الأولى والجلسة الأحدث', 'Comparing ROM and muscle strength progress between baseline and latest session')}
                     </p>
                   </div>
                 </div>
-                <div className="text-slate-400 p-1">
+                <div className="text-muted-foreground-2 p-1">
                   {isLongitudinalOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </div>
               </button>
 
               {isLongitudinalOpen && (
-                <div className="mt-3 pt-3 border-t border-teal-100 space-y-3">
+                <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
                   {/* ROM Comparisons */}
                   {longitudinalRomComparisons.length > 0 && (
                     <div className="space-y-2">
-                      <span className="text-xs font-bold text-teal-900 flex items-center gap-1">
-                        <Compass className="w-3.5 h-3.5 text-teal-600" />
+                      <span className="text-xs font-bold text-foreground flex items-center gap-1">
+                        <Compass className="w-3.5 h-3.5 text-primary" />
                         <span>{bi('تطور المدى الحركي:', 'Range of Motion (ROM) Progress:')}</span>
                       </span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {longitudinalRomComparisons.map((c, idx) => (
                           <div
                             key={idx}
-                            className="p-2.5 rounded-lg bg-white border border-teal-100 text-xs shadow-2xs space-y-1"
+                            className="p-2.5 rounded-lg bg-card border border-card-line text-xs shadow-2xs space-y-1"
                           >
-                            <div className="flex items-center justify-between font-bold text-slate-800">
+                            <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200">
                               <span>
                                 {c.jointNameAr} — {c.movementNameAr}
                               </span>
@@ -484,30 +486,30 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                               </span>
                             </div>
 
-                            <div className="flex items-center justify-between text-xs text-slate-600">
+                            <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
                               <span>
                                 {bi(`الأساس (جلسة #${c.baselineSessionNumber}):`, `Baseline (S#${c.baselineSessionNumber}):`)}{' '}
-                                <strong className="font-mono text-slate-800">
+                                <strong className="font-mono text-slate-800 dark:text-slate-200">
                                   {c.baselineIsTested ? `${c.baselineAngle}°` : bi('غير مفحوص', 'Not Tested')}
                                 </strong>
                               </span>
                               <span>
                                 {bi(`الأحدث (جلسة #${c.latestSessionNumber}):`, `Latest (S#${c.latestSessionNumber}):`)}{' '}
-                                <strong className="font-mono text-slate-800">
+                                <strong className="font-mono text-slate-800 dark:text-slate-200">
                                   {c.latestIsTested ? `${c.latestAngle}°` : bi('غير مفحوص', 'Not Tested')}
                                 </strong>
                               </span>
                             </div>
 
-                            <div className="pt-1 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <div className="pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
                               {c.comparison.isComparable && c.comparison.deltaDegrees !== null ? (
                                 <span
-                                  className={`inline-flex items-center gap-1 font-bold font-mono px-2 py-0.5 rounded-full ${
+                                  className={`inline-flex items-center gap-1 font-bold font-mono text-xs ${
                                     c.comparison.deltaDegrees > 0
-                                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                      ? 'text-emerald-700 dark:text-emerald-400'
                                       : c.comparison.deltaDegrees < 0
-                                      ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                                      : 'bg-slate-100 text-slate-700 border border-slate-300'
+                                      ? 'text-rose-700 dark:text-rose-400'
+                                      : 'text-muted-foreground-1'
                                   }`}
                                 >
                                   {c.comparison.deltaDegrees > 0 && '+'}
@@ -521,7 +523,7 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                                   </span>
                                 </span>
                               ) : (
-                                <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded text-xs border border-amber-200">
+                                <span className="text-amber-700 dark:text-amber-400 text-xs font-medium">
                                   {isEn ? (c.comparison.reasonEn || 'Not directly comparable') : (c.comparison.reasonAr || 'غير قابلة للمقارنة المباشرة')}
                                 </span>
                               )}
@@ -535,31 +537,31 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                   {/* MMT Comparisons */}
                   {longitudinalMmtComparisons.length > 0 && (
                     <div className="space-y-2">
-                      <span className="text-xs font-bold text-indigo-900 flex items-center gap-1">
-                        <Dumbbell className="w-3.5 h-3.5 text-indigo-600" />
+                      <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1">
+                        <Dumbbell className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                         <span>{bi('تطور القوة العضلية:', 'Muscle Strength (MMT) Progress:')}</span>
                       </span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {longitudinalMmtComparisons.map((c, idx) => (
                           <div
                             key={idx}
-                            className="p-2.5 rounded-lg bg-white border border-indigo-100 text-xs shadow-2xs space-y-1"
+                            className="p-2.5 rounded-lg bg-card border border-card-line text-xs shadow-2xs space-y-1"
                           >
-                            <div className="flex items-center justify-between font-bold text-slate-800">
+                            <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200">
                               <span>{c.muscleNameAr}</span>
                               <span className="text-xs text-slate-400">
                                 {c.actionNameAr} ({c.laterality})
                               </span>
                             </div>
 
-                            <div className="flex items-center justify-between text-xs text-slate-600">
+                            <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
                               <span>
                                 {bi(`الأساس (جلسة #${c.baselineSessionNumber}):`, `Baseline (S#${c.baselineSessionNumber}):`)}{' '}
-                                <strong className="font-mono text-slate-800">{bi('درجة', 'Grade')} {c.baselineGrade}</strong>
+                                <strong className="font-mono text-slate-800 dark:text-slate-200">{bi('درجة', 'Grade')} {c.baselineGrade}</strong>
                               </span>
                               <span>
                                 {bi(`الأحدث (جلسة #${c.latestSessionNumber}):`, `Latest (S#${c.latestSessionNumber}):`)}{' '}
-                                <strong className="font-mono text-slate-800">{bi('درجة', 'Grade')} {c.latestGrade}</strong>
+                                <strong className="font-mono text-slate-800 dark:text-slate-200">{bi('درجة', 'Grade')} {c.latestGrade}</strong>
                               </span>
                             </div>
                           </div>
@@ -618,58 +620,58 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                     </span>
 
                     {/* Session Type Badge */}
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${typeInfo.badgeClass}`}>
+                    <span className={`text-xs font-bold ${typeInfo.badgeClass}`}>
                       {typeInfo.ar}
                     </span>
 
                     {/* Status Badge */}
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${statusInfo.badgeClass}`}>
+                    <span className={`text-xs font-bold ${statusInfo.badgeClass}`}>
                       {statusInfo.ar}
                     </span>
 
                     {/* Attendance Badge if not attended */}
                     {sess.attendanceStatus !== 'attended' && (
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${attendanceInfo.badgeClass}`}>
+                      <span className={`text-xs font-bold ${attendanceInfo.badgeClass}`}>
                         {attendanceInfo.ar}
                       </span>
                     )}
 
                     {/* Addenda count badge */}
                     {addendaCount > 0 && (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
-                        <History className="w-3 h-3 text-amber-700" />
+                      <span className="text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                        <History className="w-3 h-3 text-amber-700 dark:text-amber-400" />
                         <span>{addendaCount} ملاحق</span>
                       </span>
                     )}
 
                     {/* Body Chart Markers Badge */}
                     {soap?.data?.subjective?.bodyChart?.markers && soap.data.subjective.bodyChart.markers.length > 0 && (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200 flex items-center gap-1">
-                        <Activity className="w-3 h-3 text-sky-600" />
+                      <span className="text-xs font-bold text-sky-700 dark:text-sky-400 flex items-center gap-1">
+                        <Activity className="w-3 h-3 text-sky-600 dark:text-sky-400" />
                         <span>{bi('مخطط الجسم', 'Body Chart')}: {soap.data.subjective.bodyChart.markers.length}</span>
                       </span>
                     )}
 
                     {/* ROM Measurements Badge */}
                     {soap?.data?.objective?.romBattery?.entries && soap.data.objective.romBattery.entries.length > 0 && (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200 flex items-center gap-1">
-                        <Compass className="w-3 h-3 text-teal-600" />
+                      <span className="text-xs font-bold text-primary flex items-center gap-1">
+                        <Compass className="w-3 h-3 text-primary" />
                         <span>ROM: {soap.data.objective.romBattery.entries.length}</span>
                       </span>
                     )}
 
                     {/* MMT Tests Badge */}
                     {soap?.data?.objective?.mmtBattery?.entries && soap.data.objective.mmtBattery.entries.length > 0 && (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200 flex items-center gap-1">
-                        <Dumbbell className="w-3 h-3 text-indigo-600" />
+                      <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1">
+                        <Dumbbell className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
                         <span>MMT: {soap.data.objective.mmtBattery.entries.length}</span>
                       </span>
                     )}
 
                     {/* Neuro Screening Badge */}
                     {hasNeuroScreening && (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-violet-50 text-violet-800 border border-violet-200 flex items-center gap-1">
-                        <Brain className="w-3 h-3 text-violet-600" />
+                      <span className="text-xs font-bold text-violet-700 dark:text-violet-400 flex items-center gap-1">
+                        <Brain className="w-3 h-3 text-violet-600 dark:text-violet-400" />
                         <span>{bi('الفحص العصبي', 'Neuro Screening')}</span>
                       </span>
                     )}
@@ -697,7 +699,7 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
 
                   {/* Cancellation Reason if cancelled */}
                   {isCancelled && sess.data.cancellationReason && (
-                    <p className="text-xs text-rose-700 bg-rose-50 p-2 rounded-lg border border-rose-200">
+                    <p className="text-xs text-rose-700 dark:text-rose-400">
                       <strong>سبب الإلغاء:</strong> {sess.data.cancellationReason}
                     </p>
                   )}
@@ -710,12 +712,12 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => handleOpenSoap(sess)}
-                    className={`inline-flex items-center gap-1 px-3 py-1.5 min-h-[36px] rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 min-h-[36px] rounded-xl text-xs font-bold transition-all cursor-pointer ${
                       isFinalized
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                        ? 'text-emerald-700 dark:text-emerald-400 hover:bg-surface/80'
                         : soap
-                        ? 'bg-primary-50 text-primary-800 border-primary-300 hover:bg-primary-100'
-                        : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                        ? 'text-primary hover:bg-surface/80'
+                        : 'text-foreground hover:bg-surface/80'
                     }`}
                   >
                     {isFinalized ? (
@@ -741,10 +743,10 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleOpenAddendum(sess)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-[36px] rounded-xl text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-[36px] rounded-xl text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-surface/80 transition-colors cursor-pointer"
                       title={bi('إضافة ملحق سريري وتصحيح للسجل المعتمد', 'Add clinical addendum')}
                     >
-                      <History className="w-3.5 h-3.5 text-amber-700" />
+                      <History className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                       <span>{addendaCount > 0 ? `الملاحق (${addendaCount})` : 'إضافة ملحق'}</span>
                     </button>
                   )}
@@ -880,13 +882,28 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
               setSessionToCancel(null);
             }
           }}
-          className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6"
         >
-          <div className="bg-card border border-rose-500/30 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <h2 id="episode-cancel-modal-title" className="text-base font-bold text-foreground">
-              {bi(`إلغاء الجلسة #${sessionToCancel.sessionNumber}`, `Cancel Session #${sessionToCancel.sessionNumber}`)}
-            </h2>
+          <div className="bg-card border border-card-line rounded-t-2xl sm:rounded-2xl max-w-md w-full max-h-[92dvh] sm:max-h-[88dvh] overflow-hidden flex flex-col shadow-2xl">
+            <div className="relative overflow-hidden px-5 pt-3 sm:pt-4 pb-4 bg-primary text-primary-foreground flex flex-col gap-2.5 shrink-0 shadow-xs">
+              <GeometricHeaderBackdrop />
+              <div className="relative z-10 w-10 h-1 bg-primary-foreground/40 rounded-full mx-auto sm:hidden shrink-0" aria-hidden="true" />
+              <div className="relative z-10 flex items-center justify-between gap-2.5">
+                <h2 id="episode-cancel-modal-title" className="text-base font-bold text-primary-foreground">
+                  {bi(`إلغاء الجلسة #${sessionToCancel.sessionNumber}`, `Cancel Session #${sessionToCancel.sessionNumber}`)}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setSessionToCancel(null)}
+                  aria-label={bi('إغلاق', 'Close')}
+                  className="size-9 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
 
+            <div className="p-5 overflow-y-auto space-y-4">
             <p className="text-xs text-muted-foreground-1 leading-relaxed">
               {bi(
                 'يرجى تحديد سبب الإلغاء ونوع التخلف لحفظه في السجل السريري للمريض:',
@@ -958,6 +975,7 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
                 {bi('تراجع', 'Cancel')}
               </button>
             </div>
+            </div>
           </div>
         </div>
       )}
@@ -974,12 +992,27 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
               setSessionToDelete(null);
             }
           }}
-          className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6"
         >
-          <div className="bg-card border border-rose-500/30 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4">
-            <h2 id="episode-delete-modal-title" className="text-base font-bold text-foreground">
-              {bi(`حذف مسودة الجلسة #${sessionToDelete.sessionNumber}`, `Delete Draft Session #${sessionToDelete.sessionNumber}`)}
-            </h2>
+          <div className="bg-card border border-card-line rounded-t-2xl sm:rounded-2xl max-w-sm w-full max-h-[92dvh] sm:max-h-[88dvh] overflow-hidden flex flex-col shadow-2xl">
+            <div className="relative overflow-hidden px-5 pt-3 sm:pt-4 pb-4 bg-primary text-primary-foreground flex flex-col gap-2.5 shrink-0 shadow-xs">
+              <GeometricHeaderBackdrop />
+              <div className="relative z-10 w-10 h-1 bg-primary-foreground/40 rounded-full mx-auto sm:hidden shrink-0" aria-hidden="true" />
+              <div className="relative z-10 flex items-center justify-between gap-2.5">
+                <h2 id="episode-delete-modal-title" className="text-base font-bold text-primary-foreground">
+                  {bi(`حذف مسودة الجلسة #${sessionToDelete.sessionNumber}`, `Delete Draft Session #${sessionToDelete.sessionNumber}`)}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setSessionToDelete(null)}
+                  aria-label={bi('إغلاق', 'Close')}
+                  className="size-9 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-4">
             <p className="text-xs text-muted-foreground-1 leading-relaxed">
               {bi(
                 'هل أنت متأكد من حذف مسودة الجلسة غير المعتمدة؟ لا يمكن التراجع عن هذا الإجراء.',
@@ -1010,6 +1043,7 @@ export const EpisodeSessionsView: React.FC<EpisodeSessionsViewProps> = ({
               >
                 {bi('تراجع', 'Cancel')}
               </button>
+            </div>
             </div>
           </div>
         </div>

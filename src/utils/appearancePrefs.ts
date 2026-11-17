@@ -386,7 +386,9 @@ export async function queryInstalledDeviceFonts(): Promise<string[]> {
       }
     }
     return Array.from(families).sort((a, b) => a.localeCompare(b));
-  } catch {
+  } catch (err) {
+    // Local Font Access API may exist but throw on some platforms (Android WebView, restricted contexts)
+    console.warn('[appearancePrefs] queryInstalledDeviceFonts failed:', err);
     return [];
   }
 }

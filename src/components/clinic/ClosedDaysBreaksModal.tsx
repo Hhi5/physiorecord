@@ -516,7 +516,7 @@ export const ClosedDaysBreaksModal: React.FC<ClosedDaysBreaksModalProps> = ({
 
         {/* Feedback Banners */}
         {savedNotice && (
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center justify-between gap-2">
+          <div className="p-3 rounded-xl bg-surface/75 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5">
               <CheckCircle2 className="size-4 shrink-0" />
               <span>{savedNotice}</span>
@@ -525,7 +525,7 @@ export const ClosedDaysBreaksModal: React.FC<ClosedDaysBreaksModalProps> = ({
               type="button"
               onClick={() => setSavedNotice(null)}
               aria-label={bi('إخفاء الإشعار', 'Dismiss notice', 'شاردنەوەی ئاگادارکردنەوە')}
-              className="p-1 rounded-lg hover:bg-emerald-500/20 cursor-pointer"
+              className="p-1 rounded-lg hover:bg-layer-hover cursor-pointer"
             >
               <X className="size-3.5" />
             </button>
@@ -533,13 +533,13 @@ export const ClosedDaysBreaksModal: React.FC<ClosedDaysBreaksModalProps> = ({
         )}
 
         {errorMsg && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 font-semibold flex items-center justify-between gap-2">
+          <div className="p-3 rounded-xl bg-surface/75 text-rose-700 dark:text-rose-300 font-semibold flex items-center justify-between gap-2">
             <span>{errorMsg}</span>
             <button
               type="button"
               onClick={() => setErrorMsg(null)}
               aria-label={bi('إغفاء التنبيه', 'Dismiss error', 'شاردنەوەی هەڵە')}
-              className="p-1 rounded-lg hover:bg-rose-500/20 cursor-pointer"
+              className="p-1 rounded-lg hover:bg-layer-hover cursor-pointer"
             >
               <X className="size-3.5" />
             </button>
@@ -809,10 +809,10 @@ export const ClosedDaysBreaksModal: React.FC<ClosedDaysBreaksModalProps> = ({
                           )}
                         </span>
                         <span
-                          className={`px-2 py-0.5 rounded-full font-semibold ${
+                          className={`font-semibold ${
                             brk.isActive
-                              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
-                              : 'bg-surface text-muted-foreground-1 border border-line-2'
+                              ? 'text-emerald-700 dark:text-emerald-300'
+                              : 'text-muted-foreground-1'
                           }`}
                         >
                           {brk.isActive
@@ -879,7 +879,7 @@ export const ClosedDaysBreaksModal: React.FC<ClosedDaysBreaksModalProps> = ({
                           `Delete ${brk.labelEn}`,
                           `سڕینەوەی ${brk.labelAr || brk.labelEn}`
                         )}
-                        className="p-2 rounded-xl border border-layer-line bg-layer hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground-1 cursor-pointer"
+                        className="p-2 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover hover:text-rose-600 text-muted-foreground-1 cursor-pointer"
                       >
                         <Trash2 className="size-3.5" />
                       </button>
@@ -892,7 +892,7 @@ export const ClosedDaysBreaksModal: React.FC<ClosedDaysBreaksModalProps> = ({
 
           {/* TAB 2: CLOSED DAYS & DATE RANGES */}
           <AccessibleTabPanel id="closed" className="pt-4 space-y-4">
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 leading-relaxed font-medium">
+            <div className="p-3 rounded-xl bg-surface/75 text-amber-800 dark:text-amber-300 leading-relaxed font-medium">
               {bi(
                 'ملاحظة: لا يتضمن التطبيق تقويم عطل رسمية مدمجاً مسبقاً؛ تقوم كل عيادة بإدخال تواريخ أو فترات الإغلاق الخاصة بها هنا يدوياً (مثل العطل أو الصيانة أو الإجازات).',
                 'Note: No pre-bundled official holiday calendar is shipped. Each clinic enters its own custom closed dates or date ranges here (holidays, maintenance, or leave).',
@@ -1065,7 +1065,7 @@ export const ClosedDaysBreaksModal: React.FC<ClosedDaysBreaksModalProps> = ({
                           `Delete ${entry.labelEn}`,
                           `سڕینەوەی ${entry.labelAr || entry.labelEn}`
                         )}
-                        className="p-2 rounded-xl border border-layer-line bg-layer hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground-1 cursor-pointer"
+                        className="p-2 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover hover:text-rose-600 text-muted-foreground-1 cursor-pointer"
                       >
                         <Trash2 className="size-3.5" />
                       </button>
@@ -1234,15 +1234,15 @@ export const ClosedDaysBreaksModal: React.FC<ClosedDaysBreaksModalProps> = ({
                           {typeLabel}
                         </span>
                         {loc.isDefault && (
-                          <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                          <span className="text-primary font-bold">
                             {bi('أساسي', 'Default', 'بنەڕەتی')}
                           </span>
                         )}
                         <span
-                          className={`px-2 py-0.5 rounded-full font-semibold ${
+                          className={`font-semibold ${
                             active
-                              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
-                              : 'bg-surface text-muted-foreground-1 border border-line-2'
+                              ? 'text-emerald-700 dark:text-emerald-300'
+                              : 'text-muted-foreground-1'
                           }`}
                         >
                           {active
@@ -1314,7 +1314,7 @@ export const ClosedDaysBreaksModal: React.FC<ClosedDaysBreaksModalProps> = ({
                           `Delete ${loc.nameEn}`,
                           `سڕینەوەی ${loc.nameAr || loc.nameEn}`
                         )}
-                        className="p-2 rounded-xl border border-layer-line bg-layer hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground-1 cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:cursor-not-allowed"
+                        className="p-2 rounded-xl border border-layer-line bg-layer hover:bg-layer-hover hover:text-rose-600 text-muted-foreground-1 cursor-pointer disabled:bg-surface disabled:text-muted-foreground-2 disabled:cursor-not-allowed"
                       >
                         <Trash2 className="size-3.5" />
                       </button>

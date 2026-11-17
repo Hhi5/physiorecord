@@ -1156,6 +1156,8 @@ export interface EncryptedAttachmentRecord {
   createdAt: string;
   updatedAt: string;
   version: number;
+  /** Phase E: Editable vector photo measurement annotation state (angles, cobb, plumb, calibration) */
+  annotations?: PhotoAnnotationState;
 }
 
 export type NoteTemplateCategory =

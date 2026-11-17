@@ -4,7 +4,7 @@
 // Pin Drop, Symptom Type, and NRS Severity (0-10)
 // =======================================================================
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import {
   PAIN_TYPE_SUGGESTIONS,
@@ -23,7 +23,7 @@ import { resolveAnatomicalRegionFromPoint } from '../../data/clinicalToolkit/bod
 import { AnatomicalFrontSvg, AnatomicalBackSvg } from './AnatomicalBodySvgs';
 import { Fraction, AutoResizeTextarea } from '../ui/Primitives';
 import { SpectrumColorPicker } from '../ui/SpectrumColorPicker';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Palette } from 'lucide-react';
 
 interface BodyChartWidgetProps {
   value: PatientBodyChartData | undefined;
@@ -45,9 +45,29 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
   const [defaultSeverityNrs, setDefaultSeverityNrs] = useState<number>(6);
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
   const [confirmClearAll, setConfirmClearAll] = useState(false);
+  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
 
   const anteriorCanvasRef = useRef<HTMLDivElement>(null);
   const posteriorCanvasRef = useRef<HTMLDivElement>(null);
+  const colorPickerContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isColorPickerOpen) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (
+        colorPickerContainerRef.current &&
+        !colorPickerContainerRef.current.contains(e.target as Node)
+      ) {
+        setIsColorPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isColorPickerOpen]);
 
   const markers = value?.markers || [];
   const clinicianSummaryNotes = value?.clinicianSummaryNotes || '';
@@ -172,14 +192,14 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
       {/* Top Controls Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/80">
         {/* View Toggle */}
-        <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium">
+        <div className="flex items-center gap-1 bg-layer p-1 rounded-lg border border-layer-line text-xs font-medium">
           <button
             type="button"
             onClick={() => setActiveViewMode('both')}
-            className={`px-3 py-1.5 rounded-md transition-colors ${
+            className={`px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
               activeViewMode === 'both'
-                ? 'bg-teal-600 text-white shadow-xs font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                : 'text-muted-foreground-1 hover:text-foreground'
             }`}
           >
             {bi('الجهتان معاً', 'Both Views', 'هەردوو لایەن')}
@@ -187,10 +207,10 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
           <button
             type="button"
             onClick={() => setActiveViewMode('anterior')}
-            className={`px-3 py-1.5 rounded-md transition-colors ${
+            className={`px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
               activeViewMode === 'anterior'
-                ? 'bg-teal-600 text-white shadow-xs font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                : 'text-muted-foreground-1 hover:text-foreground'
             }`}
           >
             {bi('أمامي (Anterior)', 'Anterior', 'پێشەوە (Anterior)')}
@@ -198,51 +218,56 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
           <button
             type="button"
             onClick={() => setActiveViewMode('posterior')}
-            className={`px-3 py-1.5 rounded-md transition-colors ${
+            className={`px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
               activeViewMode === 'posterior'
-                ? 'bg-teal-600 text-white shadow-xs font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                : 'text-muted-foreground-1 hover:text-foreground'
             }`}
           >
             {bi('خلفي (Posterior)', 'Posterior', 'پشتەوە (Posterior)')}
           </button>
         </div>
 
-        {/* Symptom Type Picker */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          {(Object.keys(BODY_SYMPTOM_TYPES) as BodySymptomType[]).map((typeKey) => {
-            const config = BODY_SYMPTOM_TYPES[typeKey];
-            const isSelected = selectedSymptomType === typeKey;
-            return (
-              <button
-                key={typeKey}
-                type="button"
-                onClick={() => setSelectedSymptomType(typeKey)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium border flex items-center gap-1.5 transition-all ${
-                  isSelected
-                    ? 'ring-2 ring-teal-500 shadow-xs'
-                    : 'opacity-70 hover:opacity-100 bg-white dark:bg-slate-900'
-                }`}
-                style={{
-                  borderColor: config.colorHex,
-                  color: isSelected ? '#ffffff' : undefined,
-                  backgroundColor: isSelected ? config.colorHex : undefined,
-                }}
-              >
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: isSelected ? '#ffffff' : config.colorHex }}
-                />
-                {bi(config.ar, config.en)}
-              </button>
-            );
-          })}
+        {/* Symptom Type Picker (Horizontally scrollable strip) */}
+        <div className="w-full rounded-2xl border border-line-2 bg-card/80 p-1 overflow-hidden">
+          <div className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-1 pt-0.5 px-0.5">
+            {(Object.keys(BODY_SYMPTOM_TYPES) as BodySymptomType[]).map((typeKey) => {
+              const config = BODY_SYMPTOM_TYPES[typeKey];
+              const isSelected = selectedSymptomType === typeKey;
+              return (
+                <button
+                  key={typeKey}
+                  type="button"
+                  onClick={(e) => {
+                    setSelectedSymptomType(typeKey);
+                    e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                  }}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-medium border flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                    isSelected
+                      ? 'ring-2 ring-primary/40 shadow-xs'
+                      : 'opacity-80 hover:opacity-100 bg-white dark:bg-slate-900'
+                  }`}
+                  style={{
+                    borderColor: config.colorHex,
+                    color: isSelected ? '#ffffff' : undefined,
+                    backgroundColor: isSelected ? config.colorHex : undefined,
+                  }}
+                >
+                  <span
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ backgroundColor: isSelected ? '#ffffff' : config.colorHex }}
+                  />
+                  {bi(config.ar, config.en)}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Optional Manual Pain Type & Custom Color Bar */}
+        {/* Optional Manual Pain Type & Popover Color Picker */}
         {!readOnly && (
-          <div className="w-full pt-2 mt-1 border-t border-slate-200 dark:border-slate-700 grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
-            <div className="lg:col-span-7 space-y-2">
+          <div className="w-full pt-2 mt-1 border-t border-slate-200 dark:border-slate-700 space-y-2">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
               <input
                 type="text"
                 aria-label={bi('نوع ألم مخصص أو يدوي', 'Optional manual pain type', 'جۆری ئازاری دەستی یان تایبەت')}
@@ -254,33 +279,81 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
                   'Optional manual pain type...',
                   'جۆری ئازاری دەستی / تایبەت (بژاردەیی)...'
                 )}
-                className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
+                className="flex-1 min-w-[200px] px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
               />
-              <div className="flex flex-wrap items-center gap-1">
-                {PAIN_TYPE_SUGGESTIONS.slice(0, 4).map((sug) => {
-                  const txt = language === 'en' ? sug.en : language === 'ckb' ? sug.ckb : sug.ar;
-                  return (
-                    <button
-                      key={sug.en}
-                      type="button"
-                      onClick={() => setCustomPainType(txt)}
-                      className="px-2 py-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 cursor-pointer"
-                    >
-                      {txt}
-                    </button>
-                  );
-                })}
+
+              {/* Popover Color Picker for Marker Pin */}
+              <div className="relative shrink-0" ref={colorPickerContainerRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsColorPickerOpen((prev) => !prev)}
+                  title={bi('تغيير لون العلامة', 'Change Pin Color', 'گۆڕینی ڕەنگی نیشانە')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:border-primary/50 transition-colors cursor-pointer shadow-2xs"
+                >
+                  <span
+                    className="size-3.5 rounded-full border border-black/15 dark:border-white/20 shrink-0 shadow-2xs"
+                    style={{
+                      backgroundColor:
+                        customPainColor || BODY_SYMPTOM_TYPES[selectedSymptomType].colorHex,
+                    }}
+                  />
+                  <span>{bi('لون العلامة', 'Pin Color', 'ڕەنگی نیشانە')}</span>
+                  <Palette className="size-3 text-slate-500" />
+                </button>
+
+                {isColorPickerOpen && (
+                  <div
+                    role="dialog"
+                    aria-label={bi('لون العلامة', 'Pin Color', 'ڕەنگی نیشانە')}
+                    className="absolute top-full mt-2 end-0 z-50 w-72 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl space-y-2.5 animate-in fade-in-50 zoom-in-95 duration-150"
+                  >
+                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                        <span
+                          className="size-3 rounded-full border border-black/15 shrink-0"
+                          style={{
+                            backgroundColor:
+                              customPainColor || BODY_SYMPTOM_TYPES[selectedSymptomType].colorHex,
+                          }}
+                        />
+                        {bi('لون العلامة', 'Pin Color', 'ڕەنگی نیشانە')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsColorPickerOpen(false)}
+                        className="text-xs font-semibold text-primary hover:underline cursor-pointer px-1 py-0.5"
+                      >
+                        {bi('تم', 'Done', 'تەواو')}
+                      </button>
+                    </div>
+
+                    <SpectrumColorPicker
+                      compact
+                      label={bi('اختر اللون', 'Pick Color', 'ڕەنگ هەڵبژێرە')}
+                      value={customPainColor}
+                      defaultColor={BODY_SYMPTOM_TYPES[selectedSymptomType].colorHex}
+                      onChange={(hex) => setCustomPainColor(hex)}
+                      onReset={() => setCustomPainColor('')}
+                    />
+                  </div>
+                )}
               </div>
             </div>
-            <div className="lg:col-span-5">
-              <SpectrumColorPicker
-                compact
-                label={bi('لون العلامة', 'Pin color', 'ڕەنگی نیشانە')}
-                value={customPainColor}
-                defaultColor={BODY_SYMPTOM_TYPES[selectedSymptomType].colorHex}
-                onChange={(hex) => setCustomPainColor(hex)}
-                onReset={() => setCustomPainColor('')}
-              />
+
+            <div className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-1 pt-0.5">
+              {PAIN_TYPE_SUGGESTIONS.slice(0, 4).map((sug) => {
+                const txt = language === 'en' ? sug.en : language === 'ckb' ? sug.ckb : sug.ar;
+                return (
+                  <button
+                    key={sug.en}
+                    type="button"
+                    onClick={() => setCustomPainType(txt)}
+                    className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 cursor-pointer whitespace-nowrap shrink-0 hover:border-primary/40 transition-colors"
+                  >
+                    {txt}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -298,7 +371,7 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
               max="10"
               value={defaultSeverityNrs}
               onChange={(e) => setDefaultSeverityNrs(Number(e.target.value))}
-              className="w-20 accent-teal-600"
+              className="w-20 accent-primary"
             />
             <span
               className={`px-2 py-0.5 rounded font-bold text-xs ${
@@ -361,14 +434,14 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
             <div className="flex flex-col items-center">
               <div className="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1.5">
                 <span>{bi('المنظر الأمامي', 'Anterior View', 'دیمەنی پێشەوە')}</span>
-                <span className="text-xs text-teal-400 font-normal">
+                <span className="text-xs text-primary font-normal">
                   ({bi('اضغط لتثبيت نقطة ألم', 'Click to pin', 'کرتە بکە بۆ دانانی خاڵی ئازار')})
                 </span>
               </div>
               <div
                 ref={anteriorCanvasRef}
                 onClick={(e) => handleCanvasClick(e, 'anterior', anteriorCanvasRef)}
-                className="relative w-[180px] sm:w-[210px] aspect-[148/318] bg-slate-950/70 p-3 rounded-2xl border border-slate-800/80 hover:border-teal-500/50 transition-colors cursor-crosshair select-none flex items-center justify-center text-slate-300 dark:text-slate-400"
+                className="relative w-[180px] sm:w-[210px] aspect-[148/318] bg-slate-950/70 p-3 rounded-2xl border border-slate-800/80 hover:border-primary/50 transition-colors cursor-crosshair select-none flex items-center justify-center text-slate-300 dark:text-slate-400"
               >
                 <AnatomicalFrontSvg className="w-full h-full text-slate-400 hover:text-slate-300 transition-colors" />
                 {renderMarkerPins('anterior')}
@@ -381,14 +454,14 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
             <div className="flex flex-col items-center">
               <div className="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1.5">
                 <span>{bi('المنظر الخلفي', 'Posterior View', 'دیمەنی پشتەوە')}</span>
-                <span className="text-xs text-teal-400 font-normal">
+                <span className="text-xs text-primary font-normal">
                   ({bi('اضغط لتثبيت نقطة ألم', 'Click to pin', 'کرتە بکە بۆ دانانی خاڵی ئازار')})
                 </span>
               </div>
               <div
                 ref={posteriorCanvasRef}
                 onClick={(e) => handleCanvasClick(e, 'posterior', posteriorCanvasRef)}
-                className="relative w-[180px] sm:w-[210px] aspect-[148/315] bg-slate-950/70 p-3 rounded-2xl border border-slate-800/80 hover:border-teal-500/50 transition-colors cursor-crosshair select-none flex items-center justify-center text-slate-300 dark:text-slate-400"
+                className="relative w-[180px] sm:w-[210px] aspect-[148/315] bg-slate-950/70 p-3 rounded-2xl border border-slate-800/80 hover:border-primary/50 transition-colors cursor-crosshair select-none flex items-center justify-center text-slate-300 dark:text-slate-400"
               >
                 <AnatomicalBackSvg className="w-full h-full text-slate-400 hover:text-slate-300 transition-colors" />
                 {renderMarkerPins('posterior')}
@@ -412,7 +485,7 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
                   `نیشانە دیاریکراوەکان (${markers.length})`
                 )}
               </h3>
-              <span className="text-xs text-teal-600 dark:text-teal-400 font-medium">
+              <span className="text-xs text-primary font-medium">
                 {bi('مرتبة بالترقيم', 'Numbered', 'ژمارەکراو')}
               </span>
             </div>
@@ -428,8 +501,8 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
                     onClick={() => setSelectedMarkerId(marker.markerId)}
                     className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-all flex items-start justify-between gap-2 ${
                       isSelected
-                        ? 'border-teal-500 bg-teal-50/50 dark:bg-teal-950/30 ring-1 ring-teal-500'
-                        : 'border-slate-200 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        ? 'border-primary bg-primary/10 ring-1 ring-primary'
+                        : 'border-card-line bg-surface hover:bg-layer-hover'
                     }`}
                   >
                     <div className="flex items-start gap-2 min-w-0">
@@ -440,16 +513,16 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
                         {idx + 1}
                       </span>
                       <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                        <p className="font-semibold text-foreground truncate">
                           {bi(
                             marker.anatomicalRegionLabelAr || marker.anatomicalRegionLabelEn || '',
                             marker.anatomicalRegionLabelEn || marker.anatomicalRegionLabelAr || ''
                           )}
                         </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                        <p className="text-xs text-muted-foreground-1">
                           <span aria-hidden="true">{markerMeta.symbolLabel} </span>
                           {markerMeta.label} •{' '}
-                          <span className="font-bold text-teal-600 dark:text-teal-400">
+                          <span className="font-bold text-primary">
                             <Fraction value={marker.severityNrs ?? defaultSeverityNrs} total={10} />
                           </span>
                         </p>
@@ -569,9 +642,9 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
                         lastUpdatedAt: new Date().toISOString(),
                       });
                     }}
-                    className="w-full accent-teal-600"
+                    className="w-full accent-primary"
                   />
-                  <span className="font-bold text-xs text-teal-600 dark:text-teal-400 shrink-0">
+                  <span className="font-bold text-xs text-primary shrink-0">
                     <Fraction value={selectedMarker.severityNrs ?? 5} total={10} />
                   </span>
                 </div>
@@ -608,7 +681,7 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
             'e.g., Sharp radiating pain originating at L4-L5 spreading down posterior left thigh...',
             'بۆ نموونە: ئازاری تیژ کە لە بڕبڕەی کەمەرەوە L4-L5 بۆ ڕانی چەپ بڵاودەبێتەوە...'
           )}
-          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-hidden focus:ring-2 focus:ring-teal-500 text-slate-800 dark:text-slate-200"
+          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-hidden focus:ring-2 focus:ring-primary text-slate-800 dark:text-slate-200"
         />
       </div>
     </div>

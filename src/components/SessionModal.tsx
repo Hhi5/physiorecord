@@ -4,6 +4,7 @@
 // =======================================================================
 
 import React, { useState, useEffect } from 'react';
+import { GeometricHeaderBackdrop } from './ui/Dialog';
 import { 
   X, 
   Calendar, 
@@ -161,7 +162,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="session-modal-title"
-      className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto"
       dir={isRtl ? 'rtl' : 'ltr'}
       onKeyDown={(e) => {
         if (e.key === 'Escape') onClose();
@@ -171,12 +172,15 @@ export const SessionModal: React.FC<SessionModalProps> = ({
       }}
     >
       <div
-        className="bg-card rounded-2xl max-w-2xl w-full max-h-[88dvh] shadow-2xl border border-card-line overflow-hidden flex flex-col"
+        className="bg-card rounded-t-2xl sm:rounded-2xl max-w-2xl w-full max-h-[92dvh] sm:max-h-[88dvh] shadow-2xl border border-card-line overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         
         {/* Modal Header */}
-        <div className="px-4 sm:px-6 py-3.5 bg-primary text-primary-foreground flex items-center justify-between gap-2 shrink-0">
+        <div className="relative overflow-hidden px-4 sm:px-6 pt-3 sm:pt-4 pb-3.5 bg-primary text-primary-foreground flex flex-col gap-2.5 shrink-0 shadow-xs">
+          <GeometricHeaderBackdrop />
+          <div className="relative z-10 w-10 h-1 bg-primary-foreground/40 rounded-full mx-auto sm:hidden" aria-hidden="true" />
+          <div className="relative z-10 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-primary-foreground/15 flex items-center justify-center text-primary-foreground shrink-0">
               <Activity className="w-5 h-5" />
@@ -200,10 +204,11 @@ export const SessionModal: React.FC<SessionModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label={bi('إغلاق', 'Close')}
-            className="min-w-[36px] min-h-[36px] rounded-lg bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            className="size-9 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
+          </div>
         </div>
 
         {/* Modal Form */}
@@ -211,7 +216,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
           <div tabIndex={0} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           
           {error && (
-            <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl flex items-start gap-3 text-rose-800 dark:text-rose-300 text-xs sm:text-sm">
+            <div className="p-4 bg-surface/75 rounded-xl flex items-start gap-3 text-rose-700 dark:text-rose-400 text-xs sm:text-sm">
               <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 flex-shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -355,8 +360,8 @@ export const SessionModal: React.FC<SessionModalProps> = ({
 
           {/* Cancellation Reason (if not attended) */}
           {attendanceStatus !== 'attended' && (
-            <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900">
-              <label htmlFor="session-cancel-reason-input" className="block text-xs font-bold text-amber-900 dark:text-amber-300 mb-1">
+            <div className="p-3.5 bg-card shadow-2xs rounded-xl space-y-1">
+              <label htmlFor="session-cancel-reason-input" className="block text-xs font-bold text-amber-700 dark:text-amber-400 mb-1">
                 {bi('سبب الإلغاء أو التخلف عن الحضور', 'Cancellation / No-Show Reason')} <span className="text-rose-500">*</span>
               </label>
               <AutoResizeTextarea
@@ -365,7 +370,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                 onChange={(e) => setCancellationReason(e.target.value)}
                 placeholder={bi('وضح سبب الإلغاء أو عدم الحضور لأرشفته في سجل المريض...', 'State reason for cancellation or no-show...')}
                 minRows={2}
-                className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-800 rounded-lg focus:ring-2 focus:ring-amber-500 bg-surface text-foreground"
+                className="w-full px-3 py-2 text-xs border border-line-2 rounded-lg focus:ring-2 focus:ring-primary bg-surface text-foreground"
                 required
               />
             </div>

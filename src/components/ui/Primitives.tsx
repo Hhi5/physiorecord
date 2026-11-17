@@ -1304,7 +1304,7 @@ export const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
             isListening
               ? 'bg-rose-600 text-white border-rose-700 animate-pulse'
               : speechStatus?.mode === 'local_ready'
-                ? 'bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/35 hover:bg-teal-500/25'
+                ? 'bg-primary/15 text-primary border-primary/35 hover:bg-primary/25'
                 : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/35'
           }`}
         >
@@ -1324,7 +1324,7 @@ export const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
         >
           <div className="px-3 py-1.5 bg-surface border-b border-card-divider flex items-center justify-between text-xs text-muted-foreground-1">
             <span className="inline-flex items-center gap-1 font-semibold">
-              <Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
               {bi('إدراج قالب سريع (/)', 'Clinical Snippets (/)', 'دانانی قاڵبی خێرا (/)')}
             </span>
             <span>Enter ↵</span>
@@ -1342,7 +1342,7 @@ export const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
                 }}
                 className={`w-full px-3 py-2 text-start transition-colors cursor-pointer ${
                   idx === activeSlashIdx
-                    ? 'bg-teal-600/15 text-foreground'
+                    ? 'bg-primary/15 text-foreground'
                     : 'hover:bg-layer-hover text-foreground'
                 }`}
               >
@@ -1375,7 +1375,7 @@ export const DemoBadge: React.FC<{ className?: string }> = ({ className = '' }) 
   return (
     <span
       dir="ltr"
-      className={`py-0.5 px-2 rounded-md text-xs font-mono font-bold bg-amber-100 text-amber-900 dark:bg-amber-950/90 dark:text-amber-200 border border-amber-500/40 shrink-0 ${className}`.trim()}
+      className={`text-xs font-mono font-extrabold tracking-wide text-amber-700 dark:text-amber-300 shrink-0 ${className}`.trim()}
       title="Demo / Synthetic Record"
     >
       DEMO
@@ -1403,7 +1403,7 @@ export function getNprsSeverityStyles(score: number | undefined | null): {
     return {
       activeBtn: 'bg-primary text-primary-foreground border-primary',
       badgeText: 'text-muted-foreground-1',
-      sliderAccent: 'accent-teal-600',
+      sliderAccent: 'accent-primary',
     };
   }
   if (score <= 3) {
@@ -1415,9 +1415,9 @@ export function getNprsSeverityStyles(score: number | undefined | null): {
   }
   if (score <= 6) {
     return {
-      activeBtn: 'bg-amber-500 text-slate-950 border-amber-600',
-      badgeText: 'text-amber-700 dark:text-amber-300',
-      sliderAccent: 'accent-amber-500',
+      activeBtn: 'bg-amber-600 text-white border-amber-700',
+      badgeText: 'text-amber-700 dark:text-amber-400',
+      sliderAccent: 'accent-amber-700',
     };
   }
   return {
@@ -1446,6 +1446,18 @@ export const NprsControl: React.FC<NprsControlProps> = ({
 
   const severity = getNprsSeverityStyles(notRecorded ? undefined : clampedValue);
 
+  const currentVal = notRecorded ? 0 : (clampedValue ?? 0);
+  const percent = (currentVal / 10) * 100;
+  const fillColor =
+    notRecorded || clampedValue === undefined
+      ? '#94a3b8'
+      : clampedValue <= 3
+      ? '#059669'
+      : clampedValue <= 6
+      ? '#d97706'
+      : '#e11d48';
+  const trackBg = `linear-gradient(to right, ${fillColor} 0%, ${fillColor} ${percent}%, rgba(148, 163, 184, 0.25) ${percent}%, rgba(148, 163, 184, 0.25) 100%)`;
+
   const handleSelect = (raw: number) => {
     const valid = Math.max(0, Math.min(10, Math.round(raw)));
     onChange(valid);
@@ -1470,8 +1482,8 @@ export const NprsControl: React.FC<NprsControlProps> = ({
 
       {/* Desktop: Interactive 0-10 slider + single-row segmented control (Always LTR) */}
       <div className="hidden sm:flex flex-col gap-1.5" dir="ltr">
-        <div className="flex items-center gap-1 flex-nowrap">
-          <div className="inline-flex items-center rounded-xl bg-card border border-card-line p-0.5 gap-0.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <div className="inline-flex flex-wrap items-center rounded-xl bg-card border border-card-line p-0.5 gap-0.5">
             {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
               const isSelected = !notRecorded && clampedValue === num;
               const numStyle = getNprsSeverityStyles(num);
@@ -1518,11 +1530,16 @@ export const NprsControl: React.FC<NprsControlProps> = ({
             min={0}
             max={10}
             step={1}
+            dir="ltr"
             disabled={disabled}
             value={clampedValue ?? 0}
             onChange={(e) => handleSelect(Number(e.target.value))}
             aria-label="NPRS Pain Slider 0-10"
-            className={`flex-1 h-2 rounded-lg cursor-pointer ${severity.sliderAccent} ${
+            style={{
+              background: trackBg,
+              ['--thumb-color' as string]: fillColor,
+            }}
+            className={`nprs-slider flex-1 h-2 rounded-lg cursor-pointer ${severity.sliderAccent} ${
               notRecorded ? 'opacity-45' : ''
             }`}
           />
@@ -1538,11 +1555,16 @@ export const NprsControl: React.FC<NprsControlProps> = ({
           min={0}
           max={10}
           step={1}
+          dir="ltr"
           disabled={disabled}
           value={clampedValue ?? 0}
           onChange={(e) => handleSelect(Number(e.target.value))}
           aria-label="NPRS 0-10"
-          className={`flex-1 h-2 rounded-lg cursor-pointer ${severity.sliderAccent}`}
+          style={{
+            background: trackBg,
+            ['--thumb-color' as string]: fillColor,
+          }}
+          className={`nprs-slider flex-1 h-2 rounded-lg cursor-pointer ${severity.sliderAccent}`}
         />
         <span className="text-xs font-mono text-rose-700 dark:text-rose-300 font-bold">10</span>
         {label === undefined && (

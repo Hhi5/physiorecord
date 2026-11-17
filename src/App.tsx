@@ -31,7 +31,7 @@ const AppContent: React.FC = () => {
       className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center text-slate-900 dark:text-white transition-colors"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
-      <RefreshCw className="w-8 h-8 text-teal-600 dark:text-teal-400 animate-spin mb-3" />
+      <RefreshCw className="w-8 h-8 text-primary animate-spin mb-3" />
       <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
         {bi(
           'جاري فحص الخزينة المشفرة والتحقق من التخزين المحلي...',

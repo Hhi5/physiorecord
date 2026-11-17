@@ -58,25 +58,25 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
   return (
     <div className="space-y-4">
       {/* Top Banner */}
-      <div className="p-3 bg-teal-50/50 dark:bg-teal-950/20 rounded-xl border border-teal-200 dark:border-teal-800/60 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-          <div>
-            <h3 className="text-xs font-bold text-teal-950 dark:text-teal-200">
+      <div className="p-3 bg-primary/10 rounded-xl border border-primary/25 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <Sparkles className="w-4 h-4 text-primary shrink-0" />
+          <div className="min-w-0">
+            <h3 className="text-xs font-bold text-foreground">
               {bi(definition.titleAr, definition.titleEn)}
             </h3>
-            <p className="text-xs text-teal-800 dark:text-teal-400">
+            <p className="text-xs text-muted-foreground-1">
               {bi(definition.descriptionAr, definition.descriptionEn)}
             </p>
           </div>
         </div>
 
         {hasScores && (
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-teal-200 dark:border-teal-800 shadow-xs">
-            <span className="text-xs text-slate-600 dark:text-slate-400 font-bold uppercase">
+          <div className="flex items-center gap-2 bg-layer px-3 py-1.5 rounded-lg border border-primary/25 shadow-2xs shrink-0">
+            <span className="text-xs text-muted-foreground-1 font-bold uppercase">
               {bi('المجموع:', 'Score:', 'کۆی گشتی:')}
             </span>
-            <span className="font-mono font-black text-sm text-teal-700 dark:text-teal-400">
+            <span className="font-mono font-black text-sm text-primary tabular-nums">
               {totalScore}
             </span>
           </div>
@@ -92,20 +92,20 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
           return (
             <div
               key={field.id}
-              className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-850 space-y-2"
+              className="p-3.5 rounded-xl border border-card-stroke bg-layer space-y-2"
             >
               <div className="flex items-center justify-between">
                 {field.options ? (
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <span className="text-xs font-bold text-foreground">
                     {bi(field.labelAr, field.labelEn)}
                   </span>
                 ) : (
-                  <label htmlFor={fieldInputId} className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <label htmlFor={fieldInputId} className="text-xs font-bold text-foreground">
                     {bi(field.labelAr, field.labelEn)}
                   </label>
                 )}
                 {field.unit && (
-                  <span className="text-xs text-slate-600 dark:text-slate-400 font-mono">{field.unit}</span>
+                  <span className="text-xs text-muted-foreground-1 font-mono">{field.unit}</span>
                 )}
               </div>
 
@@ -121,9 +121,9 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
                     disabled={readOnly}
                     value={typeof val === 'number' ? val : 0}
                     onChange={(e) => handleFieldChange(field.id, Number(e.target.value))}
-                    className="w-full accent-teal-600"
+                    className="w-full accent-primary"
                   />
-                  <span className="w-10 text-center font-bold font-mono text-xs text-teal-700 dark:text-teal-400">
+                  <span className="w-10 text-center font-bold font-mono text-xs text-primary tabular-nums">
                     {typeof val === 'number' ? val : 0}
                   </span>
                 </div>
@@ -142,7 +142,7 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
                   onChange={(e) =>
                     handleFieldChange(field.id, e.target.value === '' ? null : Number(e.target.value))
                   }
-                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white"
+                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-card-stroke bg-surface font-mono text-foreground"
                 />
               )}
 
@@ -158,10 +158,10 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
                         aria-pressed={isSelected}
                         disabled={readOnly}
                         onClick={() => handleFieldChange(field.id, opt.value)}
-                        className={`min-h-[34px] px-2.5 py-1 text-xs font-medium rounded-lg border transition-all ${
+                        className={`min-h-[34px] px-2.5 py-1 text-xs font-medium rounded-lg border transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-teal-600 text-white border-teal-600 shadow-xs'
-                            : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                            ? 'bg-primary text-primary-foreground border-primary shadow-2xs'
+                            : 'bg-surface text-foreground border-card-stroke hover:bg-layer-hover'
                         }`}
                       >
                         {bi(opt.labelAr, opt.labelEn)}
@@ -179,7 +179,7 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
                   disabled={readOnly}
                   value={typeof val === 'string' ? val : ''}
                   onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white"
+                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-card-stroke bg-surface text-foreground"
                 />
               )}
             </div>
@@ -189,14 +189,14 @@ export const DynamicCustomWidget: React.FC<DynamicCustomWidgetProps> = ({
 
       {/* Clinical Interpretation Result */}
       {matchingInterp && (
-        <div className="p-3 rounded-xl bg-teal-50 dark:bg-teal-950/30 border border-teal-300 dark:border-teal-800 text-xs flex items-start gap-2.5">
-          <CheckCircle2 className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
+        <div className="p-3 rounded-xl bg-primary/10 border border-primary/25 text-xs flex items-start gap-2.5">
+          <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <div>
-            <span className="font-bold text-teal-900 dark:text-teal-200 block">
+            <span className="font-bold text-foreground block">
               {bi(matchingInterp.severityAr, matchingInterp.severityEn)}
             </span>
             {(matchingInterp.clinicalRecommendationAr || matchingInterp.clinicalRecommendationEn) && (
-              <p className="text-xs text-teal-700 dark:text-teal-300 mt-0.5">
+              <p className="text-xs text-muted-foreground-1 mt-0.5">
                 {bi(
                   matchingInterp.clinicalRecommendationAr || matchingInterp.clinicalRecommendationEn || '',
                   matchingInterp.clinicalRecommendationEn || matchingInterp.clinicalRecommendationAr || ''

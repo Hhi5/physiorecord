@@ -17,6 +17,7 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 import { useVault } from '../../context/VaultContext';
 import { usePatients } from '../../context/PatientContext';
+import { GeometricHeaderBackdrop } from '../ui/Dialog';
 import {
   findAllDirectoryDuplicatePairs,
   mergePatientsTransactional,
@@ -185,7 +186,7 @@ export const PatientMergeModal: React.FC<PatientMergeModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6"
       dir={isRtl ? 'rtl' : 'ltr'}
       onClick={() => {
         if (!merging) onClose();
@@ -196,39 +197,43 @@ export const PatientMergeModal: React.FC<PatientMergeModalProps> = ({
         aria-modal="true"
         aria-labelledby="patient-merge-modal-title"
         data-testid="patient-merge-modal"
-        className="w-full max-w-3xl max-h-[92vh] bg-layer border border-layer-line text-foreground rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        className="w-full max-w-3xl max-h-[92dvh] sm:max-h-[88dvh] bg-layer border border-layer-line text-foreground rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-card-divider bg-surface/60 flex items-start justify-between gap-3 shrink-0">
-          <div className="flex items-start gap-3 min-w-0">
-            <span className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <GitMerge className="w-5 h-5" />
-            </span>
-            <div className="min-w-0">
-              <h2
-                id="patient-merge-modal-title"
-                className="text-base sm:text-lg font-bold text-foreground leading-snug"
-              >
-                {bi('دمج سجلات المرضى المكررة', 'Merge Duplicate Patient Records')}
-              </h2>
-              <p className="text-xs text-muted-foreground-1 mt-0.5 leading-relaxed">
-                {bi(
-                  'نقل الحلقات والجلسات والملاحظات المعتمدة والفواتير إلى ملف موحد مع لقطة أمان مشفرة مسبقة.',
-                  'Consolidate episodes, sessions, finalized SOAP notes, and invoices into one surviving chart with a pre-merge encrypted snapshot.'
-                )}
-              </p>
+        <div className="relative overflow-hidden px-5 pt-3 sm:pt-4 pb-4 bg-primary text-primary-foreground flex flex-col gap-2.5 shrink-0 shadow-xs">
+          <GeometricHeaderBackdrop />
+          <div className="relative z-10 w-10 h-1 bg-primary-foreground/40 rounded-full mx-auto sm:hidden shrink-0" aria-hidden="true" />
+          <div className="relative z-10 flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <span className="size-10 rounded-xl bg-primary-foreground/15 text-primary-foreground border border-primary-foreground/25 flex items-center justify-center shrink-0">
+                <GitMerge className="w-5 h-5" />
+              </span>
+              <div className="min-w-0">
+                <h2
+                  id="patient-merge-modal-title"
+                  className="text-base sm:text-lg font-bold text-primary-foreground leading-snug"
+                >
+                  {bi('دمج سجلات المرضى المكررة', 'Merge Duplicate Patient Records')}
+                </h2>
+                <p className="text-xs text-primary-foreground/85 mt-0.5 leading-relaxed">
+                  {bi(
+                    'نقل الحلقات والجلسات والملاحظات المعتمدة والفواتير إلى ملف موحد مع لقطة أمان مشفرة مسبقة.',
+                    'Consolidate episodes, sessions, finalized SOAP notes, and invoices into one surviving chart with a pre-merge encrypted snapshot.'
+                  )}
+                </p>
+              </div>
             </div>
+            <button
+              type="button"
+              disabled={merging}
+              onClick={onClose}
+              aria-label={bi('إغلاق', 'Close')}
+              className="size-9 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground disabled:opacity-50 inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            type="button"
-            disabled={merging}
-            onClick={onClose}
-            aria-label={bi('إغلاق', 'Close')}
-            className="p-2 rounded-xl text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover disabled:opacity-50 transition-colors cursor-pointer shrink-0"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Body */}
@@ -238,7 +243,7 @@ export const PatientMergeModal: React.FC<PatientMergeModalProps> = ({
             <div
               data-testid="merge-success-banner"
               role="status"
-              className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/35 text-emerald-900 dark:text-emerald-200 space-y-2.5"
+              className="p-4 rounded-xl bg-surface/75 text-emerald-900 dark:text-emerald-200 space-y-2.5"
             >
               <div className="flex items-start gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
@@ -259,44 +264,44 @@ export const PatientMergeModal: React.FC<PatientMergeModalProps> = ({
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
-                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 border border-emerald-500/20 flex items-center justify-between">
+                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 flex items-center justify-between">
                   <span>{bi('الحلقات', 'Episodes')}</span>
                   <Num value={mergeSummary.movedCounts.episodes} className="font-bold" />
                 </div>
-                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 border border-emerald-500/20 flex items-center justify-between">
+                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 flex items-center justify-between">
                   <span>{bi('الجلسات', 'Sessions')}</span>
                   <Num value={mergeSummary.movedCounts.sessions} className="font-bold" />
                 </div>
-                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 border border-emerald-500/20 flex items-center justify-between">
+                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 flex items-center justify-between">
                   <span>{bi('ملاحظات SOAP', 'SOAP Notes')}</span>
                   <Num value={mergeSummary.movedCounts.soapNotes} className="font-bold" />
                 </div>
-                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 border border-emerald-500/20 flex items-center justify-between">
+                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 flex items-center justify-between">
                   <span>{bi('الفواتير والدفعات', 'Invoices & Payments')}</span>
                   <Num
                     value={mergeSummary.movedCounts.invoices + mergeSummary.movedCounts.payments}
                     className="font-bold"
                   />
                 </div>
-                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 border border-emerald-500/20 flex items-center justify-between">
+                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 flex items-center justify-between">
                   <span>{bi('المواعيد والانتظار', 'Appts & Waitlist')}</span>
                   <Num
                     value={mergeSummary.movedCounts.appointments + mergeSummary.movedCounts.waitingList}
                     className="font-bold"
                   />
                 </div>
-                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 border border-emerald-500/20 flex items-center justify-between">
+                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 flex items-center justify-between">
                   <span>{bi('الملاحق التصحيحية', 'Addenda')}</span>
                   <Num value={mergeSummary.movedCounts.clinicalAddenda} className="font-bold" />
                 </div>
-                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 border border-emerald-500/20 flex items-center justify-between">
+                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 flex items-center justify-between">
                   <span>{bi('الأدوية والموافقات', 'Meds & Consents')}</span>
                   <Num
                     value={mergeSummary.movedCounts.patientMedications + mergeSummary.movedCounts.consents}
                     className="font-bold"
                   />
                 </div>
-                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 border border-emerald-500/20 flex items-center justify-between">
+                <div className="px-2.5 py-1.5 rounded-lg bg-surface/80 flex items-center justify-between">
                   <span>{bi('المرفقات والمسودات', 'Files & Drafts')}</span>
                   <Num
                     value={mergeSummary.movedCounts.attachments + mergeSummary.movedCounts.drafts}
@@ -311,7 +316,7 @@ export const PatientMergeModal: React.FC<PatientMergeModalProps> = ({
           {errorMsg && (
             <div
               role="alert"
-              className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2.5"
+              className="p-3.5 rounded-xl bg-surface/75 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2.5"
             >
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
@@ -385,7 +390,7 @@ export const PatientMergeModal: React.FC<PatientMergeModalProps> = ({
                             </bdi>
                           </div>
                         </div>
-                        <span className="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 text-xs font-semibold shrink-0 self-start sm:self-center">
+                        <span className="text-amber-800 dark:text-amber-200 text-xs font-semibold shrink-0 self-start sm:self-center">
                           {isSelected ? bi('محدد حالياً', 'Selected') : bi('اختيار للدمج', 'Select Pair')}
                         </span>
                       </button>
@@ -481,7 +486,7 @@ export const PatientMergeModal: React.FC<PatientMergeModalProps> = ({
             </div>
 
             {isSamePatient && (
-              <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/35 text-xs font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-2">
+              <div className="p-2.5 rounded-lg bg-surface/75 text-xs font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 <span>
                   {bi(
@@ -495,7 +500,7 @@ export const PatientMergeModal: React.FC<PatientMergeModalProps> = ({
             {/* Selected Records Side-by-Side Preview */}
             {survivingPatient && sourcePatient && !isSamePatient && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/25 space-y-1 text-xs">
+                <div className="p-3 rounded-xl bg-surface/75 space-y-1 text-xs">
                   <div className="font-bold text-emerald-800 dark:text-emerald-200">
                     {bi('يبقى نشطاً:', 'Retained Record:')} {getPatientDisplayName(survivingPatient.data, language)}
                   </div>
@@ -512,7 +517,7 @@ export const PatientMergeModal: React.FC<PatientMergeModalProps> = ({
                   </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/25 space-y-1 text-xs">
+                <div className="p-3 rounded-xl bg-surface/75 space-y-1 text-xs">
                   <div className="font-bold text-amber-800 dark:text-amber-200">
                     {bi('يُدمج فيه:', 'Absorbed Duplicate:')} {getPatientDisplayName(sourcePatient.data, language)}
                   </div>

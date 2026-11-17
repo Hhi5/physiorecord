@@ -66,11 +66,11 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
   return (
     <div className="space-y-4">
       {/* TUG Test Section — Measured value + cited population ranges (no bare binary fall-risk label) */}
-      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-850 space-y-3">
+      <div className="p-4 rounded-xl border border-card-line bg-card space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Timer className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-            <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+            <Timer className="w-4 h-4 text-primary" />
+            <h3 className="text-xs font-bold text-foreground">
               {bi('اختبار النهوض والمشي الموقوت (Timed Up & Go - TUG)', 'Timed Up & Go (TUG) Test', 'پشکنینی هەستانەوە و ڕۆیشتنی کاتبەند (TUG)')}
             </h3>
           </div>
@@ -97,7 +97,7 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
                     tugSeconds: e.target.value === '' ? null : Number(e.target.value),
                   })
                 }
-                className="w-24 px-3 py-1.5 font-bold font-mono text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-center focus:ring-2 focus:ring-teal-500"
+                className="w-24 px-3 py-1.5 font-bold font-mono text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-center focus:ring-2 focus:ring-primary"
               />
               <label htmlFor="gait-tug-seconds" className="text-xs font-bold text-slate-600 dark:text-slate-400">
                 {bi('ثانية (Seconds)', 'sec', 'چرکە (sec)')}
@@ -105,7 +105,7 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
             </div>
 
             {currentData.tugSeconds !== null && currentData.tugSeconds !== undefined && (
-              <div className="px-3 py-1.5 rounded-lg border border-teal-200 dark:border-teal-800 bg-teal-50/70 dark:bg-teal-950/40 text-xs font-semibold text-teal-900 dark:text-teal-200 tabular-nums">
+              <div className="px-3 py-1.5 rounded-lg border border-primary/25 bg-primary/10 text-xs font-semibold text-primary tabular-nums">
                 <span>{bi('الزمن المقاس:', 'Measured time:', 'کاتی پێوراو:')} </span>
                 <span className="font-mono font-bold">
                   <Num value={Number(currentData.tugSeconds.toFixed(1))} /> {bi('ث', 's', 'چ')}
@@ -115,7 +115,7 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
           </div>
 
           <div>
-            <label htmlFor="gait-tug-norm-select" className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+            <label htmlFor="gait-tug-norm-select" className="text-xs font-semibold text-foreground block mb-1">
               {bi('الفئة المرجعية للمقارنة السريرية:', 'Reference Cohort Context:', 'پۆلی سەرچاوە بۆ بەراوردکردنی کلینیکی:')}
             </label>
             <select
@@ -125,7 +125,7 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
               onChange={(e) =>
                 handleUpdate({ tugPopulationProfile: e.target.value as TugPopulationProfile })
               }
-              className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200"
+              className="w-full px-3 py-1.5 text-xs rounded-lg border border-layer-line bg-layer text-foreground"
             >
               {TUG_POPULATION_NORMS.map((norm) => (
                 <option key={norm.profileId} value={norm.profileId}>
@@ -137,30 +137,30 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
         </div>
 
         {/* Cited Population Reference Range Table */}
-        <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 space-y-2">
-          <div className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-200">
-            <Info className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
+        <div className="p-3 rounded-lg bg-surface border border-card-line space-y-2">
+          <div className="flex items-start gap-2 text-xs text-foreground">
+            <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
             <div className="space-y-0.5">
               <p className="font-bold">
                 {bi(selectedNorm.referenceRangeAr, selectedNorm.referenceRangeEn)}
               </p>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
+              <p className="text-xs text-muted-foreground-1">
                 {bi(selectedNorm.clinicalContextAr, selectedNorm.clinicalContextEn)}
               </p>
-              <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
+              <p className="text-xs font-mono text-muted-foreground-2">
                 {selectedNorm.citation}
               </p>
             </div>
           </div>
 
           <details className="text-xs">
-            <summary className="cursor-pointer font-semibold text-teal-700 dark:text-teal-400 select-none">
+            <summary className="cursor-pointer font-semibold text-primary select-none">
               {bi('عرض جدول القيم المرجعية الموثقة حسب الفئات السكانية', 'View cited population reference table', 'پیشاندانی خشتەی بەها سەرچاوەپێکراوەکان بەپێی پۆلەکان')}
             </summary>
             <div className="mt-2 overflow-x-auto">
               <table className="w-full text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+                  <tr className="border-b border-card-divider text-muted-foreground-1">
                     <th className="py-1.5 px-2 text-start font-bold">
                       {bi('الفئة', 'Population', 'پۆل')}
                     </th>
@@ -172,13 +172,13 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800">
+                <tbody className="divide-y divide-card-divider">
                   {TUG_POPULATION_NORMS.map((norm) => (
                     <tr
                       key={norm.profileId}
                       className={
                         norm.profileId === selectedNorm.profileId
-                          ? 'bg-teal-50/70 dark:bg-teal-950/30 font-semibold'
+                          ? 'bg-primary/10 font-semibold'
                           : ''
                       }
                     >
@@ -258,10 +258,10 @@ export const GaitPostureWidget: React.FC<GaitPostureWidgetProps> = ({
                 type="button"
                 disabled={readOnly}
                 onClick={() => toggleDeviation(dev.id)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
                   isSelected
-                    ? 'bg-teal-600 text-white border-teal-600 shadow-xs'
-                    : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/80 hover:bg-slate-100'
+                    ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                    : 'bg-surface text-foreground border-layer-line hover:bg-layer-hover'
                 }`}
               >
                 {bi(dev.ar, dev.en)}

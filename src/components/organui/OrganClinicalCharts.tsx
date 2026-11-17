@@ -168,14 +168,14 @@ export const OrganClinicalCharts: React.FC<OrganClinicalChartsProps> = ({
   return (
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-5 shadow-2xs">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-card-divider pb-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-950/80 border border-teal-200 dark:border-teal-800 flex items-center justify-center text-teal-600 dark:text-teal-400">
+          <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary">
             <Activity className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+              <h3 className="text-xs font-bold text-foreground">
                 {bi(
                   'المخططات السريرية لتطور الحالة',
                   'Longitudinal Clinical Outcome Charts',
@@ -330,7 +330,7 @@ export const OrganClinicalCharts: React.FC<OrganClinicalChartsProps> = ({
                         cx={x}
                         cy={y}
                         r="4.5"
-                        className="fill-teal-600 stroke-white dark:stroke-slate-900 stroke-2"
+                        className="fill-primary stroke-white dark:stroke-slate-900 stroke-2"
                       />
                       <text
                         x={x}
@@ -374,7 +374,7 @@ export const OrganClinicalCharts: React.FC<OrganClinicalChartsProps> = ({
                     'نیشاندەرەکانی مەودای جووڵە (ROM) و هێزی ماسولکە (MMT)'
                   )}
             </span>
-            <span className="text-xs font-mono text-teal-600 dark:text-teal-400 tabular-nums">
+            <span className="text-xs font-mono text-primary tabular-nums">
               {outcomePoints.length > 0
                 ? `${outcomePoints[0].scaleCode} · ${outcomePoints.length}`
                 : `${romEntries.length} ROM · ${mmtEntries.length} MMT`}
@@ -498,9 +498,9 @@ export const OrganClinicalCharts: React.FC<OrganClinicalChartsProps> = ({
                         <bdi dir="ltr">{measured}° / {refAngle}° ({pct}%)</bdi>
                       </span>
                     </div>
-                    <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                    <div className="h-2 rounded-full bg-surface overflow-hidden">
                       <div
-                        className="h-full bg-teal-600 rounded-full transition-all"
+                        className="h-full bg-primary rounded-full transition-all"
                         style={{ width: `${pct}%` }}
                       />
                     </div>

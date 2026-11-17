@@ -42,7 +42,7 @@ export const RecoveredWorkBanner: React.FC<RecoveredWorkBannerProps> = ({
     <div
       dir={isRtl ? 'rtl' : 'ltr'}
       data-testid="recovered-work-banner"
-      className="px-3 sm:px-4 py-2 bg-amber-500/15 border-b border-amber-500/35 text-xs text-foreground shrink-0 space-y-2"
+      className="ps-11 sm:ps-12 pe-3 sm:pe-4 py-2 bg-surface/75 border-b border-line-2 text-xs text-foreground shrink-0 space-y-2"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 font-bold text-amber-950 dark:text-amber-200">
@@ -73,7 +73,7 @@ export const RecoveredWorkBanner: React.FC<RecoveredWorkBannerProps> = ({
           <div
             key={d.id}
             data-testid={`recovered-draft-item-${d.draftType}`}
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-card border border-amber-500/35 shadow-2xs"
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-card shadow-2xs"
           >
             <div className="min-w-0">
               <div className="font-bold text-foreground break-words">

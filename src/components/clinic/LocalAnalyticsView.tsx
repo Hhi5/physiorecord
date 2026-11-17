@@ -127,17 +127,17 @@ export const LocalAnalyticsView: React.FC = () => {
   const hasDemoPatients = useMemo(() => patients.some((p) => Boolean(p.data.isDemo)), [patients]);
 
   return (
-    <div className="space-y-6 pb-8">
-      <div className="bg-layer border border-card-stroke rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+    <div className="pr-container space-y-5">
+      <div className="pr-page-header">
         <div className="flex items-start gap-3">
-          <div className="w-11 h-11 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-600 dark:text-teal-300 shrink-0">
-            <BarChart3 className="w-6 h-6" />
+          <div className="pr-icon-chip">
+            <BarChart3 className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground">
+            <h1 className="pr-page-title">
               {t('analytics.title')}
             </h1>
-            <p className="text-xs text-muted-foreground-1 mt-1">
+            <p className="pr-page-subtitle mt-0.5">
               {t('analytics.subtitle')}
             </p>
           </div>
@@ -166,15 +166,15 @@ export const LocalAnalyticsView: React.FC = () => {
       )}
 
       {/* Primary KPI Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* Caseload */}
-        <div className="bg-layer border border-card-stroke rounded-2xl p-4 space-y-2">
+        <div className="pr-surface p-4 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground-1">
             <span>{isEn ? 'Active Caseload & Episodes' : 'المرضى والحلقات العلاجية'}</span>
-            <Users className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+            <Users className="w-4 h-4 text-primary" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-extrabold text-foreground">
+            <span className="text-2xl font-extrabold text-foreground tabular-nums">
               <Num value={summary.activePatients} />
             </span>
             <span className="text-xs text-muted-foreground-1">
@@ -189,14 +189,14 @@ export const LocalAnalyticsView: React.FC = () => {
           </div>
           <div className="text-xs text-muted-foreground-1 flex items-center justify-between">
             <span>{isEn ? 'Mean Sessions / Episode' : 'متوسط الجلسات / حلقة'}</span>
-            <span className="font-bold text-foreground">
+            <span className="font-bold text-foreground tabular-nums">
               <Num value={summary.meanSessionsPerEpisode} />
             </span>
           </div>
         </div>
 
         {/* Attendance & No-Show */}
-        <div className="bg-layer border border-card-stroke rounded-2xl p-4 space-y-2">
+        <div className="pr-surface p-4 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground-1">
             <span>{isEn ? 'Attendance & No-Show' : 'الالتزام والغياب'}</span>
             <CalendarCheck2 className="w-4 h-4 text-sky-600 dark:text-sky-400" />
@@ -230,7 +230,7 @@ export const LocalAnalyticsView: React.FC = () => {
         </div>
 
         {/* Clinical Outcome Improvement & MCID */}
-        <div className="bg-layer border border-card-stroke rounded-2xl p-4 space-y-2">
+        <div className="pr-surface p-4 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground-1">
             <span>{isEn ? 'Outcome Improvement & MCID' : 'تحسن المقاييس الوظيفية'}</span>
             <TrendingUp className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
@@ -264,7 +264,7 @@ export const LocalAnalyticsView: React.FC = () => {
         </div>
 
         {/* Income vs Expenses */}
-        <div className="bg-layer border border-card-stroke rounded-2xl p-4 space-y-2">
+        <div className="pr-surface p-4 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground-1">
             <span>{isEn ? 'Net Local Cashflow' : 'صافي التدفق المالي'}</span>
             <Wallet className="w-4 h-4 text-amber-700 dark:text-amber-400" />
@@ -294,13 +294,13 @@ export const LocalAnalyticsView: React.FC = () => {
       </div>
 
       {/* Monthly Income vs Expenses Bar Comparison */}
-      <div className="bg-layer border border-card-stroke rounded-2xl p-5 space-y-4">
+      <div className="pr-surface p-4 sm:p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-base font-bold text-foreground">
+            <h2 className="pr-section-title">
               {isEn ? 'Monthly Income vs Operating Expenses (Last 6 Months)' : 'الإيرادات مقابل المصاريف التشغيلية (آخر 6 أشهر)'}
             </h2>
-            <p className="text-xs text-muted-foreground-1">
+            <p className="text-xs text-muted-foreground-1 mt-0.5">
               {isEn
                 ? 'Calculated directly from encrypted local payments and expenses.'
                 : 'محتسبة مباشرةً من المدفوعات والمصاريف المشفرة محلياً.'}
@@ -308,7 +308,7 @@ export const LocalAnalyticsView: React.FC = () => {
           </div>
           <div className="flex items-center gap-4 text-xs">
             <span className="inline-flex items-center gap-1.5 text-foreground font-medium">
-              <span className="w-3 h-3 rounded bg-teal-600 inline-block" />
+              <span className="w-3 h-3 rounded bg-primary inline-block" />
               {isEn ? 'Collected Income' : 'الإيرادات المحصّلة'}
             </span>
             <span className="inline-flex items-center gap-1.5 text-foreground font-medium">
@@ -341,7 +341,7 @@ export const LocalAnalyticsView: React.FC = () => {
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                     <span className="font-bold text-foreground">{monthLabel}</span>
                     <div className="flex flex-wrap items-center gap-4">
-                      <span className="text-teal-700 dark:text-teal-300 font-semibold">
+                      <span className="text-primary font-semibold">
                         + <Money amount={row.incomeIQD} />
                       </span>
                       <span className="text-rose-700 dark:text-rose-400 font-semibold">
@@ -361,7 +361,7 @@ export const LocalAnalyticsView: React.FC = () => {
                   <div className="space-y-1.5">
                     <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-teal-600 transition-all"
+                        className="h-full rounded-full bg-primary transition-all"
                         style={{ width: `${Math.max(incPct, row.incomeIQD > 0 ? 2 : 0)}%` }}
                       />
                     </div>
