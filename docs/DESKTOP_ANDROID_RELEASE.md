@@ -41,11 +41,10 @@
    ```
 
 ### ب. بناء وتثبيت نسخة الأندرويد محلياً
-تم ضبط `android/gradle.properties` مسبقاً بحد أقصى `-Xmx1280m` وإيقاف `Gradle Daemon` لحماية ذاكرة الـ 8 GB:
+تم ضبط `android/gradle.properties` مسبقاً بحد أقصى `-Xmx1280m` وإيقاف `Gradle Daemon` لحماية ذاكرة الـ 8 GB (يتطلب Java 21 متوافقاً مع Capacitor 8):
 ```bash
-npm install --no-save @capacitor/core@^6.2.0 @capacitor/cli@^6.2.0 @capacitor/android@^6.2.0
-npm run build:android:web
-npx cap sync android
+npm ci
+npm run android:sync
 cd android
 ./gradlew assembleDebug --no-daemon
 adb install -r app/build/outputs/apk/debug/app-debug.apk
@@ -53,9 +52,9 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 ### ج. بناء وتشغيل نسخة سطح المكتب Windows Electron محلياً
 ```bash
-npm install --no-save electron@^34.3.0 electron-builder@^25.1.8
+npm install --no-save electron@34.3.0 electron-builder@25.1.8
 npm run electron:start
-# أو لإنتاج ملف التثبيت Setup .exe داخل مجلد release/:
+# أو لإنتاج ملفات التثبيت والنسخة المحمولة Setup + Portable .exe داخل مجلد release/:
 npm run electron:dist
 ```
 

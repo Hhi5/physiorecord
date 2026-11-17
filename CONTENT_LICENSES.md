@@ -82,7 +82,6 @@ Run `npm run check:content` to verify that zero undocumented SVGs, images, fonts
 | `docs/CONTENT_PACK_CONVENTION.md` | Bilingual community clinical content pack convention requiring `source`, `license` (`CC0-1.0`/`CC-BY-4.0`/`MIT`/`Apache-2.0`/`BSD-3-Clause`), `author` & `version` metadata (`local`) | PhysioRecord Contributors | `GPL-3.0-or-later` | 2026-11-14 | Engineering Audit |
 | `docs/INDEX.md` | Bilingual Arabic RTL & English LTR documentation portal index (`local`) | PhysioRecord Contributors | `GPL-3.0-or-later` | 2026-11-14 | Engineering Audit |
 | `src/components/LockScreen.tsx` | Original inline geometric SVG backdrop art for encrypted vault unlock & setup screens (`local`) | PhysioRecord Contributors | Original Project Code (`GPL-3.0-or-later`) | 2026-11-16 | Engineering Audit |
-| `public/assets/aistudio/report_ca51075f.pdf` | Clinical UI & UX architecture audit report artifact (`local`) | PhysioRecord Contributors | `GPL-3.0-or-later` | 2026-11-16 | Engineering Audit |
 | `public/assets/aistudio/screenshot_1_ab8d1550.png` | UX audit benchmark screenshot 1 (`local`) | PhysioRecord Contributors | `GPL-3.0-or-later` | 2026-11-16 | Engineering Audit |
 | `public/assets/aistudio/screenshot_2_48600c6d.png` | UX audit benchmark screenshot 2 (`local`) | PhysioRecord Contributors | `GPL-3.0-or-later` | 2026-11-16 | Engineering Audit |
 

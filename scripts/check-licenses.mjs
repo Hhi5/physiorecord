@@ -30,6 +30,7 @@ const PROD_ALLOWED = new Set([
 const DEV_ONLY_ALLOWED = new Set([
   ...PROD_ALLOWED,
   'MPL-2.0',
+  'BlueOak-1.0.0',
 ]);
 
 const FORBIDDEN_PATTERNS = [

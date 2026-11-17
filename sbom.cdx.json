@@ -2,10 +2,10 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:b127402a-7e42-44ed-b5dc-6d91caa80355",
+  "serialNumber": "urn:uuid:4c356a3a-59fb-4b5b-8688-6a5513743d56",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-16T14:50:19.631Z",
+    "timestamp": "2026-11-17T21:21:19.124Z",
     "tools": {
       "components": [
         {
@@ -59,16 +59,117 @@
         {
           "url": "https://github.com/dequelabs/axe-core-npm.git",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/@axe-core/playwright/-/playwright-4.14.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@axe-core/playwright"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "@capacitor",
+      "name": "android",
+      "version": "8.6.2",
+      "bom-ref": "@capacitor/android@8.6.2",
+      "scope": "optional",
+      "author": "Ionic Team <hi@ionic.io> (https://ionic.io)",
+      "description": "Capacitor: Cross-platform apps with JavaScript and the web",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40capacitor/android@8.6.2",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/ionic-team/capacitor.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://capacitorjs.com",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@capacitor/android"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "@capacitor",
+      "name": "cli",
+      "version": "8.6.2",
+      "bom-ref": "@capacitor/cli@8.6.2",
+      "scope": "optional",
+      "author": "Ionic Team <hi@ionic.io> (https://ionic.io)",
+      "description": "Capacitor: Cross-platform apps with JavaScript and the web",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40capacitor/cli@8.6.2",
+      "externalReferences": [
+        {
+          "url": "https://github.com/ionic-team/capacitor.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://capacitorjs.com",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@capacitor/cli"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "@capacitor",
+      "name": "core",
+      "version": "8.6.2",
+      "bom-ref": "@capacitor/core@8.6.2",
+      "scope": "optional",
+      "author": "Ionic Team <hi@ionic.io> (https://ionic.io)",
+      "description": "Capacitor: Cross-platform apps with JavaScript and the web",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40capacitor/core@8.6.2",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/ionic-team/capacitor.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://capacitorjs.com",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@capacitor/core"
         }
       ]
     },
@@ -98,10 +199,6 @@
         {
           "url": "https://fontsource.org/fonts/ibm-plex-sans-arabic",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/@fontsource/ibm-plex-sans-arabic/-/ibm-plex-sans-arabic-5.3.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -137,10 +234,6 @@
         {
           "url": "https://fontsource.org/fonts/inter",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/@fontsource/inter/-/inter-5.3.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -176,10 +269,6 @@
         {
           "url": "https://fontsource.org/fonts/jetbrains-mono",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/@fontsource/jetbrains-mono/-/jetbrains-mono-5.3.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -210,10 +299,6 @@
         {
           "url": "https://github.com/adobe/react-spectrum/tree/main/packages/@internationalized/date",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/@internationalized/date/-/date-3.12.4.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -244,10 +329,6 @@
         {
           "url": "https://github.com/adobe/react-spectrum",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/@internationalized/number/-/number-3.6.9.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -278,16 +359,381 @@
         {
           "url": "https://github.com/adobe/react-spectrum",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/@internationalized/string/-/string-3.2.10.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@internationalized/string"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "@ionic",
+      "name": "cli-framework-output",
+      "version": "2.2.8",
+      "bom-ref": "@ionic/cli-framework-output@2.2.8",
+      "scope": "optional",
+      "author": "Ionic Team <hi@ionic.io> (https://ionicframework.com)",
+      "description": "The log/tasks/spinners portion of Ionic CLI Framework",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40ionic/cli-framework-output@2.2.8",
+      "externalReferences": [
+        {
+          "url": "https://github.com/ionic-team/ionic-cli.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://ionicframework.com/",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@ionic/cli-framework-output"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "@ionic",
+      "name": "utils-array",
+      "version": "2.1.6",
+      "bom-ref": "@ionic/utils-array@2.1.6",
+      "scope": "optional",
+      "author": "Ionic Team <hi@ionic.io> (https://ionic.io)",
+      "description": "Array utils",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40ionic/utils-array@2.1.6",
+      "externalReferences": [
+        {
+          "url": "https://github.com/ionic-team/ionic-cli.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://ionicframework.com/",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@ionic/utils-array"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "@ionic",
+      "name": "utils-fs",
+      "version": "3.1.7",
+      "bom-ref": "@ionic/utils-fs@3.1.7",
+      "scope": "optional",
+      "author": "Ionic Team <hi@ionic.io> (https://ionic.io)",
+      "description": "Filesystem utils for Node",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40ionic/utils-fs@3.1.7",
+      "externalReferences": [
+        {
+          "url": "https://github.com/ionic-team/ionic-cli.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://ionicframework.com/",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@ionic/utils-fs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fs-extra",
+      "version": "9.1.0",
+      "bom-ref": "fs-extra@9.1.0",
+      "scope": "optional",
+      "author": "JP Richardson <jprichardson@gmail.com>",
+      "description": "fs-extra contains methods that aren't included in the vanilla Node.js fs package. Such as recursive mkdir, copy, and remove.",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/fs-extra@9.1.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/jprichardson/node-fs-extra",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/jprichardson/node-fs-extra",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@ionic/utils-fs/node_modules/fs-extra"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "@ionic",
+      "name": "utils-object",
+      "version": "2.1.6",
+      "bom-ref": "@ionic/utils-object@2.1.6",
+      "scope": "optional",
+      "author": "Ionic Team <hi@ionic.io> (https://ionic.io)",
+      "description": "Object utils",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40ionic/utils-object@2.1.6",
+      "externalReferences": [
+        {
+          "url": "https://github.com/ionic-team/ionic-cli.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://ionicframework.com/",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@ionic/utils-object"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "@ionic",
+      "name": "utils-process",
+      "version": "2.1.12",
+      "bom-ref": "@ionic/utils-process@2.1.12",
+      "scope": "optional",
+      "author": "Ionic Team <hi@ionic.io> (https://ionic.io)",
+      "description": "Process utils for NodeJS",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40ionic/utils-process@2.1.12",
+      "externalReferences": [
+        {
+          "url": "https://github.com/ionic-team/ionic-cli.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://ionicframework.com/",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@ionic/utils-process"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "@ionic",
+      "name": "utils-stream",
+      "version": "3.1.7",
+      "bom-ref": "@ionic/utils-stream@3.1.7",
+      "scope": "optional",
+      "author": "Ionic Team <hi@ionic.io> (https://ionic.io)",
+      "description": "Stream utils for NodeJS",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40ionic/utils-stream@3.1.7",
+      "externalReferences": [
+        {
+          "url": "https://github.com/ionic-team/ionic-cli.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://ionicframework.com/",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@ionic/utils-stream"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "@ionic",
+      "name": "utils-subprocess",
+      "version": "3.0.1",
+      "bom-ref": "@ionic/utils-subprocess@3.0.1",
+      "scope": "optional",
+      "author": "Ionic Team <hi@ionic.io> (https://ionic.io)",
+      "description": "Subprocess utils for NodeJS",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40ionic/utils-subprocess@3.0.1",
+      "externalReferences": [
+        {
+          "url": "https://github.com/ionic-team/ionic-cli.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://ionicframework.com/",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@ionic/utils-subprocess"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "@ionic",
+      "name": "utils-terminal",
+      "version": "2.3.5",
+      "bom-ref": "@ionic/utils-terminal@2.3.5",
+      "scope": "optional",
+      "author": "Ionic Team <hi@ionic.io> (https://ionic.io)",
+      "description": "Terminal utils for NodeJS",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40ionic/utils-terminal@2.3.5",
+      "externalReferences": [
+        {
+          "url": "https://github.com/ionic-team/ionic-cli.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://ionicframework.com/",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@ionic/utils-terminal"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "@isaacs",
+      "name": "fs-minipass",
+      "version": "4.0.1",
+      "bom-ref": "@isaacs/fs-minipass@4.0.1",
+      "scope": "optional",
+      "author": "Isaac Z. Schlueter",
+      "description": "fs read and write streams based on minipass",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40isaacs/fs-minipass@4.0.1",
+      "externalReferences": [
+        {
+          "url": "https://github.com/npm/fs-minipass.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@isaacs/fs-minipass"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "@isaacs",
+      "name": "nonrecursive-glob-match",
+      "version": "1.1.0",
+      "bom-ref": "@isaacs/nonrecursive-glob-match@1.1.0",
+      "scope": "optional",
+      "description": "a single-path-portion glob matcher not subject to recursive backtracking ReDoS",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40isaacs/nonrecursive-glob-match@1.1.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@isaacs/nonrecursive-glob-match"
         }
       ]
     },
@@ -365,8 +811,8 @@
       "type": "library",
       "group": "@jridgewell",
       "name": "resolve-uri",
-      "version": "3.1.2",
-      "bom-ref": "@jridgewell/resolve-uri@3.1.2",
+      "version": "3.1.3",
+      "bom-ref": "@jridgewell/resolve-uri@3.1.3",
       "scope": "optional",
       "author": "Justin Ridgewell <justin@ridgewell.name>",
       "description": "Resolve a URI relative to an optional base URI",
@@ -378,7 +824,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40jridgewell/resolve-uri@3.1.2",
+      "purl": "pkg:npm/%40jridgewell/resolve-uri@3.1.3",
       "externalReferences": [
         {
           "url": "https://github.com/jridgewell/resolve-uri",
@@ -501,8 +947,8 @@
       "type": "library",
       "group": "@playwright",
       "name": "test",
-      "version": "1.65.0",
-      "bom-ref": "@playwright/test@1.65.0",
+      "version": "1.65.1",
+      "bom-ref": "@playwright/test@1.65.1",
       "scope": "optional",
       "author": "Microsoft Corporation",
       "description": "A high-level API to automate web browsers",
@@ -514,7 +960,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40playwright/test@1.65.0",
+      "purl": "pkg:npm/%40playwright/test@1.65.1",
       "externalReferences": [
         {
           "url": "git+https://github.com/microsoft/playwright.git",
@@ -523,10 +969,6 @@
         {
           "url": "https://playwright.dev",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/@playwright/test/-/test-1.65.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -540,8 +982,8 @@
       "type": "library",
       "group": "@puppeteer",
       "name": "browsers",
-      "version": "3.2.6",
-      "bom-ref": "@puppeteer/browsers@3.2.6",
+      "version": "3.2.7",
+      "bom-ref": "@puppeteer/browsers@3.2.7",
       "scope": "optional",
       "author": "The Chromium Authors",
       "description": "Download and launch browsers",
@@ -553,15 +995,11 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40puppeteer/browsers@3.2.6",
+      "purl": "pkg:npm/%40puppeteer/browsers@3.2.7",
       "externalReferences": [
         {
           "url": "https://github.com/puppeteer/puppeteer/tree/main/packages/browsers",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/@puppeteer/browsers/-/browsers-3.2.6.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -592,10 +1030,6 @@
         {
           "url": "https://github.com/adobe/react-spectrum",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/@react-types/shared/-/shared-3.37.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -608,415 +1042,9 @@
     {
       "type": "library",
       "group": "@rolldown",
-      "name": "binding-android-arm-eabi",
-      "version": "1.2.18",
-      "bom-ref": "@rolldown/binding-android-arm-eabi@1.2.18",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40rolldown/binding-android-arm-eabi@1.2.18",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@rolldown/binding-android-arm-eabi/-/binding-android-arm-eabi-1.2.18.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@rolldown/binding-android-arm-eabi"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@rolldown",
-      "name": "binding-android-arm64",
-      "version": "1.2.18",
-      "bom-ref": "@rolldown/binding-android-arm64@1.2.18",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40rolldown/binding-android-arm64@1.2.18",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@rolldown/binding-android-arm64/-/binding-android-arm64-1.2.18.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@rolldown/binding-android-arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@rolldown",
-      "name": "binding-darwin-arm64",
-      "version": "1.2.18",
-      "bom-ref": "@rolldown/binding-darwin-arm64@1.2.18",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40rolldown/binding-darwin-arm64@1.2.18",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@rolldown/binding-darwin-arm64/-/binding-darwin-arm64-1.2.18.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@rolldown/binding-darwin-arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@rolldown",
-      "name": "binding-darwin-x64",
-      "version": "1.2.18",
-      "bom-ref": "@rolldown/binding-darwin-x64@1.2.18",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40rolldown/binding-darwin-x64@1.2.18",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@rolldown/binding-darwin-x64/-/binding-darwin-x64-1.2.18.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@rolldown/binding-darwin-x64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@rolldown",
-      "name": "binding-freebsd-x64",
-      "version": "1.2.18",
-      "bom-ref": "@rolldown/binding-freebsd-x64@1.2.18",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40rolldown/binding-freebsd-x64@1.2.18",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@rolldown/binding-freebsd-x64/-/binding-freebsd-x64-1.2.18.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@rolldown/binding-freebsd-x64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@rolldown",
-      "name": "binding-linux-arm-gnueabihf",
-      "version": "1.2.18",
-      "bom-ref": "@rolldown/binding-linux-arm-gnueabihf@1.2.18",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40rolldown/binding-linux-arm-gnueabihf@1.2.18",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@rolldown/binding-linux-arm-gnueabihf/-/binding-linux-arm-gnueabihf-1.2.18.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@rolldown/binding-linux-arm-gnueabihf"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@rolldown",
-      "name": "binding-linux-arm64-gnu",
-      "version": "1.2.18",
-      "bom-ref": "@rolldown/binding-linux-arm64-gnu@1.2.18",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40rolldown/binding-linux-arm64-gnu@1.2.18",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@rolldown/binding-linux-arm64-gnu/-/binding-linux-arm64-gnu-1.2.18.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@rolldown/binding-linux-arm64-gnu"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@rolldown",
-      "name": "binding-linux-arm64-musl",
-      "version": "1.2.18",
-      "bom-ref": "@rolldown/binding-linux-arm64-musl@1.2.18",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40rolldown/binding-linux-arm64-musl@1.2.18",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@rolldown/binding-linux-arm64-musl/-/binding-linux-arm64-musl-1.2.18.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@rolldown/binding-linux-arm64-musl"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@rolldown",
-      "name": "binding-linux-ppc64-gnu",
-      "version": "1.2.18",
-      "bom-ref": "@rolldown/binding-linux-ppc64-gnu@1.2.18",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40rolldown/binding-linux-ppc64-gnu@1.2.18",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@rolldown/binding-linux-ppc64-gnu/-/binding-linux-ppc64-gnu-1.2.18.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@rolldown/binding-linux-ppc64-gnu"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@rolldown",
-      "name": "binding-linux-s390x-gnu",
-      "version": "1.2.18",
-      "bom-ref": "@rolldown/binding-linux-s390x-gnu@1.2.18",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40rolldown/binding-linux-s390x-gnu@1.2.18",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@rolldown/binding-linux-s390x-gnu/-/binding-linux-s390x-gnu-1.2.18.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@rolldown/binding-linux-s390x-gnu"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@rolldown",
       "name": "binding-linux-x64-gnu",
-      "version": "1.2.18",
-      "bom-ref": "@rolldown/binding-linux-x64-gnu@1.2.18",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40rolldown/binding-linux-x64-gnu@1.2.18",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@rolldown/binding-linux-x64-gnu/-/binding-linux-x64-gnu-1.2.18.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@rolldown/binding-linux-x64-gnu"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@rolldown",
-      "name": "binding-linux-x64-musl",
-      "version": "1.2.18",
-      "bom-ref": "@rolldown/binding-linux-x64-musl@1.2.18",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40rolldown/binding-linux-x64-musl@1.2.18",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@rolldown/binding-linux-x64-musl/-/binding-linux-x64-musl-1.2.18.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@rolldown/binding-linux-x64-musl"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@rolldown",
-      "name": "binding-openharmony-arm64",
-      "version": "1.2.18",
-      "bom-ref": "@rolldown/binding-openharmony-arm64@1.2.18",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40rolldown/binding-openharmony-arm64@1.2.18",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@rolldown/binding-openharmony-arm64/-/binding-openharmony-arm64-1.2.18.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@rolldown/binding-openharmony-arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@rolldown",
-      "name": "binding-win32-arm64-msvc",
-      "version": "1.2.18",
-      "bom-ref": "@rolldown/binding-win32-arm64-msvc@1.2.18",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40rolldown/binding-win32-arm64-msvc@1.2.18",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@rolldown/binding-win32-arm64-msvc/-/binding-win32-arm64-msvc-1.2.18.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@rolldown/binding-win32-arm64-msvc"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@rolldown",
-      "name": "binding-win32-x64-msvc",
-      "version": "1.2.18",
-      "bom-ref": "@rolldown/binding-win32-x64-msvc@1.2.18",
+      "version": "1.2.19",
+      "bom-ref": "@rolldown/binding-linux-x64-gnu@1.2.19",
       "scope": "optional",
       "description": "Fast JavaScript/TypeScript bundler in Rust with Rollup-compatible API.",
       "licenses": [
@@ -1027,7 +1055,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40rolldown/binding-win32-x64-msvc@1.2.18",
+      "purl": "pkg:npm/%40rolldown/binding-linux-x64-gnu@1.2.19",
       "externalReferences": [
         {
           "url": "git+https://github.com/rolldown/rolldown.git",
@@ -1041,7 +1069,7 @@
       "properties": [
         {
           "name": "cdx:npm:package:path",
-          "value": "node_modules/@rolldown/binding-win32-x64-msvc"
+          "value": "node_modules/@rolldown/binding-linux-x64-gnu"
         }
       ]
     },
@@ -1049,8 +1077,8 @@
       "type": "library",
       "group": "@rolldown",
       "name": "pluginutils",
-      "version": "1.1.0",
-      "bom-ref": "@rolldown/pluginutils@1.1.0",
+      "version": "1.1.1",
+      "bom-ref": "@rolldown/pluginutils@1.1.1",
       "scope": "optional",
       "description": "Plugin utilities for Rolldown",
       "licenses": [
@@ -1061,7 +1089,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40rolldown/pluginutils@1.1.0",
+      "purl": "pkg:npm/%40rolldown/pluginutils@1.1.1",
       "externalReferences": [
         {
           "url": "git+https://github.com/rolldown/plugins.git",
@@ -1105,10 +1133,6 @@
         {
           "url": "https://swc.rs",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/@swc/helpers/-/helpers-0.5.24.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -1184,209 +1208,6 @@
     {
       "type": "library",
       "group": "@tailwindcss",
-      "name": "oxide-android-arm64",
-      "version": "4.3.5",
-      "bom-ref": "@tailwindcss/oxide-android-arm64@4.3.5",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40tailwindcss/oxide-android-arm64@4.3.5",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@tailwindcss/oxide-android-arm64/-/oxide-android-arm64-4.3.5.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@tailwindcss/oxide-android-arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@tailwindcss",
-      "name": "oxide-darwin-arm64",
-      "version": "4.3.5",
-      "bom-ref": "@tailwindcss/oxide-darwin-arm64@4.3.5",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40tailwindcss/oxide-darwin-arm64@4.3.5",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.3.5.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@tailwindcss/oxide-darwin-arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@tailwindcss",
-      "name": "oxide-darwin-x64",
-      "version": "4.3.5",
-      "bom-ref": "@tailwindcss/oxide-darwin-x64@4.3.5",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40tailwindcss/oxide-darwin-x64@4.3.5",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@tailwindcss/oxide-darwin-x64/-/oxide-darwin-x64-4.3.5.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@tailwindcss/oxide-darwin-x64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@tailwindcss",
-      "name": "oxide-freebsd-x64",
-      "version": "4.3.5",
-      "bom-ref": "@tailwindcss/oxide-freebsd-x64@4.3.5",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40tailwindcss/oxide-freebsd-x64@4.3.5",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@tailwindcss/oxide-freebsd-x64/-/oxide-freebsd-x64-4.3.5.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@tailwindcss/oxide-freebsd-x64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@tailwindcss",
-      "name": "oxide-linux-arm-gnueabihf",
-      "version": "4.3.5",
-      "bom-ref": "@tailwindcss/oxide-linux-arm-gnueabihf@4.3.5",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40tailwindcss/oxide-linux-arm-gnueabihf@4.3.5",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@tailwindcss/oxide-linux-arm-gnueabihf/-/oxide-linux-arm-gnueabihf-4.3.5.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@tailwindcss/oxide-linux-arm-gnueabihf"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@tailwindcss",
-      "name": "oxide-linux-arm64-gnu",
-      "version": "4.3.5",
-      "bom-ref": "@tailwindcss/oxide-linux-arm64-gnu@4.3.5",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40tailwindcss/oxide-linux-arm64-gnu@4.3.5",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@tailwindcss/oxide-linux-arm64-gnu/-/oxide-linux-arm64-gnu-4.3.5.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@tailwindcss/oxide-linux-arm64-gnu"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@tailwindcss",
-      "name": "oxide-linux-arm64-musl",
-      "version": "4.3.5",
-      "bom-ref": "@tailwindcss/oxide-linux-arm64-musl@4.3.5",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40tailwindcss/oxide-linux-arm64-musl@4.3.5",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@tailwindcss/oxide-linux-arm64-musl/-/oxide-linux-arm64-musl-4.3.5.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@tailwindcss/oxide-linux-arm64-musl"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@tailwindcss",
       "name": "oxide-linux-x64-gnu",
       "version": "4.3.5",
       "bom-ref": "@tailwindcss/oxide-linux-x64-gnu@4.3.5",
@@ -1402,43 +1223,14 @@
       "purl": "pkg:npm/%40tailwindcss/oxide-linux-x64-gnu@4.3.5",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@tailwindcss/oxide-linux-x64-gnu/-/oxide-linux-x64-gnu-4.3.5.tgz",
-          "type": "distribution"
+          "url": "git+https://github.com/tailwindlabs/tailwindcss.git",
+          "type": "vcs"
         }
       ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@tailwindcss/oxide-linux-x64-gnu"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@tailwindcss",
-      "name": "oxide-linux-x64-musl",
-      "version": "4.3.5",
-      "bom-ref": "@tailwindcss/oxide-linux-x64-musl@4.3.5",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40tailwindcss/oxide-linux-x64-musl@4.3.5",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@tailwindcss/oxide-linux-x64-musl/-/oxide-linux-x64-musl-4.3.5.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@tailwindcss/oxide-linux-x64-musl"
         }
       ]
     },
@@ -1679,64 +1471,6 @@
     {
       "type": "library",
       "group": "@tailwindcss",
-      "name": "oxide-win32-arm64-msvc",
-      "version": "4.3.5",
-      "bom-ref": "@tailwindcss/oxide-win32-arm64-msvc@4.3.5",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40tailwindcss/oxide-win32-arm64-msvc@4.3.5",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@tailwindcss/oxide-win32-arm64-msvc/-/oxide-win32-arm64-msvc-4.3.5.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@tailwindcss/oxide-win32-arm64-msvc"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@tailwindcss",
-      "name": "oxide-win32-x64-msvc",
-      "version": "4.3.5",
-      "bom-ref": "@tailwindcss/oxide-win32-x64-msvc@4.3.5",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40tailwindcss/oxide-win32-x64-msvc@4.3.5",
-      "externalReferences": [
-        {
-          "url": "git+https://github.com/tailwindlabs/tailwindcss.git",
-          "type": "vcs"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@tailwindcss/oxide-win32-x64-msvc"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@tailwindcss",
       "name": "vite",
       "version": "4.3.5",
       "bom-ref": "@tailwindcss/vite@4.3.5",
@@ -1873,6 +1607,40 @@
     {
       "type": "library",
       "group": "@types",
+      "name": "fs-extra",
+      "version": "8.1.5",
+      "bom-ref": "@types/fs-extra@8.1.5",
+      "scope": "optional",
+      "description": "TypeScript definitions for fs-extra",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40types/fs-extra@8.1.5",
+      "externalReferences": [
+        {
+          "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/fs-extra",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@types/fs-extra"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "@types",
       "name": "node",
       "version": "22.20.5",
       "bom-ref": "@types/node@22.20.5",
@@ -1997,10 +1765,6 @@
         {
           "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-reconciler",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/@types/react-reconciler/-/react-reconciler-0.34.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -2012,349 +1776,31 @@
     },
     {
       "type": "library",
-      "group": "@typescript",
-      "name": "typescript-aix-ppc64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-aix-ppc64@7.0.2",
+      "group": "@types",
+      "name": "slice-ansi",
+      "version": "4.0.0",
+      "bom-ref": "@types/slice-ansi@4.0.0",
       "scope": "optional",
+      "description": "TypeScript definitions for slice-ansi",
       "licenses": [
         {
           "license": {
-            "id": "Apache-2.0",
+            "id": "MIT",
             "acknowledgement": "declared"
           }
         }
       ],
-      "purl": "pkg:npm/%40typescript/typescript-aix-ppc64@7.0.2",
+      "purl": "pkg:npm/%40types/slice-ansi@4.0.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@typescript/typescript-aix-ppc64/-/typescript-aix-ppc64-7.0.2.tgz",
-          "type": "distribution"
+          "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+          "type": "vcs"
         }
       ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-aix-ppc64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-darwin-arm64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-darwin-arm64@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-darwin-arm64@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-darwin-arm64/-/typescript-darwin-arm64-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-darwin-arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-darwin-x64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-darwin-x64@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-darwin-x64@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-darwin-x64/-/typescript-darwin-x64-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-darwin-x64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-freebsd-arm64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-freebsd-arm64@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-freebsd-arm64@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-freebsd-arm64/-/typescript-freebsd-arm64-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-freebsd-arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-freebsd-x64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-freebsd-x64@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-freebsd-x64@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-freebsd-x64/-/typescript-freebsd-x64-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-freebsd-x64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-linux-arm",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-linux-arm@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-linux-arm@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-linux-arm/-/typescript-linux-arm-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-linux-arm"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-linux-arm64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-linux-arm64@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-linux-arm64@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-linux-arm64/-/typescript-linux-arm64-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-linux-arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-linux-loong64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-linux-loong64@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-linux-loong64@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-linux-loong64/-/typescript-linux-loong64-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-linux-loong64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-linux-mips64el",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-linux-mips64el@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-linux-mips64el@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-linux-mips64el/-/typescript-linux-mips64el-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-linux-mips64el"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-linux-ppc64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-linux-ppc64@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-linux-ppc64@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-linux-ppc64/-/typescript-linux-ppc64-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-linux-ppc64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-linux-riscv64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-linux-riscv64@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-linux-riscv64@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-linux-riscv64/-/typescript-linux-riscv64-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-linux-riscv64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-linux-s390x",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-linux-s390x@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-linux-s390x@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-linux-s390x/-/typescript-linux-s390x-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-linux-s390x"
+          "value": "node_modules/@types/slice-ansi"
         }
       ]
     },
@@ -2365,6 +1811,8 @@
       "version": "7.0.2",
       "bom-ref": "@typescript/typescript-linux-x64@7.0.2",
       "scope": "optional",
+      "author": "Microsoft Corp.",
+      "description": "TypeScript is a language for application scale JavaScript development",
       "licenses": [
         {
           "license": {
@@ -2376,188 +1824,18 @@
       "purl": "pkg:npm/%40typescript/typescript-linux-x64@7.0.2",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@typescript/typescript-linux-x64/-/typescript-linux-x64-7.0.2.tgz",
-          "type": "distribution"
+          "url": "https://github.com/microsoft/TypeScript.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://www.typescriptlang.org/",
+          "type": "website"
         }
       ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@typescript/typescript-linux-x64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-netbsd-arm64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-netbsd-arm64@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-netbsd-arm64@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-netbsd-arm64/-/typescript-netbsd-arm64-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-netbsd-arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-netbsd-x64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-netbsd-x64@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-netbsd-x64@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-netbsd-x64/-/typescript-netbsd-x64-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-netbsd-x64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-openbsd-arm64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-openbsd-arm64@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-openbsd-arm64@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-openbsd-arm64/-/typescript-openbsd-arm64-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-openbsd-arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-openbsd-x64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-openbsd-x64@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-openbsd-x64@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-openbsd-x64/-/typescript-openbsd-x64-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-openbsd-x64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-sunos-x64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-sunos-x64@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-sunos-x64@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-sunos-x64/-/typescript-sunos-x64-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-sunos-x64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "group": "@typescript",
-      "name": "typescript-win32-arm64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-win32-arm64@7.0.2",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-win32-arm64@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-win32-arm64/-/typescript-win32-arm64-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@typescript/typescript-win32-arm64"
         }
       ]
     },
@@ -2666,11 +1944,45 @@
     },
     {
       "type": "library",
-      "name": "ansi-regex",
-      "version": "6.6.0",
-      "bom-ref": "ansi-regex@6.6.0",
+      "group": "@xmldom",
+      "name": "xmldom",
+      "version": "0.9.12",
+      "bom-ref": "@xmldom/xmldom@0.9.12",
       "scope": "optional",
-      "author": "Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)",
+      "description": "A pure JavaScript W3C standard-based (XML DOM Level 2 Core) DOMParser and XMLSerializer module.",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40xmldom/xmldom@0.9.12",
+      "externalReferences": [
+        {
+          "url": "git://github.com/xmldom/xmldom.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/xmldom/xmldom",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@xmldom/xmldom"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ansi-regex",
+      "version": "5.0.1",
+      "bom-ref": "ansi-regex@5.0.1",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
       "description": "Regular expression for matching ANSI escape codes",
       "licenses": [
         {
@@ -2680,15 +1992,11 @@
           }
         }
       ],
-      "purl": "pkg:npm/ansi-regex@6.6.0",
+      "purl": "pkg:npm/ansi-regex@5.0.1",
       "externalReferences": [
         {
           "url": "chalk/ansi-regex",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-6.6.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -2701,8 +2009,8 @@
     {
       "type": "library",
       "name": "ansi-styles",
-      "version": "6.2.3",
-      "bom-ref": "ansi-styles@6.2.3",
+      "version": "4.3.0",
+      "bom-ref": "ansi-styles@4.3.0",
       "scope": "optional",
       "author": "Sindre Sorhus",
       "description": "ANSI escape codes for styling strings in the terminal",
@@ -2714,15 +2022,11 @@
           }
         }
       ],
-      "purl": "pkg:npm/ansi-styles@6.2.3",
+      "purl": "pkg:npm/ansi-styles@4.3.0",
       "externalReferences": [
         {
           "url": "chalk/ansi-styles",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-6.2.3.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -2757,10 +2061,6 @@
         {
           "url": "https://github.com/theKashey/aria-hidden#readme",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/aria-hidden/-/aria-hidden-1.2.6.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -2802,9 +2102,73 @@
     },
     {
       "type": "library",
+      "name": "astral-regex",
+      "version": "2.0.0",
+      "bom-ref": "astral-regex@2.0.0",
+      "scope": "optional",
+      "author": "Kevin Mårtensson",
+      "description": "Regular expression for matching astral symbols",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/astral-regex@2.0.0",
+      "externalReferences": [
+        {
+          "url": "kevva/astral-regex",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/astral-regex"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "at-least-node",
+      "version": "1.0.0",
+      "bom-ref": "at-least-node@1.0.0",
+      "scope": "optional",
+      "author": "Ryan Zimmerman <opensrc@ryanzim.com>",
+      "description": "Lightweight Node.js version sniffing/comparison",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/at-least-node@1.0.0",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/RyanZim/at-least-node.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/RyanZim/at-least-node#readme",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/at-least-node"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "axe-core",
-      "version": "4.14.0",
-      "bom-ref": "axe-core@4.14.0",
+      "version": "4.14.1",
+      "bom-ref": "axe-core@4.14.1",
       "scope": "optional",
       "description": "Accessibility engine for automated Web UI testing",
       "licenses": [
@@ -2815,7 +2179,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/axe-core@4.14.0",
+      "purl": "pkg:npm/axe-core@4.14.1",
       "externalReferences": [
         {
           "url": "https://github.com/dequelabs/axe-core.git",
@@ -2824,16 +2188,232 @@
         {
           "url": "https://www.deque.com/axe/",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/axe-core/-/axe-core-4.14.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/axe-core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "balanced-match",
+      "version": "4.0.4",
+      "bom-ref": "balanced-match@4.0.4",
+      "scope": "optional",
+      "description": "Match balanced character pairs, like \"{\" and \"}\"",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/balanced-match@4.0.4",
+      "externalReferences": [
+        {
+          "url": "git://github.com/juliangruber/balanced-match.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/balanced-match"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "base64-js",
+      "version": "1.5.1",
+      "bom-ref": "base64-js@1.5.1",
+      "scope": "optional",
+      "author": "T. Jameson Little <t.jameson.little@gmail.com>",
+      "description": "Base64 encoding/decoding in pure JS",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/base64-js@1.5.1",
+      "externalReferences": [
+        {
+          "url": "git://github.com/beatgammit/base64-js.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/beatgammit/base64-js",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/base64-js"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "big-integer",
+      "version": "1.6.52",
+      "bom-ref": "big-integer@1.6.52",
+      "scope": "optional",
+      "author": "Peter Olson <peter.e.c.olson+npm@gmail.com>",
+      "description": "An arbitrary length integer library for Javascript",
+      "licenses": [
+        {
+          "license": {
+            "id": "Unlicense",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/big-integer@1.6.52",
+      "externalReferences": [
+        {
+          "url": "git@github.com:peterolson/BigInteger.js.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/big-integer"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bplist-creator",
+      "version": "0.1.0",
+      "bom-ref": "bplist-creator@0.1.0",
+      "scope": "optional",
+      "author": "Joe Ferner",
+      "description": "Binary Mac OS X Plist (property list) creator.",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/bplist-creator@0.1.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/nearinfinity/node-bplist-creator.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/bplist-creator"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bplist-parser",
+      "version": "0.3.2",
+      "bom-ref": "bplist-parser@0.3.2",
+      "scope": "optional",
+      "author": "Joe Ferner <joe.ferner@nearinfinity.com>",
+      "description": "Binary plist parser.",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/bplist-parser@0.3.2",
+      "externalReferences": [
+        {
+          "url": "https://github.com/nearinfinity/node-bplist-parser.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/nearinfinity/node-bplist-parser",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/bplist-parser"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "brace-expansion",
+      "version": "5.0.13",
+      "bom-ref": "brace-expansion@5.0.13",
+      "scope": "optional",
+      "description": "Brace expansion as known from sh/bash",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/brace-expansion@5.0.13",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/juliangruber/brace-expansion.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/brace-expansion"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "buffer-crc32",
+      "version": "0.2.13",
+      "bom-ref": "buffer-crc32@0.2.13",
+      "scope": "optional",
+      "author": "Brian J. Brennan <brianloveswords@gmail.com>",
+      "description": "A pure javascript CRC32 algorithm that plays nice with binary data",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/buffer-crc32@0.2.13",
+      "externalReferences": [
+        {
+          "url": "git://github.com/brianloveswords/buffer-crc32.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/brianloveswords/buffer-crc32",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/buffer-crc32"
         }
       ]
     },
@@ -2873,6 +2453,36 @@
     },
     {
       "type": "library",
+      "name": "chownr",
+      "version": "3.0.0",
+      "bom-ref": "chownr@3.0.0",
+      "scope": "optional",
+      "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)",
+      "description": "like `chown -R`",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/chownr@3.0.0",
+      "externalReferences": [
+        {
+          "url": "git://github.com/isaacs/chownr.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/chownr"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "chromium-bidi",
       "version": "157.0.8090-0",
       "bom-ref": "chromium-bidi@157.0.8090-0",
@@ -2892,10 +2502,6 @@
         {
           "url": "https://github.com/GoogleChromeLabs/chromium-bidi.git",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/chromium-bidi/-/chromium-bidi-157.0.8090-0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -2959,10 +2565,6 @@
         {
           "url": "https://reactjs.org/",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/client-only/-/client-only-0.0.1.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -2993,10 +2595,6 @@
         {
           "url": "yargs/cliui",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/cliui/-/cliui-9.0.1.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -3027,16 +2625,166 @@
         {
           "url": "sindresorhus/string-width",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/string-width/-/string-width-7.2.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/cliui/node_modules/string-width"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "emoji-regex",
+      "version": "10.6.0",
+      "bom-ref": "emoji-regex@10.6.0",
+      "scope": "optional",
+      "author": "Mathias Bynens",
+      "description": "A regular expression to match all Emoji-only symbols as per the Unicode Standard.",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/emoji-regex@10.6.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/mathiasbynens/emoji-regex.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://mths.be/emoji-regex",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/cliui/node_modules/string-width/node_modules/emoji-regex"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "strip-ansi",
+      "version": "7.2.0",
+      "bom-ref": "strip-ansi@7.2.0",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Strip ANSI escape codes from a string",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/strip-ansi@7.2.0",
+      "externalReferences": [
+        {
+          "url": "chalk/strip-ansi",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/cliui/node_modules/strip-ansi"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ansi-regex",
+      "version": "6.6.0",
+      "bom-ref": "ansi-regex@6.6.0",
+      "scope": "optional",
+      "author": "Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)",
+      "description": "Regular expression for matching ANSI escape codes",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/ansi-regex@6.6.0",
+      "externalReferences": [
+        {
+          "url": "chalk/ansi-regex",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/cliui/node_modules/strip-ansi/node_modules/ansi-regex"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "wrap-ansi",
+      "version": "9.0.2",
+      "bom-ref": "wrap-ansi@9.0.2",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Wordwrap a string with ANSI escape codes",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/wrap-ansi@9.0.2",
+      "externalReferences": [
+        {
+          "url": "chalk/wrap-ansi",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/cliui/node_modules/wrap-ansi"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ansi-styles",
+      "version": "6.2.3",
+      "bom-ref": "ansi-styles@6.2.3",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "ANSI escape codes for styling strings in the terminal",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/ansi-styles@6.2.3",
+      "externalReferences": [
+        {
+          "url": "chalk/ansi-styles",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/cliui/node_modules/wrap-ansi/node_modules/ansi-styles"
         }
       ]
     },
@@ -3072,9 +2820,137 @@
     },
     {
       "type": "library",
+      "name": "color-convert",
+      "version": "2.0.1",
+      "bom-ref": "color-convert@2.0.1",
+      "scope": "optional",
+      "author": "Heather Arthur <fayearthur@gmail.com>",
+      "description": "Plain color conversion functions",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/color-convert@2.0.1",
+      "externalReferences": [
+        {
+          "url": "Qix-/color-convert",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/color-convert"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "color-name",
+      "version": "1.1.4",
+      "bom-ref": "color-name@1.1.4",
+      "scope": "optional",
+      "author": "DY <dfcreative@gmail.com>",
+      "description": "A list of color names and its values",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/color-name@1.1.4",
+      "externalReferences": [
+        {
+          "url": "git@github.com:colorjs/color-name.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/colorjs/color-name",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/color-name"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "commander",
+      "version": "12.1.0",
+      "bom-ref": "commander@12.1.0",
+      "scope": "optional",
+      "author": "TJ Holowaychuk <tj@vision-media.ca>",
+      "description": "the complete solution for node.js command-line programs",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/commander@12.1.0",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/tj/commander.js.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/commander"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "cross-spawn",
+      "version": "7.0.6",
+      "bom-ref": "cross-spawn@7.0.6",
+      "scope": "optional",
+      "author": "André Cruz <andre@moxy.studio>",
+      "description": "Cross platform child_process#spawn and child_process#spawnSync",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/cross-spawn@7.0.6",
+      "externalReferences": [
+        {
+          "url": "git@github.com:moxystudio/node-cross-spawn.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/moxystudio/node-cross-spawn",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/cross-spawn"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "csstype",
-      "version": "3.2.3",
-      "bom-ref": "csstype@3.2.3",
+      "version": "3.2.4",
+      "bom-ref": "csstype@3.2.4",
       "scope": "required",
       "author": "Fredrik Nicol <fredrik.nicol@gmail.com>",
       "description": "Strict TypeScript and Flow types for style based on MDN data",
@@ -3086,7 +2962,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/csstype@3.2.3",
+      "purl": "pkg:npm/csstype@3.2.4",
       "externalReferences": [
         {
           "url": "https://github.com/frenic/csstype",
@@ -3097,6 +2973,66 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/csstype"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "debug",
+      "version": "4.4.3",
+      "bom-ref": "debug@4.4.3",
+      "scope": "optional",
+      "author": "Josh Junon (https://github.com/qix-)",
+      "description": "Lightweight debugging utility for Node.js and the browser",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/debug@4.4.3",
+      "externalReferences": [
+        {
+          "url": "git://github.com/debug-js/debug.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/debug"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "define-lazy-prop",
+      "version": "2.0.0",
+      "bom-ref": "define-lazy-prop@2.0.0",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Define a lazily evaluated property on an object",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/define-lazy-prop@2.0.0",
+      "externalReferences": [
+        {
+          "url": "sindresorhus/define-lazy-prop",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/define-lazy-prop"
         }
       ]
     },
@@ -3133,8 +3069,8 @@
     {
       "type": "library",
       "name": "devtools-protocol",
-      "version": "0.0.1704951",
-      "bom-ref": "devtools-protocol@0.0.1704951",
+      "version": "0.0.1717327",
+      "bom-ref": "devtools-protocol@0.0.1717327",
       "scope": "optional",
       "author": "The Chromium Authors",
       "description": "The Chrome DevTools Protocol JSON",
@@ -3146,15 +3082,11 @@
           }
         }
       ],
-      "purl": "pkg:npm/devtools-protocol@0.0.1704951",
+      "purl": "pkg:npm/devtools-protocol@0.0.1717327",
       "externalReferences": [
         {
           "url": "https://github.com/ChromeDevTools/devtools-protocol",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/devtools-protocol/-/devtools-protocol-0.0.1704951.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -3234,9 +3166,43 @@
     },
     {
       "type": "library",
+      "name": "elementtree",
+      "version": "0.1.7",
+      "bom-ref": "elementtree@0.1.7",
+      "scope": "optional",
+      "author": "Rackspace US, Inc.",
+      "description": "XML Serialization and Parsing module based on Python's ElementTree.",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/elementtree@0.1.7",
+      "externalReferences": [
+        {
+          "url": "git://github.com/racker/node-elementtree.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/racker/node-elementtree",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/elementtree"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "emoji-regex",
-      "version": "10.6.0",
-      "bom-ref": "emoji-regex@10.6.0",
+      "version": "8.0.0",
+      "bom-ref": "emoji-regex@8.0.0",
       "scope": "optional",
       "author": "Mathias Bynens",
       "description": "A regular expression to match all Emoji-only symbols as per the Unicode Standard.",
@@ -3248,7 +3214,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/emoji-regex@10.6.0",
+      "purl": "pkg:npm/emoji-regex@8.0.0",
       "externalReferences": [
         {
           "url": "https://github.com/mathiasbynens/emoji-regex.git",
@@ -3257,10 +3223,6 @@
         {
           "url": "https://mths.be/emoji-regex",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-10.6.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -3273,8 +3235,8 @@
     {
       "type": "library",
       "name": "enhanced-resolve",
-      "version": "5.26.1",
-      "bom-ref": "enhanced-resolve@5.26.1",
+      "version": "5.27.0",
+      "bom-ref": "enhanced-resolve@5.27.0",
       "scope": "optional",
       "author": "Tobias Koppers @sokra",
       "description": "Offers a async require.resolve function. It's highly configurable.",
@@ -3286,7 +3248,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/enhanced-resolve@5.26.1",
+      "purl": "pkg:npm/enhanced-resolve@5.27.0",
       "externalReferences": [
         {
           "url": "git+https://github.com/webpack/enhanced-resolve.git",
@@ -3301,6 +3263,36 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/enhanced-resolve"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "env-paths",
+      "version": "2.2.1",
+      "bom-ref": "env-paths@2.2.1",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Get paths for storing things like data, config, cache, etc",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/env-paths@2.2.1",
+      "externalReferences": [
+        {
+          "url": "sindresorhus/env-paths",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/env-paths"
         }
       ]
     },
@@ -3359,10 +3351,6 @@
         {
           "url": "lukeed/escalade",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/escalade/-/escalade-3.2.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -3436,6 +3424,36 @@
     },
     {
       "type": "library",
+      "name": "fd-slicer",
+      "version": "1.1.0",
+      "bom-ref": "fd-slicer@1.1.0",
+      "scope": "optional",
+      "author": "Andrew Kelley <superjoe30@gmail.com>",
+      "description": "safely create multiple ReadStream or WriteStream objects from the same file descriptor",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/fd-slicer@1.1.0",
+      "externalReferences": [
+        {
+          "url": "git://github.com/andrewrk/node-fd-slicer.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/fd-slicer"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "fdir",
       "version": "6.5.0",
       "bom-ref": "fdir@6.5.0",
@@ -3500,10 +3518,12 @@
     },
     {
       "type": "library",
-      "name": "fsevents",
-      "version": "2.3.3",
-      "bom-ref": "fsevents@2.3.3",
+      "name": "fs-extra",
+      "version": "11.4.1",
+      "bom-ref": "fs-extra@11.4.1",
       "scope": "optional",
+      "author": "JP Richardson <jprichardson@gmail.com>",
+      "description": "fs-extra contains methods that aren't included in the vanilla Node.js fs package. Such as recursive mkdir, copy, and remove.",
       "licenses": [
         {
           "license": {
@@ -3512,17 +3532,21 @@
           }
         }
       ],
-      "purl": "pkg:npm/fsevents@2.3.3",
+      "purl": "pkg:npm/fs-extra@11.4.1",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz",
-          "type": "distribution"
+          "url": "git+https://github.com/jprichardson/node-fs-extra.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/jprichardson/node-fs-extra",
+          "type": "website"
         }
       ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
-          "value": "node_modules/fsevents"
+          "value": "node_modules/fs-extra"
         }
       ]
     },
@@ -3550,10 +3574,6 @@
         {
           "url": "https://github.com/stefanpenner/get-caller-file#readme",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/get-caller-file/-/get-caller-file-2.0.5.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -3584,10 +3604,6 @@
         {
           "url": "sindresorhus/get-east-asian-width",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/get-east-asian-width/-/get-east-asian-width-1.7.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -3599,20 +3615,50 @@
     },
     {
       "type": "library",
+      "name": "glob",
+      "version": "14.0.6",
+      "bom-ref": "glob@14.0.6",
+      "scope": "optional",
+      "author": "Isaac Z. Schlueter <i@izs.me> (https://blog.izs.me/)",
+      "description": "the most correct and second fastest glob implementation in JavaScript",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/glob@14.0.6",
+      "externalReferences": [
+        {
+          "url": "git@github.com:isaacs/node-glob.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/glob"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "graceful-fs",
-      "version": "4.2.11",
-      "bom-ref": "graceful-fs@4.2.11",
+      "version": "4.2.12",
+      "bom-ref": "graceful-fs@4.2.12",
       "scope": "optional",
       "description": "A drop-in replacement for fs, making various improvements.",
       "licenses": [
         {
           "license": {
-            "id": "ISC",
+            "id": "BlueOak-1.0.0",
             "acknowledgement": "declared"
           }
         }
       ],
-      "purl": "pkg:npm/graceful-fs@4.2.11",
+      "purl": "pkg:npm/graceful-fs@4.2.12",
       "externalReferences": [
         {
           "url": "https://github.com/isaacs/node-graceful-fs",
@@ -3623,6 +3669,189 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/graceful-fs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "inherits",
+      "version": "2.0.4",
+      "bom-ref": "inherits@2.0.4",
+      "scope": "optional",
+      "description": "Browser-friendly inheritance fully compatible with standard node.js inherits()",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/inherits@2.0.4",
+      "externalReferences": [
+        {
+          "url": "git://github.com/isaacs/inherits",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/inherits"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ini",
+      "version": "4.1.3",
+      "bom-ref": "ini@4.1.3",
+      "scope": "optional",
+      "author": "GitHub Inc.",
+      "description": "An ini encoder/decoder for node",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/ini@4.1.3",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/npm/ini.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/ini"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "is-docker",
+      "version": "2.2.1",
+      "bom-ref": "is-docker@2.2.1",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Check if the process is running inside a Docker container",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/is-docker@2.2.1",
+      "externalReferences": [
+        {
+          "url": "sindresorhus/is-docker",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/is-docker"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "is-fullwidth-code-point",
+      "version": "3.0.0",
+      "bom-ref": "is-fullwidth-code-point@3.0.0",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Check if the character represented by a given Unicode code point is fullwidth",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/is-fullwidth-code-point@3.0.0",
+      "externalReferences": [
+        {
+          "url": "sindresorhus/is-fullwidth-code-point",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/is-fullwidth-code-point"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "is-wsl",
+      "version": "2.2.0",
+      "bom-ref": "is-wsl@2.2.0",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Check if the process is running inside Windows Subsystem for Linux (Bash on Windows)",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/is-wsl@2.2.0",
+      "externalReferences": [
+        {
+          "url": "sindresorhus/is-wsl",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/is-wsl"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "isexe",
+      "version": "2.0.0",
+      "bom-ref": "isexe@2.0.0",
+      "scope": "optional",
+      "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)",
+      "description": "Minimal module to check if a file is executable.",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/isexe@2.0.0",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/isaacs/isexe.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/isaacs/isexe#readme",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/isexe"
         }
       ]
     },
@@ -3651,10 +3880,6 @@
         {
           "url": "https://github.com/pmndrs/its-fine",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/its-fine/-/its-fine-2.1.1.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -3689,10 +3914,6 @@
         {
           "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-reconciler",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/@types/react-reconciler/-/react-reconciler-0.28.9.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -3733,6 +3954,66 @@
     },
     {
       "type": "library",
+      "name": "jsonfile",
+      "version": "6.2.1",
+      "bom-ref": "jsonfile@6.2.1",
+      "scope": "optional",
+      "author": "JP Richardson <jprichardson@gmail.com>",
+      "description": "Easily read/write JSON files.",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/jsonfile@6.2.1",
+      "externalReferences": [
+        {
+          "url": "git@github.com:jprichardson/node-jsonfile.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/jsonfile"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "kleur",
+      "version": "4.1.5",
+      "bom-ref": "kleur@4.1.5",
+      "scope": "optional",
+      "author": "Luke Edwards",
+      "description": "The fastest Node.js library for formatting terminal text with ANSI colors~!",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/kleur@4.1.5",
+      "externalReferences": [
+        {
+          "url": "lukeed/kleur",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/kleur"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "konva",
       "version": "10.9.1",
       "bom-ref": "konva@10.9.1",
@@ -3756,10 +4037,6 @@
         {
           "url": "https://konvajs.org/",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/konva/-/konva-10.9.1.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -3800,206 +4077,11 @@
     },
     {
       "type": "library",
-      "name": "lightningcss-android-arm64",
-      "version": "1.33.0",
-      "bom-ref": "lightningcss-android-arm64@1.33.0",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MPL-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/lightningcss-android-arm64@1.33.0",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/lightningcss-android-arm64/-/lightningcss-android-arm64-1.33.0.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/lightningcss-android-arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "lightningcss-darwin-arm64",
-      "version": "1.33.0",
-      "bom-ref": "lightningcss-darwin-arm64@1.33.0",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MPL-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/lightningcss-darwin-arm64@1.33.0",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/lightningcss-darwin-arm64/-/lightningcss-darwin-arm64-1.33.0.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/lightningcss-darwin-arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "lightningcss-darwin-x64",
-      "version": "1.33.0",
-      "bom-ref": "lightningcss-darwin-x64@1.33.0",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MPL-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/lightningcss-darwin-x64@1.33.0",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/lightningcss-darwin-x64/-/lightningcss-darwin-x64-1.33.0.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/lightningcss-darwin-x64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "lightningcss-freebsd-x64",
-      "version": "1.33.0",
-      "bom-ref": "lightningcss-freebsd-x64@1.33.0",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MPL-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/lightningcss-freebsd-x64@1.33.0",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/lightningcss-freebsd-x64/-/lightningcss-freebsd-x64-1.33.0.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/lightningcss-freebsd-x64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "lightningcss-linux-arm-gnueabihf",
-      "version": "1.33.0",
-      "bom-ref": "lightningcss-linux-arm-gnueabihf@1.33.0",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MPL-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/lightningcss-linux-arm-gnueabihf@1.33.0",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/lightningcss-linux-arm-gnueabihf/-/lightningcss-linux-arm-gnueabihf-1.33.0.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/lightningcss-linux-arm-gnueabihf"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "lightningcss-linux-arm64-gnu",
-      "version": "1.33.0",
-      "bom-ref": "lightningcss-linux-arm64-gnu@1.33.0",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MPL-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/lightningcss-linux-arm64-gnu@1.33.0",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/lightningcss-linux-arm64-gnu/-/lightningcss-linux-arm64-gnu-1.33.0.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/lightningcss-linux-arm64-gnu"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "lightningcss-linux-arm64-musl",
-      "version": "1.33.0",
-      "bom-ref": "lightningcss-linux-arm64-musl@1.33.0",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MPL-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/lightningcss-linux-arm64-musl@1.33.0",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/lightningcss-linux-arm64-musl/-/lightningcss-linux-arm64-musl-1.33.0.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/lightningcss-linux-arm64-musl"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "name": "lightningcss-linux-x64-gnu",
       "version": "1.33.0",
       "bom-ref": "lightningcss-linux-x64-gnu@1.33.0",
       "scope": "optional",
+      "description": "A CSS parser, transformer, and minifier written in Rust",
       "licenses": [
         {
           "license": {
@@ -4011,8 +4093,8 @@
       "purl": "pkg:npm/lightningcss-linux-x64-gnu@1.33.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/lightningcss-linux-x64-gnu/-/lightningcss-linux-x64-gnu-1.33.0.tgz",
-          "type": "distribution"
+          "url": "https://github.com/parcel-bundler/lightningcss.git",
+          "type": "vcs"
         }
       ],
       "properties": [
@@ -4024,86 +4106,31 @@
     },
     {
       "type": "library",
-      "name": "lightningcss-linux-x64-musl",
-      "version": "1.33.0",
-      "bom-ref": "lightningcss-linux-x64-musl@1.33.0",
+      "name": "lru-cache",
+      "version": "11.5.3",
+      "bom-ref": "lru-cache@11.5.3",
       "scope": "optional",
+      "author": "Isaac Z. Schlueter <i@izs.me>",
+      "description": "A cache object that deletes the least-recently-used items.",
       "licenses": [
         {
           "license": {
-            "id": "MPL-2.0",
+            "id": "BlueOak-1.0.0",
             "acknowledgement": "declared"
           }
         }
       ],
-      "purl": "pkg:npm/lightningcss-linux-x64-musl@1.33.0",
+      "purl": "pkg:npm/lru-cache@11.5.3",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/lightningcss-linux-x64-musl/-/lightningcss-linux-x64-musl-1.33.0.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/lightningcss-linux-x64-musl"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "lightningcss-win32-arm64-msvc",
-      "version": "1.33.0",
-      "bom-ref": "lightningcss-win32-arm64-msvc@1.33.0",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MPL-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/lightningcss-win32-arm64-msvc@1.33.0",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/lightningcss-win32-arm64-msvc/-/lightningcss-win32-arm64-msvc-1.33.0.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/lightningcss-win32-arm64-msvc"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "lightningcss-win32-x64-msvc",
-      "version": "1.33.0",
-      "bom-ref": "lightningcss-win32-x64-msvc@1.33.0",
-      "scope": "optional",
-      "description": "A CSS parser, transformer, and minifier written in Rust",
-      "licenses": [
-        {
-          "license": {
-            "id": "MPL-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/lightningcss-win32-x64-msvc@1.33.0",
-      "externalReferences": [
-        {
-          "url": "https://github.com/parcel-bundler/lightningcss.git",
+          "url": "git+ssh://git@github.com/isaacs/node-lru-cache.git",
           "type": "vcs"
         }
       ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
-          "value": "node_modules/lightningcss-win32-x64-msvc"
+          "value": "node_modules/lru-cache"
         }
       ]
     },
@@ -4173,6 +4200,66 @@
     },
     {
       "type": "library",
+      "name": "minimatch",
+      "version": "11.0.9",
+      "bom-ref": "minimatch@11.0.9",
+      "scope": "optional",
+      "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me)",
+      "description": "a glob matcher in javascript",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/minimatch@11.0.9",
+      "externalReferences": [
+        {
+          "url": "git+ssh://git@github.com/isaacs/minimatch.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/minimatch"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "minipass",
+      "version": "7.1.3",
+      "bom-ref": "minipass@7.1.3",
+      "scope": "optional",
+      "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)",
+      "description": "minimal implementation of a PassThrough stream",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/minipass@7.1.3",
+      "externalReferences": [
+        {
+          "url": "https://github.com/isaacs/minipass",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/minipass"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "minisearch",
       "version": "7.2.0",
       "bom-ref": "minisearch@7.2.0",
@@ -4196,16 +4283,42 @@
         {
           "url": "https://lucaong.github.io/minisearch/",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/minisearch/-/minisearch-7.2.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/minisearch"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "minizlib",
+      "version": "3.1.0",
+      "bom-ref": "minizlib@3.1.0",
+      "scope": "optional",
+      "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)",
+      "description": "A small fast zlib stream built on [minipass](http://npm.im/minipass) and Node.js's zlib binding.",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/minizlib@3.1.0",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/isaacs/minizlib.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/minizlib"
         }
       ]
     },
@@ -4233,10 +4346,6 @@
         {
           "url": "https://github.com/developit/mitt",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/mitt/-/mitt-3.0.1.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -4271,10 +4380,6 @@
         {
           "url": "https://github.com/ayuhito/modern-tar",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/modern-tar/-/modern-tar-0.8.6.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -4374,6 +4479,35 @@
     },
     {
       "type": "library",
+      "name": "ms",
+      "version": "2.1.3",
+      "bom-ref": "ms@2.1.3",
+      "scope": "optional",
+      "description": "Tiny millisecond conversion utility",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/ms@2.1.3",
+      "externalReferences": [
+        {
+          "url": "vercel/ms",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/ms"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "nanoid",
       "version": "3.3.20",
       "bom-ref": "nanoid@3.3.20",
@@ -4399,6 +4533,40 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/nanoid"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "native-run",
+      "version": "2.1.0",
+      "bom-ref": "native-run@2.1.0",
+      "scope": "optional",
+      "author": "Ionic Team <hi@ionicframework.com> (https://ionicframework.com)",
+      "description": "A CLI for running apps on iOS/Android devices and simulators/emulators",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/native-run@2.1.0",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/ionic-team/native-run.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/ionic-team/native-run#readme",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/native-run"
         }
       ]
     },
@@ -4433,6 +4601,156 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/obug"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "open",
+      "version": "8.4.2",
+      "bom-ref": "open@8.4.2",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Open stuff like URLs, files, executables. Cross-platform.",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/open@8.4.2",
+      "externalReferences": [
+        {
+          "url": "sindresorhus/open",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/open"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "package-json-from-dist",
+      "version": "1.0.1",
+      "bom-ref": "package-json-from-dist@1.0.1",
+      "scope": "optional",
+      "author": "Isaac Z. Schlueter <i@izs.me> (https://izs.me)",
+      "description": "Load the local package.json from either src or dist folder",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/package-json-from-dist@1.0.1",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/isaacs/package-json-from-dist.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/package-json-from-dist"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "path-key",
+      "version": "3.1.1",
+      "bom-ref": "path-key@3.1.1",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Get the PATH environment variable key cross-platform",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/path-key@3.1.1",
+      "externalReferences": [
+        {
+          "url": "sindresorhus/path-key",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/path-key"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "path-scurry",
+      "version": "3.0.0",
+      "bom-ref": "path-scurry@3.0.0",
+      "scope": "optional",
+      "author": "Isaac Z. Schlueter <i@izs.me> (https://blog.izs.me)",
+      "description": "walk paths fast and efficiently",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/path-scurry@3.0.0",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/isaacs/path-scurry",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/path-scurry"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pend",
+      "version": "1.2.0",
+      "bom-ref": "pend@1.2.0",
+      "scope": "optional",
+      "author": "Andrew Kelley <superjoe30@gmail.com>",
+      "description": "dead-simple optimistic async helper",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/pend@1.2.0",
+      "externalReferences": [
+        {
+          "url": "git://github.com/andrewrk/node-pend.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/pend"
         }
       ]
     },
@@ -4503,8 +4821,8 @@
     {
       "type": "library",
       "name": "playwright",
-      "version": "1.65.0",
-      "bom-ref": "playwright@1.65.0",
+      "version": "1.65.1",
+      "bom-ref": "playwright@1.65.1",
       "scope": "optional",
       "author": "Microsoft Corporation",
       "description": "A high-level API to automate web browsers",
@@ -4516,7 +4834,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/playwright@1.65.0",
+      "purl": "pkg:npm/playwright@1.65.1",
       "externalReferences": [
         {
           "url": "git+https://github.com/microsoft/playwright.git",
@@ -4525,10 +4843,6 @@
         {
           "url": "https://playwright.dev",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/playwright/-/playwright-1.65.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -4541,8 +4855,8 @@
     {
       "type": "library",
       "name": "playwright-core",
-      "version": "1.65.0",
-      "bom-ref": "playwright-core@1.65.0",
+      "version": "1.65.1",
+      "bom-ref": "playwright-core@1.65.1",
       "scope": "optional",
       "author": "Microsoft Corporation",
       "description": "A high-level API to automate web browsers",
@@ -4554,7 +4868,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/playwright-core@1.65.0",
+      "purl": "pkg:npm/playwright-core@1.65.1",
       "externalReferences": [
         {
           "url": "git+https://github.com/microsoft/playwright.git",
@@ -4563,10 +4877,6 @@
         {
           "url": "https://playwright.dev",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/playwright-core/-/playwright-core-1.65.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -4578,9 +4888,39 @@
     },
     {
       "type": "library",
+      "name": "plist",
+      "version": "3.1.1",
+      "bom-ref": "plist@3.1.1",
+      "scope": "optional",
+      "author": "Nathan Rajlich <nathan@tootallnate.net>",
+      "description": "Apple's property list parser/builder for Node.js and browsers",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/plist@3.1.1",
+      "externalReferences": [
+        {
+          "url": "git://github.com/TooTallNate/node-plist.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/plist"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "postcss",
-      "version": "8.5.32",
-      "bom-ref": "postcss@8.5.32",
+      "version": "8.5.33",
+      "bom-ref": "postcss@8.5.33",
       "scope": "optional",
       "author": "Andrey Sitnik <andrey@sitnik.es>",
       "description": "Tool for transforming styles with JS plugins",
@@ -4592,7 +4932,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/postcss@8.5.32",
+      "purl": "pkg:npm/postcss@8.5.33",
       "externalReferences": [
         {
           "url": "postcss/postcss",
@@ -4612,9 +4952,69 @@
     },
     {
       "type": "library",
+      "name": "prompts",
+      "version": "2.4.2",
+      "bom-ref": "prompts@2.4.2",
+      "scope": "optional",
+      "author": "Terkel Gjervig",
+      "description": "Lightweight, beautiful and user-friendly prompts",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/prompts@2.4.2",
+      "externalReferences": [
+        {
+          "url": "terkelg/prompts",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/prompts"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "kleur",
+      "version": "3.0.3",
+      "bom-ref": "kleur@3.0.3",
+      "scope": "optional",
+      "author": "Luke Edwards",
+      "description": "The fastest Node.js library for formatting terminal text with ANSI colors~!",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/kleur@3.0.3",
+      "externalReferences": [
+        {
+          "url": "lukeed/kleur",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/prompts/node_modules/kleur"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "puppeteer-core",
-      "version": "25.16.0",
-      "bom-ref": "puppeteer-core@25.16.0",
+      "version": "25.18.1",
+      "bom-ref": "puppeteer-core@25.18.1",
       "scope": "optional",
       "author": "The Chromium Authors",
       "description": "A high-level API to control headless Chrome over the DevTools Protocol",
@@ -4626,15 +5026,11 @@
           }
         }
       ],
-      "purl": "pkg:npm/puppeteer-core@25.16.0",
+      "purl": "pkg:npm/puppeteer-core@25.18.1",
       "externalReferences": [
         {
           "url": "https://github.com/puppeteer/puppeteer/tree/main/packages/puppeteer-core",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/puppeteer-core/-/puppeteer-core-25.16.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -4697,10 +5093,6 @@
         {
           "url": "https://github.com/adobe/react-spectrum",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/react-aria/-/react-aria-3.53.1.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -4730,10 +5122,6 @@
         {
           "url": "https://github.com/adobe/react-spectrum",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/react-aria-components/-/react-aria-components-1.22.1.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -4800,10 +5188,6 @@
         {
           "url": "https://konvajs.org/docs/react/index.html",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/react-konva/-/react-konva-19.3.2.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -4837,10 +5221,6 @@
         {
           "url": "https://react.dev/",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/react-reconciler/-/react-reconciler-0.34.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -4870,10 +5250,6 @@
         {
           "url": "https://github.com/adobe/react-spectrum",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/react-stately/-/react-stately-3.51.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -4885,9 +5261,68 @@
     },
     {
       "type": "library",
+      "name": "readable-stream",
+      "version": "3.6.2",
+      "bom-ref": "readable-stream@3.6.2",
+      "scope": "optional",
+      "description": "Streams3, a user-land copy of the stream library from Node.js",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/readable-stream@3.6.2",
+      "externalReferences": [
+        {
+          "url": "git://github.com/nodejs/readable-stream",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/readable-stream"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "rimraf",
+      "version": "6.1.4",
+      "bom-ref": "rimraf@6.1.4",
+      "scope": "optional",
+      "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)",
+      "description": "A deep deletion module for node (like `rm -rf`)",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/rimraf@6.1.4",
+      "externalReferences": [
+        {
+          "url": "git@github.com:isaacs/rimraf.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/rimraf"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "rolldown",
-      "version": "1.2.18",
-      "bom-ref": "rolldown@1.2.18",
+      "version": "1.2.19",
+      "bom-ref": "rolldown@1.2.19",
       "scope": "optional",
       "description": "Fast JavaScript/TypeScript bundler in Rust with Rollup-compatible API.",
       "licenses": [
@@ -4898,7 +5333,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/rolldown@1.2.18",
+      "purl": "pkg:npm/rolldown@1.2.19",
       "externalReferences": [
         {
           "url": "git+https://github.com/rolldown/rolldown.git",
@@ -4913,6 +5348,70 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/rolldown"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "safe-buffer",
+      "version": "5.2.1",
+      "bom-ref": "safe-buffer@5.2.1",
+      "scope": "optional",
+      "author": "Feross Aboukhadijeh",
+      "description": "Safer Node.js Buffer API",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/safe-buffer@5.2.1",
+      "externalReferences": [
+        {
+          "url": "git://github.com/feross/safe-buffer.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/feross/safe-buffer",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/safe-buffer"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "sax",
+      "version": "1.1.4",
+      "bom-ref": "sax@1.1.4",
+      "scope": "optional",
+      "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)",
+      "description": "An evented streaming XML parser in JavaScript",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/sax@1.1.4",
+      "externalReferences": [
+        {
+          "url": "git://github.com/isaacs/sax-js.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/sax"
         }
       ]
     },
@@ -4946,6 +5445,257 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/scheduler"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "semver",
+      "version": "7.8.6",
+      "bom-ref": "semver@7.8.6",
+      "scope": "optional",
+      "author": "GitHub Inc.",
+      "description": "The semantic version parser used by npm.",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/semver@7.8.6",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/npm/node-semver.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/semver"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "shebang-command",
+      "version": "2.0.0",
+      "bom-ref": "shebang-command@2.0.0",
+      "scope": "optional",
+      "author": "Kevin Mårtensson",
+      "description": "Get the command from a shebang",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/shebang-command@2.0.0",
+      "externalReferences": [
+        {
+          "url": "kevva/shebang-command",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/shebang-command"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "shebang-regex",
+      "version": "3.0.0",
+      "bom-ref": "shebang-regex@3.0.0",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Regular expression for matching a shebang line",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/shebang-regex@3.0.0",
+      "externalReferences": [
+        {
+          "url": "sindresorhus/shebang-regex",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/shebang-regex"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "signal-exit",
+      "version": "3.0.7",
+      "bom-ref": "signal-exit@3.0.7",
+      "scope": "optional",
+      "author": "Ben Coe <ben@npmjs.com>",
+      "description": "when you want to fire an event no matter how a process exits.",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/signal-exit@3.0.7",
+      "externalReferences": [
+        {
+          "url": "https://github.com/tapjs/signal-exit.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/tapjs/signal-exit",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/signal-exit"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "simple-plist",
+      "version": "1.3.1",
+      "bom-ref": "simple-plist@1.3.1",
+      "scope": "optional",
+      "author": "Joe Wollard",
+      "description": "A wrapper utility for interacting with plist data.",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/simple-plist@1.3.1",
+      "externalReferences": [
+        {
+          "url": "https://github.com/wollardj/simple-plist.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/wollardj/simple-plist.git",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/simple-plist"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bplist-parser",
+      "version": "0.3.1",
+      "bom-ref": "bplist-parser@0.3.1",
+      "scope": "optional",
+      "author": "Joe Ferner <joe.ferner@nearinfinity.com>",
+      "description": "Binary plist parser.",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/bplist-parser@0.3.1",
+      "externalReferences": [
+        {
+          "url": "https://github.com/nearinfinity/node-bplist-parser.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/nearinfinity/node-bplist-parser",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/simple-plist/node_modules/bplist-parser"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "sisteransi",
+      "version": "1.0.5",
+      "bom-ref": "sisteransi@1.0.5",
+      "scope": "optional",
+      "author": "Terkel Gjervig",
+      "description": "ANSI escape codes for some terminal swag",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/sisteransi@1.0.5",
+      "externalReferences": [
+        {
+          "url": "https://github.com/terkelg/sisteransi",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/sisteransi"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "slice-ansi",
+      "version": "4.0.0",
+      "bom-ref": "slice-ansi@4.0.0",
+      "scope": "optional",
+      "description": "Slice a string with ANSI escape codes",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/slice-ansi@4.0.0",
+      "externalReferences": [
+        {
+          "url": "chalk/slice-ansi",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/slice-ansi"
         }
       ]
     },
@@ -4985,6 +5735,36 @@
     },
     {
       "type": "library",
+      "name": "split2",
+      "version": "4.2.0",
+      "bom-ref": "split2@4.2.0",
+      "scope": "optional",
+      "author": "Matteo Collina <hello@matteocollina.com>",
+      "description": "split a Text Stream into a Line Stream, using Stream 3",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/split2@4.2.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/mcollina/split2.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/split2"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "std-env",
       "version": "4.3.0",
       "bom-ref": "std-env@4.3.0",
@@ -5014,9 +5794,39 @@
     },
     {
       "type": "library",
+      "name": "stream-buffers",
+      "version": "2.2.0",
+      "bom-ref": "stream-buffers@2.2.0",
+      "scope": "optional",
+      "author": "Sam Day <me@samcday.com.au>",
+      "description": "Buffer-backed Streams for reading and writing.",
+      "licenses": [
+        {
+          "license": {
+            "id": "Unlicense",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/stream-buffers@2.2.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/samcday/node-stream-buffer.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/stream-buffers"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "string-width",
-      "version": "8.3.0",
-      "bom-ref": "string-width@8.3.0",
+      "version": "4.2.3",
+      "bom-ref": "string-width@4.2.3",
       "scope": "optional",
       "author": "Sindre Sorhus",
       "description": "Get the visual width of a string - the number of columns required to display it",
@@ -5028,15 +5838,11 @@
           }
         }
       ],
-      "purl": "pkg:npm/string-width@8.3.0",
+      "purl": "pkg:npm/string-width@4.2.3",
       "externalReferences": [
         {
           "url": "sindresorhus/string-width",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/string-width/-/string-width-8.3.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -5048,9 +5854,42 @@
     },
     {
       "type": "library",
+      "name": "string_decoder",
+      "version": "1.3.0",
+      "bom-ref": "string_decoder@1.3.0",
+      "scope": "optional",
+      "description": "The string_decoder module from Node core",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/string_decoder@1.3.0",
+      "externalReferences": [
+        {
+          "url": "git://github.com/nodejs/string_decoder.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/nodejs/string_decoder",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/string_decoder"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "strip-ansi",
-      "version": "7.2.0",
-      "bom-ref": "strip-ansi@7.2.0",
+      "version": "6.0.1",
+      "bom-ref": "strip-ansi@6.0.1",
       "scope": "optional",
       "author": "Sindre Sorhus",
       "description": "Strip ANSI escape codes from a string",
@@ -5062,15 +5901,11 @@
           }
         }
       ],
-      "purl": "pkg:npm/strip-ansi@7.2.0",
+      "purl": "pkg:npm/strip-ansi@6.0.1",
       "externalReferences": [
         {
           "url": "chalk/strip-ansi",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-7.2.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -5150,8 +5985,8 @@
     {
       "type": "library",
       "name": "tapable",
-      "version": "2.3.3",
-      "bom-ref": "tapable@2.3.3",
+      "version": "2.3.4",
+      "bom-ref": "tapable@2.3.4",
       "scope": "optional",
       "author": "Tobias Koppers @sokra",
       "description": "Just a little module for plugins.",
@@ -5163,7 +5998,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/tapable@2.3.3",
+      "purl": "pkg:npm/tapable@2.3.4",
       "externalReferences": [
         {
           "url": "http://github.com/webpack/tapable.git",
@@ -5178,6 +6013,66 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/tapable"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tar",
+      "version": "7.5.23",
+      "bom-ref": "tar@7.5.23",
+      "scope": "optional",
+      "author": "Isaac Z. Schlueter",
+      "description": "tar for node",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/tar@7.5.23",
+      "externalReferences": [
+        {
+          "url": "https://github.com/isaacs/node-tar.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/tar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "through2",
+      "version": "4.0.2",
+      "bom-ref": "through2@4.0.2",
+      "scope": "optional",
+      "author": "Rod Vagg <r@va.gg> (https://github.com/rvagg)",
+      "description": "A tiny wrapper around Node.js streams.Transform (Streams2/3) to avoid explicit subclassing noise",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/through2@4.0.2",
+      "externalReferences": [
+        {
+          "url": "https://github.com/rvagg/through2.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/through2"
         }
       ]
     },
@@ -5284,6 +6179,40 @@
     },
     {
       "type": "library",
+      "name": "tree-kill",
+      "version": "1.2.2",
+      "bom-ref": "tree-kill@1.2.2",
+      "scope": "optional",
+      "author": "Peteris Krumins",
+      "description": "kill trees of processes",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/tree-kill@1.2.2",
+      "externalReferences": [
+        {
+          "url": "git://github.com/pkrumins/node-tree-kill.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/pkrumins/node-tree-kill",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/tree-kill"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "tslib",
       "version": "2.9.1",
       "bom-ref": "tslib@2.9.1",
@@ -5319,8 +6248,8 @@
     {
       "type": "library",
       "name": "typed-query-selector",
-      "version": "2.12.3",
-      "bom-ref": "typed-query-selector@2.12.3",
+      "version": "2.12.4",
+      "bom-ref": "typed-query-selector@2.12.4",
       "scope": "optional",
       "author": "Pig Fang <g-plane@hotmail.com>",
       "description": "Better typed `querySelector` and `querySelectorAll`.",
@@ -5332,15 +6261,11 @@
           }
         }
       ],
-      "purl": "pkg:npm/typed-query-selector@2.12.3",
+      "purl": "pkg:npm/typed-query-selector@2.12.4",
       "externalReferences": [
         {
           "url": "g-plane/typed-query-selector",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/typed-query-selector/-/typed-query-selector-2.12.3.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -5386,45 +6311,6 @@
     },
     {
       "type": "library",
-      "group": "@typescript",
-      "name": "typescript-win32-x64",
-      "version": "7.0.2",
-      "bom-ref": "@typescript/typescript-win32-x64@7.0.2",
-      "scope": "optional",
-      "author": "Microsoft Corp.",
-      "description": "TypeScript is a language for application scale JavaScript development",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/%40typescript/typescript-win32-x64@7.0.2",
-      "externalReferences": [
-        {
-          "url": "https://github.com/microsoft/TypeScript.git",
-          "type": "vcs"
-        },
-        {
-          "url": "https://www.typescriptlang.org/",
-          "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/@typescript/typescript-win32-x64/-/typescript-win32-x64-7.0.2.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/typescript/node_modules/@typescript/typescript-win32-x64"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "name": "undici-types",
       "version": "6.21.0",
       "bom-ref": "undici-types@6.21.0",
@@ -5458,6 +6344,70 @@
     },
     {
       "type": "library",
+      "name": "universalify",
+      "version": "2.0.1",
+      "bom-ref": "universalify@2.0.1",
+      "scope": "optional",
+      "author": "Ryan Zimmerman <opensrc@ryanzim.com>",
+      "description": "Make a callback- or promise-based function support both promises and callbacks.",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/universalify@2.0.1",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/RyanZim/universalify.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/RyanZim/universalify#readme",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/universalify"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "untildify",
+      "version": "4.0.0",
+      "bom-ref": "untildify@4.0.0",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Convert a tilde path to an absolute path: `~/dev` → `/Users/sindresorhus/dev`",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/untildify@4.0.0",
+      "externalReferences": [
+        {
+          "url": "sindresorhus/untildify",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/untildify"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "use-sync-external-store",
       "version": "1.7.0",
       "bom-ref": "use-sync-external-store@1.7.0",
@@ -5476,10 +6426,6 @@
         {
           "url": "https://github.com/react/react.git",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/use-sync-external-store/-/use-sync-external-store-1.7.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -5491,9 +6437,43 @@
     },
     {
       "type": "library",
+      "name": "util-deprecate",
+      "version": "1.0.2",
+      "bom-ref": "util-deprecate@1.0.2",
+      "scope": "optional",
+      "author": "Nathan Rajlich <nathan@tootallnate.net> (http://n8.io/)",
+      "description": "The Node.js `util.deprecate()` function with browser support",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/util-deprecate@1.0.2",
+      "externalReferences": [
+        {
+          "url": "git://github.com/TooTallNate/util-deprecate.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/TooTallNate/util-deprecate",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/util-deprecate"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "vite",
-      "version": "8.3.7",
-      "bom-ref": "vite@8.3.7",
+      "version": "8.3.8",
+      "bom-ref": "vite@8.3.8",
       "scope": "optional",
       "author": "Evan You",
       "description": "Native-ESM powered web dev build tool",
@@ -5505,7 +6485,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/vite@8.3.7",
+      "purl": "pkg:npm/vite@8.3.8",
       "externalReferences": [
         {
           "url": "git+https://github.com/vitejs/vite.git",
@@ -5560,8 +6540,8 @@
     {
       "type": "library",
       "name": "webdriver-bidi-protocol",
-      "version": "1.0.1",
-      "bom-ref": "webdriver-bidi-protocol@1.0.1",
+      "version": "1.0.2",
+      "bom-ref": "webdriver-bidi-protocol@1.0.2",
       "scope": "optional",
       "author": "The Chromium Authors",
       "licenses": [
@@ -5572,21 +6552,47 @@
           }
         }
       ],
-      "purl": "pkg:npm/webdriver-bidi-protocol@1.0.1",
+      "purl": "pkg:npm/webdriver-bidi-protocol@1.0.2",
       "externalReferences": [
         {
           "url": "git+https://github.com/GoogleChromeLabs/webdriver-bidi-protocol.git",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/webdriver-bidi-protocol/-/webdriver-bidi-protocol-1.0.1.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/webdriver-bidi-protocol"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "which",
+      "version": "2.0.2",
+      "bom-ref": "which@2.0.2",
+      "scope": "optional",
+      "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me)",
+      "description": "Like which(1) unix command. Find the first instance of an executable in the PATH.",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/which@2.0.2",
+      "externalReferences": [
+        {
+          "url": "git://github.com/isaacs/node-which.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/which"
         }
       ]
     },
@@ -5627,8 +6633,8 @@
     {
       "type": "library",
       "name": "wrap-ansi",
-      "version": "9.0.2",
-      "bom-ref": "wrap-ansi@9.0.2",
+      "version": "7.0.0",
+      "bom-ref": "wrap-ansi@7.0.0",
       "scope": "optional",
       "author": "Sindre Sorhus",
       "description": "Wordwrap a string with ANSI escape codes",
@@ -5640,15 +6646,11 @@
           }
         }
       ],
-      "purl": "pkg:npm/wrap-ansi@9.0.2",
+      "purl": "pkg:npm/wrap-ansi@7.0.0",
       "externalReferences": [
         {
           "url": "chalk/wrap-ansi",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-9.0.2.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -5660,43 +6662,9 @@
     },
     {
       "type": "library",
-      "name": "string-width",
-      "version": "7.2.0",
-      "bom-ref": "node_modules/wrap-ansi/node_modules/string-width@7.2.0",
-      "scope": "optional",
-      "author": "Sindre Sorhus",
-      "description": "Get the visual width of a string - the number of columns required to display it",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "acknowledgement": "declared"
-          }
-        }
-      ],
-      "purl": "pkg:npm/string-width@7.2.0",
-      "externalReferences": [
-        {
-          "url": "sindresorhus/string-width",
-          "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/string-width/-/string-width-7.2.0.tgz",
-          "type": "distribution"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/wrap-ansi/node_modules/string-width"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "name": "ws",
-      "version": "8.22.2",
-      "bom-ref": "ws@8.22.2",
+      "version": "8.23.0",
+      "bom-ref": "ws@8.23.0",
       "scope": "optional",
       "author": "Einar Otto Stangvik <einaros@gmail.com> (http://2x.io)",
       "description": "Simple to use, blazing fast and thoroughly tested websocket client and server for Node.js",
@@ -5708,7 +6676,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/ws@8.22.2",
+      "purl": "pkg:npm/ws@8.23.0",
       "externalReferences": [
         {
           "url": "git+https://github.com/websockets/ws.git",
@@ -5717,16 +6685,144 @@
         {
           "url": "https://github.com/websockets/ws",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/ws/-/ws-8.22.2.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/ws"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "xcode",
+      "version": "4.0.0",
+      "bom-ref": "xcode@4.0.0",
+      "scope": "optional",
+      "author": "Apache Software Foundation",
+      "description": "parser for xcodeproj/project.pbxproj files",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/xcode@4.0.0",
+      "externalReferences": [
+        {
+          "url": "github:apache/cordova-node-xcode",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/xcode"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "xml2js",
+      "version": "0.6.2",
+      "bom-ref": "xml2js@0.6.2",
+      "scope": "optional",
+      "author": "Marek Kubica <marek@xivilization.net> (https://xivilization.net)",
+      "description": "Simple XML to JavaScript object converter.",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/xml2js@0.6.2",
+      "externalReferences": [
+        {
+          "url": "https://github.com/Leonidas-from-XIV/node-xml2js.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/Leonidas-from-XIV/node-xml2js",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/xml2js"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "xmlbuilder",
+      "version": "11.0.1",
+      "bom-ref": "xmlbuilder@11.0.1",
+      "scope": "optional",
+      "author": "Ozgur Ozcitak <oozcitak@gmail.com>",
+      "description": "An XML builder for node.js",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/xmlbuilder@11.0.1",
+      "externalReferences": [
+        {
+          "url": "git://github.com/oozcitak/xmlbuilder-js.git",
+          "type": "vcs"
+        },
+        {
+          "url": "http://github.com/oozcitak/xmlbuilder-js",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/xml2js/node_modules/xmlbuilder"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "xmlbuilder",
+      "version": "15.1.1",
+      "bom-ref": "xmlbuilder@15.1.1",
+      "scope": "optional",
+      "author": "Ozgur Ozcitak <oozcitak@gmail.com>",
+      "description": "An XML builder for node.js",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/xmlbuilder@15.1.1",
+      "externalReferences": [
+        {
+          "url": "git://github.com/oozcitak/xmlbuilder-js.git",
+          "type": "vcs"
+        },
+        {
+          "url": "http://github.com/oozcitak/xmlbuilder-js",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/xmlbuilder"
         }
       ]
     },
@@ -5755,16 +6851,42 @@
         {
           "url": "https://github.com/yargs/y18n",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/y18n/-/y18n-5.0.8.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/y18n"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "yallist",
+      "version": "5.0.0",
+      "bom-ref": "yallist@5.0.0",
+      "scope": "optional",
+      "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)",
+      "description": "Yet Another Linked List",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/yallist@5.0.0",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/isaacs/yallist.git",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/yallist"
         }
       ]
     },
@@ -5792,10 +6914,6 @@
         {
           "url": "https://yargs.js.org/",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/yargs/-/yargs-18.2.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -5826,16 +6944,136 @@
         {
           "url": "https://github.com/yargs/yargs-parser.git",
           "type": "vcs"
-        },
-        {
-          "url": "https://registry.npmjs.org/yargs-parser/-/yargs-parser-22.0.0.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/yargs-parser"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "string-width",
+      "version": "8.3.0",
+      "bom-ref": "string-width@8.3.0",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Get the visual width of a string - the number of columns required to display it",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/string-width@8.3.0",
+      "externalReferences": [
+        {
+          "url": "sindresorhus/string-width",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/yargs/node_modules/string-width"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "strip-ansi",
+      "version": "7.2.0",
+      "bom-ref": "node_modules/yargs/node_modules/string-width/node_modules/strip-ansi@7.2.0",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Strip ANSI escape codes from a string",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/strip-ansi@7.2.0",
+      "externalReferences": [
+        {
+          "url": "chalk/strip-ansi",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/yargs/node_modules/string-width/node_modules/strip-ansi"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ansi-regex",
+      "version": "6.6.0",
+      "bom-ref": "node_modules/yargs/node_modules/string-width/node_modules/strip-ansi/node_modules/ansi-regex@6.6.0",
+      "scope": "optional",
+      "author": "Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)",
+      "description": "Regular expression for matching ANSI escape codes",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/ansi-regex@6.6.0",
+      "externalReferences": [
+        {
+          "url": "chalk/ansi-regex",
+          "type": "vcs"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/yargs/node_modules/string-width/node_modules/strip-ansi/node_modules/ansi-regex"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "yauzl",
+      "version": "2.10.0",
+      "bom-ref": "yauzl@2.10.0",
+      "scope": "optional",
+      "author": "Josh Wolfe <thejoshwolfe@gmail.com>",
+      "description": "yet another unzip library for node",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/yauzl@2.10.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/thejoshwolfe/yauzl.git",
+          "type": "vcs"
+        },
+        {
+          "url": "https://github.com/thejoshwolfe/yauzl",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/yauzl"
         }
       ]
     },
@@ -5864,10 +7102,6 @@
         {
           "url": "https://zod.dev",
           "type": "website"
-        },
-        {
-          "url": "https://registry.npmjs.org/zod/-/zod-4.6.7.tgz",
-          "type": "distribution"
         }
       ],
       "properties": [
@@ -5883,10 +7117,13 @@
       "ref": "physiorecord@1.0.0",
       "dependsOn": [
         "@axe-core/playwright@4.14.0",
+        "@capacitor/android@8.6.2",
+        "@capacitor/cli@8.6.2",
+        "@capacitor/core@8.6.2",
         "@fontsource/ibm-plex-sans-arabic@5.3.0",
         "@fontsource/inter@5.3.0",
         "@fontsource/jetbrains-mono@5.3.0",
-        "@playwright/test@1.65.0",
+        "@playwright/test@1.65.1",
         "@tailwindcss/vite@4.3.5",
         "@types/node@22.20.5",
         "@types/react@19.3.0",
@@ -5900,7 +7137,7 @@
         "lucide-react@0.546.0",
         "minisearch@7.2.0",
         "motion@12.43.0",
-        "puppeteer-core@25.16.0",
+        "puppeteer-core@25.18.1",
         "react@19.3.1",
         "react-aria-components@1.22.1",
         "react-dom@19.3.1",
@@ -5908,7 +7145,7 @@
         "tailwind-merge@3.7.0",
         "tailwindcss@4.3.5",
         "typescript@7.0.2",
-        "vite@8.3.7",
+        "vite@8.3.8",
         "vitest@5.1.0",
         "zod@4.6.7"
       ]
@@ -5916,7 +7153,39 @@
     {
       "ref": "@axe-core/playwright@4.14.0",
       "dependsOn": [
-        "axe-core@4.14.0"
+        "axe-core@4.14.1"
+      ]
+    },
+    {
+      "ref": "@capacitor/android@8.6.2"
+    },
+    {
+      "ref": "@capacitor/cli@8.6.2",
+      "dependsOn": [
+        "@ionic/cli-framework-output@2.2.8",
+        "@ionic/utils-subprocess@3.0.1",
+        "@ionic/utils-terminal@2.3.5",
+        "commander@12.1.0",
+        "debug@4.4.3",
+        "env-paths@2.2.1",
+        "fs-extra@11.4.1",
+        "kleur@4.1.5",
+        "native-run@2.1.0",
+        "open@8.4.2",
+        "plist@3.1.1",
+        "prompts@2.4.2",
+        "rimraf@6.1.4",
+        "semver@7.8.6",
+        "tar@7.5.23",
+        "tslib@2.9.1",
+        "xcode@4.0.0",
+        "xml2js@0.6.2"
+      ]
+    },
+    {
+      "ref": "@capacitor/core@8.6.2",
+      "dependsOn": [
+        "tslib@2.9.1"
       ]
     },
     {
@@ -5947,6 +7216,100 @@
       ]
     },
     {
+      "ref": "@ionic/cli-framework-output@2.2.8",
+      "dependsOn": [
+        "@ionic/utils-terminal@2.3.5",
+        "debug@4.4.3",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@ionic/utils-array@2.1.6",
+      "dependsOn": [
+        "debug@4.4.3",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@ionic/utils-fs@3.1.7",
+      "dependsOn": [
+        "@types/fs-extra@8.1.5",
+        "debug@4.4.3",
+        "fs-extra@9.1.0",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "fs-extra@9.1.0",
+      "dependsOn": [
+        "at-least-node@1.0.0",
+        "graceful-fs@4.2.12",
+        "jsonfile@6.2.1",
+        "universalify@2.0.1"
+      ]
+    },
+    {
+      "ref": "@ionic/utils-object@2.1.6",
+      "dependsOn": [
+        "debug@4.4.3",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@ionic/utils-process@2.1.12",
+      "dependsOn": [
+        "@ionic/utils-object@2.1.6",
+        "@ionic/utils-terminal@2.3.5",
+        "debug@4.4.3",
+        "signal-exit@3.0.7",
+        "tree-kill@1.2.2",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@ionic/utils-stream@3.1.7",
+      "dependsOn": [
+        "debug@4.4.3",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@ionic/utils-subprocess@3.0.1",
+      "dependsOn": [
+        "@ionic/utils-array@2.1.6",
+        "@ionic/utils-fs@3.1.7",
+        "@ionic/utils-process@2.1.12",
+        "@ionic/utils-stream@3.1.7",
+        "@ionic/utils-terminal@2.3.5",
+        "cross-spawn@7.0.6",
+        "debug@4.4.3",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@ionic/utils-terminal@2.3.5",
+      "dependsOn": [
+        "@types/slice-ansi@4.0.0",
+        "debug@4.4.3",
+        "signal-exit@3.0.7",
+        "slice-ansi@4.0.0",
+        "string-width@4.2.3",
+        "strip-ansi@6.0.1",
+        "tslib@2.9.1",
+        "untildify@4.0.0",
+        "wrap-ansi@7.0.0"
+      ]
+    },
+    {
+      "ref": "@isaacs/fs-minipass@4.0.1",
+      "dependsOn": [
+        "minipass@7.1.3"
+      ]
+    },
+    {
+      "ref": "@isaacs/nonrecursive-glob-match@1.1.0"
+    },
+    {
       "ref": "@jridgewell/gen-mapping@0.3.13",
       "dependsOn": [
         "@jridgewell/sourcemap-codec@1.6.0",
@@ -5961,7 +7324,7 @@
       ]
     },
     {
-      "ref": "@jridgewell/resolve-uri@3.1.2"
+      "ref": "@jridgewell/resolve-uri@3.1.3"
     },
     {
       "ref": "@jridgewell/sourcemap-codec@1.6.0"
@@ -5969,7 +7332,7 @@
     {
       "ref": "@jridgewell/trace-mapping@0.3.31",
       "dependsOn": [
-        "@jridgewell/resolve-uri@3.1.2",
+        "@jridgewell/resolve-uri@3.1.3",
         "@jridgewell/sourcemap-codec@1.6.0"
       ]
     },
@@ -5977,13 +7340,13 @@
       "ref": "@oxc-project/types@0.156.0"
     },
     {
-      "ref": "@playwright/test@1.65.0",
+      "ref": "@playwright/test@1.65.1",
       "dependsOn": [
-        "playwright@1.65.0"
+        "playwright@1.65.1"
       ]
     },
     {
-      "ref": "@puppeteer/browsers@3.2.6",
+      "ref": "@puppeteer/browsers@3.2.7",
       "dependsOn": [
         "modern-tar@0.8.6",
         "yargs@18.2.0"
@@ -5993,52 +7356,10 @@
       "ref": "@react-types/shared@3.37.0"
     },
     {
-      "ref": "@rolldown/binding-android-arm-eabi@1.2.18"
+      "ref": "@rolldown/binding-linux-x64-gnu@1.2.19"
     },
     {
-      "ref": "@rolldown/binding-android-arm64@1.2.18"
-    },
-    {
-      "ref": "@rolldown/binding-darwin-arm64@1.2.18"
-    },
-    {
-      "ref": "@rolldown/binding-darwin-x64@1.2.18"
-    },
-    {
-      "ref": "@rolldown/binding-freebsd-x64@1.2.18"
-    },
-    {
-      "ref": "@rolldown/binding-linux-arm-gnueabihf@1.2.18"
-    },
-    {
-      "ref": "@rolldown/binding-linux-arm64-gnu@1.2.18"
-    },
-    {
-      "ref": "@rolldown/binding-linux-arm64-musl@1.2.18"
-    },
-    {
-      "ref": "@rolldown/binding-linux-ppc64-gnu@1.2.18"
-    },
-    {
-      "ref": "@rolldown/binding-linux-s390x-gnu@1.2.18"
-    },
-    {
-      "ref": "@rolldown/binding-linux-x64-gnu@1.2.18"
-    },
-    {
-      "ref": "@rolldown/binding-linux-x64-musl@1.2.18"
-    },
-    {
-      "ref": "@rolldown/binding-openharmony-arm64@1.2.18"
-    },
-    {
-      "ref": "@rolldown/binding-win32-arm64-msvc@1.2.18"
-    },
-    {
-      "ref": "@rolldown/binding-win32-x64-msvc@1.2.18"
-    },
-    {
-      "ref": "@rolldown/pluginutils@1.1.0"
+      "ref": "@rolldown/pluginutils@1.1.1"
     },
     {
       "ref": "@swc/helpers@0.5.24"
@@ -6047,7 +7368,7 @@
       "ref": "@tailwindcss/node@4.3.5",
       "dependsOn": [
         "@jridgewell/remapping@2.3.5",
-        "enhanced-resolve@5.26.1",
+        "enhanced-resolve@5.27.0",
         "jiti@2.7.0",
         "lightningcss@1.33.0",
         "magic-string@1.4.5",
@@ -6058,46 +7379,12 @@
     {
       "ref": "@tailwindcss/oxide@4.3.5",
       "dependsOn": [
-        "@tailwindcss/oxide-android-arm64@4.3.5",
-        "@tailwindcss/oxide-darwin-arm64@4.3.5",
-        "@tailwindcss/oxide-darwin-x64@4.3.5",
-        "@tailwindcss/oxide-freebsd-x64@4.3.5",
-        "@tailwindcss/oxide-linux-arm-gnueabihf@4.3.5",
-        "@tailwindcss/oxide-linux-arm64-gnu@4.3.5",
-        "@tailwindcss/oxide-linux-arm64-musl@4.3.5",
         "@tailwindcss/oxide-linux-x64-gnu@4.3.5",
-        "@tailwindcss/oxide-linux-x64-musl@4.3.5",
-        "@tailwindcss/oxide-wasm32-wasi@4.3.5",
-        "@tailwindcss/oxide-win32-arm64-msvc@4.3.5",
-        "@tailwindcss/oxide-win32-x64-msvc@4.3.5"
+        "@tailwindcss/oxide-wasm32-wasi@4.3.5"
       ]
     },
     {
-      "ref": "@tailwindcss/oxide-android-arm64@4.3.5"
-    },
-    {
-      "ref": "@tailwindcss/oxide-darwin-arm64@4.3.5"
-    },
-    {
-      "ref": "@tailwindcss/oxide-darwin-x64@4.3.5"
-    },
-    {
-      "ref": "@tailwindcss/oxide-freebsd-x64@4.3.5"
-    },
-    {
-      "ref": "@tailwindcss/oxide-linux-arm-gnueabihf@4.3.5"
-    },
-    {
-      "ref": "@tailwindcss/oxide-linux-arm64-gnu@4.3.5"
-    },
-    {
-      "ref": "@tailwindcss/oxide-linux-arm64-musl@4.3.5"
-    },
-    {
       "ref": "@tailwindcss/oxide-linux-x64-gnu@4.3.5"
-    },
-    {
-      "ref": "@tailwindcss/oxide-linux-x64-musl@4.3.5"
     },
     {
       "ref": "@tailwindcss/oxide-wasm32-wasi@4.3.5",
@@ -6145,12 +7432,6 @@
       "ref": "tslib@2.8.1"
     },
     {
-      "ref": "@tailwindcss/oxide-win32-arm64-msvc@4.3.5"
-    },
-    {
-      "ref": "@tailwindcss/oxide-win32-x64-msvc@4.3.5"
-    },
-    {
       "ref": "@tailwindcss/vite@4.3.5",
       "dependsOn": [
         "@tailwindcss/node@4.3.5",
@@ -6172,6 +7453,12 @@
       "ref": "@types/estree@1.0.10"
     },
     {
+      "ref": "@types/fs-extra@8.1.5",
+      "dependsOn": [
+        "@types/node@22.20.5"
+      ]
+    },
+    {
       "ref": "@types/node@22.20.5",
       "dependsOn": [
         "undici-types@6.21.0"
@@ -6180,7 +7467,7 @@
     {
       "ref": "@types/react@19.3.0",
       "dependsOn": [
-        "csstype@3.2.3"
+        "csstype@3.2.4"
       ]
     },
     {
@@ -6190,66 +7477,15 @@
       "ref": "@types/react-reconciler@0.34.0"
     },
     {
-      "ref": "@typescript/typescript-aix-ppc64@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-darwin-arm64@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-darwin-x64@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-freebsd-arm64@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-freebsd-x64@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-linux-arm@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-linux-arm64@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-linux-loong64@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-linux-mips64el@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-linux-ppc64@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-linux-riscv64@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-linux-s390x@7.0.2"
+      "ref": "@types/slice-ansi@4.0.0"
     },
     {
       "ref": "@typescript/typescript-linux-x64@7.0.2"
     },
     {
-      "ref": "@typescript/typescript-netbsd-arm64@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-netbsd-x64@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-openbsd-arm64@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-openbsd-x64@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-sunos-x64@7.0.2"
-    },
-    {
-      "ref": "@typescript/typescript-win32-arm64@7.0.2"
-    },
-    {
       "ref": "@vitejs/plugin-react@6.3.0",
       "dependsOn": [
-        "@rolldown/pluginutils@1.1.0"
+        "@rolldown/pluginutils@1.1.1"
       ]
     },
     {
@@ -6265,10 +7501,16 @@
       "ref": "@vitest/spy@5.1.0"
     },
     {
-      "ref": "ansi-regex@6.6.0"
+      "ref": "@xmldom/xmldom@0.9.12"
     },
     {
-      "ref": "ansi-styles@6.2.3"
+      "ref": "ansi-regex@5.0.1"
+    },
+    {
+      "ref": "ansi-styles@4.3.0",
+      "dependsOn": [
+        "color-convert@2.0.1"
+      ]
     },
     {
       "ref": "aria-hidden@1.2.6",
@@ -6280,10 +7522,49 @@
       "ref": "assertion-error@2.0.1"
     },
     {
-      "ref": "axe-core@4.14.0"
+      "ref": "astral-regex@2.0.0"
+    },
+    {
+      "ref": "at-least-node@1.0.0"
+    },
+    {
+      "ref": "axe-core@4.14.1"
+    },
+    {
+      "ref": "balanced-match@4.0.4"
+    },
+    {
+      "ref": "base64-js@1.5.1"
+    },
+    {
+      "ref": "big-integer@1.6.52"
+    },
+    {
+      "ref": "bplist-creator@0.1.0",
+      "dependsOn": [
+        "stream-buffers@2.2.0"
+      ]
+    },
+    {
+      "ref": "bplist-parser@0.3.2",
+      "dependsOn": [
+        "big-integer@1.6.52"
+      ]
+    },
+    {
+      "ref": "brace-expansion@5.0.13",
+      "dependsOn": [
+        "balanced-match@4.0.4"
+      ]
+    },
+    {
+      "ref": "buffer-crc32@0.2.13"
     },
     {
       "ref": "chai@6.3.0"
+    },
+    {
+      "ref": "chownr@3.0.0"
     },
     {
       "ref": "chromium-bidi@157.0.8090-0",
@@ -6318,16 +7599,68 @@
       ]
     },
     {
+      "ref": "emoji-regex@10.6.0"
+    },
+    {
+      "ref": "strip-ansi@7.2.0",
+      "dependsOn": [
+        "ansi-regex@6.6.0"
+      ]
+    },
+    {
+      "ref": "ansi-regex@6.6.0"
+    },
+    {
+      "ref": "wrap-ansi@9.0.2",
+      "dependsOn": [
+        "ansi-styles@6.2.3",
+        "string-width@7.2.0",
+        "strip-ansi@7.2.0"
+      ]
+    },
+    {
+      "ref": "ansi-styles@6.2.3"
+    },
+    {
       "ref": "clsx@2.1.1"
     },
     {
-      "ref": "csstype@3.2.3"
+      "ref": "color-convert@2.0.1",
+      "dependsOn": [
+        "color-name@1.1.4"
+      ]
+    },
+    {
+      "ref": "color-name@1.1.4"
+    },
+    {
+      "ref": "commander@12.1.0"
+    },
+    {
+      "ref": "cross-spawn@7.0.6",
+      "dependsOn": [
+        "path-key@3.1.1",
+        "shebang-command@2.0.0",
+        "which@2.0.2"
+      ]
+    },
+    {
+      "ref": "csstype@3.2.4"
+    },
+    {
+      "ref": "debug@4.4.3",
+      "dependsOn": [
+        "ms@2.1.3"
+      ]
+    },
+    {
+      "ref": "define-lazy-prop@2.0.0"
     },
     {
       "ref": "detect-libc@2.1.2"
     },
     {
-      "ref": "devtools-protocol@0.0.1704951"
+      "ref": "devtools-protocol@0.0.1717327"
     },
     {
       "ref": "dexie@4.4.7"
@@ -6336,14 +7669,23 @@
       "ref": "dexie-react-hooks@4.4.0"
     },
     {
-      "ref": "emoji-regex@10.6.0"
+      "ref": "elementtree@0.1.7",
+      "dependsOn": [
+        "sax@1.1.4"
+      ]
     },
     {
-      "ref": "enhanced-resolve@5.26.1",
+      "ref": "emoji-regex@8.0.0"
+    },
+    {
+      "ref": "enhanced-resolve@5.27.0",
       "dependsOn": [
-        "graceful-fs@4.2.11",
-        "tapable@2.3.3"
+        "graceful-fs@4.2.12",
+        "tapable@2.3.4"
       ]
+    },
+    {
+      "ref": "env-paths@2.2.1"
     },
     {
       "ref": "es-module-lexer@2.3.2"
@@ -6361,6 +7703,12 @@
       "ref": "expect-type@1.4.0"
     },
     {
+      "ref": "fd-slicer@1.1.0",
+      "dependsOn": [
+        "pend@1.2.0"
+      ]
+    },
+    {
       "ref": "fdir@6.5.0"
     },
     {
@@ -6372,7 +7720,12 @@
       ]
     },
     {
-      "ref": "fsevents@2.3.3"
+      "ref": "fs-extra@11.4.1",
+      "dependsOn": [
+        "graceful-fs@4.2.12",
+        "jsonfile@6.2.1",
+        "universalify@2.0.1"
+      ]
     },
     {
       "ref": "get-caller-file@2.0.5"
@@ -6381,7 +7734,36 @@
       "ref": "get-east-asian-width@1.7.0"
     },
     {
-      "ref": "graceful-fs@4.2.11"
+      "ref": "glob@14.0.6",
+      "dependsOn": [
+        "minimatch@11.0.9",
+        "minipass@7.1.3",
+        "path-scurry@3.0.0"
+      ]
+    },
+    {
+      "ref": "graceful-fs@4.2.12"
+    },
+    {
+      "ref": "inherits@2.0.4"
+    },
+    {
+      "ref": "ini@4.1.3"
+    },
+    {
+      "ref": "is-docker@2.2.1"
+    },
+    {
+      "ref": "is-fullwidth-code-point@3.0.0"
+    },
+    {
+      "ref": "is-wsl@2.2.0",
+      "dependsOn": [
+        "is-docker@2.2.1"
+      ]
+    },
+    {
+      "ref": "isexe@2.0.0"
     },
     {
       "ref": "its-fine@2.1.1",
@@ -6396,57 +7778,30 @@
       "ref": "jiti@2.7.0"
     },
     {
+      "ref": "jsonfile@6.2.1",
+      "dependsOn": [
+        "graceful-fs@4.2.12",
+        "universalify@2.0.1"
+      ]
+    },
+    {
+      "ref": "kleur@4.1.5"
+    },
+    {
       "ref": "konva@10.9.1"
     },
     {
       "ref": "lightningcss@1.33.0",
       "dependsOn": [
         "detect-libc@2.1.2",
-        "lightningcss-android-arm64@1.33.0",
-        "lightningcss-darwin-arm64@1.33.0",
-        "lightningcss-darwin-x64@1.33.0",
-        "lightningcss-freebsd-x64@1.33.0",
-        "lightningcss-linux-arm-gnueabihf@1.33.0",
-        "lightningcss-linux-arm64-gnu@1.33.0",
-        "lightningcss-linux-arm64-musl@1.33.0",
-        "lightningcss-linux-x64-gnu@1.33.0",
-        "lightningcss-linux-x64-musl@1.33.0",
-        "lightningcss-win32-arm64-msvc@1.33.0",
-        "lightningcss-win32-x64-msvc@1.33.0"
+        "lightningcss-linux-x64-gnu@1.33.0"
       ]
-    },
-    {
-      "ref": "lightningcss-android-arm64@1.33.0"
-    },
-    {
-      "ref": "lightningcss-darwin-arm64@1.33.0"
-    },
-    {
-      "ref": "lightningcss-darwin-x64@1.33.0"
-    },
-    {
-      "ref": "lightningcss-freebsd-x64@1.33.0"
-    },
-    {
-      "ref": "lightningcss-linux-arm-gnueabihf@1.33.0"
-    },
-    {
-      "ref": "lightningcss-linux-arm64-gnu@1.33.0"
-    },
-    {
-      "ref": "lightningcss-linux-arm64-musl@1.33.0"
     },
     {
       "ref": "lightningcss-linux-x64-gnu@1.33.0"
     },
     {
-      "ref": "lightningcss-linux-x64-musl@1.33.0"
-    },
-    {
-      "ref": "lightningcss-win32-arm64-msvc@1.33.0"
-    },
-    {
-      "ref": "lightningcss-win32-x64-msvc@1.33.0"
+      "ref": "lru-cache@11.5.3"
     },
     {
       "ref": "lucide-react@0.546.0"
@@ -6458,7 +7813,23 @@
       ]
     },
     {
+      "ref": "minimatch@11.0.9",
+      "dependsOn": [
+        "@isaacs/nonrecursive-glob-match@1.1.0",
+        "brace-expansion@5.0.13"
+      ]
+    },
+    {
+      "ref": "minipass@7.1.3"
+    },
+    {
       "ref": "minisearch@7.2.0"
+    },
+    {
+      "ref": "minizlib@3.1.0",
+      "dependsOn": [
+        "minipass@7.1.3"
+      ]
     },
     {
       "ref": "mitt@3.0.1"
@@ -6483,10 +7854,53 @@
       "ref": "motion-utils@12.39.0"
     },
     {
+      "ref": "ms@2.1.3"
+    },
+    {
       "ref": "nanoid@3.3.20"
     },
     {
+      "ref": "native-run@2.1.0",
+      "dependsOn": [
+        "@ionic/utils-fs@3.1.7",
+        "@ionic/utils-terminal@2.3.5",
+        "bplist-parser@0.3.2",
+        "debug@4.4.3",
+        "elementtree@0.1.7",
+        "ini@4.1.3",
+        "plist@3.1.1",
+        "split2@4.2.0",
+        "through2@4.0.2",
+        "tslib@2.9.1",
+        "yauzl@2.10.0"
+      ]
+    },
+    {
       "ref": "obug@3.0.0"
+    },
+    {
+      "ref": "open@8.4.2",
+      "dependsOn": [
+        "define-lazy-prop@2.0.0",
+        "is-docker@2.2.1",
+        "is-wsl@2.2.0"
+      ]
+    },
+    {
+      "ref": "package-json-from-dist@1.0.1"
+    },
+    {
+      "ref": "path-key@3.1.1"
+    },
+    {
+      "ref": "path-scurry@3.0.0",
+      "dependsOn": [
+        "lru-cache@11.5.3",
+        "minipass@7.1.3"
+      ]
+    },
+    {
+      "ref": "pend@1.2.0"
     },
     {
       "ref": "picocolors@1.1.1"
@@ -6495,16 +7909,24 @@
       "ref": "picomatch@4.0.7"
     },
     {
-      "ref": "playwright@1.65.0",
+      "ref": "playwright@1.65.1",
       "dependsOn": [
-        "playwright-core@1.65.0"
+        "playwright-core@1.65.1"
       ]
     },
     {
-      "ref": "playwright-core@1.65.0"
+      "ref": "playwright-core@1.65.1"
     },
     {
-      "ref": "postcss@8.5.32",
+      "ref": "plist@3.1.1",
+      "dependsOn": [
+        "@xmldom/xmldom@0.9.12",
+        "base64-js@1.5.1",
+        "xmlbuilder@15.1.1"
+      ]
+    },
+    {
+      "ref": "postcss@8.5.33",
       "dependsOn": [
         "nanoid@3.3.20",
         "picocolors@1.1.1",
@@ -6512,14 +7934,24 @@
       ]
     },
     {
-      "ref": "puppeteer-core@25.16.0",
+      "ref": "prompts@2.4.2",
       "dependsOn": [
-        "@puppeteer/browsers@3.2.6",
+        "kleur@3.0.3",
+        "sisteransi@1.0.5"
+      ]
+    },
+    {
+      "ref": "kleur@3.0.3"
+    },
+    {
+      "ref": "puppeteer-core@25.18.1",
+      "dependsOn": [
+        "@puppeteer/browsers@3.2.7",
         "chromium-bidi@157.0.8090-0",
-        "devtools-protocol@0.0.1704951",
-        "typed-query-selector@2.12.3",
-        "webdriver-bidi-protocol@1.0.1",
-        "ws@8.22.2"
+        "devtools-protocol@0.0.1717327",
+        "typed-query-selector@2.12.4",
+        "webdriver-bidi-protocol@1.0.2",
+        "ws@8.23.0"
       ]
     },
     {
@@ -6585,47 +8017,107 @@
       ]
     },
     {
-      "ref": "rolldown@1.2.18",
+      "ref": "readable-stream@3.6.2",
+      "dependsOn": [
+        "inherits@2.0.4",
+        "string_decoder@1.3.0",
+        "util-deprecate@1.0.2"
+      ]
+    },
+    {
+      "ref": "rimraf@6.1.4",
+      "dependsOn": [
+        "glob@14.0.6",
+        "package-json-from-dist@1.0.1"
+      ]
+    },
+    {
+      "ref": "rolldown@1.2.19",
       "dependsOn": [
         "@oxc-project/types@0.156.0",
-        "@rolldown/binding-android-arm-eabi@1.2.18",
-        "@rolldown/binding-android-arm64@1.2.18",
-        "@rolldown/binding-darwin-arm64@1.2.18",
-        "@rolldown/binding-darwin-x64@1.2.18",
-        "@rolldown/binding-freebsd-x64@1.2.18",
-        "@rolldown/binding-linux-arm-gnueabihf@1.2.18",
-        "@rolldown/binding-linux-arm64-gnu@1.2.18",
-        "@rolldown/binding-linux-arm64-musl@1.2.18",
-        "@rolldown/binding-linux-ppc64-gnu@1.2.18",
-        "@rolldown/binding-linux-s390x-gnu@1.2.18",
-        "@rolldown/binding-linux-x64-gnu@1.2.18",
-        "@rolldown/binding-linux-x64-musl@1.2.18",
-        "@rolldown/binding-openharmony-arm64@1.2.18",
-        "@rolldown/binding-win32-arm64-msvc@1.2.18",
-        "@rolldown/binding-win32-x64-msvc@1.2.18",
-        "@rolldown/pluginutils@1.1.0"
+        "@rolldown/binding-linux-x64-gnu@1.2.19",
+        "@rolldown/pluginutils@1.1.1"
       ]
+    },
+    {
+      "ref": "safe-buffer@5.2.1"
+    },
+    {
+      "ref": "sax@1.1.4"
     },
     {
       "ref": "scheduler@0.28.0"
     },
     {
+      "ref": "semver@7.8.6"
+    },
+    {
+      "ref": "shebang-command@2.0.0",
+      "dependsOn": [
+        "shebang-regex@3.0.0"
+      ]
+    },
+    {
+      "ref": "shebang-regex@3.0.0"
+    },
+    {
+      "ref": "signal-exit@3.0.7"
+    },
+    {
+      "ref": "simple-plist@1.3.1",
+      "dependsOn": [
+        "bplist-creator@0.1.0",
+        "bplist-parser@0.3.1",
+        "plist@3.1.1"
+      ]
+    },
+    {
+      "ref": "bplist-parser@0.3.1",
+      "dependsOn": [
+        "big-integer@1.6.52"
+      ]
+    },
+    {
+      "ref": "sisteransi@1.0.5"
+    },
+    {
+      "ref": "slice-ansi@4.0.0",
+      "dependsOn": [
+        "ansi-styles@4.3.0",
+        "astral-regex@2.0.0",
+        "is-fullwidth-code-point@3.0.0"
+      ]
+    },
+    {
       "ref": "source-map-js@1.2.2"
+    },
+    {
+      "ref": "split2@4.2.0"
     },
     {
       "ref": "std-env@4.3.0"
     },
     {
-      "ref": "string-width@8.3.0",
+      "ref": "stream-buffers@2.2.0"
+    },
+    {
+      "ref": "string-width@4.2.3",
       "dependsOn": [
-        "get-east-asian-width@1.7.0",
-        "strip-ansi@7.2.0"
+        "emoji-regex@8.0.0",
+        "is-fullwidth-code-point@3.0.0",
+        "strip-ansi@6.0.1"
       ]
     },
     {
-      "ref": "strip-ansi@7.2.0",
+      "ref": "string_decoder@1.3.0",
       "dependsOn": [
-        "ansi-regex@6.6.0"
+        "safe-buffer@5.2.1"
+      ]
+    },
+    {
+      "ref": "strip-ansi@6.0.1",
+      "dependsOn": [
+        "ansi-regex@5.0.1"
       ]
     },
     {
@@ -6635,7 +8127,23 @@
       "ref": "tailwindcss@4.3.5"
     },
     {
-      "ref": "tapable@2.3.3"
+      "ref": "tapable@2.3.4"
+    },
+    {
+      "ref": "tar@7.5.23",
+      "dependsOn": [
+        "@isaacs/fs-minipass@4.0.1",
+        "chownr@3.0.0",
+        "minipass@7.1.3",
+        "minizlib@3.1.0",
+        "yallist@5.0.0"
+      ]
+    },
+    {
+      "ref": "through2@4.0.2",
+      "dependsOn": [
+        "readable-stream@3.6.2"
+      ]
     },
     {
       "ref": "tinybench@6.2.3"
@@ -6651,53 +8159,42 @@
       ]
     },
     {
+      "ref": "tree-kill@1.2.2"
+    },
+    {
       "ref": "tslib@2.9.1"
     },
     {
-      "ref": "typed-query-selector@2.12.3"
+      "ref": "typed-query-selector@2.12.4"
     },
     {
       "ref": "typescript@7.0.2",
       "dependsOn": [
-        "@typescript/typescript-aix-ppc64@7.0.2",
-        "@typescript/typescript-darwin-arm64@7.0.2",
-        "@typescript/typescript-darwin-x64@7.0.2",
-        "@typescript/typescript-freebsd-arm64@7.0.2",
-        "@typescript/typescript-freebsd-x64@7.0.2",
-        "@typescript/typescript-linux-arm@7.0.2",
-        "@typescript/typescript-linux-arm64@7.0.2",
-        "@typescript/typescript-linux-loong64@7.0.2",
-        "@typescript/typescript-linux-mips64el@7.0.2",
-        "@typescript/typescript-linux-ppc64@7.0.2",
-        "@typescript/typescript-linux-riscv64@7.0.2",
-        "@typescript/typescript-linux-s390x@7.0.2",
-        "@typescript/typescript-linux-x64@7.0.2",
-        "@typescript/typescript-netbsd-arm64@7.0.2",
-        "@typescript/typescript-netbsd-x64@7.0.2",
-        "@typescript/typescript-openbsd-arm64@7.0.2",
-        "@typescript/typescript-openbsd-x64@7.0.2",
-        "@typescript/typescript-sunos-x64@7.0.2",
-        "@typescript/typescript-win32-arm64@7.0.2",
-        "@typescript/typescript-win32-x64@7.0.2"
+        "@typescript/typescript-linux-x64@7.0.2"
       ]
-    },
-    {
-      "ref": "@typescript/typescript-win32-x64@7.0.2"
     },
     {
       "ref": "undici-types@6.21.0"
     },
     {
+      "ref": "universalify@2.0.1"
+    },
+    {
+      "ref": "untildify@4.0.0"
+    },
+    {
       "ref": "use-sync-external-store@1.7.0"
     },
     {
-      "ref": "vite@8.3.7",
+      "ref": "util-deprecate@1.0.2"
+    },
+    {
+      "ref": "vite@8.3.8",
       "dependsOn": [
-        "fsevents@2.3.3",
         "lightningcss@1.33.0",
         "picomatch@4.0.7",
-        "postcss@8.5.32",
-        "rolldown@1.2.18",
+        "postcss@8.5.33",
+        "rolldown@1.2.19",
         "tinyglobby@0.2.17"
       ]
     },
@@ -6720,32 +8217,52 @@
       ]
     },
     {
-      "ref": "webdriver-bidi-protocol@1.0.1"
+      "ref": "webdriver-bidi-protocol@1.0.2"
+    },
+    {
+      "ref": "which@2.0.2",
+      "dependsOn": [
+        "isexe@2.0.0"
+      ]
     },
     {
       "ref": "why-is-node-running@3.2.1"
     },
     {
-      "ref": "wrap-ansi@9.0.2",
+      "ref": "wrap-ansi@7.0.0",
       "dependsOn": [
-        "ansi-styles@6.2.3",
-        "node_modules/wrap-ansi/node_modules/string-width@7.2.0",
-        "strip-ansi@7.2.0"
+        "ansi-styles@4.3.0",
+        "string-width@4.2.3",
+        "strip-ansi@6.0.1"
       ]
     },
     {
-      "ref": "node_modules/wrap-ansi/node_modules/string-width@7.2.0",
+      "ref": "ws@8.23.0"
+    },
+    {
+      "ref": "xcode@4.0.0",
       "dependsOn": [
-        "emoji-regex@10.6.0",
-        "get-east-asian-width@1.7.0",
-        "strip-ansi@7.2.0"
+        "simple-plist@1.3.1"
       ]
     },
     {
-      "ref": "ws@8.22.2"
+      "ref": "xml2js@0.6.2",
+      "dependsOn": [
+        "sax@1.1.4",
+        "xmlbuilder@11.0.1"
+      ]
+    },
+    {
+      "ref": "xmlbuilder@11.0.1"
+    },
+    {
+      "ref": "xmlbuilder@15.1.1"
     },
     {
       "ref": "y18n@5.0.8"
+    },
+    {
+      "ref": "yallist@5.0.0"
     },
     {
       "ref": "yargs@18.2.0",
@@ -6760,6 +8277,29 @@
     },
     {
       "ref": "yargs-parser@22.0.0"
+    },
+    {
+      "ref": "string-width@8.3.0",
+      "dependsOn": [
+        "get-east-asian-width@1.7.0",
+        "node_modules/yargs/node_modules/string-width/node_modules/strip-ansi@7.2.0"
+      ]
+    },
+    {
+      "ref": "node_modules/yargs/node_modules/string-width/node_modules/strip-ansi@7.2.0",
+      "dependsOn": [
+        "node_modules/yargs/node_modules/string-width/node_modules/strip-ansi/node_modules/ansi-regex@6.6.0"
+      ]
+    },
+    {
+      "ref": "node_modules/yargs/node_modules/string-width/node_modules/strip-ansi/node_modules/ansi-regex@6.6.0"
+    },
+    {
+      "ref": "yauzl@2.10.0",
+      "dependsOn": [
+        "buffer-crc32@0.2.13",
+        "fd-slicer@1.1.0"
+      ]
     },
     {
       "ref": "zod@4.6.7"

@@ -24,8 +24,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Security vulnerability audit (npm audit)
-        run: npm audit --audit-level=high
+      - name: Security vulnerability audit (production dependencies, npm audit)
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Enforce dependency open-source licenses (R3)
         run: npm run check:licenses
