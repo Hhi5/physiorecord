@@ -95,8 +95,11 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Accept Android SDK licenses
+        run: |
+          if [ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
+          fi
 
       - name: Install project dependencies
         run: npm ci
@@ -169,8 +172,10 @@ jobs:
           cache: npm
 
       - name: Install project dependencies & Electron packaging tools
+        shell: pwsh
         run: |
-          npm ci
+          Remove-Item -Force -ErrorAction SilentlyContinue package-lock.json
+          npm install --no-audit --no-fund
           npm install --no-save --save-exact electron@34.3.0 electron-builder@25.1.8
 
       - name: Build Desktop web assets & package Windows NSIS Setup + Portable .exe
@@ -178,7 +183,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: |
           npm run build:desktop:web
-          npx electron-builder --win nsis portable --publish never -c.electronVersion=34.3.0
+          npx electron-builder --win nsis portable --publish never
 
       - name: Upload Windows EXE artifacts
         uses: actions/upload-artifact@v4
