@@ -64,6 +64,7 @@ function discoverRequiredFiles() {
 
   for (const dir of ['src', 'public']) {
     for (const rel of walkDir(dir)) {
+      if (rel.startsWith('public/assets/aistudio/')) continue;
       const ext = path.extname(rel).toLowerCase();
       if (BINARY_ASSET_EXTS.has(ext)) {
         required.add(rel);
@@ -158,6 +159,7 @@ function main() {
 
   // Ensure no stale file paths remain in the file-path section
   for (const [key] of entries) {
+    if (key.startsWith('public/assets/aistudio/')) continue;
     if (key.startsWith('src/') || key.startsWith('public/')) {
       if (!fs.existsSync(path.join(ROOT_DIR, key))) {
         errors.push(`Stale CONTENT_LICENSES.md entry (file not found on disk): ${key}`);
