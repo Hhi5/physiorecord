@@ -21,7 +21,7 @@
 
 صُمم مشروع الأندرويد في `android/` ليعمل على **جميع هواتف الأندرويد** القديمة والحديثة:
 1. **Universal APK (`abiFilters "arm64-v8a", "armeabi-v7a", "x86_64"`)**: يدعم المعالجات الحديثة `64-bit` والهواتف الاقتصادية/القديمة `32-bit`.
-2. **`minSdkVersion = 23` (Android 6.0+)**: يغطي أكثر من 99.5% من أجهزة أندرويد الفعالة.
+2. **`minSdkVersion = 24` (Android 7.0+)**: يغطي أكثر من 99.5% من أجهزة أندرويد الفعالة ويتوافق مع متطلبات Capacitor 8.
 3. **بديل ضغط تلقائي (`CompressionStream` Fallback)**: عند تصدير `.ptbackup` على هواتف ذات `Android System WebView` قديم لا يدعم `CompressionStream('gzip')`، يتحول التطبيق تلقائياً إلى `compression: 'none'` مع الحفاظ الكامل على تشفير `AES-256-GCM` وتوقيع `HMAC-SHA256`.
 4. **دعم جميع مديري الملفات (Samsung, Xiaomi MIUI/HyperOS, Huawei EMUI, Infinix, Tecno, Oppo)**:
    - عند الحفظ: يستخدم `Intent.ACTION_CREATE_DOCUMENT` (Storage Access Framework) أو نافذة المشاركة الأصلية `Intent.ACTION_SEND` عبر `FileProvider`.
