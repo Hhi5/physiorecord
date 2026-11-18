@@ -8,8 +8,8 @@ android {
         applicationId "org.physiorecord.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 10000
-        versionName "1.0.0"
+        versionCode 10100
+        versionName "1.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         // Universal APK supporting 64-bit ARM, 32-bit ARM (older phones), and x86_64
@@ -45,6 +45,8 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             if (signingConfigs.release.storeFile != null) {
                 signingConfig signingConfigs.release
+            } else if ("true".equalsIgnoreCase(System.getenv("REQUIRE_SIGNED_RELEASE"))) {
+                throw new GradleException("Persistent release keystore is required for in-place Android upgrades (ANDROID_KEYSTORE_PATH missing).")
             }
         }
     }

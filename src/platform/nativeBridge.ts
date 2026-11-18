@@ -6,6 +6,8 @@
 // - Standard Web / PWA APIs (File System Access API, Web Share, window.print)
 // =======================================================================
 
+import { isAllowedGithubReleaseUrl } from '../utils/updateSafety';
+
 export type AppRuntimeTarget = 'web' | 'android' | 'desktop';
 
 export interface AndroidPhysioRecordPlugin {
@@ -38,6 +40,11 @@ export interface AndroidPhysioRecordPlugin {
   }) => Promise<{
     opened: boolean;
   }>;
+  getAppVersionInfo?: () => Promise<{
+    packageName: string;
+    versionName: string;
+    versionCode: number;
+  }>;
 }
 
 export interface ElectronDesktopUpdateStatus {
@@ -45,6 +52,11 @@ export interface ElectronDesktopUpdateStatus {
   currentVersion: string;
   latestVersion?: string;
   releaseUrl?: string;
+  downloadUrl?: string;
+  assetName?: string;
+  assetSizeBytes?: number;
+  publishedAt?: string;
+  releaseNotes?: string;
   messageAr: string;
   messageEn: string;
 }
@@ -161,6 +173,20 @@ export function getAppRuntimeTarget(): AppRuntimeTarget {
   if (isElectronDesktop()) return 'desktop';
   if (isNativeAndroid()) return 'android';
   return 'web';
+}
+
+export async function getAndroidAppVersionInfo(): Promise<{
+  packageName: string;
+  versionName: string;
+  versionCode: number;
+} | null> {
+  const androidPlugin = getAndroidNativePlugin();
+  if (!androidPlugin?.getAppVersionInfo) return null;
+  try {
+    return await androidPlugin.getAppVersionInfo();
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -378,10 +404,10 @@ export async function exportPlatformPdfDirect(
  * Open an allowed external URL (e.g. `https://wa.me/964...` or `https://www.google.com/maps/...`) safely outside the app WebView/Electron window.
  */
 export async function openSafeExternalUrl(url: string): Promise<boolean> {
-  if (
-    !url ||
-    !/^https:\/\/(wa\.me|api\.whatsapp\.com|(www\.)?google\.com\/maps)\//i.test(url)
-  ) {
+  const isWhatsAppOrMaps =
+    Boolean(url) &&
+    /^https:\/\/(wa\.me|api\.whatsapp\.com|(www\.)?google\.com\/maps)\//i.test(url);
+  if (!isWhatsAppOrMaps && !isAllowedGithubReleaseUrl(url)) {
     return false;
   }
 

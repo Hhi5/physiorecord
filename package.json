@@ -1,7 +1,7 @@
 {
   "name": "physiorecord",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "GPL-3.0-or-later",
   "type": "module",
   "main": "electron/main.mjs",
@@ -12,6 +12,7 @@
     "build:android:web": "node scripts/build-target.mjs android",
     "build:desktop:web": "node scripts/build-target.mjs desktop",
     "sync:version": "node scripts/sync-version.mjs",
+    "android:keystore:init": "node scripts/setup-android-keystore.mjs",
     "android:prepare": "node scripts/prepare-android-template.mjs",
     "android:sync": "npm run build:android:web && node scripts/prepare-android-template.mjs && npx cap sync android",
     "electron:start": "npm run build:desktop:web && npx electron .",

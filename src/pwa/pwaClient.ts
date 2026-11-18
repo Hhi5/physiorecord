@@ -39,6 +39,7 @@ function detectIosSafari(): boolean {
 
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
 let waitingWorker: ServiceWorker | null = null;
+let swRegistration: ServiceWorkerRegistration | null = null;
 
 const listeners = new Set<() => void>();
 
@@ -93,6 +94,7 @@ export function initPwaClient(): void {
       navigator.serviceWorker
         .register('/sw.js', { scope: '/' })
         .then((registration) => {
+          swRegistration = registration;
           if (registration.waiting) {
             waitingWorker = registration.waiting;
             state.updateReady = true;
@@ -148,6 +150,29 @@ export function applyPwaUpdate(): void {
     waitingWorker.postMessage({ type: 'SKIP_WAITING' });
   } else if (typeof window !== 'undefined') {
     window.location.reload();
+  }
+}
+
+export async function checkForPwaUpdate(): Promise<'update-ready' | 'up-to-date' | 'unavailable'> {
+  if (
+    isNativeAppShell() ||
+    typeof navigator === 'undefined' ||
+    !('serviceWorker' in navigator) ||
+    !swRegistration
+  ) {
+    return 'unavailable';
+  }
+  try {
+    await swRegistration.update();
+    if (swRegistration.waiting) {
+      waitingWorker = swRegistration.waiting;
+      state.updateReady = true;
+      notify();
+      return 'update-ready';
+    }
+    return state.updateReady ? 'update-ready' : 'up-to-date';
+  } catch {
+    return 'unavailable';
   }
 }
 

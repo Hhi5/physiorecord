@@ -970,13 +970,24 @@ export const AppLayout: React.FC = () => {
                 )}
               </span>
             </div>
-            <button
-              type="button"
-              onClick={applyPwaUpdate}
-              className="min-h-[36px] px-3 py-1 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
-            >
-              {bi('تحديث وإعادة التحميل', 'Reload to Update', 'نوێکردنەوە و بارکردنەوە')}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                data-testid="pwa-banner-backup-first-btn"
+                onClick={() => setIsBackupModalOpen(true)}
+                className="min-h-[36px] px-3 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-bold cursor-pointer"
+              >
+                {bi('نسخ احتياطي أولاً', 'Back Up First', 'کۆپی یەدەگ سەرەتا')}
+              </button>
+              <button
+                type="button"
+                data-testid="pwa-banner-reload-update-btn"
+                onClick={applyPwaUpdate}
+                className="min-h-[36px] px-3 py-1 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
+              >
+                {bi('تحديث وإعادة التحميل', 'Reload to Update', 'نوێکردنەوە و بارکردنەوە')}
+              </button>
+            </div>
           </div>
         )}
 

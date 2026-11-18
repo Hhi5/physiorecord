@@ -376,6 +376,22 @@ function registerIpcHandlers() {
       const latestTag = String(release?.tag_name || '').replace(/^v/i, '');
       const releaseUrl =
         String(release?.html_url || '') || 'https://github.com/Hhi5/physiorecord/releases';
+      const assets = Array.isArray(release?.assets) ? release.assets : [];
+      const exeAssets = assets.filter(
+        (a) =>
+          typeof a?.name === 'string' &&
+          a.name.toLowerCase().endsWith('.exe') &&
+          typeof a?.browser_download_url === 'string' &&
+          a.browser_download_url.startsWith('https://github.com/Hhi5/physiorecord/releases')
+      );
+      const preferredSetup =
+        exeAssets.find((a) => /setup/i.test(a.name)) || exeAssets[0] || null;
+      const publishedAt =
+        typeof release?.published_at === 'string' ? release.published_at : undefined;
+      const releaseNotes =
+        typeof release?.body === 'string' && release.body.trim()
+          ? release.body.trim().slice(0, 500)
+          : undefined;
 
       if (latestTag && compareSemver(latestTag, currentVersion) > 0) {
         return {
@@ -383,8 +399,13 @@ function registerIpcHandlers() {
           currentVersion,
           latestVersion: latestTag,
           releaseUrl,
-          messageAr: `يتوفر إصدار جديد (${latestTag}). يمكنك تحميل المثبت المحدث من صفحة الإصدارات الرسمية.`,
-          messageEn: `A newer version (${latestTag}) is available on GitHub Releases.`,
+          downloadUrl: preferredSetup?.browser_download_url || releaseUrl,
+          assetName: preferredSetup?.name,
+          assetSizeBytes: typeof preferredSetup?.size === 'number' ? preferredSetup.size : undefined,
+          publishedAt,
+          releaseNotes,
+          messageAr: `يتوفر إصدار جديد (${latestTag}). يُثبَّت فوق النسخة الحالية مباشرة دون حذف بيانات العيادة.`,
+          messageEn: `A newer version (${latestTag}) is available. Installing Setup upgrades in place without removing clinic data.`,
         };
       }
 
@@ -393,6 +414,7 @@ function registerIpcHandlers() {
         currentVersion,
         latestVersion: latestTag || currentVersion,
         releaseUrl,
+        publishedAt,
         messageAr: `أنت تستخدم أحدث إصدار حالياً (${currentVersion}).`,
         messageEn: `You are running the latest version (${currentVersion}).`,
       };

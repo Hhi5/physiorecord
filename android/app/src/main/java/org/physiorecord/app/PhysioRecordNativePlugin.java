@@ -3,7 +3,10 @@ package org.physiorecord.app;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintManager;
@@ -172,12 +175,38 @@ public class PhysioRecordNativePlugin extends Plugin {
     }
 
     @PluginMethod
+    public void getAppVersionInfo(PluginCall call) {
+        try {
+            Context ctx = getContext();
+            PackageManager pm = ctx.getPackageManager();
+            String pkgName = ctx.getPackageName();
+            PackageInfo info = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                    ? pm.getPackageInfo(pkgName, PackageManager.PackageInfoFlags.of(0))
+                    : pm.getPackageInfo(pkgName, 0);
+            long versionCode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                    ? info.getLongVersionCode()
+                    : info.versionCode;
+
+            JSObject ret = new JSObject();
+            ret.put("packageName", pkgName);
+            ret.put("versionName", info.versionName != null ? info.versionName : "1.0.0");
+            ret.put("versionCode", versionCode);
+            call.resolve(ret);
+        } catch (Exception ex) {
+            call.reject("Failed reading Android PackageInfo: " + ex.getMessage(), ex);
+        }
+    }
+
+    @PluginMethod
     public void openExternalUrl(PluginCall call) {
         String url = call.getString("url", "");
+        boolean isAllowedGithubRelease = url != null
+                && url.matches("^https://github\\.com/Hhi5/physiorecord/releases(/.*)?$");
         if (url == null || (!url.startsWith("https://wa.me/")
                 && !url.startsWith("https://api.whatsapp.com/")
                 && !url.startsWith("https://www.google.com/maps/")
-                && !url.startsWith("https://google.com/maps/"))) {
+                && !url.startsWith("https://google.com/maps/")
+                && !isAllowedGithubRelease)) {
             call.reject("Blocked non-allowlisted external URL.");
             return;
         }
