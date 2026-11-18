@@ -28,7 +28,7 @@ Contributors MUST preserve these workflows built specifically for solo physical 
    - **ROM**: No displayed normative `Normal: ...` reference ranges (`romMmtCatalog.ts` omits `normalRangeDegrees`).
    - **Special Tests**: Concise provocative test names + target anatomical structures across all 9 joint regions without verbose explanatory prose.
    - **Outcome Measures**: Score-entry calculators (`ODI`, `NDI`, `QuickDASH`, `SPADI`, `LEFS`) without copyrighted questionnaire item text; open functional procedures (`NPRS`, `PSFS`, `TUG`, `30s-CST`, `5xSTS`) + Custom Measure Builder.
-   - **Anatomical SVGs**: Preserve existing AI-generated SVGs (`AnatomicalBodySvgs.tsx`, `frontBodySvg.raw.svg`, `backBodySvg.raw.svg`, `OrganDermatomeMap.tsx`, `DermatomesMapTab.tsx`) intact and documented in `CONTENT_LICENSES.md`.
+   - **Anatomical SVGs**: Preserve existing AI-generated SVGs (`AnatomicalBodySvgs.tsx`, `frontBodySvg.raw.svg`, `backBodySvg.raw.svg`) intact and documented in `CONTENT_LICENSES.md`.
 
 ## 3. Open-Source License Policy
 

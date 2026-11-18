@@ -179,7 +179,7 @@ All identified high and medium priority defects were directly remediated in the 
 
 ### 5.2 Real-World Browser Screenshot Evidence Catalog
 
-The following screenshot artifacts were captured during the automated Chrome audit run and are saved in `docs/audit_screenshots/`:
+The following historical screenshot artifacts were captured during the legacy Chrome audit run (binary PNGs pruned from the repo during repository hygiene; active visual/RTL verification is enforced by `npm run test:e2e`):
 
 | Screenshot File | Step / Screen | Key Verification Highlight |
 | :--- | :--- | :--- |

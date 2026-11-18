@@ -5,7 +5,7 @@
   "serialNumber": "urn:uuid:4c356a3a-59fb-4b5b-8688-6a5513743d56",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-17T21:33:19.565Z",
+    "timestamp": "2026-11-18T16:49:18.411Z",
     "tools": {
       "components": [
         {
@@ -18,9 +18,9 @@
     "component": {
       "type": "application",
       "name": "physiorecord",
-      "version": "1.0.0",
-      "bom-ref": "physiorecord@1.0.0",
-      "purl": "pkg:npm/physiorecord@1.0.0",
+      "version": "1.1.0",
+      "bom-ref": "physiorecord@1.1.0",
+      "purl": "pkg:npm/physiorecord@1.1.0",
       "licenses": [
         {
           "license": {
@@ -985,8 +985,6 @@
       "version": "3.2.7",
       "bom-ref": "@puppeteer/browsers@3.2.7",
       "scope": "optional",
-      "author": "The Chromium Authors",
-      "description": "Download and launch browsers",
       "licenses": [
         {
           "license": {
@@ -996,12 +994,6 @@
         }
       ],
       "purl": "pkg:npm/%40puppeteer/browsers@3.2.7",
-      "externalReferences": [
-        {
-          "url": "https://github.com/puppeteer/puppeteer/tree/main/packages/browsers",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -2487,8 +2479,6 @@
       "version": "157.0.8090-0",
       "bom-ref": "chromium-bidi@157.0.8090-0",
       "scope": "optional",
-      "author": "The Chromium Authors",
-      "description": "An implementation of the WebDriver BiDi protocol for Chromium implemented as a JavaScript layer translating between BiDi and CDP, running inside a Chrome tab.",
       "licenses": [
         {
           "license": {
@@ -2498,12 +2488,6 @@
         }
       ],
       "purl": "pkg:npm/chromium-bidi@157.0.8090-0",
-      "externalReferences": [
-        {
-          "url": "https://github.com/GoogleChromeLabs/chromium-bidi.git",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -2517,8 +2501,6 @@
       "version": "0.7.1",
       "bom-ref": "class-variance-authority@0.7.1",
       "scope": "required",
-      "author": "Joe Bell (https://joebell.co.uk)",
-      "description": "Class Variance Authority 🧬",
       "licenses": [
         {
           "license": {
@@ -2528,16 +2510,6 @@
         }
       ],
       "purl": "pkg:npm/class-variance-authority@0.7.1",
-      "externalReferences": [
-        {
-          "url": "https://github.com/joe-bell/cva.git",
-          "type": "vcs"
-        },
-        {
-          "url": "https://github.com/joe-bell/cva#readme",
-          "type": "website"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -2580,8 +2552,6 @@
       "version": "9.0.1",
       "bom-ref": "cliui@9.0.1",
       "scope": "optional",
-      "author": "Ben Coe <ben@npmjs.com>",
-      "description": "easily create complex multi-column command-line-interfaces",
       "licenses": [
         {
           "license": {
@@ -2591,12 +2561,6 @@
         }
       ],
       "purl": "pkg:npm/cliui@9.0.1",
-      "externalReferences": [
-        {
-          "url": "yargs/cliui",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -2610,8 +2574,6 @@
       "version": "7.2.0",
       "bom-ref": "string-width@7.2.0",
       "scope": "optional",
-      "author": "Sindre Sorhus",
-      "description": "Get the visual width of a string - the number of columns required to display it",
       "licenses": [
         {
           "license": {
@@ -2621,12 +2583,6 @@
         }
       ],
       "purl": "pkg:npm/string-width@7.2.0",
-      "externalReferences": [
-        {
-          "url": "sindresorhus/string-width",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -2640,8 +2596,6 @@
       "version": "10.6.0",
       "bom-ref": "emoji-regex@10.6.0",
       "scope": "optional",
-      "author": "Mathias Bynens",
-      "description": "A regular expression to match all Emoji-only symbols as per the Unicode Standard.",
       "licenses": [
         {
           "license": {
@@ -2651,16 +2605,6 @@
         }
       ],
       "purl": "pkg:npm/emoji-regex@10.6.0",
-      "externalReferences": [
-        {
-          "url": "https://github.com/mathiasbynens/emoji-regex.git",
-          "type": "vcs"
-        },
-        {
-          "url": "https://mths.be/emoji-regex",
-          "type": "website"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -2674,8 +2618,6 @@
       "version": "7.2.0",
       "bom-ref": "strip-ansi@7.2.0",
       "scope": "optional",
-      "author": "Sindre Sorhus",
-      "description": "Strip ANSI escape codes from a string",
       "licenses": [
         {
           "license": {
@@ -2685,12 +2627,6 @@
         }
       ],
       "purl": "pkg:npm/strip-ansi@7.2.0",
-      "externalReferences": [
-        {
-          "url": "chalk/strip-ansi",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -2704,8 +2640,6 @@
       "version": "6.6.0",
       "bom-ref": "ansi-regex@6.6.0",
       "scope": "optional",
-      "author": "Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)",
-      "description": "Regular expression for matching ANSI escape codes",
       "licenses": [
         {
           "license": {
@@ -2715,12 +2649,6 @@
         }
       ],
       "purl": "pkg:npm/ansi-regex@6.6.0",
-      "externalReferences": [
-        {
-          "url": "chalk/ansi-regex",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -2734,8 +2662,6 @@
       "version": "9.0.2",
       "bom-ref": "wrap-ansi@9.0.2",
       "scope": "optional",
-      "author": "Sindre Sorhus",
-      "description": "Wordwrap a string with ANSI escape codes",
       "licenses": [
         {
           "license": {
@@ -2745,12 +2671,6 @@
         }
       ],
       "purl": "pkg:npm/wrap-ansi@9.0.2",
-      "externalReferences": [
-        {
-          "url": "chalk/wrap-ansi",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -2764,8 +2684,6 @@
       "version": "6.2.3",
       "bom-ref": "ansi-styles@6.2.3",
       "scope": "optional",
-      "author": "Sindre Sorhus",
-      "description": "ANSI escape codes for styling strings in the terminal",
       "licenses": [
         {
           "license": {
@@ -2775,12 +2693,6 @@
         }
       ],
       "purl": "pkg:npm/ansi-styles@6.2.3",
-      "externalReferences": [
-        {
-          "url": "chalk/ansi-styles",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -3072,8 +2984,6 @@
       "version": "0.0.1717327",
       "bom-ref": "devtools-protocol@0.0.1717327",
       "scope": "optional",
-      "author": "The Chromium Authors",
-      "description": "The Chrome DevTools Protocol JSON",
       "licenses": [
         {
           "license": {
@@ -3083,12 +2993,6 @@
         }
       ],
       "purl": "pkg:npm/devtools-protocol@0.0.1717327",
-      "externalReferences": [
-        {
-          "url": "https://github.com/ChromeDevTools/devtools-protocol",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -3136,8 +3040,6 @@
       "version": "4.4.0",
       "bom-ref": "dexie-react-hooks@4.4.0",
       "scope": "required",
-      "author": "David Fahlander <https://github.com/dfahlander>",
-      "description": "React hooks for reactive data fetching using Dexie.js",
       "licenses": [
         {
           "license": {
@@ -3147,16 +3049,6 @@
         }
       ],
       "purl": "pkg:npm/dexie-react-hooks@4.4.0",
-      "externalReferences": [
-        {
-          "url": "git+https://github.com/dexie/Dexie.js.git",
-          "type": "vcs"
-        },
-        {
-          "url": "https://dexie.org",
-          "type": "website"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -3336,8 +3228,6 @@
       "version": "3.2.0",
       "bom-ref": "escalade@3.2.0",
       "scope": "optional",
-      "author": "Luke Edwards",
-      "description": "A tiny (183B to 210B) and fast utility to ascend parent directories",
       "licenses": [
         {
           "license": {
@@ -3347,12 +3237,6 @@
         }
       ],
       "purl": "pkg:npm/escalade@3.2.0",
-      "externalReferences": [
-        {
-          "url": "lukeed/escalade",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -3492,8 +3376,6 @@
       "version": "12.43.0",
       "bom-ref": "framer-motion@12.43.0",
       "scope": "required",
-      "author": "Matt Perry",
-      "description": "A simple and powerful JavaScript animation library",
       "licenses": [
         {
           "license": {
@@ -3503,12 +3385,6 @@
         }
       ],
       "purl": "pkg:npm/framer-motion@12.43.0",
-      "externalReferences": [
-        {
-          "url": "https://github.com/motiondivision/motion/",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -3556,7 +3432,6 @@
       "version": "2.0.5",
       "bom-ref": "get-caller-file@2.0.5",
       "scope": "optional",
-      "author": "Stefan Penner",
       "licenses": [
         {
           "license": {
@@ -3566,16 +3441,6 @@
         }
       ],
       "purl": "pkg:npm/get-caller-file@2.0.5",
-      "externalReferences": [
-        {
-          "url": "git+https://github.com/stefanpenner/get-caller-file.git",
-          "type": "vcs"
-        },
-        {
-          "url": "https://github.com/stefanpenner/get-caller-file#readme",
-          "type": "website"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -3589,8 +3454,6 @@
       "version": "1.7.0",
       "bom-ref": "get-east-asian-width@1.7.0",
       "scope": "optional",
-      "author": "Sindre Sorhus",
-      "description": "Determine the East Asian Width of a Unicode character",
       "licenses": [
         {
           "license": {
@@ -3600,12 +3463,6 @@
         }
       ],
       "purl": "pkg:npm/get-east-asian-width@1.7.0",
-      "externalReferences": [
-        {
-          "url": "sindresorhus/get-east-asian-width",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -4328,7 +4185,6 @@
       "version": "3.0.1",
       "bom-ref": "mitt@3.0.1",
       "scope": "optional",
-      "description": "Tiny 200b functional Event Emitter / pubsub.",
       "licenses": [
         {
           "license": {
@@ -4338,16 +4194,6 @@
         }
       ],
       "purl": "pkg:npm/mitt@3.0.1",
-      "externalReferences": [
-        {
-          "url": "developit/mitt",
-          "type": "vcs"
-        },
-        {
-          "url": "https://github.com/developit/mitt",
-          "type": "website"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -4361,8 +4207,6 @@
       "version": "0.8.6",
       "bom-ref": "modern-tar@0.8.6",
       "scope": "optional",
-      "author": "Ayuhito <hello@ayuhito.com>",
-      "description": "Zero dependency streaming tar parser and writer for JavaScript.",
       "licenses": [
         {
           "license": {
@@ -4372,16 +4216,6 @@
         }
       ],
       "purl": "pkg:npm/modern-tar@0.8.6",
-      "externalReferences": [
-        {
-          "url": "git+https://github.com/ayuhito/modern-tar.git",
-          "type": "vcs"
-        },
-        {
-          "url": "https://github.com/ayuhito/modern-tar",
-          "type": "website"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -4395,8 +4229,6 @@
       "version": "12.43.0",
       "bom-ref": "motion@12.43.0",
       "scope": "required",
-      "author": "Matt Perry",
-      "description": "An animation library for JavaScript and React.",
       "licenses": [
         {
           "license": {
@@ -4406,12 +4238,6 @@
         }
       ],
       "purl": "pkg:npm/motion@12.43.0",
-      "externalReferences": [
-        {
-          "url": "https://github.com/motiondivision/motion",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -4425,7 +4251,6 @@
       "version": "12.43.0",
       "bom-ref": "motion-dom@12.43.0",
       "scope": "required",
-      "author": "Matt Perry",
       "licenses": [
         {
           "license": {
@@ -4435,12 +4260,6 @@
         }
       ],
       "purl": "pkg:npm/motion-dom@12.43.0",
-      "externalReferences": [
-        {
-          "url": "https://github.com/motiondivision/motion",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -4454,7 +4273,6 @@
       "version": "12.39.0",
       "bom-ref": "motion-utils@12.39.0",
       "scope": "required",
-      "author": "Matt Perry",
       "licenses": [
         {
           "license": {
@@ -4464,12 +4282,6 @@
         }
       ],
       "purl": "pkg:npm/motion-utils@12.39.0",
-      "externalReferences": [
-        {
-          "url": "https://github.com/motiondivision/motion",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -5016,8 +4828,6 @@
       "version": "25.18.1",
       "bom-ref": "puppeteer-core@25.18.1",
       "scope": "optional",
-      "author": "The Chromium Authors",
-      "description": "A high-level API to control headless Chrome over the DevTools Protocol",
       "licenses": [
         {
           "license": {
@@ -5027,12 +4837,6 @@
         }
       ],
       "purl": "pkg:npm/puppeteer-core@25.18.1",
-      "externalReferences": [
-        {
-          "url": "https://github.com/puppeteer/puppeteer/tree/main/packages/puppeteer-core",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -5921,8 +5725,6 @@
       "version": "3.7.0",
       "bom-ref": "tailwind-merge@3.7.0",
       "scope": "required",
-      "author": "Dany Castillo",
-      "description": "Merge Tailwind CSS classes without style conflicts",
       "licenses": [
         {
           "license": {
@@ -5932,16 +5734,6 @@
         }
       ],
       "purl": "pkg:npm/tailwind-merge@3.7.0",
-      "externalReferences": [
-        {
-          "url": "https://github.com/dcastil/tailwind-merge.git",
-          "type": "vcs"
-        },
-        {
-          "url": "https://github.com/dcastil/tailwind-merge",
-          "type": "website"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -6251,8 +6043,6 @@
       "version": "2.12.4",
       "bom-ref": "typed-query-selector@2.12.4",
       "scope": "optional",
-      "author": "Pig Fang <g-plane@hotmail.com>",
-      "description": "Better typed `querySelector` and `querySelectorAll`.",
       "licenses": [
         {
           "license": {
@@ -6262,12 +6052,6 @@
         }
       ],
       "purl": "pkg:npm/typed-query-selector@2.12.4",
-      "externalReferences": [
-        {
-          "url": "g-plane/typed-query-selector",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -6543,7 +6327,6 @@
       "version": "1.0.2",
       "bom-ref": "webdriver-bidi-protocol@1.0.2",
       "scope": "optional",
-      "author": "The Chromium Authors",
       "licenses": [
         {
           "license": {
@@ -6553,12 +6336,6 @@
         }
       ],
       "purl": "pkg:npm/webdriver-bidi-protocol@1.0.2",
-      "externalReferences": [
-        {
-          "url": "git+https://github.com/GoogleChromeLabs/webdriver-bidi-protocol.git",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -6666,8 +6443,6 @@
       "version": "8.23.0",
       "bom-ref": "ws@8.23.0",
       "scope": "optional",
-      "author": "Einar Otto Stangvik <einaros@gmail.com> (http://2x.io)",
-      "description": "Simple to use, blazing fast and thoroughly tested websocket client and server for Node.js",
       "licenses": [
         {
           "license": {
@@ -6677,16 +6452,6 @@
         }
       ],
       "purl": "pkg:npm/ws@8.23.0",
-      "externalReferences": [
-        {
-          "url": "git+https://github.com/websockets/ws.git",
-          "type": "vcs"
-        },
-        {
-          "url": "https://github.com/websockets/ws",
-          "type": "website"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -6832,8 +6597,6 @@
       "version": "5.0.8",
       "bom-ref": "y18n@5.0.8",
       "scope": "optional",
-      "author": "Ben Coe <bencoe@gmail.com>",
-      "description": "the bare-bones internationalization library used by yargs",
       "licenses": [
         {
           "license": {
@@ -6843,16 +6606,6 @@
         }
       ],
       "purl": "pkg:npm/y18n@5.0.8",
-      "externalReferences": [
-        {
-          "url": "yargs/y18n",
-          "type": "vcs"
-        },
-        {
-          "url": "https://github.com/yargs/y18n",
-          "type": "website"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -6896,7 +6649,6 @@
       "version": "18.2.0",
       "bom-ref": "yargs@18.2.0",
       "scope": "optional",
-      "description": "yargs the modern, pirate-themed, successor to optimist.",
       "licenses": [
         {
           "license": {
@@ -6906,16 +6658,6 @@
         }
       ],
       "purl": "pkg:npm/yargs@18.2.0",
-      "externalReferences": [
-        {
-          "url": "https://github.com/yargs/yargs.git",
-          "type": "vcs"
-        },
-        {
-          "url": "https://yargs.js.org/",
-          "type": "website"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -6929,8 +6671,6 @@
       "version": "22.0.0",
       "bom-ref": "yargs-parser@22.0.0",
       "scope": "optional",
-      "author": "Ben Coe <ben@npmjs.com>",
-      "description": "the mighty option parser used by yargs",
       "licenses": [
         {
           "license": {
@@ -6940,12 +6680,6 @@
         }
       ],
       "purl": "pkg:npm/yargs-parser@22.0.0",
-      "externalReferences": [
-        {
-          "url": "https://github.com/yargs/yargs-parser.git",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -6959,8 +6693,6 @@
       "version": "8.3.0",
       "bom-ref": "string-width@8.3.0",
       "scope": "optional",
-      "author": "Sindre Sorhus",
-      "description": "Get the visual width of a string - the number of columns required to display it",
       "licenses": [
         {
           "license": {
@@ -6970,12 +6702,6 @@
         }
       ],
       "purl": "pkg:npm/string-width@8.3.0",
-      "externalReferences": [
-        {
-          "url": "sindresorhus/string-width",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -6989,8 +6715,6 @@
       "version": "7.2.0",
       "bom-ref": "node_modules/yargs/node_modules/string-width/node_modules/strip-ansi@7.2.0",
       "scope": "optional",
-      "author": "Sindre Sorhus",
-      "description": "Strip ANSI escape codes from a string",
       "licenses": [
         {
           "license": {
@@ -7000,12 +6724,6 @@
         }
       ],
       "purl": "pkg:npm/strip-ansi@7.2.0",
-      "externalReferences": [
-        {
-          "url": "chalk/strip-ansi",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -7019,8 +6737,6 @@
       "version": "6.6.0",
       "bom-ref": "node_modules/yargs/node_modules/string-width/node_modules/strip-ansi/node_modules/ansi-regex@6.6.0",
       "scope": "optional",
-      "author": "Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)",
-      "description": "Regular expression for matching ANSI escape codes",
       "licenses": [
         {
           "license": {
@@ -7030,12 +6746,6 @@
         }
       ],
       "purl": "pkg:npm/ansi-regex@6.6.0",
-      "externalReferences": [
-        {
-          "url": "chalk/ansi-regex",
-          "type": "vcs"
-        }
-      ],
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -7114,7 +6824,7 @@
   ],
   "dependencies": [
     {
-      "ref": "physiorecord@1.0.0",
+      "ref": "physiorecord@1.1.0",
       "dependsOn": [
         "@axe-core/playwright@4.14.0",
         "@capacitor/android@8.6.2",

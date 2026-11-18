@@ -8,7 +8,9 @@ PhysioRecord is a **local-first, browser-only SPA** designed for offline clinica
 +-------------------------------------------------------------------+
 | React 19 UI Layer (Arabic & Kurdish Sorani RTL / English LTR)     |
 | - Tailwind CSS v4 Semantic Palette Tokens (clinical-default, etc.) |
-| - Accessible Primitives (React Aria Components + Custom Inputs)   |
+| - Accessible Primitives (`src/components/ui/`: React Aria + Inputs)|
+| - Settings (`src/components/settings/`), Chart & Session Modules    |
+|   (`src/components/workspace/chart/`, `.../workspace/session/`)    |
 | - Clinical Widgets (Body Chart, ROM/MMT, Special Tests, Outcomes) |
 +---------------------------------+---------------------------------+
                                   |
@@ -23,9 +25,11 @@ PhysioRecord is a **local-first, browser-only SPA** designed for offline clinica
                                   v
 +-------------------------------------------------------------------+
 | Domain & Persistence Services (`src/services/`)                   |
-| - episodeService / sessionService / soapService (finalize + addenda) |
-| - clinicOperationsService (scheduling, finances, staff, HEP)      |
-| - localStorageMigrationService (verified migration into Dexie)    |
+| - episodeService / sessionService / soapService (finalize+addenda)|
+| - clinicOperationsService facade (`src/services/operations/`:     |
+|   vaultHydration, staffRbac, clinicalRecords, settings,           |
+|   scheduling, finance)                                            |
+| - draftRecoveryService / localStorageMigrationService             |
 +---------------------------------+---------------------------------+
                                   |
                                   v
@@ -50,6 +54,6 @@ Current Dexie database version is **v10** (historical `v1`–`v9` remain immutab
 
 ## 3. UI, PWA & Security Headers
 
-- Replaced Preline UI dependencies completely with project-owned primitives (`src/components/ui/{Dialog,Tabs,Popover,ComboBox,Primitives}.tsx`) built on `react-aria-components` (`Apache-2.0`) and Tailwind CSS v4 semantic theme variables (`src/styles/themes/`).
+- Replaced Preline UI dependencies completely with project-owned primitives (`src/components/ui/{Dialog,Tabs,Primitives,BodyMapSlot,LanguageSwitcher,SpectrumColorPicker}.tsx`) built on `react-aria-components` (`Apache-2.0`) and Tailwind CSS v4 semantic theme variables (`src/styles/themes/`).
 - Self-hosted `@fontsource/inter`, `@fontsource/ibm-plex-sans-arabic`, and `@fontsource/jetbrains-mono` ensure zero external stylesheet/font downloads.
 - Zero-dependency in-repo PWA plugin (`scripts/vite-pwa-plugin.mjs`, `GPL-3.0-or-later`) generates same-origin `/sw.js` and `/manifest.webmanifest` plus production strict CSP `<meta>` and `public/_headers`.

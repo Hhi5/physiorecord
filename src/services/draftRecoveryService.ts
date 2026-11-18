@@ -25,6 +25,7 @@ import type {
   DraftRecordType,
   EncryptedDraftEntity,
 } from '../types/clinical';
+import { recordSafeNonFatalWarning } from '../utils/safeDevDiagnostics';
 
 export const DRAFT_DEBOUNCE_MS = 650;
 
@@ -79,8 +80,8 @@ export class DraftRecoveryService {
     for (const fn of this.listeners) {
       try {
         fn();
-      } catch {
-        // Ignore subscriber errors
+      } catch (err: unknown) {
+        recordSafeNonFatalWarning('drafts', 'notify_subscriber', err);
       }
     }
   }
@@ -187,7 +188,11 @@ export class DraftRecoveryService {
       this.pendingInputs.delete(id);
       void this.trackSave(
         this.saveDraftAsync(pending.dek, pending.input, pending.database)
-      ).catch(() => undefined);
+      ).catch((err: unknown) => {
+        recordSafeNonFatalWarning('drafts', 'debounced_save_draft', err, {
+          draftType: pending.input.draftType,
+        });
+      });
     }, Math.min(Math.max(100, delayMs), 1000));
 
     this.pendingTimers.set(id, timer);
@@ -284,7 +289,8 @@ export class DraftRecoveryService {
         createdAt: raw.createdAt,
         updatedAt: decrypted.updatedAt || raw.updatedAt,
       };
-    } catch {
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('drafts', 'decrypt_single_draft', err, { draftType });
       return null;
     }
   }
@@ -324,8 +330,10 @@ export class DraftRecoveryService {
           createdAt: raw.createdAt,
           updatedAt: decrypted.updatedAt || raw.updatedAt,
         });
-      } catch {
-        // Ignore stale or undecryptable rows from prior key generations
+      } catch (err: unknown) {
+        recordSafeNonFatalWarning('drafts', 'decrypt_listed_draft', err, {
+          draftType: raw.draftType,
+        });
       }
     }
     return results.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
@@ -372,8 +380,8 @@ export class DraftRecoveryService {
             const id = buildDraftId(snapshot.draftType, snapshot.entityId);
             toSave.set(id, { dek: fallbackDek, database, input: snapshot });
           }
-        } catch {
-          // Ignore UI collector error during unload
+        } catch (err: unknown) {
+          recordSafeNonFatalWarning('drafts', 'collect_flush_source', err);
         }
       }
     }
@@ -387,7 +395,11 @@ export class DraftRecoveryService {
             .then((res) => {
               if (res) savedCount++;
             })
-            .catch(() => undefined)
+            .catch((err: unknown) => {
+              recordSafeNonFatalWarning('drafts', 'flush_save_draft', err, {
+                draftType: item.input.draftType,
+              });
+            })
         )
       );
     }

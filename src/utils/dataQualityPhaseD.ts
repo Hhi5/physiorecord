@@ -20,6 +20,7 @@ import {
 } from '../crypto/vault';
 import { recoveryDb } from '../crypto/recovery';
 import { ClinicOperationsService } from '../services/clinicOperationsService';
+import { recordSafeNonFatalWarning } from './safeDevDiagnostics';
 import {
   CannotDeleteFinalizedRecordError,
   type EpisodeClinicalData,
@@ -603,8 +604,8 @@ export async function mergePatientsTransactional(params: {
       if (dec.patientId === sourcePatientId) {
         matchedSourceExpenses.push({ entity: expEntity, decrypted: dec });
       }
-    } catch {
-      // Ignore unreadable rows
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('data-quality', 'merge_decrypt_expense_row', err);
     }
   }
 
@@ -1429,8 +1430,8 @@ export async function rollbackImportedBatchTransactional(
           targetIds.push(entity.id);
         }
       }
-    } catch {
-      // Ignore un-decryptable rows
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('data-quality', 'rollback_decrypt_patient_row', err);
     }
   }
 

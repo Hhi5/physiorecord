@@ -65,19 +65,21 @@ npm run electron:dist
 > **تحذير حرج**: يرفض نظام أندرويد تثبيت أي تحديث APK فوق النسخة السابقة (`INSTALL_PARSE_FAILED_INCONSISTENT_CERTIFICATES`) إذا لم يكن موقّعاً بنفس مفتاح الـ Keystore الأصلي. فقدان هذا المفتاح يعني اضطرار المستخدمين لتصدير `.ptbackup` ثم حذف التطبيق القديم وتثبيت الجديد.
 
 ### خطوات التوليد (تُنفّذ مرة واحدة فقط خارج المستودع):
+يُفضّل استخدام السكربت المدمج `npm run android:keystore:init` (راجع [`docs/UPDATES_AND_SIGNING.md`](UPDATES_AND_SIGNING.md)) أو تنفيذ `keytool` يدوياً:
 ```bash
 keytool -genkeypair -v \
-  -keystore physiorecord-release.jks \
+  -keystore .keystore/physiorecord-release.jks \
   -keyalg RSA -keysize 4096 -validity 10000 \
-  -alias physiorecord
+  -alias physiorecord_release
 ```
 1. احتفظ بنسختين offline من ملف `physiorecord-release.jks` وكلمة المرور (على قرص USB خارجي مشفر وفي مدير كلمات مرور).
 2. لا تضع ملف `.jks` داخل مستودع Git أبداً (محمي في `.gitignore`).
-3. لتمكين التوقيع التلقائي في GitHub Actions، أضف الأسرار الأربعة التالية في **Settings -> Secrets and variables -> Actions**:
-   - `ANDROID_KEYSTORE_BASE64`: ناتج تحويل الملف إلى Base64 (`base64 -w 0 physiorecord-release.jks`).
+3. لتمكين التوقيع التلقائي في GitHub Actions، أضف الأسرار التالية في **Settings -> Secrets and variables -> Actions**:
+   - `ANDROID_KEYSTORE_BASE64`: ناتج تحويل الملف إلى Base64.
    - `ANDROID_KEYSTORE_PASSWORD`: كلمة مرور مخزن المفاتيح.
-   - `ANDROID_KEY_ALIAS`: `physiorecord`.
+   - `ANDROID_KEY_ALIAS`: `physiorecord_release`.
    - `ANDROID_KEY_PASSWORD`: كلمة مرور المفتاح.
+   - `ANDROID_CERT_SHA256` *(مُوصى به)*: بصمة الشهادة للتحقق التلقائي قبل النشر.
 
 ---
 

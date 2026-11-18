@@ -42,6 +42,7 @@ import {
   type DexieSchemaDowngradeInfo,
 } from '../platform/nativeBridge';
 import type { DecryptedDraftRecord } from '../types/clinical';
+import { recordSafeNonFatalWarning } from '../utils/safeDevDiagnostics';
 
 export interface VaultRepairSummary {
   repairedCount: number;
@@ -517,8 +518,8 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           try {
             await disablePasskeyPrfUnlock(db);
             setIsPrfEnrolled(false);
-          } catch {
-            // Non-fatal if PRF wasn't enrolled
+          } catch (prfErr: unknown) {
+            recordSafeNonFatalWarning('vault', 'disable_prf_after_rotation', prfErr);
           }
         }
       } catch (rotErr) {
@@ -539,8 +540,8 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         const persistent = await requestPersistentStorage();
         setPersistenceGranted(persistent);
-      } catch {
-        // ignore
+      } catch (persistErr: unknown) {
+        recordSafeNonFatalWarning('vault', 'request_persistent_storage', persistErr);
       }
 
       setDek(effectiveDek);
@@ -608,7 +609,8 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         meta.kdfIterations || CONSTANTS.DEFAULT_PBKDF2_ITERATIONS
       );
       return await checkVerifier(candidateKek, meta.verifierIv, meta.verifierCiphertext);
-    } catch {
+    } catch (verifyErr: unknown) {
+      recordSafeNonFatalWarning('vault', 'verify_vault_password', verifyErr);
       return false;
     }
   }, []);
@@ -645,8 +647,8 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const summary = await rotateAllKeys(db, dekRef.current, vaultKek);
     try {
       await disablePasskeyPrfUnlock(db);
-    } catch {
-      // Ignore if PRF was not active
+    } catch (prfErr: unknown) {
+      recordSafeNonFatalWarning('vault', 'disable_prf_after_manual_rotation', prfErr);
     }
     setIsPrfEnrolled(false);
     await ClinicOperationsService.hydrateEncryptedCache(summary.newOperationalDek, db, {

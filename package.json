@@ -2,6 +2,15 @@
   "name": "physiorecord",
   "private": true,
   "version": "1.1.0",
+  "description": "Offline-first, WebCrypto AES-256-GCM encrypted physical therapy EHR for clinics in Iraq (Arabic/Kurdish RTL & English LTR).",
+  "homepage": "https://github.com/Hhi5/physiorecord",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hhi5/physiorecord.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Hhi5/physiorecord/issues"
+  },
   "license": "GPL-3.0-or-later",
   "type": "module",
   "main": "electron/main.mjs",
@@ -31,19 +40,14 @@
     "@fontsource/ibm-plex-sans-arabic": "^5.3.0",
     "@fontsource/inter": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
     "dexie": "^4.4.7",
-    "dexie-react-hooks": "^4.4.0",
     "konva": "^10.9.1",
     "lucide-react": "^0.546.0",
     "minisearch": "^7.2.0",
-    "motion": "^12.23.24",
     "react": "^19.0.1",
     "react-aria-components": "^1.22.1",
     "react-dom": "^19.0.1",
     "react-konva": "^19.3.2",
-    "tailwind-merge": "^3.7.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -57,7 +61,6 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
-    "puppeteer-core": "^25.16.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vite": "^8.3.0",

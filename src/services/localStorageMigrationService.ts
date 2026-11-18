@@ -66,6 +66,7 @@ import {
   ADMIN_PIN_PBKDF2_ITERATIONS,
   hashAdminPinPBKDF2,
 } from './clinicSecurityHelpers';
+import { recordSafeNonFatalWarning } from '../utils/safeDevDiagnostics';
 
 export const LOCALSTORAGE_MIGRATION_STATE_ID = 'localStorage_v5_migration';
 export const LOCALSTORAGE_MIGRATION_LOCK_NAME = 'physiorecord_v5_localstorage_migration';
@@ -499,8 +500,8 @@ export class LocalStorageMigrationService {
             pEntity.recordSalt
           );
           if (pData.fullName) knownPatientNames.push(pData.fullName);
-        } catch {
-          // ignore
+        } catch (err: unknown) {
+          recordSafeNonFatalWarning('migration', 'decrypt_patient_for_scrub', err);
         }
       }
 
@@ -910,8 +911,8 @@ export class LocalStorageMigrationService {
                   existingEntity.recordSalt
                 );
                 currentReg = { ...currentReg, ...dec };
-              } catch {
-                // ignore overwrite if corrupt
+              } catch (err: unknown) {
+                recordSafeNonFatalWarning('migration', 'decrypt_existing_mrn_registry', err);
               }
             }
             const issuedSet = new Set<string>(currentReg.issuedMrns || []);
@@ -1012,8 +1013,8 @@ export class LocalStorageMigrationService {
                   existingEntity.recordSalt
                 );
                 currentFlags = { ...currentFlags, ...dec };
-              } catch {
-                // ignore
+              } catch (err: unknown) {
+                recordSafeNonFatalWarning('migration', 'decrypt_existing_module_flags', err);
               }
             }
             const boolVal = rawValue.trim() === 'true' || rawValue.trim() === '1';
@@ -1079,8 +1080,8 @@ export class LocalStorageMigrationService {
                   existingEntity.recordSalt
                 );
                 currentMeta = { ...currentMeta, ...dec };
-              } catch {
-                // ignore
+              } catch (err: unknown) {
+                recordSafeNonFatalWarning('migration', 'decrypt_existing_backup_meta', err);
               }
             }
             const nextMeta: BackupStateMetadata = {

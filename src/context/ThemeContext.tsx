@@ -17,6 +17,7 @@ import {
   saveUploadedCustomFont,
   type CustomFontMeta,
 } from '../utils/customFonts';
+import { recordSafeNonFatalWarning } from '../utils/safeDevDiagnostics';
 
 export type ThemeMode = 'light' | 'dark';
 export type ThemePaletteId =
@@ -204,8 +205,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         return 'dark';
       }
-    } catch {
-      // ignore storage errors
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('theme', 'read_theme_mode', err);
     }
     return 'light';
   });
@@ -223,8 +224,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         localStorage.removeItem(LEGACY_THEME_STORAGE_KEY);
         return rawSaved as ThemePaletteId;
       }
-    } catch {
-      // ignore storage errors
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('theme', 'read_theme_palette', err);
     }
     return 'theme-clinical-default';
   });
@@ -233,7 +234,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const saved = localStorage.getItem(CUSTOM_PRIMARY_COLOR_STORAGE_KEY) || '';
       return parseHexRgb(saved) ? saved.toUpperCase() : '';
-    } catch {
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('theme', 'read_custom_primary_color', err);
       return '';
     }
   });
@@ -247,8 +249,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     try {
       localStorage.setItem(STORAGE_KEY, theme);
-    } catch {
-      // ignore storage errors
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('theme', 'persist_theme_mode', err);
     }
   }, [theme]);
 
@@ -258,8 +260,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       localStorage.setItem(THEME_PALETTE_STORAGE_KEY, themePalette);
       localStorage.removeItem(LEGACY_THEME_STORAGE_KEY);
-    } catch {
-      // ignore storage errors
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('theme', 'persist_theme_palette', err);
     }
   }, [themePalette]);
 
@@ -271,8 +273,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       } else {
         localStorage.removeItem(CUSTOM_PRIMARY_COLOR_STORAGE_KEY);
       }
-    } catch {
-      // ignore storage errors
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('theme', 'persist_custom_primary_color', err);
     }
   }, [customPrimaryColor, theme]);
 
@@ -298,8 +300,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const saved = localStorage.getItem(FONT_SCALE_STORAGE_KEY);
       if (saved === '115' || saved === '130') return Number(saved) as FontScaleOption;
-    } catch {
-      // Ignore
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('theme', 'read_font_scale', err);
     }
     return 100;
   });
@@ -310,8 +312,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (saved === 'true') return true;
       if (saved === 'false') return false;
       if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return true;
-    } catch {
-      // Ignore
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('theme', 'read_reduce_motion', err);
     }
     return false;
   });
@@ -326,7 +328,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return normalizeDisplayPreferences(JSON.parse(rawPrefs) as Partial<DisplayPreferences>, legacyScale);
       }
       return normalizeDisplayPreferences(undefined, legacyScale);
-    } catch {
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('theme', 'read_display_prefs', err);
       return DEFAULT_DISPLAY_PREFERENCES;
     }
   });
@@ -376,8 +379,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           ? 115
           : 100;
       localStorage.setItem(FONT_SCALE_STORAGE_KEY, String(legacyScale));
-    } catch {
-      // Ignore
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('theme', 'persist_display_prefs', err);
     }
   }, [displayPrefs, customFonts]);
 
@@ -394,8 +397,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     try {
       localStorage.setItem(REDUCE_MOTION_STORAGE_KEY, reduceMotion ? 'true' : 'false');
-    } catch {
-      // Ignore
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('theme', 'persist_reduce_motion', err);
     }
   }, [effectiveReduceMotion, reduceMotion]);
 

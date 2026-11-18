@@ -12,6 +12,7 @@ import {
   getElectronDesktopBridge,
   saveTextFilePortable,
 } from '../platform/nativeBridge';
+import { recordSafeNonFatalWarning } from '../utils/safeDevDiagnostics';
 
 const AUTO_BACKUP_DIR_HANDLE_ID = 'auto_backup_dir';
 
@@ -101,7 +102,8 @@ export async function getConfiguredBackupFolder(): Promise<{
         return { configured: true, folderName: res.folderName || res.folderPath || 'Backup Folder' };
       }
       return { configured: false };
-    } catch {
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('backup', 'electron_get_backup_directory', err);
       return { configured: false };
     }
   }
@@ -110,7 +112,8 @@ export async function getConfiguredBackupFolder(): Promise<{
     const rec = await db.fsHandles.get(AUTO_BACKUP_DIR_HANDLE_ID);
     if (!rec || !rec.handle) return { configured: false };
     return { configured: true, folderName: rec.folderName || 'Backup Folder' };
-  } catch {
+  } catch (err: unknown) {
+    recordSafeNonFatalWarning('backup', 'idb_get_backup_directory', err);
     return { configured: false };
   }
 }
@@ -137,8 +140,8 @@ export async function writeBackupToConfiguredFolder(
       if (res.written) {
         return { written: true, folderName: res.folderName || 'Backup Folder' };
       }
-    } catch {
-      // Fall through
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('backup', 'electron_write_backup_directory', err);
     }
   }
 
@@ -195,8 +198,8 @@ export async function saveBackupPackageToDevice(
           folderName: folderResult.folderName,
         };
       }
-    } catch {
-      // Fall through
+    } catch (err: unknown) {
+      recordSafeNonFatalWarning('backup', 'write_configured_backup_folder_pref', err);
     }
   }
 
@@ -247,7 +250,7 @@ export async function saveBackupPackageToDevice(
       if (err instanceof Error && err.name === 'AbortError') {
         throw err;
       }
-      // Fall through to folder/download fallback
+      recordSafeNonFatalWarning('backup', 'web_save_file_picker_fallback', err);
     }
   }
 
@@ -262,8 +265,8 @@ export async function saveBackupPackageToDevice(
         folderName: folderResult.folderName,
       };
     }
-  } catch {
-    // Fall through to download fallback
+  } catch (err: unknown) {
+    recordSafeNonFatalWarning('backup', 'write_configured_backup_folder_fallback', err);
   }
 
   // 5. Browser download fallback

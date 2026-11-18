@@ -11,7 +11,7 @@ Thank you for helping improve **PhysioRecord**, a local-first clinical physical 
 2. **Offline / Zero-Network Requirement (`npm run test:e2e`)**:
    - Zero CDN URLs, external font links, analytics, or runtime HTTP calls to third-party origins.
 3. **Database & Security Invariants**:
-   - Never modify existing Dexie schema versions (`v1`–`v6`); always append a new monotonic version.
+   - Never modify existing Dexie schema versions (`v1`–`v10`); always append a new monotonic version (`v11`, ...).
    - Never break encrypted rest guarantees or bypass immutability on finalized clinical SOAP notes (amend via clinical addenda only).
 4. **Localization & Accessibility**:
    - Arabic RTL first with matching English parity; minimum text size `12px`; all UI strings must support both languages.

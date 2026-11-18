@@ -37,6 +37,8 @@ playwright-report/
 playwright/.cache/
 blob-report/
 ui-audit/
+ux-evidence/
+public/assets/aistudio/
 .aistudio/
 .agents/
 .tmp/
