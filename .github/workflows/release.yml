@@ -92,7 +92,7 @@ jobs:
           cd dist && zip -r "../PhysioRecord-Web-PWA-${VERSION_TAG}.zip" .
 
       - name: Upload Web PWA & SBOM artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: web-pwa-bundle
           path: |
@@ -211,7 +211,7 @@ jobs:
           fi
 
       - name: Upload Android APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-universal-apk
           path: |
@@ -259,7 +259,7 @@ jobs:
           npx electron-builder --win nsis portable --publish never
 
       - name: Upload Windows EXE artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-exe-release
           path: |
