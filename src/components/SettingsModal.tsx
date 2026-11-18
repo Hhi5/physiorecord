@@ -2400,7 +2400,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         value={editingNameAr}
                         onChange={(e) => setEditingNameAr(e.target.value)}
                         className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground focus:outline-none focus:border-primary"
-                        placeholder={bi('مثال: د. حسين الرمضاني', 'e.g. Dr. Hussein Al-Ramadhani', 'نموونە: د. حسێن ڕەمەزانی')}
+                        placeholder={bi('مثال: د. زيد العاني', 'e.g. Dr. Zaid Al-Ani', 'نموونە: د. زەید عانی')}
                       />
                     </div>
 
@@ -2415,7 +2415,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         value={editingNameEn}
                         onChange={(e) => setEditingNameEn(e.target.value)}
                         className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground text-start focus:outline-none focus:border-primary"
-                        placeholder="e.g. Dr. Hussein Al-Ramadhani"
+                        placeholder="e.g. Dr. Zaid Al-Ani"
                       />
                     </div>
 

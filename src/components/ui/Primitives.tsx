@@ -302,8 +302,13 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   const displayMasked = maskIraqiPhoneInput(value);
 
   return (
-    <div dir="ltr" className="relative flex items-center w-full">
-      <span className="px-2.5 py-2 text-xs rounded-s-xl bg-muted border border-e-0 border-layer-line text-muted-foreground-1 font-semibold tabular-nums select-none">
+    <div
+      dir="ltr"
+      className={`flex items-stretch w-full rounded-xl border border-layer-line bg-layer overflow-hidden focus-within:border-primary ${
+        disabled ? 'opacity-60' : ''
+      }`}
+    >
+      <span className="inline-flex items-center justify-center px-3 text-xs bg-muted border-r border-layer-line text-muted-foreground-1 font-semibold tabular-nums select-none shrink-0">
         +964
       </span>
       <input
@@ -325,7 +330,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
         }}
         placeholder={placeholder}
         aria-label={ariaLabel || bi('رقم الهاتف', 'Phone number', 'ژمارەی تەلەفۆن')}
-        className={`w-full px-3 py-2 text-xs rounded-e-xl bg-layer border border-layer-line text-foreground tabular-nums ${isRtl ? 'text-right' : 'text-left'} focus:outline-none focus:border-primary ${className}`.trim()}
+        className={`flex-1 min-w-0 px-3 py-2 text-xs bg-transparent text-foreground tabular-nums ${isRtl ? 'text-right' : 'text-left'} focus:outline-none ${className}`.trim()}
       />
     </div>
   );

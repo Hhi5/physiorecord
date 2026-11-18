@@ -18,6 +18,7 @@ import type {
   DailyAuditDigest,
 } from '../../types/clinicManagement';
 import { localDate } from '../../utils/date';
+import { triggerPlatformPrint } from '../../platform/nativeBridge';
 import { ModalDialog } from '../ui/Dialog';
 import {
   UserCheck,
@@ -458,7 +459,9 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
                 </button>
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={() => {
+                    void triggerPlatformPrint(`PhysioRecord_Audit_Digest_${dailyDigest.dateKey}`);
+                  }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg bg-layer border border-layer-line text-xs font-semibold text-foreground hover:bg-layer-hover cursor-pointer"
                 >
                   <Printer className="size-3.5 text-primary" />

@@ -481,6 +481,9 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
     template: Omit<OrthopedicSpecialTestItem, 'outcome' | 'notes' | 'painScoreNrs'>;
   } | null>(null);
 
+  const [pinnedTestIds, setPinnedTestIds] = useState<string[]>([]);
+  const [showAllCatalog, setShowAllCatalog] = useState(false);
+
   const outcomeMap = useMemo(() => {
     const map = new Map<string, OrthopedicSpecialTestItem>();
     value.forEach((item) => map.set(item.id, item));
@@ -491,6 +494,8 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
     const builtInIds = new Set(MASTER_SPECIAL_TESTS.map((t) => t.id));
     return value.filter((item) => !builtInIds.has(item.id));
   }, [value]);
+
+  const isSearching = searchTerm.trim().length > 0;
 
   const filteredMasterTests = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
@@ -505,6 +510,33 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
       );
     });
   }, [selectedJoint, searchTerm]);
+
+  // Visible built-in tests:
+  // - If searching or showAllCatalog is true: show all filteredMasterTests
+  // - Otherwise (default compact mode): ONLY show tests that are selected/documented (outcome !== 'not_tested' or has notes) OR picked from the dropdown (pinnedTestIds)
+  const visibleMasterTests = useMemo(() => {
+    if (isSearching || showAllCatalog) {
+      return filteredMasterTests;
+    }
+    const pinnedSet = new Set(pinnedTestIds);
+    return filteredMasterTests.filter((test) => {
+      const recorded = outcomeMap.get(test.id);
+      const isDocumented =
+        (recorded && recorded.outcome !== 'not_tested') || Boolean(recorded?.notes?.trim());
+      return isDocumented || pinnedSet.has(test.id);
+    });
+  }, [filteredMasterTests, isSearching, showAllCatalog, outcomeMap, pinnedTestIds]);
+
+  // Unselected tests available in the dropdown picker for the active joint filter
+  const availableDropdownTests = useMemo(() => {
+    const pinnedSet = new Set(pinnedTestIds);
+    return filteredMasterTests.filter((test) => {
+      const recorded = outcomeMap.get(test.id);
+      const isDocumented =
+        (recorded && recorded.outcome !== 'not_tested') || Boolean(recorded?.notes?.trim());
+      return !isDocumented && !pinnedSet.has(test.id);
+    });
+  }, [filteredMasterTests, outcomeMap, pinnedTestIds]);
 
   const handleSetOutcome = (
     template: Omit<OrthopedicSpecialTestItem, 'outcome' | 'notes' | 'painScoreNrs'>,
@@ -522,6 +554,7 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
       } else {
         updated[existingIdx] = { ...updated[existingIdx], outcome: 'not_tested' };
       }
+      setPinnedTestIds((prev) => prev.filter((id) => id !== template.id));
       onChange(updated);
       return;
     }
@@ -635,15 +668,15 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
   ).length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3.5">
       {/* Header Summary + Search */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-bold text-foreground">
             {bi(
-              `الفحوصات الموثقة: ${testedCount}`,
-              `Documented Tests: ${testedCount}`,
-              `تاقیکردنەوە تۆمارکراوەکان: ${testedCount}`
+              `الفحوصات المحددة: ${testedCount}`,
+              `Selected Tests: ${testedCount}`,
+              `تاقیکردنەوە دیاریکراوەکان: ${testedCount}`
             )}
           </span>
           {positiveCount > 0 && (
@@ -665,18 +698,18 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
             onChange={(e) => setSearchTerm(e.target.value)}
             aria-label={bi('بحث في الفحوصات التخصصية', 'Search special tests', 'گەڕان لە تاقیکردنەوە تایبەتەکان')}
             placeholder={bi(
-              'ابحث باسم الفحص أو البنية...',
-              'Search test or structure...',
-              'گەڕان بە ناوی تاقیکردنەوە یان پێکهاتە...'
+              'ابحث لإظهار الفحص فوراً (مثال: Neer، Lachman)...',
+              'Search to reveal test (e.g., Neer, Lachman)...',
+              'گەڕان بۆ پیشاندانی تاقیکردنەوە...'
             )}
             className="w-full ps-8 pe-3 py-1.5 text-xs bg-layer border border-layer-line rounded-xl text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
       </div>
 
-      {/* Joint Filter Pills (Horizontally scrollable strip) */}
-      <div className="rounded-2xl border border-line-2 bg-surface/60 p-1 overflow-hidden">
-        <div className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-1 pt-0.5 px-0.5">
+      {/* Joint Filter Pills (Single unified horizontally scrollable rectangle) */}
+      <div className="rounded-2xl border border-line-2 bg-surface/70 p-1.5 overflow-hidden">
+        <div className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-1">
           {JOINT_LABELS.map((j) => {
             const isActive = selectedJoint === j.id;
             return (
@@ -687,10 +720,10 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
                   setSelectedJoint(j.id);
                   e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
                 }}
-                className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                className={`min-h-[34px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-2xs'
-                    : 'bg-card text-muted-foreground-1 border border-line-2/70 hover:bg-layer-hover hover:text-foreground'
+                    : 'bg-card/80 text-muted-foreground-1 border border-transparent hover:bg-card hover:text-foreground'
                 }`}
               >
                 {bi(j.ar, j.en)}
@@ -699,6 +732,73 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
           })}
         </div>
       </div>
+
+      {/* Compact Dropdown Selector for Unselected Built-in Special Tests */}
+      {!readOnly && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-surface/60 border border-line-2 rounded-2xl p-2.5">
+          <div className="flex-1 min-w-0">
+            <select
+              aria-label={bi(
+                'اختر فحصاً تخصصياً من القائمة المنسدلة',
+                'Select a special test from dropdown',
+                'تاقیکردنەوەیەکی تایبەت لە لیستەکە هەڵبژێرە'
+              )}
+              value=""
+              onChange={(e) => {
+                const pickedId = e.target.value;
+                if (!pickedId) return;
+                setPinnedTestIds((prev) => (prev.includes(pickedId) ? prev : [pickedId, ...prev]));
+              }}
+              className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-semibold text-foreground focus:outline-none focus:border-primary cursor-pointer"
+            >
+              <option value="">
+                {bi(
+                  `+ اختر فحصاً تخصصياً من القائمة المنسدلة (${availableDropdownTests.length} متاح)...`,
+                  `+ Pick a special test from dropdown (${availableDropdownTests.length} available)...`,
+                  `+ تاقیکردنەوەیەکی تایبەت لە لیستەکە هەڵبژێرە (${availableDropdownTests.length})...`
+                )}
+              </option>
+              {selectedJoint === 'all'
+                ? JOINT_LABELS.filter((j) => j.id !== 'all').map((jointGroup) => {
+                    const groupTests = availableDropdownTests.filter(
+                      (t) => t.joint === jointGroup.id
+                    );
+                    if (groupTests.length === 0) return null;
+                    return (
+                      <optgroup key={jointGroup.id} label={bi(jointGroup.ar, jointGroup.en)}>
+                        {groupTests.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {bi(t.nameAr, t.nameEn)} — {bi(t.targetPathologyAr, t.targetPathologyEn)}
+                          </option>
+                        ))}
+                      </optgroup>
+                    );
+                  })
+                : availableDropdownTests.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {bi(t.nameAr, t.nameEn)} — {bi(t.targetPathologyAr, t.targetPathologyEn)}
+                    </option>
+                  ))}
+            </select>
+          </div>
+
+          {availableDropdownTests.length > 0 && !isSearching && (
+            <button
+              type="button"
+              onClick={() => setShowAllCatalog((prev) => !prev)}
+              className="px-3 py-2 rounded-xl border border-line-2 bg-card hover:bg-layer-hover text-xs font-semibold text-muted-foreground-1 hover:text-foreground transition-colors cursor-pointer shrink-0"
+            >
+              {showAllCatalog
+                ? bi('إخفاء غير المحددة', 'Hide Unselected', 'شاردنەوەی دیارینەکراوەکان')
+                : bi(
+                    `عرض كل القائمة (${filteredMasterTests.length})`,
+                    `Show All (${filteredMasterTests.length})`,
+                    `پیشاندانی هەموو (${filteredMasterTests.length})`
+                  )}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Quick Custom Special Test Input + Interactive Form */}
       {!readOnly && (
@@ -872,38 +972,64 @@ export const SpecialTestsWidget: React.FC<SpecialTestsWidgetProps> = ({
         </div>
       )}
 
-      {/* Built-In Orthopedic Tests Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-        {filteredMasterTests.map((test) => {
-          const recorded = outcomeMap.get(test.id);
-          const currentOutcome = recorded?.outcome || 'not_tested';
-          const notes = recorded?.notes;
-          return (
-            <SpecialTestRowCard
-              key={test.id}
-              test={test}
-              currentOutcome={currentOutcome}
-              notes={notes}
-              readOnly={readOnly}
-              onSelectOutcome={(outcome) => handleSetOutcome(test, outcome)}
-              onOpenNotes={() =>
-                setActiveNoteTest({
-                  id: test.id,
-                  nameAr: test.nameAr,
-                  nameEn: test.nameEn,
-                  notes: notes || '',
-                  template: test,
-                })
-              }
-            />
-          );
-        })}
-      </div>
+      {/* Built-In Orthopedic Tests Grid (Selected, Pinned, or Searched) */}
+      {visibleMasterTests.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          {visibleMasterTests.map((test) => {
+            const recorded = outcomeMap.get(test.id);
+            const currentOutcome = recorded?.outcome || 'not_tested';
+            const notes = recorded?.notes;
+            const isPinnedUntested =
+              currentOutcome === 'not_tested' && !notes && pinnedTestIds.includes(test.id);
+            return (
+              <SpecialTestRowCard
+                key={test.id}
+                test={test}
+                currentOutcome={currentOutcome}
+                notes={notes}
+                readOnly={readOnly}
+                onSelectOutcome={(outcome) => handleSetOutcome(test, outcome)}
+                onOpenNotes={() =>
+                  setActiveNoteTest({
+                    id: test.id,
+                    nameAr: test.nameAr,
+                    nameEn: test.nameEn,
+                    notes: notes || '',
+                    template: test,
+                  })
+                }
+                onRemoveCustom={
+                  isPinnedUntested
+                    ? () => setPinnedTestIds((prev) => prev.filter((id) => id !== test.id))
+                    : undefined
+                }
+              />
+            );
+          })}
+        </div>
+      )}
 
-      {filteredMasterTests.length === 0 && (
-        <p className="text-xs text-muted-foreground-2 py-4 text-center">
-          {bi('لا توجد فحوصات مطابقة للبحث.', 'No matching special tests found.', 'هیچ تاقیکردنەوەیەکی گونجاو نەدۆزرایەوە.')}
-        </p>
+      {visibleMasterTests.length === 0 && customSavedTests.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-line-2 bg-surface/40 px-4 py-4 text-center space-y-1">
+          <p className="text-xs font-semibold text-foreground">
+            {isSearching
+              ? bi('لا توجد فحوصات مطابقة للبحث.', 'No matching special tests found.', 'هیچ تاقیکردنەوەیەکی گونجاو نەدۆزرایەوە.')
+              : bi(
+                  'تم إخفاء الفحوصات غير المحددة لتوفير المساحة.',
+                  'Unselected special tests are hidden to save space.',
+                  'تاقیکردنەوە دیارینەکراوەکان شاردراونەتەوە بۆ پاشەکەوتکردنی شوێن.'
+                )}
+          </p>
+          {!isSearching && (
+            <p className="text-xs text-muted-foreground-1">
+              {bi(
+                'اختر فحصاً من القائمة المنسدلة أعلاه أو ابحث باسم الفحص لإظهاره وتحديد نتيجته (+ / -).',
+                'Select a test from the dropdown above or search by name to reveal and mark it (+ / -).',
+                'تاقیکردنەوەیەک لە لیستەکەی سەرەوە هەڵبژێرە یان بە ناو بگەڕێ بۆ پیشاندان و دیاریکردنی ئەنجامەکەی (+ / -).'
+              )}
+            </p>
+          )}
+        </div>
       )}
 
       {/* Test Notes Modal */}

@@ -4,7 +4,7 @@
 // letters, and 4 actionable retention buckets with WhatsApp reminder links.
 // =======================================================================
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dialog as AriaDialog,
   Modal,
@@ -25,6 +25,16 @@ import {
 } from '../../utils/date';
 import { getCurrencyConfig } from '../../utils/currencies';
 import { isValidEncryptedImageDataUrl } from '../../utils/imageUtils';
+import {
+  buildShareableDocumentHtmlFile,
+  shareDocumentViaWebShareOrFallback,
+} from '../../utils/sharingInteropPhaseE';
+import {
+  exportPlatformPdfDirect,
+  getElectronDesktopBridge,
+  saveTextFilePortable,
+  triggerPlatformPrint,
+} from '../../platform/nativeBridge';
 import {
   REFERRAL_SOURCE_LABELS,
   buildDoctorReportBackLetter,
@@ -80,6 +90,7 @@ import {
   CheckCircle2,
   Clock,
   Copy,
+  Download,
   Edit3,
   FileText,
   Languages,
@@ -128,6 +139,8 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
   const { language, isRtl, bi } = useLanguage();
   const [letterLang, setLetterLang] = useState<'ar' | 'en'>(language === 'en' ? 'en' : 'ar');
   const [copied, setCopied] = useState(false);
+  const [shareStatusText, setShareStatusText] = useState<string | null>(null);
+  const sheetRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setLetterLang(language === 'en' ? 'en' : 'ar');
@@ -202,6 +215,94 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
     ? clinicProfile.stampSignatureDataUrl
     : undefined;
 
+  const resolvedClinicName =
+    (isLetterAr ? clinicProfile.clinicNameAr : clinicProfile.clinicNameEn) ||
+    clinicProfile.clinicNameAr ||
+    clinicProfile.clinicNameEn ||
+    (isLetterAr
+      ? 'عيادة العلاج الطبيعي والتأهيل الطبي'
+      : 'Physical Therapy & Medical Rehabilitation Clinic');
+
+  const resolvedTherapistName =
+    (isLetterAr ? clinicProfile.therapistNameAr : clinicProfile.therapistNameEn) ||
+    clinicProfile.therapistNameAr ||
+    clinicProfile.therapistNameEn ||
+    (isLetterAr ? 'المعالج الفيزيائي المشرف' : 'Supervising Physiotherapist');
+
+  const resolvedDoctorLabel =
+    (doctor ? (isLetterAr ? doctor.nameAr || doctor.nameEn : doctor.nameEn || doctor.nameAr) : '') ||
+    doctorNameFallback ||
+    patient.data.referringPhysician ||
+    (isLetterAr ? 'السيد/ة الطبيب المختص المحترم' : 'Dear Referring Physician');
+
+  const resolvedPatientLabel = isLetterAr
+    ? patient.data.fullNameAr || patient.data.fullName
+    : patient.data.fullName || patient.data.fullNameAr;
+
+  const fileNameBase = `physiorecord-referral-report-${patient.data.mrn || patient.id}-${localDate()}`;
+  const canDirectExportPdf = Boolean(getElectronDesktopBridge()?.exportCurrentPageToPdf);
+
+  const handlePrint = () => {
+    void triggerPlatformPrint(fileNameBase);
+  };
+
+  const handleDirectExportPdf = async () => {
+    const ok = await exportPlatformPdfDirect(`${fileNameBase}.pdf`);
+    if (ok) {
+      setShareStatusText(bi('تم حفظ ملف PDF بنجاح', 'PDF saved successfully', 'پەڕگەی PDF پاشەکەوت کرا'));
+      setTimeout(() => setShareStatusText(null), 3000);
+    }
+  };
+
+  const handleShareFile = async () => {
+    const file = buildShareableDocumentHtmlFile({
+      title: subjectText,
+      docType: 'referral_letter',
+      sheetHtml: sheetRef.current?.innerHTML || '',
+      dir: isLetterAr ? 'rtl' : 'ltr',
+      lang: letterLang,
+      fileNameBase,
+    });
+    const result = await shareDocumentViaWebShareOrFallback({
+      title: subjectText,
+      text: `${subjectText}\n\n${bodyText}`,
+      file,
+      patientPhone: doctor?.phone || null,
+    });
+    if (result.method === 'web_share_file' || result.method === 'web_share_text') {
+      setShareStatusText(bi('تمت مشاركة التقرير بنجاح', 'Report shared successfully', 'ڕاپۆرتەکە هاوبەشکرا'));
+    } else {
+      setShareStatusText(bi('تم نسخ التقرير للمشاركة', 'Report copied for sharing', 'ڕاپۆرتەکە کۆپی کرا'));
+    }
+    setTimeout(() => setShareStatusText(null), 3000);
+  };
+
+  const handleDownloadFile = async () => {
+    const file = buildShareableDocumentHtmlFile({
+      title: subjectText,
+      docType: 'referral_letter',
+      sheetHtml: sheetRef.current?.innerHTML || '',
+      dir: isLetterAr ? 'rtl' : 'ltr',
+      lang: letterLang,
+      fileNameBase,
+    });
+    const htmlText =
+      typeof file.text === 'function' ? await file.text() : sheetRef.current?.innerHTML || '';
+    try {
+      await saveTextFilePortable({
+        filename: file.name,
+        content: htmlText,
+        mimeType: 'text/html;charset=utf-8',
+        description: 'HTML Printable Document (.html)',
+        extensions: ['html'],
+      });
+      setShareStatusText(bi('تم تنزيل ملف التقرير', 'Report file downloaded', 'پەڕگەی ڕاپۆرت داگیرا'));
+      setTimeout(() => setShareStatusText(null), 3000);
+    } catch {
+      // User cancelled native dialog
+    }
+  };
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(`${subjectText}\n\n${bodyText}`);
@@ -219,11 +320,11 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
         if (!open) onClose();
       }}
       isDismissable
-      className="fixed inset-0 z-[90] bg-slate-950/65 backdrop-blur-xs flex flex-col outline-none"
+      className="react-aria-ModalOverlay print-modal-overlay fixed inset-0 z-[90] bg-slate-950/65 backdrop-blur-xs flex flex-col outline-none print:static print:inset-auto print:!bg-white print:backdrop-blur-none print:block"
     >
       <Modal
         dir={isRtl ? 'rtl' : 'ltr'}
-        className="w-full h-full max-h-[100dvh] flex flex-col outline-none print:h-auto print:max-h-none"
+        className="w-full h-full max-h-[100dvh] flex flex-col outline-none print:h-auto print:max-h-none print:!bg-white print:block"
       >
         <AriaDialog
           aria-label={bi(
@@ -231,7 +332,7 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
             'Referring Doctor Report-Back Letter',
             'پێشبینینی ڕاپۆرتی بەدواداچوون بۆ پزیشکی نێردەر'
           )}
-          className="w-full h-full flex flex-col min-h-0 outline-none print:h-auto overflow-hidden"
+          className="w-full h-full flex flex-col min-h-0 outline-none print:h-auto print:!bg-white print:block overflow-hidden"
         >
           {/* Pinned Screen-only Top Header & Action Strip (Non-shrinking, Always Visible, Zero Clipping) */}
           <header
@@ -274,17 +375,28 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
               </div>
             </div>
 
-            {/* Unified Horizontally Scrollable Print Action Strip */}
+            {/* Unified Horizontally Scrollable Print & Share Action Strip */}
             <div className="px-4 sm:px-6 py-2.5 bg-surface/90 border-t border-card-line/80">
               <div className="max-w-[210mm] mx-auto pr-hscroll overflow-x-auto flex items-center gap-2 whitespace-nowrap">
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={handlePrint}
                   className="min-h-[36px] px-4 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors shrink-0"
                 >
                   <Printer className="size-3.5" />
                   <span>{bi('طباعة / حفظ PDF', 'Print / Save PDF', 'چاپ / پاشەکەوتکردنی PDF')}</span>
                 </button>
+
+                {canDirectExportPdf && (
+                  <button
+                    type="button"
+                    onClick={() => void handleDirectExportPdf()}
+                    className="min-h-[36px] px-3.5 py-1.5 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                  >
+                    <Download className="size-3.5" />
+                    <span>{bi('تصدير PDF مباشر', 'Direct Save PDF', 'پاشەکەوتکردنی ڕاستەوخۆی PDF')}</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -297,6 +409,15 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
                       ? bi('التحويل للإنجليزية (EN)', 'Switch to English (EN)', 'گۆڕین بۆ ئینگلیزی (EN)')
                       : bi('التحويل للعربية (AR)', 'Switch to Arabic (AR)', 'گۆڕین بۆ عەرەبی (AR)')}
                   </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void handleShareFile()}
+                  className="min-h-[36px] px-3 py-1.5 rounded-xl border border-primary/25 bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                >
+                  <Share2 className="size-3.5" />
+                  <span>{bi('مشاركة التقرير', 'Share Report', 'هاوبەشکردنی ڕاپۆرت')}</span>
                 </button>
 
                 <button
@@ -315,6 +436,25 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
                       : bi('نسخ النص', 'Copy', 'لەبەرگرتنەوە')}
                   </span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => void handleDownloadFile()}
+                  className="min-h-[36px] px-3 py-1.5 rounded-xl border border-line-2 bg-card hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                >
+                  <Download className="size-3.5 text-primary" />
+                  <span>{bi('تنزيل ملف (.html)', 'Download File', 'داگرتنی پەڕگە')}</span>
+                </button>
+
+                {shareStatusText && (
+                  <span
+                    role="status"
+                    className="text-emerald-700 dark:text-emerald-400 text-xs font-semibold inline-flex items-center gap-1.5 px-1 shrink-0"
+                  >
+                    <CheckCircle2 className="size-3.5 shrink-0" />
+                    <span>{shareStatusText}</span>
+                  </span>
+                )}
               </div>
             </div>
           </header>
@@ -325,128 +465,231 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
             onClick={onClose}
             className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain touch-pan-y p-3 sm:p-6 flex flex-col items-center focus:outline-none print:overflow-visible print:p-0 print:block"
           >
-      {/* Screen-only Subject & Body Quick Editor */}
-      <div
-        className="print-modal-chrome w-full max-w-[210mm] mb-4 bg-card border border-card-line rounded-2xl p-4 shadow-sm space-y-3 shrink-0 print:hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div>
-          <label htmlFor="doc-letter-subject" className="block text-xs font-semibold text-foreground mb-1">
-            {bi('عنوان الرسالة / الموضوع:', 'Letter Subject:', 'ناونیشانی نامە / بابەت:')}
-          </label>
-          <input
-            id="doc-letter-subject"
-            type="text"
-            dir={isLetterAr ? 'rtl' : 'ltr'}
-            value={subjectText}
-            onChange={(e) => setSubjectText(e.target.value)}
-            className="w-full px-3 py-1.5 rounded-xl border border-layer-line bg-layer text-xs font-semibold text-foreground focus:outline-none focus:border-primary"
-          />
-        </div>
-        <div>
-          <label htmlFor="doc-letter-body" className="block text-xs font-semibold text-foreground mb-1">
-            {bi('نص التقرير السريري للطبيب المحيل:', 'Report Body:', 'دەقی ڕاپۆرتی کلینیکی بۆ پزیشکی نێردەر:')}
-          </label>
-          <AutoResizeTextarea
-            id="doc-letter-body"
-            minRows={6}
-            dir={isLetterAr ? 'rtl' : 'ltr'}
-            value={bodyText}
-            onChange={(e) => setBodyText(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl border border-layer-line bg-layer text-xs text-foreground leading-relaxed focus:outline-none focus:border-primary"
-          />
-        </div>
-      </div>
-
-      {/* Printable A4 Letter Sheet (Full original width with smooth horizontal & vertical pan on mobile) */}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[210mm] overflow-x-auto overscroll-x-contain touch-auto rounded-2xl shadow-2xl shrink-0 print:overflow-visible print:max-w-none print:shadow-none"
-      >
-        <div
-          dir={isLetterAr ? 'rtl' : 'ltr'}
-          className="print-sheet-container w-[210mm] min-w-[210mm] print:w-full print:min-w-0 bg-white text-slate-900 rounded-2xl border border-slate-200 border-t-4 border-t-emerald-700 p-6 sm:p-10 space-y-6 text-xs leading-relaxed"
-        >
-        <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-emerald-700/20 pb-4 print-break-inside-avoid">
-          <div className="flex items-start gap-3">
-            {logoSafe && (
-              <img
-                src={logoSafe}
-                alt="Clinic Logo"
-                className="h-14 w-14 object-contain rounded-xl border border-emerald-200/80 p-1 bg-white shrink-0"
-              />
-            )}
-            <div className="space-y-0.5">
-              <h1 className="text-base font-extrabold text-slate-900">
-                {(isLetterAr ? clinicProfile.clinicNameAr : clinicProfile.clinicNameEn) ||
-                  clinicProfile.clinicNameAr ||
-                  clinicProfile.clinicNameEn}
-              </h1>
-              <p className="text-xs font-semibold text-emerald-800">
-                {(isLetterAr ? clinicProfile.therapistNameAr : clinicProfile.therapistNameEn) ||
-                  clinicProfile.therapistNameAr ||
-                  clinicProfile.therapistNameEn}
-              </p>
-              {clinicProfile.phone && (
-                <p className="text-xs text-slate-600 tabular-nums">
-                  <bdi dir="ltr">{clinicProfile.phone}</bdi>
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className={isLetterAr ? 'text-left' : 'text-right'}>
-            <span className="inline-block px-3.5 py-1.5 rounded-xl bg-emerald-700 text-white text-xs font-bold shadow-2xs">
-              {isLetterAr ? 'تقرير متابعة للطبيب المحيل' : 'Referring Physician Report'}
-            </span>
-            <p className="text-xs text-slate-600 mt-1 tabular-nums">
-              {isLetterAr ? 'التاريخ: ' : 'Date: '}
-              <bdi dir="ltr">{formatDateDDMMYYYY(localDate())}</bdi>
-            </p>
-          </div>
-        </header>
-
-        <div className="border border-emerald-200/70 rounded-2xl bg-emerald-50/45 p-4 print-break-inside-avoid">
-          <div className="text-xs font-bold text-slate-900">{subjectText}</div>
-        </div>
-
-        <div className="whitespace-pre-wrap text-xs leading-7 text-slate-800 font-sans">
-          {bodyText}
-        </div>
-
-        <footer className="border-t border-slate-200 pt-5 space-y-4 print-break-inside-avoid">
-          <div className="flex flex-col sm:flex-row items-end sm:items-end justify-between gap-4">
-            <p className="hidden sm:block text-xs text-slate-500">
-              {isLetterAr
-                ? 'صدر هذا التقرير محلياً من نظام PhysioRecord المشفر.'
-                : 'Generated locally inside PhysioRecord.'}
-            </p>
-            <div className="text-center min-w-[180px] space-y-1 ms-auto">
-              {stampSafe && (
-                <img
-                  src={stampSafe}
-                  alt="Clinic Stamp"
-                  className="h-14 mx-auto object-contain"
+            {/* Screen-only Subject & Body Quick Editor */}
+            <div
+              className="print-modal-chrome w-full max-w-[210mm] mb-4 bg-card border border-card-line rounded-2xl p-4 shadow-sm space-y-3 shrink-0 print:hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div>
+                <label htmlFor="doc-letter-subject" className="block text-xs font-semibold text-foreground mb-1">
+                  {bi('عنوان الرسالة / الموضوع:', 'Letter Subject:', 'ناونیشانی نامە / بابەت:')}
+                </label>
+                <input
+                  id="doc-letter-subject"
+                  type="text"
+                  dir={isLetterAr ? 'rtl' : 'ltr'}
+                  value={subjectText}
+                  onChange={(e) => setSubjectText(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-xl border border-layer-line bg-layer text-xs font-semibold text-foreground focus:outline-none focus:border-primary"
                 />
-              )}
-              <div className="border-t border-slate-400 pt-1 text-xs font-bold text-slate-900">
-                {(isLetterAr ? clinicProfile.therapistNameAr : clinicProfile.therapistNameEn) ||
-                  clinicProfile.therapistNameAr ||
-                  clinicProfile.therapistNameEn}
               </div>
-              <div className="text-xs text-slate-500">
-                {isLetterAr ? 'التوقيع والختم' : 'Signature & Stamp'}
+              <div>
+                <label htmlFor="doc-letter-body" className="block text-xs font-semibold text-foreground mb-1">
+                  {bi('نص التقرير السريري للطبيب المحيل:', 'Report Body:', 'دەقی ڕاپۆرتی کلینیکی بۆ پزیشکی نێردەر:')}
+                </label>
+                <AutoResizeTextarea
+                  id="doc-letter-body"
+                  minRows={6}
+                  dir={isLetterAr ? 'rtl' : 'ltr'}
+                  value={bodyText}
+                  onChange={(e) => setBodyText(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-layer-line bg-layer text-xs text-foreground leading-relaxed focus:outline-none focus:border-primary"
+                />
               </div>
             </div>
-          </div>
-          <div className="sm:hidden text-center text-[10px] text-slate-400 pt-2 border-t border-slate-100">
-            {isLetterAr
-              ? 'صدر هذا التقرير محلياً من نظام PhysioRecord المشفر.'
-              : 'Generated locally inside PhysioRecord.'}
-          </div>
-        </footer>
-      </div>
-      </div>
+
+            {/* Printable Formal A4 Letter Sheet (Word-style Official Medical Document) */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-[210mm] overflow-x-auto overscroll-x-contain touch-auto rounded-lg shadow-2xl shrink-0 print:overflow-visible print:max-w-none print:shadow-none"
+            >
+              <div
+                ref={sheetRef}
+                dir={isLetterAr ? 'rtl' : 'ltr'}
+                className="print-sheet-container w-[210mm] min-w-[210mm] min-h-[272mm] print:w-full print:min-w-0 bg-white text-slate-900 border border-slate-300 border-t-4 border-t-slate-900 p-8 sm:p-11 flex flex-col justify-between text-xs leading-relaxed"
+              >
+                <div className="space-y-5">
+                  {/* Formal Institutional Header */}
+                  <header className="flex items-start justify-between gap-4 border-b-2 border-slate-800 pb-4 print-break-inside-avoid">
+                    <div className="flex items-start gap-3.5">
+                      {logoSafe && (
+                        <img
+                          src={logoSafe}
+                          alt="Clinic Logo"
+                          className="h-16 w-16 object-contain rounded-lg border border-slate-300 p-1 bg-white shrink-0"
+                        />
+                      )}
+                      <div className="space-y-1">
+                        <h1 className="text-base font-extrabold text-slate-900 tracking-tight">
+                          {resolvedClinicName}
+                        </h1>
+                        <p className="text-xs font-bold text-slate-800">
+                          {isLetterAr ? 'المعالج الفيزيائي المشرف: ' : 'Supervising Physiotherapist: '}
+                          {resolvedTherapistName}
+                        </p>
+                        <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-600">
+                          {clinicProfile.licenseNumber && (
+                            <span>
+                              {isLetterAr ? 'رقم الإجازة: ' : 'License #: '}
+                              <bdi dir="ltr">{clinicProfile.licenseNumber}</bdi>
+                            </span>
+                          )}
+                          {clinicProfile.phone && (
+                            <span>
+                              {isLetterAr ? 'الهاتف: ' : 'Phone: '}
+                              <bdi dir="ltr">{clinicProfile.phone}</bdi>
+                            </span>
+                          )}
+                        </div>
+                        {(clinicProfile.addressAr || clinicProfile.addressEn) && (
+                          <p className="text-xs text-slate-600">
+                            {isLetterAr
+                              ? clinicProfile.addressAr || clinicProfile.addressEn
+                              : clinicProfile.addressEn || clinicProfile.addressAr}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="border border-slate-300 bg-slate-50 rounded-lg px-3.5 py-2 text-xs space-y-1 shrink-0">
+                      <div className="font-bold text-slate-900">
+                        {isLetterAr ? 'كتاب رسمي / تقرير سريري' : 'Official Clinical Report'}
+                      </div>
+                      <div className="text-slate-600">
+                        {isLetterAr ? 'تاريخ الإصدار: ' : 'Issue Date: '}
+                        <bdi dir="ltr" className="font-bold text-slate-900 tabular-nums">
+                          {formatDateDDMMYYYY(localDate())}
+                        </bdi>
+                      </div>
+                      <div className="text-slate-600">
+                        {isLetterAr ? 'رقم الملف: ' : 'MRN: '}
+                        <bdi dir="ltr" className="font-mono font-bold text-slate-900">
+                          {patient.data.mrn || '—'}
+                        </bdi>
+                      </div>
+                    </div>
+                  </header>
+
+                  {/* Formal Centered Title Banner */}
+                  <div className="border-y border-slate-400 bg-slate-100 py-2 px-4 text-center print-break-inside-avoid">
+                    <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">
+                      {isLetterAr
+                        ? 'تقرير متابعة سريري للطبيب المحيل — Referring Physician Progress Report'
+                        : 'Referring Physician Clinical Follow-Up Report'}
+                    </h2>
+                  </div>
+
+                  {/* Formal Word-Style Bordered Metadata Table */}
+                  <table className="w-full border-collapse border border-slate-400 text-xs print-break-inside-avoid">
+                    <tbody>
+                      <tr>
+                        <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-start font-bold text-slate-800 w-[18%]">
+                          {isLetterAr ? 'إلى حضرة الطبيب' : 'Referred By / To'}
+                        </th>
+                        <td className="border border-slate-300 px-3 py-2 font-bold text-slate-900 w-[32%]">
+                          {resolvedDoctorLabel}
+                          {(isLetterAr ? doctor?.specialtyAr || doctor?.specialtyEn : doctor?.specialtyEn || doctor?.specialtyAr)
+                            ? ` (${isLetterAr ? doctor?.specialtyAr || doctor?.specialtyEn : doctor?.specialtyEn || doctor?.specialtyAr})`
+                            : ''}
+                        </td>
+                        <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-start font-bold text-slate-800 w-[18%]">
+                          {isLetterAr ? 'اسم المريض' : 'Patient Name'}
+                        </th>
+                        <td className="border border-slate-300 px-3 py-2 font-bold text-slate-900 w-[32%]">
+                          {resolvedPatientLabel}
+                        </td>
+                      </tr>
+                      <tr>
+                        <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-start font-bold text-slate-800">
+                          {isLetterAr ? 'العمر / الجنس' : 'Age / Gender'}
+                        </th>
+                        <td className="border border-slate-300 px-3 py-2 font-semibold text-slate-800">
+                          {patient.data.age ? `${patient.data.age} ${isLetterAr ? 'سنة' : 'yrs'}` : '—'}
+                          {patient.data.gender
+                            ? ` · ${
+                                patient.data.gender === 'male'
+                                  ? isLetterAr
+                                    ? 'ذكر'
+                                    : 'Male'
+                                  : patient.data.gender === 'female'
+                                    ? isLetterAr
+                                      ? 'أنثى'
+                                      : 'Female'
+                                    : ''
+                              }`
+                            : ''}
+                        </td>
+                        <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-start font-bold text-slate-800">
+                          {isLetterAr ? 'رقم الهاتف' : 'Phone'}
+                        </th>
+                        <td className="border border-slate-300 px-3 py-2 font-semibold text-slate-800 tabular-nums">
+                          <bdi dir="ltr">{patient.data.phone || patient.data.phoneNumber || '—'}</bdi>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-start font-bold text-slate-800">
+                          {isLetterAr ? 'الموضوع' : 'Subject'}
+                        </th>
+                        <td colSpan={3} className="border border-slate-300 px-3 py-2 font-bold text-slate-900">
+                          {subjectText}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  {/* Formal Clinical Narrative Box */}
+                  <div className="border border-slate-300 rounded-md overflow-hidden">
+                    <div className="bg-slate-100 border-b border-slate-300 px-3.5 py-2 font-bold text-slate-900">
+                      {isLetterAr
+                        ? 'تفاصيل التقييم السريري وخطة التأهيل المتبعة'
+                        : 'Clinical Evaluation & Rehabilitation Summary'}
+                    </div>
+                    <div className="p-5 whitespace-pre-wrap text-xs leading-7 text-slate-900 font-sans min-h-[120mm]">
+                      {bodyText}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Official Bottom-Anchored Signature & Stamp Footer */}
+                <footer className="mt-auto pt-6 border-t-2 border-slate-800 print-break-inside-avoid">
+                  <div className="flex flex-row items-end justify-between gap-6">
+                    <div className="max-w-md space-y-1 text-xs text-slate-600">
+                      <p className="font-bold text-slate-800">
+                        {isLetterAr
+                          ? 'وتفضلوا بقبول فائق الاحترام والتقدير،'
+                          : 'Sincerely, Physical Therapy & Rehabilitation Department'}
+                      </p>
+                      <p className="text-slate-500">
+                        {isLetterAr
+                          ? 'وثيقة سريرية رسمية صادرة محلياً من نظام العيادة المشفر PhysioRecord.'
+                          : 'Official clinical document generated locally inside PhysioRecord.'}
+                      </p>
+                    </div>
+
+                    <div className="border border-slate-300 bg-slate-50/70 rounded-lg px-5 py-3 text-center min-w-[210px] space-y-1.5 ms-auto">
+                      <div className="text-xs font-bold text-slate-600">
+                        {isLetterAr ? 'المعالج الفيزيائي المشرف' : 'Supervising Physiotherapist'}
+                      </div>
+                      {stampSafe ? (
+                        <img
+                          src={stampSafe}
+                          alt="Clinic Stamp"
+                          className="h-14 mx-auto object-contain"
+                        />
+                      ) : (
+                        <div className="h-8" />
+                      )}
+                      <div className="border-t border-slate-400 pt-1.5 text-xs font-extrabold text-slate-900">
+                        {resolvedTherapistName}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {isLetterAr ? 'التوقيع والختم الرسمي' : 'Official Signature & Stamp'}
+                      </div>
+                    </div>
+                  </div>
+                </footer>
+              </div>
+            </div>
           </div>
         </AriaDialog>
       </Modal>

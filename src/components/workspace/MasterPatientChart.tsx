@@ -3455,6 +3455,8 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 attachments={attachments}
                 onPersistAttachments={handlePersistAttachments}
               />
+              {/* 5.2 + E4 Encrypted Posture Gallery & Photo Angle Measurement Studio */}
+              <PatientAttachmentsPanel patientId={patient.id} episodeId={activeEpisode?.id} />
             </Suspense>
           </div>
         )}
@@ -3665,11 +3667,8 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
               </div>
             </div>
 
-            {/* 5.2 Encrypted Patient Attachments & Posture Photos (off by default in Modules) */}
+            {/* 4.8 Informed Consent & Encrypted Signature Pad */}
             <Suspense fallback={null}>
-              <PatientAttachmentsPanel patientId={patient.id} episodeId={activeEpisode?.id} />
-
-              {/* 4.8 Informed Consent & Encrypted Signature Pad */}
               <ConsentSignaturePanel patient={patient} episode={activeEpisode} />
             </Suspense>
           </div>

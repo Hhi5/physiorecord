@@ -91,13 +91,13 @@ test.describe('Phase E — Sharing & Interop (E1–E4)', () => {
     await page.locator('input[type="number"]').first().fill('31');
     await page.locator('form button[type="submit"]').first().click();
 
-    // Inside newly opened patient workspace: open Profile & Finance tab for E4 Photo Studio + E3 Visit Card
-    const profileTabBtn = page
+    // Inside newly opened patient workspace: open History (السجل المرضي) tab for E4 Photo Studio
+    const historyTabBtn = page
       .locator('button')
-      .filter({ hasText: /الملف الشخصي والمالي|Profile & Finance/i })
+      .filter({ hasText: /السجل المرضي|History/i })
       .first();
-    await expect(profileTabBtn).toBeVisible({ timeout: 10_000 });
-    await profileTabBtn.click();
+    await expect(historyTabBtn).toBeVisible({ timeout: 10_000 });
+    await historyTabBtn.click();
 
     // Enable 5.2 Attachments Gallery inline if currently off
     const enableGalleryBtn = page
@@ -212,7 +212,14 @@ test.describe('Phase E — Sharing & Interop (E1–E4)', () => {
       timeout: 10_000,
     });
 
-    // Test E3 Patient Visit Card & E1 Web Share / WhatsApp / Copy fallback inside MasterPatientChart
+    // Switch to Financial & Docs tab for E3 Patient Visit Card & E1 Web Share / WhatsApp / Copy fallback
+    const profileTabBtn = page
+      .locator('button')
+      .filter({ hasText: /الملف والمالية|Financial & Docs/i })
+      .first();
+    await expect(profileTabBtn).toBeVisible({ timeout: 10_000 });
+    await profileTabBtn.click();
+
     await page.getByTestId('print-patient-visit-card-btn').click();
     await expect(page.getByTestId('print-patient-visit-card-section')).toBeVisible({
       timeout: 10_000,

@@ -20,6 +20,7 @@ asar: true
 npmRebuild: false
 
 win:
+  icon: electron/icon.ico
   target:
     - target: nsis
       arch:
@@ -30,6 +31,9 @@ win:
 
 nsis:
   artifactName: "${productName}-Setup-${version}-${arch}.${ext}"
+  installerIcon: electron/icon.ico
+  uninstallerIcon: electron/icon.ico
+  installerHeaderIcon: electron/icon.ico
   oneClick: false
   perMachine: false
   allowElevation: true

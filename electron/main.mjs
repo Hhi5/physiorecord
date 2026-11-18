@@ -412,12 +412,17 @@ function registerIpcHandlers() {
 }
 
 function createMainWindow() {
+  const windowIconPath = path.join(
+    __dirname,
+    process.platform === 'win32' ? 'icon.ico' : 'icon.png'
+  );
   mainWindow = new BrowserWindow({
     width: 1366,
     height: 860,
     minWidth: 360,
     minHeight: 640,
     title: 'PhysioRecord',
+    ...(fsSync.existsSync(windowIconPath) ? { icon: windowIconPath } : {}),
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),

@@ -281,9 +281,9 @@ export const ExamWidgetShelf: React.FC<ExamWidgetShelfProps> = ({
       </div>
 
       {/* Category Filter Tabs & Search Bar */}
-      <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-card-divider">
+      <div className="space-y-2.5 pt-2 border-t border-card-divider">
         {!isCompactMode && (
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative w-full">
             <Search className="size-3.5 text-muted-foreground-1 absolute top-1/2 -translate-y-1/2 start-3" />
             <input
               type="text"
@@ -294,36 +294,49 @@ export const ExamWidgetShelf: React.FC<ExamWidgetShelfProps> = ({
                 'Search test, joint, muscle (e.g., shoulder, ROM, knee, neuro)...',
                 'گەڕان بە ناوی پشکنین، جومگە، یان ماسولکە...'
               )}
-              className="w-full ps-8 pe-3 py-1.5 text-xs rounded-xl bg-layer border border-layer-line text-foreground placeholder:text-muted-foreground-1 focus:outline-none focus:border-primary"
+              className="w-full ps-8 pe-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground placeholder:text-muted-foreground-1 focus:outline-none focus:border-primary"
             />
           </div>
         )}
 
-        {/* Categories */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none">
-          {[
-            { id: 'all', ar: 'الكل', en: 'All Tools', ckb: 'هەمووی' },
-            { id: 'body_chart', ar: 'مخطط الجسم', en: 'Body Map', ckb: 'هێڵکاری جەستە' },
-            { id: 'rom_mmt', ar: 'حركة وقوة', en: 'ROM / MMT', ckb: 'جووڵە و هێز' },
-            { id: 'neurology', ar: 'أعصاب وقطاعات حسية', en: 'Neuro & Dermatomes', ckb: 'دەمار و هەست' },
-            { id: 'special_tests', ar: 'اختبارات عظمية', en: 'Orthopedic', ckb: 'تاقیکردنەوەی ئێسک' },
-            { id: 'gait_balance', ar: 'مشي وتوازن', en: 'Gait / TUG', ckb: 'ڕۆیشتن و هاوسەنگی' },
-            { id: 'functional_scales', ar: 'مقاييس وظيفية', en: 'Scales', ckb: 'پێوەرە فەرمانییەکان' },
-            { id: 'custom_ai', ar: 'مخصص', en: 'Custom', ckb: 'تایبەت' },
-          ].map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`py-1 px-2.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                selectedCategory === cat.id
-                  ? 'bg-primary text-primary-foreground shadow-2xs'
-                  : 'bg-surface border border-line-2 text-muted-foreground-1 hover:text-foreground'
-              }`}
-            >
-              {bi(cat.ar, cat.en, cat.ckb)}
-            </button>
-          ))}
+        {/* Unified Single-Rectangle Horizontally Scrollable Category Bar */}
+        <div className="w-full rounded-2xl border border-line-2 bg-surface/70 p-1.5 overflow-hidden">
+          <div
+            role="tablist"
+            aria-label={bi('تصنيفات الفحوصات السريرية', 'Clinical exam categories', 'پۆلێنەکانی پشکنینی کلینیکی')}
+            className="pr-hscroll overflow-x-auto flex items-center gap-1.5 whitespace-nowrap pb-1"
+          >
+            {[
+              { id: 'all', ar: 'الكل', en: 'All Tools', ckb: 'هەمووی' },
+              { id: 'body_chart', ar: 'مخطط الجسم', en: 'Body Map', ckb: 'هێڵکاری جەستە' },
+              { id: 'rom_mmt', ar: 'حركة وقوة', en: 'ROM / MMT', ckb: 'جووڵە و هێز' },
+              { id: 'neurology', ar: 'أعصاب وقطاعات حسية', en: 'Neuro & Dermatomes', ckb: 'دەمار و هەست' },
+              { id: 'special_tests', ar: 'اختبارات عظمية', en: 'Orthopedic', ckb: 'تاقیکردنەوەی ئێسک' },
+              { id: 'gait_balance', ar: 'مشي وتوازن', en: 'Gait / TUG', ckb: 'ڕۆیشتن و هاوسەنگی' },
+              { id: 'functional_scales', ar: 'مقاييس وظيفية', en: 'Scales', ckb: 'پێوەرە فەرمانییەکان' },
+              ...(studioEnabled
+                ? [{ id: 'custom_ai', ar: 'مخصص', en: 'Custom', ckb: 'تایبەت' }]
+                : []),
+            ].map((cat) => {
+              const isActive = selectedCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`shrink-0 py-1.5 px-3.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground shadow-2xs'
+                      : 'bg-card/80 hover:bg-card border border-transparent text-muted-foreground-1 hover:text-foreground'
+                  }`}
+                >
+                  {bi(cat.ar, cat.en, cat.ckb)}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 

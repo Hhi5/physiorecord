@@ -117,24 +117,31 @@ export function buildShareableDocumentHtmlFile(params: {
       color: #0f172a;
       font-family: system-ui, -apple-system, 'Segoe UI', Tahoma, Arial, sans-serif;
       font-size: 13px;
-      line-height: 1.6;
+      line-height: 1.65;
     }
     .sheet-wrap {
-      max-width: 820px;
+      max-width: 210mm;
+      min-height: 272mm;
       margin: 0 auto;
       background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 14px;
-      padding: 28px;
+      border: 1px solid #cbd5e1;
+      border-top: 4px solid #0f172a;
+      padding: 32px 38px;
       box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: start; font-size: 12px; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; border-bottom: 2px solid #1e293b; padding-bottom: 14px; margin-bottom: 16px; }
+    footer { margin-top: auto; padding-top: 18px; border-top: 2px solid #1e293b; display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 8px; }
+    th, td { border: 1px solid #94a3b8; padding: 7px 10px; text-align: start; font-size: 12px; }
     th { background: #f1f5f9; font-weight: 700; }
     img { max-width: 100%; height: auto; }
     @media print {
+      @page { size: A4; margin: 12mm; }
       body { background: #ffffff; padding: 0; }
-      .sheet-wrap { box-shadow: none; border: none; padding: 0; max-width: none; }
+      .sheet-wrap { box-shadow: none; border: none; border-top: 3px solid #0f172a; padding: 4mm 2mm; max-width: none; min-height: 268mm; }
     }
   </style>
 </head>

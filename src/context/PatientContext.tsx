@@ -18,6 +18,7 @@ import {
   ensureUniquePatientMrn,
   isDemoPatient,
 } from '../utils/mrn';
+import { sanitizeLegacyDemoPhone } from '../data/syntheticPatients';
 
 const SUMMARY_TEXT_PREVIEW_LIMIT = 600;
 
@@ -78,10 +79,20 @@ export async function loadFullPatientRecordFromDb(
     entity.recordSalt
   );
 
+  const isDemo = Boolean(decryptedData.isDemo || entity.id.startsWith('syn-patient-'));
+  const sanitizedPhone = isDemo
+    ? sanitizeLegacyDemoPhone(decryptedData.phone || decryptedData.phoneNumber)
+    : decryptedData.phone;
+  const sanitizedPhoneNumber = isDemo
+    ? sanitizeLegacyDemoPhone(decryptedData.phoneNumber || decryptedData.phone)
+    : decryptedData.phoneNumber;
+
   const normalizedData: PatientClinicalData = {
     ...decryptedData,
     mrn: getPatientMrn({ id: entity.id, data: decryptedData }, 0),
-    isDemo: Boolean(decryptedData.isDemo || entity.id.startsWith('syn-patient-')),
+    isDemo,
+    ...(sanitizedPhone ? { phone: sanitizedPhone } : {}),
+    ...(sanitizedPhoneNumber ? { phoneNumber: sanitizedPhoneNumber } : {}),
     attachmentsCount: Array.isArray(decryptedData.attachments)
       ? decryptedData.attachments.length
       : decryptedData.attachmentsCount,
@@ -174,10 +185,20 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
             entity.recordSalt
           );
 
+          const isDemo = Boolean(decryptedData.isDemo || entity.id.startsWith('syn-patient-'));
+          const sanitizedPhone = isDemo
+            ? sanitizeLegacyDemoPhone(decryptedData.phone || decryptedData.phoneNumber, idx + 1)
+            : decryptedData.phone;
+          const sanitizedPhoneNumber = isDemo
+            ? sanitizeLegacyDemoPhone(decryptedData.phoneNumber || decryptedData.phone, idx + 1)
+            : decryptedData.phoneNumber;
+
           const normalizedData: PatientClinicalData = {
             ...decryptedData,
             mrn: getPatientMrn({ id: entity.id, data: decryptedData }, decryptedCards.length),
-            isDemo: Boolean(decryptedData.isDemo || entity.id.startsWith('syn-patient-')),
+            isDemo,
+            ...(sanitizedPhone ? { phone: sanitizedPhone } : {}),
+            ...(sanitizedPhoneNumber ? { phoneNumber: sanitizedPhoneNumber } : {}),
           };
 
           decryptedCards.push(

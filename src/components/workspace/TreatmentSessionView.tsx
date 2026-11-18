@@ -54,6 +54,10 @@ import {
 import { formatClinicalDate, formatDateDDMMYYYY, localDate } from '../../utils/date';
 import { evaluateNoteCompleteness, type NoteCompletenessReport } from '../../utils/reEvalNudge';
 import { checkModalitySafety, type ModalitySafetyRule } from '../../utils/modalitySafetyChecker';
+import {
+  formatElapsedMmSs as formatTimerMmSs,
+  resolveInitialSessionTimerState,
+} from '../../utils/sessionTimerState';
 
 const VitalsPanel = lazy(() =>
   import('./VitalsPanel').then((m) => ({ default: m.VitalsPanel }))
@@ -485,9 +489,31 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
   const [newChipLabelEn, setNewChipLabelEn] = useState('');
   const [newChipDetail, setNewChipDetail] = useState('');
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [timerRunning, setTimerRunning] = useState(() => session.data.status !== 'finalized');
-  const [savedSessionSeconds, setSavedSessionSeconds] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(() => {
+    const recorded = ClinicOperationsService.getSessionTimerSeconds(session.id);
+    return resolveInitialSessionTimerState({
+      isFinalized: session.data.status === 'finalized',
+      recordedSeconds: recorded,
+    }).elapsedSeconds;
+  });
+  const [timerRunning, setTimerRunning] = useState<boolean>(() => {
+    const recorded = ClinicOperationsService.getSessionTimerSeconds(session.id);
+    return resolveInitialSessionTimerState({
+      isFinalized: session.data.status === 'finalized',
+      recordedSeconds: recorded,
+    }).timerRunning;
+  });
+  const [savedSessionSeconds, setSavedSessionSeconds] = useState<number | null>(() => {
+    const recorded = ClinicOperationsService.getSessionTimerSeconds(session.id);
+    return resolveInitialSessionTimerState({
+      isFinalized: session.data.status === 'finalized',
+      recordedSeconds: recorded,
+    }).savedSessionSeconds;
+  });
+  const latestElapsedRef = useRef<number>(elapsedSeconds);
+  const isLockedRef = useRef<boolean>(isLocked);
+  latestElapsedRef.current = elapsedSeconds;
+  isLockedRef.current = isLocked;
   const [localUndoToast, setLocalUndoToast] = useState<{
     snapshot: FinishUndoSnapshot;
     label: string;
@@ -748,11 +774,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
     await ClinicOperationsService.saveQuickSoapChipsAsync(DEFAULT_QUICK_SOAP_CHIPS);
   };
 
-  const formatElapsedMmSs = (totalSec: number) => {
-    const mins = Math.floor(totalSec / 60);
-    const secs = totalSec % 60;
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  };
+  const formatElapsedMmSs = (totalSec: number) => formatTimerMmSs(totalSec);
 
   const loadSoapAndAddenda = useCallback(async () => {
     if (!dek || !session.id) return;
@@ -955,27 +977,72 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
   useEffect(() => {
     autoFinishTriggeredRef.current = false;
-    const durMins = session.data.sessionDurationMinutes;
-    if (durMins && durMins > 0) {
-      setSavedSessionSeconds(durMins * 60);
-      setElapsedSeconds(durMins * 60);
-      setTimerRunning(false);
-    } else {
-      setSavedSessionSeconds(null);
-      setElapsedSeconds(0);
-      setTimerRunning(session.data.status !== 'finalized');
-    }
     loadSoapAndAddenda();
-  }, [loadSoapAndAddenda, session.id, session.data.status, session.data.sessionDurationMinutes]);
+  }, [loadSoapAndAddenda]);
 
-  // Automatic session timer
+  // Initialize session timer strictly per session.id (never from scheduled sessionDurationMinutes)
+  // and persist actual elapsed time on navigation / unmount so re-entry resumes from recorded time.
+  useEffect(() => {
+    const currentSessionId = session.id;
+    const recorded = ClinicOperationsService.getSessionTimerSeconds(currentSessionId);
+    const initial = resolveInitialSessionTimerState({
+      isFinalized: session.data.status === 'finalized',
+      recordedSeconds: recorded,
+    });
+    setElapsedSeconds(initial.elapsedSeconds);
+    setSavedSessionSeconds(initial.savedSessionSeconds);
+    setTimerRunning(initial.timerRunning);
+    latestElapsedRef.current = initial.elapsedSeconds;
+
+    const flushTimerOnLeave = () => {
+      if (!isLockedRef.current && latestElapsedRef.current > 0) {
+        ClinicOperationsService.saveSessionTimerSeconds(
+          currentSessionId,
+          latestElapsedRef.current
+        );
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        flushTimerOnLeave();
+      }
+    };
+
+    window.addEventListener('pagehide', flushTimerOnLeave);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('pagehide', flushTimerOnLeave);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      flushTimerOnLeave();
+    };
+    // Intentionally scoped to session.id only so language/draft updates never reset an active timer
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.id]);
+
+  // Stop timer immediately if session transitions to finalized
+  useEffect(() => {
+    if (isLocked) {
+      setTimerRunning(false);
+    }
+  }, [isLocked]);
+
+  // Automatic session timer with periodic encrypted checkpoint every 5 seconds
   useEffect(() => {
     if (!timerRunning || isLocked) return;
     const id = setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
+      setElapsedSeconds((prev) => {
+        const next = prev + 1;
+        latestElapsedRef.current = next;
+        if (next > 0 && next % 5 === 0) {
+          ClinicOperationsService.saveSessionTimerSeconds(session.id, next);
+        }
+        return next;
+      });
     }, 1000);
     return () => clearInterval(id);
-  }, [timerRunning, isLocked]);
+  }, [timerRunning, isLocked, session.id]);
 
   // Auto-open Finish flow when launched via "Finish & Collect" in Today view
   useEffect(() => {
@@ -1168,6 +1235,9 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         }
         setSoapRecord(savedSoap);
         setIsLegacyDraftOrigin(Boolean(!savedSoap.data.isFinalized && savedSoap.data.legacyUnreviewed));
+        if (latestElapsedRef.current > 0) {
+          ClinicOperationsService.saveSessionTimerSeconds(session.id, latestElapsedRef.current);
+        }
         if (!isAuto) {
           setIsDirty(false);
           void DraftRecoveryService.deleteDraftAsync('soap', session.id).then(() =>
@@ -1729,39 +1799,69 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         <div className="flex flex-wrap items-center justify-between sm:justify-end gap-1.5 sm:gap-2">
           {!isLocked && (
             <div
+              data-testid="session-timer-widget"
               className="inline-flex items-center gap-1 ps-2.5 pe-1 py-0.5 rounded-xl bg-surface border border-line-2 text-xs font-mono tabular-nums"
               title={bi('مؤقت الجلسة', 'Session Timer', 'کاتژمێری دانیشتن')}
             >
               <Timer className="size-3.5 text-primary" />
               {savedSessionSeconds !== null && !timerRunning ? (
                 <>
-                  <span className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-0.5">
+                  <span
+                    data-testid="session-timer-display"
+                    className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-0.5"
+                  >
                     <bdi dir="ltr">{formatElapsedMmSs(savedSessionSeconds)}</bdi>
                     <span className="text-[10px] ms-0.5">{bi('مسجّل', 'saved', 'تۆمارکرا')}</span>
                   </span>
                   <button
                     type="button"
+                    data-testid="session-timer-resume-btn"
                     onClick={() => {
+                      setElapsedSeconds(savedSessionSeconds);
+                      latestElapsedRef.current = savedSessionSeconds;
+                      setSavedSessionSeconds(null);
+                      setTimerRunning(true);
+                    }}
+                    className="min-w-[30px] min-h-[30px] inline-flex items-center justify-center rounded-lg hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer transition-colors"
+                    aria-label={bi('استئناف المؤقت', 'Resume timer', 'بەردەوامبوونی کاتژمێر')}
+                    title={bi('استئناف المؤقت', 'Resume timer', 'بەردەوامبوونی کاتژمێر')}
+                  >
+                    <Play className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="session-timer-reset-btn"
+                    onClick={() => {
+                      ClinicOperationsService.clearSessionTimerSeconds(session.id);
+                      latestElapsedRef.current = 0;
                       setSavedSessionSeconds(null);
                       setElapsedSeconds(0);
                       setTimerRunning(true);
                     }}
                     className="min-w-[30px] min-h-[30px] inline-flex items-center justify-center rounded-lg hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer transition-colors"
                     aria-label={bi('إعادة التعيين', 'Reset timer', 'سفرکردنەوەی کاتژمێر')}
+                    title={bi('إعادة التعيين', 'Reset timer', 'سفرکردنەوەی کاتژمێر')}
                   >
                     <RotateCcw className="size-3.5" />
                   </button>
                 </>
               ) : (
                 <>
-                  <span className="font-bold text-foreground">
+                  <span
+                    data-testid="session-timer-display"
+                    className="font-bold text-foreground"
+                  >
                     <bdi dir="ltr">{formatElapsedMmSs(elapsedSeconds)}</bdi>
                   </span>
                   <button
                     type="button"
+                    data-testid="session-timer-toggle-btn"
                     onClick={() => {
                       if (timerRunning) {
                         setSavedSessionSeconds(elapsedSeconds);
+                        if (elapsedSeconds > 0) {
+                          ClinicOperationsService.saveSessionTimerSeconds(session.id, elapsedSeconds);
+                        }
                       }
                       setTimerRunning((r) => !r);
                     }}
@@ -1776,7 +1876,13 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setElapsedSeconds(0)}
+                    data-testid="session-timer-reset-btn"
+                    onClick={() => {
+                      ClinicOperationsService.clearSessionTimerSeconds(session.id);
+                      latestElapsedRef.current = 0;
+                      setSavedSessionSeconds(null);
+                      setElapsedSeconds(0);
+                    }}
                     className="min-w-[30px] min-h-[30px] inline-flex items-center justify-center rounded-lg hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer transition-colors"
                     aria-label={bi('تصفير المؤقت', 'Reset timer', 'سفرکردنەوەی کاتژمێر')}
                   >

@@ -77,20 +77,42 @@ export const IRAQI_SYNTHETIC_CITIES_AND_DISTRICTS: ReadonlyArray<{
   },
 ];
 
+const LEGACY_DEMO_PHONE_REPLACEMENTS: Readonly<Record<string, string>> = {
+  '+964 770 123 4567': '+964 700 000 0147',
+  '0770 123 4567': '+964 700 000 0147',
+  '+964 780 987 6543': '+964 700 000 0283',
+  '0780 987 6543': '+964 700 000 0283',
+  '+964 790 321 0987': '+964 700 000 0391',
+  '0790 321 0987': '+964 700 000 0391',
+  '+964 771 789 1234': '+964 700 000 0465',
+  '0771 789 1234': '+964 700 000 0465',
+  '+964 750 216 5498': '+964 700 000 0528',
+  '0750 216 5498': '+964 700 000 0528',
+};
+
+export function sanitizeLegacyDemoPhone(rawPhone?: string | null, fallbackIndex = 1): string {
+  if (!rawPhone) return `+964 700 000 ${String(1000 + (fallbackIndex % 8999)).padStart(4, '0')}`;
+  const trimmed = rawPhone.trim();
+  if (LEGACY_DEMO_PHONE_REPLACEMENTS[trimmed]) {
+    return LEGACY_DEMO_PHONE_REPLACEMENTS[trimmed];
+  }
+  return trimmed;
+}
+
 export const SYNTHETIC_PATIENTS: SyntheticPatientSeed[] = [
   {
     id: "syn-patient-001",
     mrn: "PT-000001",
     isDemo: true,
-    fullName: "Ahmed Fahad Al-Shammari",
-    fullNameAr: "أحمد فهد الشمري",
-    dateOfBirth: "1996-04-15",
-    age: 30,
+    fullName: "Mazin Raed Al-Rubaie",
+    fullNameAr: "مازن رائد الربيعي",
+    dateOfBirth: "1994-06-18",
+    age: 32,
     gender: "male",
-    phone: "+964 770 123 4567",
-    phoneNumber: "+964 770 123 4567",
+    phone: "+964 700 000 0147",
+    phoneNumber: "+964 700 000 0147",
     address: "بغداد — المنصور",
-    occupation: "مهندس برمجيات ورياضي هاوٍ",
+    occupation: "مهندس شبكات ورياضي هاوٍ",
     dominantHand: "right",
     medicalHistory: "إصابة رياضية بقطع كامل في الرباط الصليبي الأمامي للركبة اليمنى أثناء مباراة كرة قدم.",
     previousSurgeries: "جراحة ترميم الرباط الصليبي الأمامي وزراعة وتر الركبة الذاتي قبل 4 أسابيع.",
@@ -106,15 +128,15 @@ export const SYNTHETIC_PATIENTS: SyntheticPatientSeed[] = [
     id: "syn-patient-002",
     mrn: "PT-000002",
     isDemo: true,
-    fullName: "Mariam Saleh Al-Ali",
-    fullNameAr: "مريم صالح العلي",
-    dateOfBirth: "1962-09-20",
-    age: 64,
+    fullName: "Salwa Qasim Al-Taie",
+    fullNameAr: "سلوى قاسم الطائي",
+    dateOfBirth: "1964-10-11",
+    age: 62,
     gender: "female",
-    phone: "+964 780 987 6543",
-    phoneNumber: "+964 780 987 6543",
+    phone: "+964 700 000 0283",
+    phoneNumber: "+964 700 000 0283",
     address: "بغداد — الكرادة",
-    occupation: "معلمة متقاعدة",
+    occupation: "مشرفة تربوية متقاعدة",
     dominantHand: "right",
     medicalHistory: "جلطة دماغية نقص تروية في الشريان الدماغي الأوسط الأيسر قبل 3 أشهر، نتج عنها شلل نصفي أيمن مع حبسة كلامية خفيفة.",
     previousSurgeries: "لا يوجد جراحات سابقة.",
@@ -130,15 +152,15 @@ export const SYNTHETIC_PATIENTS: SyntheticPatientSeed[] = [
     id: "syn-patient-003",
     mrn: "PT-000003",
     isDemo: true,
-    fullName: "Salem Nasser Al-Mansour",
-    fullNameAr: "سالم ناصر المنصور",
-    dateOfBirth: "1958-11-03",
-    age: 68,
+    fullName: "Jasim Tariq Al-Nuaimi",
+    fullNameAr: "جاسم طارق النعيمي",
+    dateOfBirth: "1959-03-22",
+    age: 67,
     gender: "male",
-    phone: "+964 790 321 0987",
-    phoneNumber: "+964 790 321 0987",
+    phone: "+964 700 000 0391",
+    phoneNumber: "+964 700 000 0391",
     address: "البصرة — العشار",
-    occupation: "أعمال حرة",
+    occupation: "تاجر مواد غذائية",
     dominantHand: "right",
     medicalHistory: "مرض شرايين تاجية ثلاثي الوعاء. خضع لجراحة مجازة الشريان التاجي قبل 6 أسابيع. تحويل لبرنامج التأهيل القلبي الرئوي من الدرجة الثانية.",
     previousSurgeries: "جراحة مجازة الشريان التاجي وشق القص قبل 6 أسابيع.",
@@ -154,15 +176,15 @@ export const SYNTHETIC_PATIENTS: SyntheticPatientSeed[] = [
     id: "syn-patient-004",
     mrn: "PT-000004",
     isDemo: true,
-    fullName: "Rayan Khalid Al-Obaidi",
-    fullNameAr: "ريان خالد العبيدي",
-    dateOfBirth: "2019-02-14",
-    age: 7,
+    fullName: "Karam Mohanad Al-Bayati",
+    fullNameAr: "كرم مهند البياتي",
+    dateOfBirth: "2018-08-09",
+    age: 8,
     gender: "male",
-    phone: "+964 771 789 1234",
-    phoneNumber: "+964 771 789 1234",
+    phone: "+964 700 000 0465",
+    phoneNumber: "+964 700 000 0465",
     address: "أربيل — عينكاوا",
-    occupation: "طالب بالصف الأول الابتدائي",
+    occupation: "طالب بالمرحلة الابتدائية",
     dominantHand: "left",
     medicalHistory: "شلل دماغي تشنجي ثنائي الطرفين ناتج عن ولادة مبكرة (30 أسبوع حمل).",
     previousSurgeries: "حقن توكسين البوتولينوم في عضلات الساقين القابضة قبل 4 أشهر.",
@@ -178,15 +200,15 @@ export const SYNTHETIC_PATIENTS: SyntheticPatientSeed[] = [
     id: "syn-patient-005",
     mrn: "PT-000005",
     isDemo: true,
-    fullName: "Fatima Abdullah Al-Harbi",
-    fullNameAr: "فاطمة عبد الله الحربي",
-    dateOfBirth: "1975-07-12",
-    age: 51,
+    fullName: "Rana Waleed Al-Ameri",
+    fullNameAr: "رنا وليد العامري",
+    dateOfBirth: "1977-05-19",
+    age: 49,
     gender: "female",
-    phone: "+964 750 216 5498",
-    phoneNumber: "+964 750 216 5498",
+    phone: "+964 700 000 0528",
+    phoneNumber: "+964 700 000 0528",
     address: "النجف — حي السعد",
-    occupation: "طبيبة أسنان",
+    occupation: "مهندسة معمارية",
     dominantHand: "right",
     medicalHistory: "التهاب محفظة الكتف اللاصق بالكتف الأيمن في مرحلة التيبس، مصحوب بمتلازمة انحشار الكفة المدورة.",
     previousSurgeries: "لا يوجد.",
@@ -195,7 +217,7 @@ export const SYNTHETIC_PATIENTS: SyntheticPatientSeed[] = [
     comorbidities: "داء السكري من النوع الثاني.",
     precautions: "",
     redFlags: "",
-    psychosocialFactors: "إجهاد مهني بسبب حاجة عملها كطبيبة أسنان إلى رفع الكتف وتثبيته لساعات طويلة.",
+    psychosocialFactors: "إجهاد مهني بسبب حاجة عملها الهندسي والمكتبي إلى تثبيت الكتف لساعات طويلة.",
     generalNotes: "الخطة تتضمن تحريك المفصل بدرجات حرية متزايدة، وإبر جافة للزناد العضلي، وبرنامج منزلي يومي باستخدام عصا القياس والبكرة."
   }
 ];
@@ -304,9 +326,8 @@ export function generateSyntheticIraqiPatients(options?: {
       IRAQI_SYNTHETIC_CITIES_AND_DISTRICTS[idx % IRAQI_SYNTHETIC_CITIES_AND_DISTRICTS.length];
     const seqNum = i + 1;
     const mrn = `PT-${String(seqNum).padStart(6, '0')}`;
-    const mid = String(100 + ((idx * 37) % 899)).padStart(3, '0');
     const last4 = String(1000 + ((idx * 731) % 8999)).padStart(4, '0');
-    const phone = `+964 ${tpl.carrierPrefix} ${mid} ${last4}`;
+    const phone = `+964 700 000 ${last4}`;
     const age = 2026 - tpl.birthYear;
     const month = String((idx % 12) + 1).padStart(2, '0');
     const day = String(((idx * 3) % 27) + 1).padStart(2, '0');

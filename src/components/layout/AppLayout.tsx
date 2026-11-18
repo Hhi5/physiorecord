@@ -612,14 +612,6 @@ export const AppLayout: React.FC = () => {
     for (let i = 0; i < SYNTHETIC_PATIENTS.length; i++) {
       const { id: fixedId, ...patientData } = SYNTHETIC_PATIENTS[i];
       if (!fixedId) continue;
-      const existingById = await db.patients.get(fixedId);
-      const existingByName = patients.find(
-        (p) =>
-          p.id === fixedId ||
-          p.data.fullNameAr === patientData.fullNameAr ||
-          p.data.fullName === patientData.fullName
-      );
-      if (existingById || existingByName) continue;
       await savePatient(patientData, fixedId);
     }
     ClinicOperationsService.seedDemoOperationsData();

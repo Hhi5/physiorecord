@@ -17,6 +17,11 @@ import {
   type SessionFinalizedEventPayload,
 } from './sessionService';
 import { localDate, getWeekdayFromDateStr } from '../utils/date';
+import {
+  sanitizeSessionTimersMap,
+  upsertBoundedSessionTimer,
+  removeSessionTimerEntry,
+} from '../utils/sessionTimerState';
 import { broadcastVaultEvent } from '../utils/vaultEvents';
 import { getCurrencyConfig, DEFAULT_CURRENCY_CODE } from '../utils/currencies';
 import { DEFAULT_WHATSAPP_TEMPLATES } from '../utils/whatsappTemplates';
@@ -287,11 +292,58 @@ export function setEpisodeClinicalMutationTestHook(
 // -----------------------------------------------------------------------
 // 1. Clinic Staff & Attribution Roles (Note: Attribution Only, Not Auth)
 // -----------------------------------------------------------------------
+const LEGACY_DIRECTOR_NAMES_AR = new Set([
+  'د. حسين الرمضاني (مدير العيادة / أخصائي أقدم)',
+  'د. حسين الرمضاني',
+]);
+const LEGACY_DIRECTOR_NAMES_EN = new Set([
+  'Dr. Hussein Al-Ramdani (Clinic Director / Senior PT)',
+  'Dr. Hussein Al-Ramadhani (Clinic Director / Senior PT)',
+  'Dr. Hussein Al-Ramdani',
+  'Dr. Hussein Al-Ramadhani',
+]);
+const DEFAULT_DIRECTOR_NAME_AR = 'د. زيد العاني (مدير العيادة / أخصائي أقدم)';
+const DEFAULT_DIRECTOR_NAME_EN = 'Dr. Zaid Al-Ani (Clinic Director / Senior PT)';
+
+function replaceLegacyDirectorNameAr(name?: string | null): string {
+  if (!name) return '';
+  const trimmed = name.trim();
+  return LEGACY_DIRECTOR_NAMES_AR.has(trimmed) ? DEFAULT_DIRECTOR_NAME_AR : name;
+}
+
+function replaceLegacyDirectorNameEn(name?: string | null): string {
+  if (!name) return '';
+  const trimmed = name.trim();
+  return LEGACY_DIRECTOR_NAMES_EN.has(trimmed) ? DEFAULT_DIRECTOR_NAME_EN : name;
+}
+
+const LEGACY_DEMO_PHONES_MAP: Readonly<Record<string, string>> = {
+  '+964 770 123 4567': '+964 700 000 0147',
+  '0770 123 4567': '+964 700 000 0147',
+  '+964 780 987 6543': '+964 700 000 0283',
+  '0780 987 6543': '+964 700 000 0283',
+  '+964 790 321 0987': '+964 700 000 0391',
+  '0790 321 0987': '+964 700 000 0391',
+  '+964 771 789 1234': '+964 700 000 0465',
+  '0771 789 1234': '+964 700 000 0465',
+  '+964 750 216 5498': '+964 700 000 0528',
+  '0750 216 5498': '+964 700 000 0528',
+};
+
+function sanitizeDemoPhoneIfNeeded(phone?: string, isDemo?: boolean): string | undefined {
+  if (!phone) return phone;
+  const trimmed = phone.trim();
+  if (isDemo && LEGACY_DEMO_PHONES_MAP[trimmed]) {
+    return LEGACY_DEMO_PHONES_MAP[trimmed];
+  }
+  return phone;
+}
+
 export const CLINIC_STAFF_ROSTER: ClinicStaffMember[] = [
   {
     id: 'staff_admin_pt',
-    nameAr: 'د. حسين الرمضاني (مدير العيادة / أخصائي أقدم)',
-    nameEn: 'Dr. Hussein Al-Ramdani (Clinic Director / Senior PT)',
+    nameAr: DEFAULT_DIRECTOR_NAME_AR,
+    nameEn: DEFAULT_DIRECTOR_NAME_EN,
     role: 'admin',
     specialtyAr: 'تأهيل العظام والعمود الفقري والإصابات الرياضية',
     specialtyEn: 'Orthopedic, Spine & Sports Rehab',
@@ -940,6 +992,7 @@ function createDefaultCache(): OperationsMemoryCache {
       recentPatientIds: [],
       pinnedPatientIds: [],
       services: [],
+      sessionTimers: {},
       updatedAt: now,
       version: 1,
     },
@@ -1213,14 +1266,26 @@ export class ClinicOperationsService {
     for (const row of apptEntities) {
       const dec = await decryptSafe<ClinicAppointment>('appointments', row.id, [], row);
       if (dec && dec.patientId) {
-        nextCache.appointments.push({ ...dec, version: row.version ?? dec.version ?? 1 });
+        const isDemoAppt = Boolean(dec.isDemo || dec.id.startsWith('demo_appt_') || dec.patientId.startsWith('syn-patient-'));
+        nextCache.appointments.push({
+          ...dec,
+          therapistName: replaceLegacyDirectorNameAr(dec.therapistName) || dec.therapistName,
+          patientPhone: sanitizeDemoPhoneIfNeeded(dec.patientPhone, isDemoAppt),
+          version: row.version ?? dec.version ?? 1,
+        });
       }
     }
 
     for (const row of waitEntities) {
       const dec = await decryptSafe<WaitingListEntry>('waitingList', row.id, [], row);
       if (dec && dec.patientId) {
-        nextCache.waitingList.push({ ...dec, version: row.version ?? dec.version ?? 1 });
+        const isDemoWait = Boolean(dec.isDemo || dec.id.startsWith('demo_wait_') || dec.patientId.startsWith('syn-patient-'));
+        nextCache.waitingList.push({
+          ...dec,
+          preferredTherapist: replaceLegacyDirectorNameAr(dec.preferredTherapist) || dec.preferredTherapist,
+          phone: sanitizeDemoPhoneIfNeeded(dec.phone, isDemoWait) || dec.phone,
+          version: row.version ?? dec.version ?? 1,
+        });
       }
     }
 
@@ -1285,7 +1350,13 @@ export class ClinicOperationsService {
           row
         );
         const arr = Array.isArray(dec) ? dec : Array.isArray(dec?.roster) ? dec.roster : null;
-        if (arr && arr.length > 0) nextCache.staffRoster = arr;
+        if (arr && arr.length > 0) {
+          nextCache.staffRoster = arr.map((member) => ({
+            ...member,
+            nameAr: replaceLegacyDirectorNameAr(member.nameAr) || member.nameAr,
+            nameEn: replaceLegacyDirectorNameEn(member.nameEn) || member.nameEn,
+          }));
+        }
       }
     }
 
@@ -1400,7 +1471,19 @@ export class ClinicOperationsService {
       const dec = await decryptSafe<Record<string, unknown>>('clinicSettings', row.id, [], row);
       if (!dec) continue;
       if (row.id === 'clinic_profile') {
-        nextCache.clinicProfile = { ...nextCache.clinicProfile, ...(dec as Partial<ClinicProfileData>) };
+        const loadedProfile = dec as Partial<ClinicProfileData>;
+        nextCache.clinicProfile = {
+          ...nextCache.clinicProfile,
+          ...loadedProfile,
+          therapistNameAr:
+            replaceLegacyDirectorNameAr(loadedProfile.therapistNameAr) ||
+            loadedProfile.therapistNameAr ||
+            nextCache.clinicProfile.therapistNameAr,
+          therapistNameEn:
+            replaceLegacyDirectorNameEn(loadedProfile.therapistNameEn) ||
+            loadedProfile.therapistNameEn ||
+            nextCache.clinicProfile.therapistNameEn,
+        };
       } else if (row.id === 'admin_auth') {
         nextCache.adminAuth = dec as unknown as AdminPinAuthRecord;
       } else if (row.id === 'pin_rate_limit') {
@@ -1600,6 +1683,7 @@ export class ClinicOperationsService {
           recentPatientIds: Array.isArray(sm.recentPatientIds) ? sm.recentPatientIds.slice(0, 12) : [],
           pinnedPatientIds: Array.isArray(sm.pinnedPatientIds) ? sm.pinnedPatientIds : [],
           services: Array.isArray(sm.services) ? sm.services : [],
+          sessionTimers: sanitizeSessionTimersMap(sm.sessionTimers),
           updatedAt: sm.updatedAt || row.updatedAt,
           version: row.version ?? sm.version ?? 1,
         };
@@ -3801,6 +3885,7 @@ export class ClinicOperationsService {
       recentPatientIds: [...this.cache.smartMemory.recentPatientIds],
       pinnedPatientIds: [...this.cache.smartMemory.pinnedPatientIds],
       services: [...this.cache.smartMemory.services],
+      sessionTimers: { ...(this.cache.smartMemory.sessionTimers || {}) },
     };
   }
 
@@ -3814,6 +3899,7 @@ export class ClinicOperationsService {
       recentPatientIds: (partial.recentPatientIds ?? this.cache.smartMemory.recentPatientIds).slice(0, 12),
       pinnedPatientIds: partial.pinnedPatientIds ?? this.cache.smartMemory.pinnedPatientIds,
       services: partial.services ?? this.cache.smartMemory.services,
+      sessionTimers: partial.sessionTimers ?? this.cache.smartMemory.sessionTimers ?? {},
       updatedAt: new Date().toISOString(),
       version: (this.cache.smartMemory.version || 0) + 1,
     };
@@ -3823,6 +3909,69 @@ export class ClinicOperationsService {
     );
     this.notifyListeners();
     return next;
+  }
+
+  static getSessionTimerSeconds(sessionId: string): number | null {
+    const cleanId = sessionId.trim();
+    if (!cleanId) return null;
+    const raw = this.cache.smartMemory.sessionTimers?.[cleanId];
+    return typeof raw === 'number' && Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : null;
+  }
+
+  static saveSessionTimerSeconds(sessionId: string, seconds: number): void {
+    const cleanId = sessionId.trim();
+    const safeSeconds = Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0;
+    if (!cleanId || safeSeconds <= 0 || !this.activeDek) return;
+    if (this.cache.smartMemory.sessionTimers?.[cleanId] === safeSeconds) return;
+
+    const nextTimers = upsertBoundedSessionTimer(
+      this.cache.smartMemory.sessionTimers,
+      cleanId,
+      safeSeconds
+    );
+    const next: SmartMemorySettings = {
+      ...this.cache.smartMemory,
+      id: 'smart_memory',
+      sessionTimers: nextTimers,
+      updatedAt: new Date().toISOString(),
+      version: (this.cache.smartMemory.version || 0) + 1,
+    };
+    this.cache.smartMemory = next;
+    void this.trackWrite(
+      this.putRecordEncrypted(
+        'clinicSettings',
+        'smart_memory',
+        [],
+        next,
+        {},
+        { skipConcurrencyCheck: true, skipBroadcast: true }
+      )
+    ).catch(() => undefined);
+  }
+
+  static clearSessionTimerSeconds(sessionId: string): void {
+    const cleanId = sessionId.trim();
+    if (!cleanId || !this.cache.smartMemory.sessionTimers?.[cleanId]) return;
+    const nextTimers = removeSessionTimerEntry(this.cache.smartMemory.sessionTimers, cleanId);
+    const next: SmartMemorySettings = {
+      ...this.cache.smartMemory,
+      id: 'smart_memory',
+      sessionTimers: nextTimers,
+      updatedAt: new Date().toISOString(),
+      version: (this.cache.smartMemory.version || 0) + 1,
+    };
+    this.cache.smartMemory = next;
+    if (!this.activeDek) return;
+    void this.trackWrite(
+      this.putRecordEncrypted(
+        'clinicSettings',
+        'smart_memory',
+        [],
+        next,
+        {},
+        { skipConcurrencyCheck: true, skipBroadcast: true }
+      )
+    ).catch(() => undefined);
   }
 
   static recordPatientVisitMemory(patientId: string): void {

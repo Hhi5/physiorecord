@@ -926,6 +926,7 @@ export interface SmartMemorySettings {
   recentPatientIds: string[];
   pinnedPatientIds: string[];
   services: ClinicServiceItem[];
+  sessionTimers?: Record<string, number>;
   updatedAt: string;
   version: number;
 }

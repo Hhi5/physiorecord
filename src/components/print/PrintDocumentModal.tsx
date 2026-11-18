@@ -572,15 +572,15 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
         if (!open) onClose();
       }}
       isDismissable
-      className="fixed inset-0 z-[90] bg-slate-950/65 backdrop-blur-xs flex flex-col outline-none"
+      className="react-aria-ModalOverlay print-modal-overlay fixed inset-0 z-[90] bg-slate-950/65 backdrop-blur-xs flex flex-col outline-none print:static print:inset-auto print:!bg-white print:backdrop-blur-none print:block"
     >
       <Modal
         dir={isRtl ? 'rtl' : 'ltr'}
-        className="w-full h-full max-h-[100dvh] flex flex-col outline-none print:h-auto print:max-h-none overflow-hidden"
+        className="w-full h-full max-h-[100dvh] flex flex-col outline-none print:h-auto print:max-h-none print:!bg-white print:block overflow-hidden print:overflow-visible"
       >
         <AriaDialog
           aria-label={uiDocTitle}
-          className="w-full h-full flex flex-col min-h-0 outline-none print:h-auto overflow-hidden"
+          className="w-full h-full flex flex-col min-h-0 outline-none print:h-auto print:!bg-white print:block overflow-hidden print:overflow-visible"
         >
           {/* Pinned Screen-only Top Header & Action Strip (Non-shrinking, Always Visible, Zero Clipping) */}
           <header className="print-modal-chrome w-full bg-card border-b border-card-line shadow-md shrink-0 print:hidden z-30">
@@ -786,30 +786,34 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
       )}
 
       {/* Printable A4 Sheet (Full original width with smooth horizontal & vertical pan on mobile) */}
-      <div className="w-full max-w-[210mm] overflow-x-auto overscroll-x-contain touch-auto rounded-2xl shadow-2xl shrink-0 print:overflow-visible print:max-w-none print:shadow-none">
+      <div className="w-full max-w-[210mm] overflow-x-auto overscroll-x-contain touch-auto rounded-none sm:rounded-xl shadow-2xl shrink-0 print:overflow-visible print:max-w-none print:shadow-none print:!bg-white">
         <div
           ref={sheetRef}
           dir={docDir}
-          className="print-sheet-container w-[210mm] min-w-[210mm] print:w-full print:min-w-0 bg-white text-slate-900 rounded-2xl border border-slate-200 border-t-4 border-t-emerald-700 p-6 sm:p-10 space-y-6 text-xs leading-relaxed"
+          className="print-sheet-container w-[210mm] min-w-[210mm] min-h-[272mm] print:w-full print:min-w-0 bg-white text-slate-900 border border-slate-300 border-t-4 border-t-slate-900 p-8 sm:p-11 flex flex-col justify-between text-xs leading-relaxed"
         >
-        {/* Clinic Letterhead */}
-        <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-emerald-700/20 pb-5 print-break-inside-avoid">
+        <div className="space-y-5 flex-1">
+        {/* Official Institutional Letterhead */}
+        <header className="flex items-start justify-between gap-4 border-b-2 border-slate-800 pb-4 print-break-inside-avoid">
           <div className="flex items-start gap-3.5">
             {logoSafe && (
               <img
                 src={logoSafe}
                 alt="Clinic Logo"
-                className="h-16 w-16 object-contain rounded-xl border border-emerald-200/80 p-1 bg-white shrink-0"
+                className="h-16 w-16 object-contain rounded-lg border border-slate-300 p-1 bg-white shrink-0"
               />
             )}
             <div className="space-y-1">
-              <h1 className="text-lg font-extrabold text-slate-900">
+              <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
                 {(isDocAr ? clinicProfile.clinicNameAr : clinicProfile.clinicNameEn) ||
                   clinicProfile.clinicNameAr ||
-                  clinicProfile.clinicNameEn}
+                  clinicProfile.clinicNameEn ||
+                  (isDocAr
+                    ? 'عيادة العلاج الطبيعي والتأهيل الطبي'
+                    : 'Physical Therapy & Medical Rehabilitation Clinic')}
               </h1>
-              <p className="text-xs font-semibold text-emerald-800">
-                {isDocAr ? 'المعالج الفيزيائي: ' : 'Physiotherapist: '}
+              <p className="text-xs font-bold text-slate-800">
+                {isDocAr ? 'الأخصائي المعالج: ' : 'Attending Physiotherapist: '}
                 {(isDocAr ? clinicProfile.therapistNameAr : clinicProfile.therapistNameEn) ||
                   clinicProfile.therapistNameAr ||
                   clinicProfile.therapistNameEn}
@@ -818,13 +822,13 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                 {clinicProfile.licenseNumber && (
                   <span>
                     {isDocAr ? 'رقم الإجازة: ' : 'License #: '}
-                    <bdi dir="ltr">{clinicProfile.licenseNumber}</bdi>
+                    <bdi dir="ltr" className="font-mono font-semibold">{clinicProfile.licenseNumber}</bdi>
                   </span>
                 )}
                 {clinicProfile.phone && (
                   <span>
                     {isDocAr ? 'الهاتف: ' : 'Phone: '}
-                    <bdi dir="ltr">{clinicProfile.phone}</bdi>
+                    <bdi dir="ltr" className="font-mono font-semibold">{clinicProfile.phone}</bdi>
                   </span>
                 )}
               </div>
@@ -838,73 +842,113 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
             </div>
           </div>
 
-          <div className={`space-y-1.5 ${isDocAr ? 'text-left' : 'text-right'}`}>
-            <div className="inline-block px-3.5 py-1.5 rounded-xl bg-emerald-700 text-white font-bold text-xs shadow-2xs">
-              {docTitle}
-            </div>
-            <p className="text-xs text-slate-600">
-              {isDocAr ? 'تاريخ الإصدار: ' : 'Issue Date: '}
-              <bdi dir="ltr" className="font-semibold tabular-nums">
+          <div className={`border border-slate-300 bg-slate-50 rounded-lg px-3.5 py-2 space-y-1 shrink-0 ${isDocAr ? 'text-left' : 'text-right'}`}>
+            <p className="text-xs text-slate-700">
+              <span className="font-semibold text-slate-500">
+                {isDocAr ? 'تاريخ الإصدار: ' : 'Issue Date: '}
+              </span>
+              <bdi dir="ltr" className="font-mono font-bold text-slate-900 tabular-nums">
                 {formatDateDDMMYYYY(localDate())}
               </bdi>
             </p>
+            {resolvedMrn && (
+              <p className="text-xs text-slate-700">
+                <span className="font-semibold text-slate-500">
+                  {isDocAr ? 'رقم الإضبارة: ' : 'File No: '}
+                </span>
+                <bdi dir="ltr" className="font-mono font-bold text-slate-900">
+                  {resolvedMrn}
+                </bdi>
+              </p>
+            )}
             {invoice?.invoiceNumber && (
-              <p className="text-xs font-mono font-bold text-emerald-800">
+              <p className="text-xs font-mono font-bold text-slate-900">
                 <bdi dir="ltr">{invoice.invoiceNumber}</bdi>
               </p>
             )}
             {zReport?.zReportNumber && (
-              <p className="text-xs font-mono font-bold text-emerald-800">
+              <p className="text-xs font-mono font-bold text-slate-900">
                 <bdi dir="ltr">{zReport.zReportNumber}</bdi>
               </p>
             )}
           </div>
         </header>
 
-        {/* Patient Metadata Band (where applicable) */}
+        {/* Centered Formal Document Title Banner */}
+        <div className="border-y border-slate-400 bg-slate-100 py-2 px-4 text-center print-break-inside-avoid">
+          <h2 className="text-sm sm:text-base font-black text-slate-900 tracking-wide">
+            {docTitle}
+          </h2>
+        </div>
+
+        {/* Formal Word-Style Bordered Patient Demographics Table (where applicable) */}
         {documentType !== 'z_report' &&
           documentType !== 'tomorrow_schedule' &&
           documentType !== 'patient_visit_card' && (
-          <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-emerald-50/45 border border-emerald-200/70 rounded-2xl p-4 print-break-inside-avoid">
-            <div>
-              <div className="text-xs text-slate-500">{isDocAr ? 'اسم المريض' : 'Patient Name'}</div>
-              <div className="text-xs font-bold text-slate-900 mt-0.5">{resolvedPatientName}</div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-500">{isDocAr ? 'رقم الملف (MRN)' : 'MRN'}</div>
-              <div className="text-xs font-mono font-semibold text-slate-800 mt-0.5">
-                <bdi dir="ltr">{resolvedMrn || '—'}</bdi>
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-500">{isDocAr ? 'الهاتف' : 'Phone'}</div>
-              <div className="text-xs font-semibold text-slate-800 mt-0.5 tabular-nums">
-                <bdi dir="ltr">{resolvedPhone || '—'}</bdi>
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-500">
-                {isDocAr ? 'العمر / الجنس' : 'Age / Gender'}
-              </div>
-              <div className="text-xs font-semibold text-slate-800 mt-0.5">
-                {patient?.data.age ? `${patient.data.age} ${isDocAr ? 'سنة' : 'yrs'}` : '—'}
-                {patient?.data.gender
-                  ? ` · ${
-                      patient.data.gender === 'male'
-                        ? isDocAr
-                          ? 'ذكر'
-                          : 'Male'
-                        : patient.data.gender === 'female'
-                          ? isDocAr
-                            ? 'أنثى'
-                            : 'Female'
-                          : isDocAr
-                            ? 'أخرى'
-                            : 'Other'
-                    }`
-                  : ''}
-              </div>
-            </div>
+          <section className="print-break-inside-avoid">
+            <table className="w-full border-collapse border border-slate-400 text-xs">
+              <tbody>
+                <tr>
+                  <td className="border border-slate-400 bg-slate-100 px-3 py-2 font-bold text-slate-700 w-[18%]">
+                    {isDocAr ? 'اسم المريض' : 'Patient Name'}
+                  </td>
+                  <td className="border border-slate-400 px-3 py-2 font-bold text-slate-900 w-[32%]">
+                    {resolvedPatientName}
+                  </td>
+                  <td className="border border-slate-400 bg-slate-100 px-3 py-2 font-bold text-slate-700 w-[18%]">
+                    {isDocAr ? 'رقم الملف (MRN)' : 'Medical Record #'}
+                  </td>
+                  <td className="border border-slate-400 px-3 py-2 font-mono font-bold text-slate-900 w-[32%]">
+                    <bdi dir="ltr">{resolvedMrn || '—'}</bdi>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border border-slate-400 bg-slate-100 px-3 py-2 font-bold text-slate-700">
+                    {isDocAr ? 'العمر / الجنس' : 'Age / Gender'}
+                  </td>
+                  <td className="border border-slate-400 px-3 py-2 font-semibold text-slate-900">
+                    {patient?.data.age ? `${patient.data.age} ${isDocAr ? 'سنة' : 'yrs'}` : '—'}
+                    {patient?.data.gender
+                      ? ` / ${
+                          patient.data.gender === 'male'
+                            ? isDocAr
+                              ? 'ذكر'
+                              : 'Male'
+                            : patient.data.gender === 'female'
+                              ? isDocAr
+                                ? 'أنثى'
+                                : 'Female'
+                              : isDocAr
+                                ? 'أخرى'
+                                : 'Other'
+                        }`
+                      : ''}
+                  </td>
+                  <td className="border border-slate-400 bg-slate-100 px-3 py-2 font-bold text-slate-700">
+                    {isDocAr ? 'رقم الهاتف' : 'Phone Number'}
+                  </td>
+                  <td className="border border-slate-400 px-3 py-2 font-mono font-semibold text-slate-900 tabular-nums">
+                    <bdi dir="ltr">{resolvedPhone || '—'}</bdi>
+                  </td>
+                </tr>
+                {(patient?.data.referringPhysician || patient?.data.occupation) && (
+                  <tr>
+                    <td className="border border-slate-400 bg-slate-100 px-3 py-2 font-bold text-slate-700">
+                      {isDocAr ? 'الجهة / الطبيب المحيل' : 'Referring Physician'}
+                    </td>
+                    <td className="border border-slate-400 px-3 py-2 font-semibold text-slate-900">
+                      {patient?.data.referringPhysician || '—'}
+                    </td>
+                    <td className="border border-slate-400 bg-slate-100 px-3 py-2 font-bold text-slate-700">
+                      {isDocAr ? 'المهنة / النشاط' : 'Occupation'}
+                    </td>
+                    <td className="border border-slate-400 px-3 py-2 font-semibold text-slate-900">
+                      {patient?.data.occupation || '—'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </section>
         )}
 
@@ -1292,8 +1336,8 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
         {isClinicalLetter && (
           <section className="space-y-4">
             {documentType === 'referral_letter' && (
-              <div className="border border-slate-300 rounded-xl p-3.5 bg-slate-50 print-break-inside-avoid">
-                <span className="text-slate-500">{isDocAr ? 'إلى: ' : 'To: '}</span>
+              <div className="border border-slate-400 bg-slate-50 px-4 py-3 print-break-inside-avoid">
+                <span className="font-bold text-slate-700">{isDocAr ? 'حضرة الدكتور / الجهة الطبية المحترمة: ' : 'To Consulting Physician / Department: '}</span>
                 <strong className="text-slate-900">
                   {recipientDoctor.trim() ||
                     patient?.data.referringPhysician ||
@@ -1302,196 +1346,272 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
               </div>
             )}
 
-            <div className="border border-slate-200 rounded-xl p-4 space-y-2 print-break-inside-avoid">
-              <h3 className="font-bold text-slate-900 border-b border-slate-200 pb-1.5">
-                {isDocAr ? 'ملخص الحالة والتشخيص' : 'Clinical Summary & Diagnosis'}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                  <span className="text-slate-500">{isDocAr ? 'الحالة / الخطة: ' : 'Episode: '}</span>
-                  <strong>{episode?.data.title || '—'}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500">{isDocAr ? 'التشخيص الطبي: ' : 'Diagnosis: '}</span>
-                  <strong>
-                    {episode?.data.medicalDiagnosis || '—'}
-                    {episode?.data.icd10Code ? ` (${episode.data.icd10Code})` : ''}
-                  </strong>
-                </div>
-                <div>
-                  <span className="text-slate-500">{isDocAr ? 'تاريخ بدء الخطة: ' : 'Episode Start: '}</span>
-                  <strong className="tabular-nums">
-                    <bdi dir="ltr">
-                      {episode?.startDate ? formatDateDDMMYYYY(episode.startDate) : '—'}
-                    </bdi>
-                  </strong>
-                </div>
-                <div>
-                  <span className="text-slate-500">{isDocAr ? 'عدد الجلسات المعتمدة: ' : 'Finalized Sessions: '}</span>
-                  <strong className="tabular-nums">{finalizedSessions.length}</strong>
-                </div>
+            {/* Formal Section 1: Clinical Summary & Medical Diagnosis */}
+            <div className="border border-slate-400 print-break-inside-avoid">
+              <div className="bg-slate-100 border-b border-slate-400 px-3.5 py-2 font-bold text-slate-900">
+                {isDocAr ? 'أولاً: الملخص السريري والتشخيص الطبي' : '1. Clinical Summary & Medical Diagnosis'}
               </div>
-              {(clinicalStore?.chiefComplaint || episode?.data.chiefComplaint) && (
-                <p className="pt-1 text-slate-800">
-                  <strong>{isDocAr ? 'الشكوى الرئيسية: ' : 'Chief Complaint: '}</strong>
-                  {clinicalStore?.chiefComplaint || episode?.data.chiefComplaint}
+              <table className="w-full border-collapse text-xs">
+                <tbody>
+                  <tr className="border-b border-slate-300">
+                    <td className="bg-slate-50 px-3 py-2 font-bold text-slate-700 w-[22%] border-e border-slate-300">
+                      {isDocAr ? 'الحالة / الخطة العلاجية' : 'Episode / Care Plan'}
+                    </td>
+                    <td className="px-3 py-2 font-semibold text-slate-900 w-[28%] border-e border-slate-300">
+                      {episode?.data.title ||
+                        (isDocAr ? 'برنامج علاج طبيعي وتأهيل طبي متكامل' : 'Comprehensive Physical Therapy & Rehabilitation')}
+                    </td>
+                    <td className="bg-slate-50 px-3 py-2 font-bold text-slate-700 w-[22%] border-e border-slate-300">
+                      {isDocAr ? 'التشخيص الطبي' : 'Medical Diagnosis'}
+                    </td>
+                    <td className="px-3 py-2 font-semibold text-slate-900 w-[28%]">
+                      {episode?.data.medicalDiagnosis ||
+                        patient?.data.medicalHistory ||
+                        (isDocAr ? 'تحت التقييم والمتابعة السريرية' : 'Under Clinical Evaluation & Follow-up')}
+                      {episode?.data.icd10Code ? ` (${episode.data.icd10Code})` : ''}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="bg-slate-50 px-3 py-2 font-bold text-slate-700 border-e border-slate-300">
+                      {isDocAr ? 'تاريخ بدء البرنامج' : 'Program Start Date'}
+                    </td>
+                    <td className="px-3 py-2 font-mono font-semibold text-slate-900 tabular-nums border-e border-slate-300">
+                      <bdi dir="ltr">
+                        {episode?.startDate
+                          ? formatDateDDMMYYYY(episode.startDate)
+                          : formatDateDDMMYYYY(localDate())}
+                      </bdi>
+                    </td>
+                    <td className="bg-slate-50 px-3 py-2 font-bold text-slate-700 border-e border-slate-300">
+                      {isDocAr ? 'عدد الجلسات المنجزة' : 'Completed Sessions'}
+                    </td>
+                    <td className="px-3 py-2 font-mono font-bold text-slate-900 tabular-nums">
+                      {finalizedSessions.length}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div className="p-3.5 space-y-2 border-t border-slate-300 bg-white">
+                <p className="text-slate-900 leading-relaxed">
+                  <strong className="text-slate-900">
+                    {isDocAr ? 'الشكوى الرئيسية والتاريخ المرضي: ' : 'Chief Complaint & Clinical History: '}
+                  </strong>
+                  {clinicalStore?.chiefComplaint ||
+                    episode?.data.chiefComplaint ||
+                    patient?.data.medicalHistory ||
+                    patient?.data.generalNotes ||
+                    (isDocAr
+                      ? 'راجع المريض العيادة لإجراء التقييم الحركي والوظيفي الشامل والبدء ببرنامج التأهيل الطبي المتخصص.'
+                      : 'Patient presented for comprehensive musculoskeletal and functional physical therapy evaluation and rehabilitation.')}
                 </p>
-              )}
-              {(clinicalStore?.clinicalImpression || episode?.data.clinicalImpression) && (
-                <p className="text-slate-800">
-                  <strong>{isDocAr ? 'الانطباع السريري: ' : 'Clinical Impression: '}</strong>
-                  {clinicalStore?.clinicalImpression || episode?.data.clinicalImpression}
-                </p>
-              )}
+                {(clinicalStore?.clinicalImpression || episode?.data.clinicalImpression) && (
+                  <p className="text-slate-900 leading-relaxed">
+                    <strong className="text-slate-900">
+                      {isDocAr ? 'الانطباع السريري: ' : 'Clinical Impression: '}
+                    </strong>
+                    {clinicalStore?.clinicalImpression || episode?.data.clinicalImpression}
+                  </p>
+                )}
+              </div>
             </div>
 
-            {baselineSnap && (
-              <div className="border border-slate-200 rounded-xl p-4 space-y-3 print-break-inside-avoid">
-                <h3 className="font-bold text-slate-900 border-b border-slate-200 pb-1.5">
-                  {isDocAr ? 'مقارنة القياسات والتقدم السريري' : 'Objective Progress & Measurements'}
-                </h3>
-                <table className="w-full border-collapse border border-slate-300 text-xs">
-                  <thead>
-                    <tr className="bg-slate-100">
-                      <th className="border border-slate-300 px-2.5 py-1.5 text-start">
-                        {isDocAr ? 'المقياس' : 'Metric'}
-                      </th>
-                      <th className="border border-slate-300 px-2.5 py-1.5 text-center">
-                        {isDocAr ? 'التقييم الأولي' : 'Baseline'} ({formatDateDDMMYYYY(baselineSnap.recordedDate)})
-                      </th>
-                      {latestSnap && latestSnap.id !== baselineSnap.id && (
-                        <th className="border border-slate-300 px-2.5 py-1.5 text-center">
-                          {isDocAr ? 'آخر تقييم' : 'Latest'} ({formatDateDDMMYYYY(latestSnap.recordedDate)})
-                        </th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="border border-slate-300 px-2.5 py-1.5 font-semibold">
-                        {isDocAr ? 'شدة الألم أثناء الراحة (NPRS 0–10)' : 'Pain at Rest (NPRS 0–10)'}
-                      </td>
-                      <td className="border border-slate-300 px-2.5 py-1.5 text-center tabular-nums">
-                        <bdi dir="ltr">{baselineSnap.painNrsRest}/10</bdi>
-                      </td>
-                      {latestSnap && latestSnap.id !== baselineSnap.id && (
-                        <td className="border border-slate-300 px-2.5 py-1.5 text-center tabular-nums font-bold">
-                          <bdi dir="ltr">{latestSnap.painNrsRest}/10</bdi>
-                        </td>
-                      )}
-                    </tr>
-                    <tr>
-                      <td className="border border-slate-300 px-2.5 py-1.5 font-semibold">
-                        {isDocAr ? 'شدة الألم مع الحركة (NPRS 0–10)' : 'Pain on Activity (NPRS 0–10)'}
-                      </td>
-                      <td className="border border-slate-300 px-2.5 py-1.5 text-center tabular-nums">
-                        <bdi dir="ltr">{baselineSnap.painNrsActivity}/10</bdi>
-                      </td>
-                      {latestSnap && latestSnap.id !== baselineSnap.id && (
-                        <td className="border border-slate-300 px-2.5 py-1.5 text-center tabular-nums font-bold">
-                          <bdi dir="ltr">{latestSnap.painNrsActivity}/10</bdi>
-                        </td>
-                      )}
-                    </tr>
-                    {(latestSnap?.outcomeScale || baselineSnap.outcomeScale) && (
-                      <tr>
-                        <td className="border border-slate-300 px-2.5 py-1.5 font-semibold">
-                          {(isDocAr
-                            ? latestSnap?.outcomeScale?.scaleNameAr || baselineSnap.outcomeScale?.scaleNameAr
-                            : latestSnap?.outcomeScale?.scaleNameEn || baselineSnap.outcomeScale?.scaleNameEn) ||
-                            (isDocAr ? 'المقياس الوظيفي' : 'Functional Outcome')}
-                        </td>
-                        <td className="border border-slate-300 px-2.5 py-1.5 text-center tabular-nums">
-                          {baselineSnap.outcomeScale
-                            ? `${baselineSnap.outcomeScale.scorePercentage}%`
-                            : '—'}
-                        </td>
-                        {latestSnap && latestSnap.id !== baselineSnap.id && (
-                          <td className="border border-slate-300 px-2.5 py-1.5 text-center tabular-nums font-bold">
-                            {latestSnap.outcomeScale
-                              ? `${latestSnap.outcomeScale.scorePercentage}%`
-                              : '—'}
-                          </td>
-                        )}
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-
-                {/* Active ROM entries WITHOUT normative normalRanges (preserving clinic customization) */}
-                {(latestSnap?.romSummary.length || baselineSnap.romSummary.length) ? (
-                  <div className="pt-2">
-                    <div className="font-bold text-slate-800 mb-1">
-                      {isDocAr ? 'قياسات المدى الحركي المسجلة (ROM):' : 'Measured Range of Motion (ROM):'}
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                      {(latestSnap?.romSummary || baselineSnap.romSummary).slice(0, 8).map((r, idx) => (
-                        <div key={idx} className="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 flex justify-between">
-                          <span>{isDocAr ? r.labelAr || r.labelEn : r.labelEn || r.labelAr}</span>
-                          <span className="font-mono font-bold">
-                            <bdi dir="ltr">{r.aromDegrees !== null ? `${r.aromDegrees}°` : '—'}</bdi>
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
+            {/* Formal Section 2: Medical Background, Precautions & Clinical Findings */}
+            {(patient?.data.medicalHistory ||
+              patient?.data.previousSurgeries ||
+              patient?.data.precautions ||
+              patient?.data.redFlags ||
+              patient?.data.generalNotes) && (
+              <div className="border border-slate-400 print-break-inside-avoid">
+                <div className="bg-slate-100 border-b border-slate-400 px-3.5 py-2 font-bold text-slate-900">
+                  {isDocAr ? 'ثانياً: الخلفية الطبية والاحتياطات السريرية' : '2. Medical History & Clinical Precautions'}
+                </div>
+                <div className="p-3.5 space-y-1.5 text-slate-900 leading-relaxed">
+                  {patient?.data.medicalHistory && (
+                    <p>
+                      <strong>{isDocAr ? 'التاريخ المرضي: ' : 'Medical History: '}</strong>
+                      {patient.data.medicalHistory}
+                    </p>
+                  )}
+                  {patient?.data.previousSurgeries && (
+                    <p>
+                      <strong>{isDocAr ? 'العمليات الجراحية السابقة: ' : 'Previous Surgeries: '}</strong>
+                      {patient.data.previousSurgeries}
+                    </p>
+                  )}
+                  {patient?.data.redFlags && (
+                    <p>
+                      <strong>{isDocAr ? 'العلامات التحذيرية (Red Flags): ' : 'Red Flags: '}</strong>
+                      {patient.data.redFlags}
+                    </p>
+                  )}
+                  {patient?.data.precautions && (
+                    <p>
+                      <strong>{isDocAr ? 'الاحتياطات والمحاذير العلاجية: ' : 'Clinical Precautions: '}</strong>
+                      {patient.data.precautions}
+                    </p>
+                  )}
+                  {patient?.data.generalNotes && (
+                    <p>
+                      <strong>{isDocAr ? 'ملاحظات سريرية مسجلة: ' : 'Clinical Notes: '}</strong>
+                      {patient.data.generalNotes}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
-            {soaps.length > 0 && (
-              <div className="border border-slate-200 rounded-xl p-4 space-y-2 print-break-inside-avoid">
-                <h3 className="font-bold text-slate-900 border-b border-slate-200 pb-1.5">
-                  {isDocAr ? 'أحدث ملاحظة سريرية موثقة (SOAP)' : 'Latest Documented SOAP Summary'}
-                </h3>
-                {(() => {
+            {/* Formal Section 3: Objective Measurements & Progress */}
+            {baselineSnap && (
+              <div className="border border-slate-400 print-break-inside-avoid">
+                <div className="bg-slate-100 border-b border-slate-400 px-3.5 py-2 font-bold text-slate-900">
+                  {isDocAr ? 'ثالثاً: مقارنة القياسات الموضوعية والتقدم السريري' : '3. Objective Measurements & Clinical Progress'}
+                </div>
+                <div className="p-3.5 space-y-3">
+                  <table className="w-full border-collapse border border-slate-400 text-xs">
+                    <thead>
+                      <tr className="bg-slate-100">
+                        <th className="border border-slate-400 px-2.5 py-1.5 text-start">
+                          {isDocAr ? 'المقياس السريري' : 'Clinical Metric'}
+                        </th>
+                        <th className="border border-slate-400 px-2.5 py-1.5 text-center">
+                          {isDocAr ? 'التقييم الأولي' : 'Baseline'} ({formatDateDDMMYYYY(baselineSnap.recordedDate)})
+                        </th>
+                        {latestSnap && latestSnap.id !== baselineSnap.id && (
+                          <th className="border border-slate-400 px-2.5 py-1.5 text-center">
+                            {isDocAr ? 'أحدث تقييم' : 'Latest'} ({formatDateDDMMYYYY(latestSnap.recordedDate)})
+                          </th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="border border-slate-400 px-2.5 py-1.5 font-semibold">
+                          {isDocAr ? 'شدة الألم أثناء الراحة (NPRS 0–10)' : 'Pain at Rest (NPRS 0–10)'}
+                        </td>
+                        <td className="border border-slate-400 px-2.5 py-1.5 text-center tabular-nums">
+                          <bdi dir="ltr">{baselineSnap.painNrsRest}/10</bdi>
+                        </td>
+                        {latestSnap && latestSnap.id !== baselineSnap.id && (
+                          <td className="border border-slate-400 px-2.5 py-1.5 text-center tabular-nums font-bold">
+                            <bdi dir="ltr">{latestSnap.painNrsRest}/10</bdi>
+                          </td>
+                        )}
+                      </tr>
+                      <tr>
+                        <td className="border border-slate-400 px-2.5 py-1.5 font-semibold">
+                          {isDocAr ? 'شدة الألم مع الحركة (NPRS 0–10)' : 'Pain on Activity (NPRS 0–10)'}
+                        </td>
+                        <td className="border border-slate-400 px-2.5 py-1.5 text-center tabular-nums">
+                          <bdi dir="ltr">{baselineSnap.painNrsActivity}/10</bdi>
+                        </td>
+                        {latestSnap && latestSnap.id !== baselineSnap.id && (
+                          <td className="border border-slate-400 px-2.5 py-1.5 text-center tabular-nums font-bold">
+                            <bdi dir="ltr">{latestSnap.painNrsActivity}/10</bdi>
+                          </td>
+                        )}
+                      </tr>
+                      {(latestSnap?.outcomeScale || baselineSnap.outcomeScale) && (
+                        <tr>
+                          <td className="border border-slate-400 px-2.5 py-1.5 font-semibold">
+                            {(isDocAr
+                              ? latestSnap?.outcomeScale?.scaleNameAr || baselineSnap.outcomeScale?.scaleNameAr
+                              : latestSnap?.outcomeScale?.scaleNameEn || baselineSnap.outcomeScale?.scaleNameEn) ||
+                              (isDocAr ? 'المقياس الوظيفي' : 'Functional Outcome')}
+                          </td>
+                          <td className="border border-slate-400 px-2.5 py-1.5 text-center tabular-nums">
+                            {baselineSnap.outcomeScale
+                              ? `${baselineSnap.outcomeScale.scorePercentage}%`
+                              : '—'}
+                          </td>
+                          {latestSnap && latestSnap.id !== baselineSnap.id && (
+                            <td className="border border-slate-400 px-2.5 py-1.5 text-center tabular-nums font-bold">
+                              {latestSnap.outcomeScale
+                                ? `${latestSnap.outcomeScale.scorePercentage}%`
+                                : '—'}
+                            </td>
+                          )}
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+
+                  {/* Active ROM entries WITHOUT normative normalRanges (preserving clinic customization) */}
+                  {(latestSnap?.romSummary.length || baselineSnap.romSummary.length) ? (
+                    <div className="pt-1">
+                      <div className="font-bold text-slate-800 mb-1.5">
+                        {isDocAr ? 'قياسات المدى الحركي المسجلة (ROM):' : 'Measured Range of Motion (ROM):'}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {(latestSnap?.romSummary || baselineSnap.romSummary).slice(0, 8).map((r, idx) => (
+                          <div key={idx} className="px-2.5 py-1 bg-slate-50 border border-slate-300 flex justify-between">
+                            <span>{isDocAr ? r.labelAr || r.labelEn : r.labelEn || r.labelAr}</span>
+                            <span className="font-mono font-bold">
+                              <bdi dir="ltr">{r.aromDegrees !== null ? `${r.aromDegrees}°` : '—'}</bdi>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            )}
+
+            {/* Formal Section 4: Rehabilitation Plan, SOAP Summary & Clinical Recommendations */}
+            <div className="border border-slate-400 print-break-inside-avoid">
+              <div className="bg-slate-100 border-b border-slate-400 px-3.5 py-2 font-bold text-slate-900">
+                {isDocAr
+                  ? 'رابعاً: الخطة العلاجية والتوصيات الطبية'
+                  : '4. Rehabilitation Plan & Clinical Recommendations'}
+              </div>
+              <div className="p-3.5 space-y-2 text-slate-900 leading-relaxed">
+                {soaps.length > 0 && (() => {
                   const latestSoap = soaps[soaps.length - 1];
                   return (
-                    <div className="space-y-1 text-slate-800">
+                    <>
                       {latestSoap.data.assessment?.clinicalImpressionCurrent && (
                         <p>
-                          <strong>{isDocAr ? 'التقييم (A): ' : 'Assessment (A): '}</strong>
+                          <strong>{isDocAr ? 'التقييم السريري الموثق (A): ' : 'Documented Assessment (A): '}</strong>
                           {latestSoap.data.assessment.clinicalImpressionCurrent}
                         </p>
                       )}
                       {(latestSoap.data.plan?.homeInstructions ||
                         latestSoap.data.plan?.nextSessionPlan) && (
                         <p>
-                          <strong>{isDocAr ? 'الخطة والتثقيف (P): ' : 'Plan & Education (P): '}</strong>
+                          <strong>{isDocAr ? 'خطة الجلسات والتعليمات (P): ' : 'Treatment Plan & Education (P): '}</strong>
                           {latestSoap.data.plan.homeInstructions ||
                             latestSoap.data.plan.nextSessionPlan}
                         </p>
                       )}
-                    </div>
+                    </>
                   );
                 })()}
-              </div>
-            )}
 
-            {documentType === 'discharge_summary' && (
-              <div className="border border-slate-200 rounded-xl p-4 space-y-2 bg-slate-50 print-break-inside-avoid">
-                <h3 className="font-bold text-slate-900">
-                  {isDocAr ? 'ملخص وتوصيات التخريج' : 'Discharge Disposition & Summary'}
-                </h3>
-                {episode?.data.dischargeReason && (
-                  <p>
-                    <strong>{isDocAr ? 'سبب التخريج: ' : 'Discharge Reason: '}</strong>
-                    {episode.data.dischargeReason}
-                  </p>
+                {documentType === 'discharge_summary' && (
+                  <>
+                    {episode?.data.dischargeReason && (
+                      <p>
+                        <strong>{isDocAr ? 'سبب التخريج: ' : 'Discharge Reason: '}</strong>
+                        {episode.data.dischargeReason}
+                      </p>
+                    )}
+                    {episode?.data.dischargeSummary && <p>{episode.data.dischargeSummary}</p>}
+                    {episode?.data.dischargeFinalOutcomeNote && (
+                      <p>{episode.data.dischargeFinalOutcomeNote}</p>
+                    )}
+                  </>
                 )}
-                {episode?.data.dischargeSummary && <p>{episode.data.dischargeSummary}</p>}
-                {episode?.data.dischargeFinalOutcomeNote && (
-                  <p className="text-slate-700">{episode.data.dischargeFinalOutcomeNote}</p>
-                )}
-              </div>
-            )}
 
-            {customRecommendation.trim() && (
-              <div className="border border-slate-300 rounded-xl p-3.5 bg-slate-50 print-break-inside-avoid">
-                <strong>{isDocAr ? 'توصيات المعالج: ' : 'Clinician Recommendations: '}</strong>
-                {customRecommendation}
+                <p>
+                  <strong>{isDocAr ? 'التوصيات والمتابعة السريرية: ' : 'Clinical Recommendations & Follow-up: '}</strong>
+                  {customRecommendation.trim() ||
+                    (isDocAr
+                      ? 'يوصى بالالتزام بالخطة التأهيلية المقررة والتمارين العلاجية المنزلية، مع المراجعة الدورية لتقييم الاستجابة الوظيفية والسريرية.'
+                      : 'Recommend adhering to the prescribed physical therapy program and home exercise regimen, with periodic clinical reassessment.')}
+                </p>
               </div>
-            )}
+            </div>
           </section>
         )}
 
@@ -2230,57 +2350,45 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
           </section>
         )}
 
-        {/* Clinic Footer + Stamp / Signature */}
-        <footer className="pt-6 border-t border-emerald-700/20 space-y-4 print-break-inside-avoid">
-          <div className="flex flex-col sm:flex-row items-end justify-between gap-4">
-            <div className="max-w-md space-y-1 text-xs text-slate-600 hidden sm:block">
+        </div>
+
+        {/* Official Bottom-Anchored Clinic Footer + Stamp / Signature */}
+        <footer className="mt-auto pt-6 border-t-2 border-slate-800 print-break-inside-avoid">
+          <div className="flex items-end justify-between gap-6">
+            <div className="max-w-md space-y-1.5 text-xs text-slate-600">
               {(clinicProfile.receiptFooterAr || clinicProfile.receiptFooterEn) && (
-                <p className="font-medium text-slate-800">
+                <p className="font-bold text-slate-800">
                   {isDocAr
                     ? clinicProfile.receiptFooterAr || clinicProfile.receiptFooterEn
                     : clinicProfile.receiptFooterEn || clinicProfile.receiptFooterAr}
                 </p>
               )}
-              <p className="text-slate-500">
+              <p className="text-slate-600">
                 {isDocAr
-                  ? 'تم إنشاء هذا المستند محلياً داخل عيادة PhysioRecord المشفرة على الجهاز.'
-                  : 'Generated locally inside PhysioRecord — encrypted on-device clinical workstation.'}
+                  ? 'وثيقة طبية صادرة رسمياً من نظام السجل السريري في العيادة.'
+                  : 'Official clinical document issued by the clinic medical record system.'}
               </p>
             </div>
 
-            <div className="text-center min-w-[160px] space-y-1 ms-auto">
-              {stampSafe && (
+            <div className="border border-slate-300 bg-slate-50/70 rounded-lg px-5 py-3 text-center min-w-[200px] space-y-1.5 ms-auto">
+              {stampSafe ? (
                 <img
                   src={stampSafe}
                   alt="Clinic Stamp"
-                  className="h-16 mx-auto object-contain"
+                  className="h-14 mx-auto object-contain"
                 />
+              ) : (
+                <div className="h-8" />
               )}
-              <div className="border-t border-emerald-700/40 pt-1 font-semibold text-slate-800">
+              <div className="border-t border-slate-400 pt-1.5 font-bold text-slate-900">
                 {(isDocAr ? clinicProfile.therapistNameAr : clinicProfile.therapistNameEn) ||
                   clinicProfile.therapistNameAr ||
                   clinicProfile.therapistNameEn}
               </div>
-              <div className="text-xs text-slate-500">
-                {isDocAr ? 'توقيع وختم العيادة' : 'Clinic Stamp & Signature'}
+              <div className="text-xs font-semibold text-slate-600">
+                {isDocAr ? 'توقيع وختم الأخصائي المعالج' : 'Attending Clinician Stamp & Signature'}
               </div>
             </div>
-          </div>
-
-          {/* On mobile / small screens, disclaimer footnote renders at the very bottom below signature */}
-          <div className="sm:hidden text-center text-[10px] text-slate-400 pt-2 border-t border-slate-100 space-y-0.5">
-            {(clinicProfile.receiptFooterAr || clinicProfile.receiptFooterEn) && (
-              <p className="font-medium text-slate-600">
-                {isDocAr
-                  ? clinicProfile.receiptFooterAr || clinicProfile.receiptFooterEn
-                  : clinicProfile.receiptFooterEn || clinicProfile.receiptFooterAr}
-              </p>
-            )}
-            <p>
-              {isDocAr
-                ? 'تم إنشاء هذا المستند محلياً داخل عيادة PhysioRecord المشفرة على الجهاز.'
-                : 'Generated locally inside PhysioRecord — encrypted on-device clinical workstation.'}
-            </p>
           </div>
         </footer>
       </div>
