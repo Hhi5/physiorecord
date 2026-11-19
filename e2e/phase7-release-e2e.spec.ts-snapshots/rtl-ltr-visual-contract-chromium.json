@@ -1,0 +1,68 @@
+[
+  {
+    "screen": "01-lock-setup",
+    "viewport": "1440x900",
+    "dir": "rtl",
+    "lang": "ar",
+    "horizontalOverflowPx": 0,
+    "hasSidebar": false,
+    "sidebarOnExpectedSide": null,
+    "allButtonsLabeled": true,
+    "minVisibleFontPx": 12
+  },
+  {
+    "screen": "02-today-solo",
+    "viewport": "1440x900",
+    "dir": "rtl",
+    "lang": "ar",
+    "horizontalOverflowPx": 0,
+    "hasSidebar": true,
+    "sidebarOnExpectedSide": true,
+    "allButtonsLabeled": true,
+    "minVisibleFontPx": 12
+  },
+  {
+    "screen": "03-today-mobile",
+    "viewport": "390x844",
+    "dir": "rtl",
+    "lang": "ar",
+    "horizontalOverflowPx": 0,
+    "hasSidebar": false,
+    "sidebarOnExpectedSide": null,
+    "allButtonsLabeled": true,
+    "minVisibleFontPx": 12
+  },
+  {
+    "screen": "04-quick-soap-dark",
+    "viewport": "1440x900",
+    "dir": "rtl",
+    "lang": "ar",
+    "horizontalOverflowPx": 0,
+    "hasSidebar": true,
+    "sidebarOnExpectedSide": true,
+    "allButtonsLabeled": true,
+    "minVisibleFontPx": 12
+  },
+  {
+    "screen": "05-finance-ledger",
+    "viewport": "1440x900",
+    "dir": "rtl",
+    "lang": "ar",
+    "horizontalOverflowPx": 0,
+    "hasSidebar": true,
+    "sidebarOnExpectedSide": true,
+    "allButtonsLabeled": true,
+    "minVisibleFontPx": 12
+  },
+  {
+    "screen": "06-directory-ltr",
+    "viewport": "1440x900",
+    "dir": "ltr",
+    "lang": "en",
+    "horizontalOverflowPx": 0,
+    "hasSidebar": true,
+    "sidebarOnExpectedSide": true,
+    "allButtonsLabeled": true,
+    "minVisibleFontPx": 12
+  }
+]

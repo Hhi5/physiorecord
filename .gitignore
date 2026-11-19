@@ -1,0 +1,69 @@
+# Dependencies
+node_modules/
+
+# Build & typecheck artifacts
+build/
+dist/
+*.tsbuildinfo
+
+# Environment & secrets (keep template only)
+.env*
+!.env.example
+*.local
+
+# Cryptographic keys, certificates & signing stores
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.pem
+*.key
+*.crt
+
+# Local databases & encrypted/raw backups (never commit clinical data)
+*.ptbackup
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.db3
+*.bak
+
+# Logs, test, audit & temporary files
+*.log
+coverage/
+test-results/
+playwright-report/
+playwright/.cache/
+blob-report/
+ui-audit/
+ux-evidence/
+public/assets/aistudio/
+.aistudio/
+.agents/
+.tmp/
+tmp/
+.cache/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Android (Capacitor) generated build & local SDK artifacts
+android/.gradle/
+android/captures/
+android/local.properties
+android/app/build/
+android/build/
+android/app/src/main/assets/public/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Windows Desktop (Electron) generated build & installer artifacts
+dist-electron/
+release/
+out/
+

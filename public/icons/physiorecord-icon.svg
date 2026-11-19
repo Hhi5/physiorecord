@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="prBg" x1="48" y1="32" x2="464" y2="480" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#14B8A6" />
+      <stop offset="0.52" stop-color="#0F766E" />
+      <stop offset="1" stop-color="#115E59" />
+    </linearGradient>
+    <linearGradient id="prShieldFill" x1="128" y1="92" x2="384" y2="424" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22" />
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.08" />
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#prBg)" />
+  <rect x="20" y="20" width="472" height="472" rx="108" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="6" />
+  <path
+    d="M256 80L388 132V244C388 336 330.4 406.4 256 432C181.6 406.4 124 336 124 244V132L256 80Z"
+    fill="url(#prShieldFill)"
+    stroke="#FFFFFF"
+    stroke-width="18"
+    stroke-linejoin="round"
+  />
+  <circle cx="256" cy="148" r="14" fill="#CCFBF1" />
+  <path
+    d="M158 262H204L228 196L266 324L294 244L316 262H354"
+    stroke="#FFFFFF"
+    stroke-width="22"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

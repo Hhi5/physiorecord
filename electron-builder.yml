@@ -1,0 +1,54 @@
+appId: org.physiorecord.app
+productName: PhysioRecord
+copyright: Copyright (c) 2026 PhysioRecord Contributors (GPL-3.0-or-later)
+electronVersion: 34.3.0
+
+directories:
+  output: release
+
+files:
+  - dist/**/*
+  - electron/**/*
+  - LICENSE
+  - NOTICE
+  - THIRD_PARTY_NOTICES.md
+  - CONTENT_LICENSES.md
+  - package.json
+  - "!node_modules/**/*"
+
+asar: true
+npmRebuild: false
+
+win:
+  icon: electron/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+
+nsis:
+  artifactName: "${productName}-Setup-${version}-${arch}.${ext}"
+  installerIcon: electron/icon.ico
+  uninstallerIcon: electron/icon.ico
+  installerHeaderIcon: electron/icon.ico
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: PhysioRecord
+  license: LICENSE
+
+portable:
+  artifactName: "${productName}-Portable-${version}-${arch}.${ext}"
+
+publish:
+  provider: github
+  owner: Hhi5
+  repo: physiorecord
+  releaseType: release

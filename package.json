@@ -1,0 +1,69 @@
+{
+  "name": "physiorecord",
+  "private": true,
+  "version": "1.1.0",
+  "description": "Offline-first, WebCrypto AES-256-GCM encrypted physical therapy EHR for clinics in Iraq (Arabic/Kurdish RTL & English LTR).",
+  "homepage": "https://github.com/Hhi5/physiorecord",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hhi5/physiorecord.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Hhi5/physiorecord/issues"
+  },
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "main": "electron/main.mjs",
+  "scripts": {
+    "dev": "vite --port=3000 --host=0.0.0.0",
+    "build": "vite build",
+    "build:web": "node scripts/build-target.mjs web",
+    "build:android:web": "node scripts/build-target.mjs android",
+    "build:desktop:web": "node scripts/build-target.mjs desktop",
+    "sync:version": "node scripts/sync-version.mjs",
+    "android:keystore:init": "node scripts/setup-android-keystore.mjs",
+    "android:prepare": "node scripts/prepare-android-template.mjs",
+    "android:sync": "npm run build:android:web && node scripts/prepare-android-template.mjs && npx cap sync android",
+    "electron:start": "npm run build:desktop:web && npx electron .",
+    "electron:dist": "npm run build:desktop:web && npx electron-builder --win nsis portable --publish never",
+    "preview": "vite preview",
+    "clean": "rm -rf dist",
+    "lint": "tsc --noEmit",
+    "test": "vitest run src",
+    "test:e2e": "playwright test",
+    "check:licenses": "node scripts/check-licenses.mjs",
+    "check:content": "node scripts/verify-content-licenses.mjs",
+    "check:perf": "node scripts/check-perf-budget.mjs",
+    "sbom": "node scripts/generate-sbom.mjs"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-sans-arabic": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "dexie": "^4.4.7",
+    "konva": "^10.9.1",
+    "lucide-react": "^0.546.0",
+    "minisearch": "^7.2.0",
+    "react": "^19.0.1",
+    "react-aria-components": "^1.22.1",
+    "react-dom": "^19.0.1",
+    "react-konva": "^19.3.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/cli": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
+    "@playwright/test": "^1.65.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^5.1.0"
+  }
+}

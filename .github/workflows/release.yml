@@ -1,0 +1,304 @@
+name: Release Multi-Platform (Web PWA + Universal Android APK + Windows EXE)
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - '[0-9]*.[0-9]*.[0-9]*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Optional release tag (e.g. v1.2.0) to publish a GitHub Release when triggered manually'
+        required: false
+        type: string
+      allow_unsigned_debug:
+        description: 'Allow debug APK build if signing secrets are not yet configured (NEVER use for user upgrades!)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-build-web:
+    name: Verify Quality Gates & Build Web PWA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync version metadata from release tag (when triggered by tag/input)
+        env:
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          TAG="${INPUT_RELEASE_TAG:-${GITHUB_REF_NAME:-}}"
+          if [[ "$TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            node scripts/sync-version.mjs --version "$TAG"
+          else
+            node scripts/sync-version.mjs
+          fi
+
+      - name: Security audit (production dependencies, high/critical)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: License compliance gate (GPL-3.0-or-later & allowlist)
+        run: npm run check:licenses
+
+      - name: Content license registry gate
+        run: npm run check:content
+
+      - name: TypeScript typecheck
+        run: npm run lint
+
+      - name: Run pure Node update & timer unit tests
+        run: |
+          npx --yes tsx --test scripts/sessionTimerState.node.test.ts
+          npx --yes tsx --test scripts/updateSafety.node.test.ts
+
+      - name: Unit & clinical verification tests
+        run: npm test
+
+      - name: Build Web PWA bundle
+        run: npm run build:web
+
+      - name: Performance budget check
+        run: npm run check:perf
+
+      - name: Generate CycloneDX SBOM
+        run: npm run sbom
+
+      - name: Package Web PWA archive with GPL notices
+        env:
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          VERSION_TAG="${INPUT_RELEASE_TAG:-${GITHUB_REF_NAME:-}}"
+          if [[ ! "$VERSION_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            VERSION_TAG="v$(node -p "require('./package.json').version")"
+          fi
+          if [[ "$VERSION_TAG" != v* ]]; then
+            VERSION_TAG="v${VERSION_TAG}"
+          fi
+          cp LICENSE NOTICE THIRD_PARTY_NOTICES.md CONTENT_LICENSES.md dist/
+          cd dist && zip -r "../PhysioRecord-Web-PWA-${VERSION_TAG}.zip" .
+
+      - name: Upload Web PWA & SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-pwa-bundle
+          path: |
+            PhysioRecord-Web-PWA-*.zip
+            sbom.cdx.json
+
+  build-android-apk:
+    name: Build Universal Android APK (Capacitor 8)
+    needs: verify-and-build-web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Accept Android SDK licenses
+        run: |
+          if [ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
+          fi
+
+      - name: Enforce Persistent Release Keystore Signing Gate
+        id: keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ALLOW_UNSIGNED_DEBUG: ${{ inputs.allow_unsigned_debug }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/physiorecord-release.jks"
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/physiorecord-release.jks" >> "$GITHUB_ENV"
+            echo "REQUIRE_SIGNED_RELEASE=true" >> "$GITHUB_ENV"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          elif [ "$ALLOW_UNSIGNED_DEBUG" = "true" ] && [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "::warning::Building unsigned debug APK because allow_unsigned_debug=true was manually set. This build CANNOT upgrade existing installs!"
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Missing persistent Android signing secrets (ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD)."
+            echo "::error::Refusing to build an un-upgradeable debug APK that forces users to uninstall and lose IndexedDB data."
+            echo "::error::Run 'npm run android:keystore:init' locally once and save the generated secrets in GitHub Settings -> Secrets -> Actions."
+            exit 1
+          fi
+
+      - name: Install project dependencies
+        run: npm ci
+
+      - name: Sync version metadata & build Android web assets + Gradle wrapper
+        env:
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          TAG="${INPUT_RELEASE_TAG:-${GITHUB_REF_NAME:-}}"
+          if [[ "$TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            node scripts/sync-version.mjs --version "$TAG"
+          else
+            node scripts/sync-version.mjs
+          fi
+          npm run build:android:web
+          node scripts/prepare-android-template.mjs
+          npx cap sync android
+
+      - name: Assemble Universal Android APK (arm64-v8a, armeabi-v7a, x86_64)
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x ./gradlew
+          if [ "${{ steps.keystore.outputs.signed }}" = "true" ]; then
+            ./gradlew assembleRelease --no-daemon
+          else
+            ./gradlew assembleDebug --no-daemon
+          fi
+
+      - name: Rename Universal APK & Verify Signing Certificate Continuity
+        env:
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+          EXPECTED_SHA256: ${{ secrets.ANDROID_CERT_SHA256 }}
+        run: |
+          VERSION_TAG="${INPUT_RELEASE_TAG:-${GITHUB_REF_NAME:-}}"
+          if [[ ! "$VERSION_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            VERSION_TAG="v$(node -p "require('./package.json').version")"
+          fi
+          if [[ "$VERSION_TAG" != v* ]]; then
+            VERSION_TAG="v${VERSION_TAG}"
+          fi
+          if [ "${{ steps.keystore.outputs.signed }}" = "true" ]; then
+            OUT_APK="PhysioRecord-Android-Universal-${VERSION_TAG}.apk"
+            cp android/app/build/outputs/apk/release/*.apk "$OUT_APK"
+            APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)"
+            if [ -n "$APKSIGNER" ]; then
+              "$APKSIGNER" verify --print-certs "$OUT_APK" | tee ANDROID_SIGNING_SHA256.txt
+              if [ -n "$EXPECTED_SHA256" ]; then
+                NORM_EXPECTED="$(echo "$EXPECTED_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+                if ! grep -iFq "$NORM_EXPECTED" ANDROID_SIGNING_SHA256.txt; then
+                  echo "::error::APK certificate SHA-256 mismatch! Aborting to prevent breaking in-place updates."
+                  exit 1
+                fi
+              fi
+            fi
+          else
+            cp android/app/build/outputs/apk/debug/*.apk "PhysioRecord-Android-Universal-${VERSION_TAG}-debug.apk"
+          fi
+
+      - name: Upload Android APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-universal-apk
+          path: |
+            PhysioRecord-Android-Universal-*.apk
+            ANDROID_SIGNING_SHA256.txt
+
+  build-windows-installer:
+    name: Build Windows Setup & Portable EXE (Electron)
+    needs: verify-and-build-web
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Sync version metadata from release tag
+        env:
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: pwsh
+        run: |
+          $tag = if ($env:INPUT_RELEASE_TAG) { $env:INPUT_RELEASE_TAG } else { $env:GITHUB_REF_NAME }
+          if ($tag -match '^v?\d+\.\d+\.\d+$') {
+            node scripts/sync-version.mjs --version "$tag"
+          } else {
+            node scripts/sync-version.mjs
+          }
+
+      - name: Install project dependencies & Electron packaging tools
+        shell: pwsh
+        run: |
+          Remove-Item -Force -ErrorAction SilentlyContinue package-lock.json
+          npm install --no-audit --no-fund
+          npm install --no-save --save-exact electron@34.3.0 electron-builder@25.1.8
+
+      - name: Build Desktop web assets & package Windows NSIS Setup + Portable .exe
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          npm run build:desktop:web
+          npx electron-builder --win nsis portable --publish never
+
+      - name: Upload Windows EXE artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe-release
+          path: |
+            release/*.exe
+            release/*.blockmap
+            release/latest.yml
+
+  publish-github-release:
+    name: Publish APK, EXE, Web PWA & SHA256SUMS to GitHub Release
+    if: startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
+    needs:
+      - verify-and-build-web
+      - build-android-apk
+      - build-windows-installer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all platform artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Generate SHA256SUMS.txt
+        working-directory: release-assets
+        run: |
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag != '' && inputs.release_tag || github.ref_name }}
+          generate_release_notes: true
+          files: |
+            release-assets/*
+            LICENSE
+            NOTICE
+            THIRD_PARTY_NOTICES.md
+            CONTENT_LICENSES.md

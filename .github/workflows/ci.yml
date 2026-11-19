@@ -1,0 +1,63 @@
+name: PhysioRecord CI Gate
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Security vulnerability audit (production dependencies, npm audit)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Enforce dependency open-source licenses (R3)
+        run: npm run check:licenses
+
+      - name: Enforce content & SVG license manifest (0.5)
+        run: npm run check:content
+
+      - name: TypeScript typecheck
+        run: npm run lint
+
+      - name: Run unit, migration & crypto tests (Vitest)
+        run: npm test
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Verify CycloneDX SBOM generation
+        run: npm run sbom
+
+      - name: Install Playwright Chromium browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E, network isolation, axe-core & RTL snapshot tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report & visual artifacts on failure
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-phase7-artifacts
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: ignore
