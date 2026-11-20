@@ -85,3 +85,17 @@ export interface DtrGradeDefinition {
   clinicalInterpretationAr: string;
   isPhysiological: boolean;
 }
+
+export interface PathologicalSignDefinition {
+  signId: 'babinski' | 'hoffmann' | 'clonus';
+  nameEn: string;
+  nameAr: string;
+  nameCkb: string;
+  pathwayEn: string;
+  pathwayAr: string;
+  elicitationEn: string;
+  elicitationAr: string;
+  positiveMeaningEn: string;
+  positiveMeaningAr: string;
+}
+

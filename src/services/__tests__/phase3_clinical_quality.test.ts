@@ -42,12 +42,22 @@ import {
 import {
   ASIA_ISNCSCI_LEVEL_CODES,
   ASIA_ISNCSCI_SENSORY_LEVELS,
+  computeAsiaSensoryTotals,
   DERMATOMES_CATALOG_GOVERNANCE,
   deriveLegacySensoryStatus,
   getAsiaSensoryCellKey,
 } from '../../data/clinicalToolkit/dermatomesData';
-import { MYOTOMES_CATALOG_GOVERNANCE } from '../../data/clinicalToolkit/myotomesData';
-import { DTR_CATALOG_GOVERNANCE } from '../../data/clinicalToolkit/dtrData';
+import {
+  ASIA_ISNCSCI_KEY_MUSCLES,
+  CLINICAL_PT_MYOTOMES,
+  computeAsiaMotorTotals,
+  MYOTOMES_CATALOG_GOVERNANCE,
+} from '../../data/clinicalToolkit/myotomesData';
+import {
+  DTR_CATALOG_GOVERNANCE,
+  DTR_DEFINITIONS,
+  PATHOLOGICAL_REFLEX_DEFINITIONS,
+} from '../../data/clinicalToolkit/dtrData';
 import { ROM_MMT_CATALOG_GOVERNANCE } from '../../data/clinicalToolkit/romMmtCatalog';
 import {
   RED_FLAG_CHECKLIST_CATALOG,
@@ -234,6 +244,92 @@ describe('Phase 3 — Clinical Quality, Safety & Data Integrity', () => {
       })
     );
     expect(slotHtmlCustom).toContain('data-slot="verified"');
+  });
+
+  it("3.2'': verifies ASIA/ISNCSCI 2019 10 key muscles, UEMS/LEMS & LT/PP totals, comprehensive C1-S2 clinical myotomes, and DTR/UMN data", () => {
+    // Official ASIA / ISNCSCI (2019) has strictly 10 key muscles (5 upper, 5 lower)
+    expect(ASIA_ISNCSCI_KEY_MUSCLES).toHaveLength(10);
+    const byRoot = Object.fromEntries(ASIA_ISNCSCI_KEY_MUSCLES.map((m) => [m.rootLevel, m]));
+    expect(byRoot.C5.functionEn).toBe('Elbow flexors');
+    expect(byRoot.C6.functionEn).toBe('Wrist extensors');
+    expect(byRoot.C7.functionEn).toBe('Elbow extensors');
+    expect(byRoot.C8.functionEn).toContain('Finger flexors');
+    expect(byRoot.T1.functionEn).toContain('Finger abductors');
+    expect(byRoot.L2.functionEn).toBe('Hip flexors');
+    expect(byRoot.L3.functionEn).toBe('Knee extensors');
+    expect(byRoot.L4.functionEn).toBe('Ankle dorsiflexors');
+    expect(byRoot.L5.functionEn).toBe('Long toe extensors');
+    expect(byRoot.S1.functionEn).toBe('Ankle plantar flexors');
+
+    // Comprehensive Clinical PT myotomes cover C1-C2..S2 with secondary differential muscles
+    expect(CLINICAL_PT_MYOTOMES.map((g) => g.root)).toEqual([
+      'C1-C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'T1', 'L1-L2', 'L3', 'L4', 'L5', 'S1', 'S2',
+    ]);
+    const c5Group = CLINICAL_PT_MYOTOMES.find((g) => g.root === 'C5')!;
+    expect(c5Group.primaryTest.movementEn).toContain('Shoulder abduction');
+    expect(c5Group.secondaryTests.some((s) => s.asiaTestId === 'asia:C5')).toBe(true);
+    const l5Group = CLINICAL_PT_MYOTOMES.find((g) => g.root === 'L5')!;
+    expect(l5Group.secondaryTests.some((s) => s.muscleEn.includes('Gluteus medius'))).toBe(true);
+
+    // Motor scoring math (including linked Clinical PT -> ASIA C5 cross-mapping & NT flag)
+    const motorTotals = computeAsiaMotorTotals([
+      {
+        rootLevel: 'C5',
+        testId: 'clinical:C5:elbow_flexion',
+        movementLabelEn: 'Elbow flexion',
+        movementLabelAr: 'ثني المرفق',
+        rightGrade: '5',
+        leftGrade: '4',
+      },
+      {
+        rootLevel: 'C6',
+        testId: 'asia:C6',
+        movementLabelEn: 'Wrist extensors',
+        movementLabelAr: 'بسط الرسغ',
+        rightGrade: '5',
+        leftGrade: 'NT',
+      },
+      {
+        rootLevel: 'L4',
+        testId: 'asia:L4',
+        movementLabelEn: 'Ankle dorsiflexors',
+        movementLabelAr: 'العطف الظهري للكاحل',
+        rightGrade: '3',
+        leftGrade: '5',
+      },
+    ]);
+    expect(motorTotals.rightUEMS).toBe(10);
+    expect(motorTotals.leftUEMS).toBe(4);
+    expect(motorTotals.leftUEMSHasNT).toBe(true);
+    expect(motorTotals.rightLEMS).toBe(3);
+    expect(motorTotals.leftLEMS).toBe(5);
+    expect(motorTotals.totalMotor).toBe(22);
+    expect(motorTotals.anyNT).toBe(true);
+
+    // Sensory scoring math (28 levels × 2 = 56/side, 112 total)
+    const sensoryTotals = computeAsiaSensoryTotals({
+      'C5.R.LT': '2',
+      'C5.L.LT': '1',
+      'C5.R.PP': '2',
+      'C5.L.PP': 'NT',
+      'S4-5.R.LT': '0',
+    });
+    expect(sensoryTotals.rightLT).toBe(2);
+    expect(sensoryTotals.leftLT).toBe(1);
+    expect(sensoryTotals.totalLT).toBe(3);
+    expect(sensoryTotals.rightPP).toBe(2);
+    expect(sensoryTotals.leftPPHasNT).toBe(true);
+    expect(sensoryTotals.alteredLevels).toBe(2);
+
+    // DTR & UMN accuracy checks
+    const brachio = DTR_DEFINITIONS.find((d) => d.reflexId === 'brachioradialis')!;
+    expect(brachio.nameAr).not.toContain('الكب');
+    expect(brachio.nameAr).toContain('الاستلقاء');
+    expect(PATHOLOGICAL_REFLEX_DEFINITIONS.map((p) => p.signId)).toEqual([
+      'babinski',
+      'hoffmann',
+      'clonus',
+    ]);
   });
 
   it('3.3: calculates MCID attainment on outcome scales, PSFS, and gates SMART Goals & GAS (-2..+2) off by default', () => {

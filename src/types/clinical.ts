@@ -937,7 +937,11 @@ export type SensoryFindingStatus =
 
 export type SensoryTableModalityGrade = '0' | '1' | '2' | 'NT';
 
-export type ReflexGradeValue = '0' | '1+' | '2+' | '3+' | '4+' | 'not_tested';
+export type ReflexGradeValue = '0' | '1+' | '2+' | '3+' | '4+' | 'NT' | 'not_tested';
+
+export type PathologicalSignResult = 'negative' | 'positive' | 'equivocal' | 'NT';
+
+export type AsiaSacralFinding = 'yes' | 'no' | 'NT';
 
 export interface DermatomeSensoryEntry {
   rootLevel: string; // 'C2' .. 'S4-5'
@@ -951,9 +955,17 @@ export interface DermatomeSensoryEntry {
 }
 
 export interface MyotomeMotorEntry {
-  rootLevel: string; // 'C5', 'C6', 'C7', 'C8', 'T1', 'L2', 'L3', 'L4', 'L5', 'S1'
+  rootLevel: string; // 'C1-C2', 'C3', 'C4', 'C5' .. 'S2'
+  /** Stable identifier distinguishing ASIA key muscle vs primary/secondary clinical PT movements */
+  testId?: string;
+  /** Protocol context when recorded ('asia' = ISNCSCI 2019 key muscle, 'clinical' = comprehensive PT screening) */
+  protocol?: 'asia' | 'clinical';
+  /** True for the root's primary movement or ASIA key muscle; false for secondary differential movements */
+  isPrimary?: boolean;
   movementLabelEn: string;
   movementLabelAr: string;
+  muscleLabelEn?: string;
+  muscleLabelAr?: string;
   rightGrade: MmtGradeValue | 'NT' | null;
   leftGrade: MmtGradeValue | 'NT' | null;
   notes?: string;
@@ -969,12 +981,34 @@ export interface DtrAssessmentEntry {
   notes?: string;
 }
 
+export interface PathologicalReflexEntry {
+  signId: 'babinski' | 'hoffmann' | 'clonus';
+  labelEn: string;
+  labelAr: string;
+  rightResult: PathologicalSignResult | null;
+  leftResult: PathologicalSignResult | null;
+  notes?: string;
+}
+
+export interface AsiaSacralSparingData {
+  /** Voluntary Anal Contraction (VAC) — ASIA/ISNCSCI Motor Sacral Sparing */
+  vac?: AsiaSacralFinding | null;
+  /** Deep Anal Pressure (DAP) — ASIA/ISNCSCI Sensory Sacral Sparing */
+  dap?: AsiaSacralFinding | null;
+}
+
 export interface NeuroScreeningBatteryData {
   batteryVersion: '1.0.0';
   dermatomes: DermatomeSensoryEntry[];
   sensoryTable?: Record<string, SensoryTableModalityGrade>; // e.g. { "C5.R.LT": "2", "C5.R.PP": "1" }
   myotomes: MyotomeMotorEntry[];
+  /** Active myotome recording mode ('clinical' = C1–S2 primary + secondary movements, 'asia' = ISNCSCI 10 key muscles) */
+  myotomeMode?: 'clinical' | 'asia';
   reflexes: DtrAssessmentEntry[];
+  /** Upper Motor Neuron (UMN) / pathological reflex screening (Babinski, Hoffmann, Ankle Clonus) */
+  pathologicalSigns?: PathologicalReflexEntry[];
+  /** ASIA/ISNCSCI Sacral Sparing markers (VAC & DAP) */
+  asiaSacral?: AsiaSacralSparingData;
   clinicalNotes?: string;
   updatedAt: string;
 }

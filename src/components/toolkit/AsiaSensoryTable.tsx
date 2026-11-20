@@ -1,28 +1,33 @@
 // =======================================================================
-// PhysioRecord — Table-First ASIA / ISNCSCI Sensory Screening Matrix
-// Replaces active dermatome SVG rendering with structured C2..S4-5 table.
+// PhysioRecord — Table-First ASIA / ISNCSCI (2019) Sensory Screening Matrix
+// Structured C2..S4-5 bilateral Light Touch (LT) & Pin Prick (PP) table
+// with anatomical key sensory points, live LT/PP totals, and DAP marker.
 // Optional visual body map slots cleanly into <BodyMapSlot region="dermatomes" />.
 // =======================================================================
 
 import React, { useMemo, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import type {
+  AsiaSacralFinding,
   DermatomeSensoryEntry,
   SensoryTableModalityGrade,
 } from '../../types/clinical';
 import {
   ASIA_ISNCSCI_SENSORY_LEVELS,
+  computeAsiaSensoryTotals,
   deriveLegacySensoryStatus,
   getAsiaSensoryCellKey,
   type AsiaSensoryModality,
   type AsiaSensorySide,
 } from '../../data/clinicalToolkit/dermatomesData';
 import { BodyMapSlot } from '../ui/BodyMapSlot';
-import { CheckCircle2, Info, RotateCcw } from 'lucide-react';
+import { CheckCircle2, Info, RotateCcw, ShieldAlert } from 'lucide-react';
 
 export interface AsiaSensoryTableProps {
   dermatomes: DermatomeSensoryEntry[];
   sensoryTable?: Record<string, SensoryTableModalityGrade>;
+  dap?: AsiaSacralFinding | null;
+  onChangeDap?: (nextDap: AsiaSacralFinding | null) => void;
   onChange: (
     nextDermatomes: DermatomeSensoryEntry[],
     nextSensoryTable: Record<string, SensoryTableModalityGrade>
@@ -39,6 +44,8 @@ type RegionFilter = 'all' | 'cervical' | 'thoracic' | 'lumbar' | 'sacral';
 export const AsiaSensoryTable: React.FC<AsiaSensoryTableProps> = ({
   dermatomes,
   sensoryTable,
+  dap = null,
+  onChangeDap,
   onChange,
   readOnly = false,
   onSelectRoot,
@@ -147,23 +154,12 @@ export const AsiaSensoryTable: React.FC<AsiaSensoryTableProps> = ({
     onChange(buildSyncedDermatomes(nextTable), nextTable);
   };
 
-  const summary = useMemo(() => {
-    let recordedCells = 0;
-    let alteredLevels = 0;
-    for (const row of ASIA_ISNCSCI_SENSORY_LEVELS) {
-      const vals = [
-        resolvedTable[getAsiaSensoryCellKey(row.rootLevel, 'R', 'LT')],
-        resolvedTable[getAsiaSensoryCellKey(row.rootLevel, 'R', 'PP')],
-        resolvedTable[getAsiaSensoryCellKey(row.rootLevel, 'L', 'LT')],
-        resolvedTable[getAsiaSensoryCellKey(row.rootLevel, 'L', 'PP')],
-      ];
-      recordedCells += vals.filter(Boolean).length;
-      if (vals.some((v) => v === '0' || v === '1')) {
-        alteredLevels += 1;
-      }
-    }
-    return { recordedCells, alteredLevels };
-  }, [resolvedTable]);
+  const totals = useMemo(() => computeAsiaSensoryTotals(resolvedTable), [resolvedTable]);
+
+  const formatSubtotal = (score: number, max: number, recorded: number, hasNT: boolean) => {
+    if (recorded === 0) return `—/${max}`;
+    return hasNT ? `${score}/${max} (NT)` : `${score}/${max}`;
+  };
 
   const renderGradeCell = (
     rootLevel: string,
@@ -215,21 +211,78 @@ export const AsiaSensoryTable: React.FC<AsiaSensoryTableProps> = ({
           <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <p className="font-medium leading-relaxed">
             {bi(
-              'التسجيل يتبع فحص المعالج نفسه؛ هذا الجدول أداة توثيق (0 = غائب، 1 = متغيّر، 2 = طبيعي، NT = غير مفحوص).',
-              "Scoring follows the clinician's own exam; this table is a recording aid (0 = Absent, 1 = Altered, 2 = Normal, NT = Not Tested)."
+              'نقاط الفحص الحسي المعيارية وفق ASIA / ISNCSCI (2019): 0 = غائب، 1 = متغيّر/ضعيف، 2 = طبيعي، NT = غير قابل للفحص.',
+              'ASIA / ISNCSCI (2019 Revised) key sensory points: 0 = Absent, 1 = Altered, 2 = Normal, NT = Not Testable.'
             )}
           </p>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-mono tabular-nums text-muted-foreground-1">
           <bdi dir="ltr">
-            {summary.recordedCells}/{ASIA_ISNCSCI_SENSORY_LEVELS.length * 4}
+            {totals.recordedCells}/{ASIA_ISNCSCI_SENSORY_LEVELS.length * 4}
           </bdi>
-          {summary.alteredLevels > 0 && (
+          {totals.alteredLevels > 0 && (
             <span className="text-orange-600 dark:text-orange-400 font-bold">
-              {bi(`${summary.alteredLevels} مستويات متغيّرة`, `${summary.alteredLevels} altered`)}
+              {bi(`${totals.alteredLevels} مستويات متغيّرة`, `${totals.alteredLevels} altered`)}
             </span>
           )}
+        </div>
+      </div>
+
+      {/* Live ASIA Sensory Subscores (LT /112 & PP /112) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="px-3 py-2 rounded-2xl bg-surface/60 flex items-center justify-between gap-2 text-xs">
+          <span className="font-bold text-foreground">
+            {bi('اللمس الخفيف (LT)', 'Light Touch (LT)')}
+          </span>
+          <div className="flex items-center gap-2 font-mono tabular-nums text-muted-foreground-1" dir="ltr">
+            <span>
+              R:{' '}
+              <strong className="text-foreground">
+                {formatSubtotal(totals.rightLT, 56, totals.rightLTRecorded, totals.rightLTHasNT)}
+              </strong>
+            </span>
+            <span>
+              L:{' '}
+              <strong className="text-foreground">
+                {formatSubtotal(totals.leftLT, 56, totals.leftLTRecorded, totals.leftLTHasNT)}
+              </strong>
+            </span>
+            <span className="px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-bold">
+              {totals.rightLTRecorded + totals.leftLTRecorded === 0
+                ? '—/112'
+                : totals.rightLTHasNT || totals.leftLTHasNT
+                  ? `${totals.totalLT}/112 NT`
+                  : `${totals.totalLT}/112`}
+            </span>
+          </div>
+        </div>
+
+        <div className="px-3 py-2 rounded-2xl bg-surface/60 flex items-center justify-between gap-2 text-xs">
+          <span className="font-bold text-foreground">
+            {bi('الوخز الحاد (PP)', 'Pin Prick (PP)')}
+          </span>
+          <div className="flex items-center gap-2 font-mono tabular-nums text-muted-foreground-1" dir="ltr">
+            <span>
+              R:{' '}
+              <strong className="text-foreground">
+                {formatSubtotal(totals.rightPP, 56, totals.rightPPRecorded, totals.rightPPHasNT)}
+              </strong>
+            </span>
+            <span>
+              L:{' '}
+              <strong className="text-foreground">
+                {formatSubtotal(totals.leftPP, 56, totals.leftPPRecorded, totals.leftPPHasNT)}
+              </strong>
+            </span>
+            <span className="px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-bold">
+              {totals.rightPPRecorded + totals.leftPPRecorded === 0
+                ? '—/112'
+                : totals.rightPPHasNT || totals.leftPPHasNT
+                  ? `${totals.totalPP}/112 NT`
+                  : `${totals.totalPP}/112`}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -309,25 +362,25 @@ export const AsiaSensoryTable: React.FC<AsiaSensoryTableProps> = ({
         )}
       </div>
 
-      {/* Table-First C2..S4-5 Sensory Recording Grid */}
+      {/* Table-First C2..S4-5 Sensory Recording Grid with Anatomical Key Points */}
       <div className="max-h-[420px] overflow-auto rounded-2xl bg-surface/55">
         <table className="w-full text-xs border-collapse">
           <thead className="sticky top-0 z-20 bg-surface border-b border-black/[0.045] dark:border-white/[0.06] text-foreground">
             <tr>
-              <th className="sticky start-0 z-30 bg-surface px-2 py-2.5 text-center font-bold w-16">
-                {bi('المستوى', 'Level')}
+              <th className="sticky start-0 z-30 bg-surface px-2.5 py-2.5 text-start font-bold min-w-[165px]">
+                {bi('المستوى ونقطة الفحص', 'Level & Key Sensory Point')}
               </th>
-              <th className="px-2 py-2.5 text-center font-bold">
-                {bi('أيمن: لمس خفيف (R.LT)', 'Right Light Touch')}
+              <th className="px-2 py-2.5 text-center font-bold whitespace-nowrap">
+                {bi('أيمن: لمس (R.LT)', 'R Light Touch')}
               </th>
-              <th className="px-2 py-2.5 text-center font-bold">
-                {bi('أيمن: وخز (R.PP)', 'Right Pin Prick')}
+              <th className="px-2 py-2.5 text-center font-bold whitespace-nowrap">
+                {bi('أيمن: وخز (R.PP)', 'R Pin Prick')}
               </th>
-              <th className="px-2 py-2.5 text-center font-bold">
-                {bi('أيسر: لمس خفيف (L.LT)', 'Left Light Touch')}
+              <th className="px-2 py-2.5 text-center font-bold whitespace-nowrap">
+                {bi('أيسر: لمس (L.LT)', 'L Light Touch')}
               </th>
-              <th className="px-2 py-2.5 text-center font-bold">
-                {bi('أيسر: وخز (L.PP)', 'Left Pin Prick')}
+              <th className="px-2 py-2.5 text-center font-bold whitespace-nowrap">
+                {bi('أيسر: وخز (L.PP)', 'L Pin Prick')}
               </th>
             </tr>
           </thead>
@@ -339,15 +392,21 @@ export const AsiaSensoryTable: React.FC<AsiaSensoryTableProps> = ({
                   key={row.rootLevel}
                   onClick={() => onSelectRoot?.(row.rootLevel)}
                   className={`transition-colors ${
-                    isSelected
-                      ? 'bg-primary/10'
-                      : 'hover:bg-card/60'
+                    isSelected ? 'bg-primary/10' : 'hover:bg-card/60'
                   }`}
                 >
-                  <td className="sticky start-0 z-10 bg-card px-2 py-2 text-center w-16">
-                    <span className="inline-flex min-w-[44px] h-6 px-1.5 rounded-md font-mono font-bold text-xs items-center justify-center bg-primary/10 text-primary">
-                      {row.rootLevel}
-                    </span>
+                  <td className="sticky start-0 z-10 bg-card px-2.5 py-2 align-middle min-w-[200px] max-w-[245px]">
+                    <div className="flex items-start gap-2">
+                      <span className="inline-flex min-w-[44px] h-6 px-1.5 rounded-md font-mono font-bold text-xs items-center justify-center bg-primary/10 text-primary shrink-0 mt-0.5">
+                        {row.rootLevel}
+                      </span>
+                      <span
+                        title={bi(row.keyPointAr, row.keyPointEn)}
+                        className="text-xs text-muted-foreground-1 leading-snug whitespace-normal"
+                      >
+                        {bi(row.keyPointAr, row.keyPointEn)}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-2 py-2 text-center whitespace-nowrap">
                     {renderGradeCell(row.rootLevel, 'R', 'LT')}
@@ -367,6 +426,60 @@ export const AsiaSensoryTable: React.FC<AsiaSensoryTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* ASIA / ISNCSCI Sensory Sacral Sparing — Deep Anal Pressure (DAP) */}
+      {onChangeDap && (
+        <div className="p-3 rounded-2xl bg-surface/65 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-start gap-2">
+            <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <div className="text-xs font-bold text-foreground">
+                {bi(
+                  'الضغط الشرجي العميق — DAP (اختياري لإصابات النخاع الشوكي / ASIA)',
+                  'Deep Anal Pressure — DAP (Optional SCI / ASIA Sensory Sacral Sparing)'
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground-1 mt-0.5">
+                {bi(
+                  'مؤشر الإبقاء الحسي العجزي (Sacral Sparing) لتحديد اكتمال أو عدم اكتمال إصابة النخاع.',
+                  'Evaluates sensory sacral sparing to distinguish complete vs. sensory-incomplete SCI.'
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            {(
+              [
+                { value: 'yes', ar: 'نعم (موجود)', en: 'Yes' },
+                { value: 'no', ar: 'لا (غائب)', en: 'No' },
+                { value: 'NT', ar: 'NT', en: 'NT' },
+              ] as const
+            ).map((opt) => {
+              const active = dap === opt.value;
+              const cls =
+                active && opt.value === 'yes'
+                  ? 'bg-emerald-600 text-white'
+                  : active && opt.value === 'no'
+                    ? 'bg-rose-600 text-white'
+                    : active && opt.value === 'NT'
+                      ? 'bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900'
+                      : 'bg-card text-muted-foreground-1 hover:bg-surface';
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  disabled={readOnly}
+                  onClick={() => onChangeDap(active ? null : opt.value)}
+                  className={`compact-btn h-8 px-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer whitespace-nowrap ${cls}`}
+                >
+                  {bi(opt.ar, opt.en)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

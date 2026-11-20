@@ -18,6 +18,7 @@ import type {
   VitalsAlertThresholds,
 } from '../../../types/clinicManagement';
 import { evaluateVitalsAgainstThresholds } from '../../../utils/modalitySafetyChecker';
+import { classifyAsiaIsncsci2019 } from '../../../utils/asiaIsncsciClassifier';
 
 export const CORE_BUILTIN_WIDGET_KEYS = [
   'body_chart',
@@ -206,28 +207,84 @@ export function buildClinicalExamSummary(
       const myotomeCount = (ns?.myotomes || []).filter(
         (m) => m.rightGrade !== null || m.leftGrade !== null
       ).length;
+      const umnTested = (ns?.pathologicalSigns || []).filter(
+        (p) => p.rightResult !== null || p.leftResult !== null
+      );
+      const umnPositive = umnTested.filter(
+        (p) => p.rightResult === 'positive' || p.leftResult === 'positive'
+      );
+      const hasSacral = Boolean(ns?.asiaSacral?.vac || ns?.asiaSacral?.dap);
       const notes = (ns?.clinicalNotes || '').trim();
       const parts: string[] = [];
       if (sensoryCount > 0) parts.push(bi(`حسي: ${sensoryCount}`, `Sensory: ${sensoryCount}`));
+      if (myotomeCount > 0) parts.push(bi(`مايوتوم: ${myotomeCount}`, `Myotomes: ${myotomeCount}`));
       if (reflexCount > 0) parts.push(bi(`منعكسات: ${reflexCount}`, `DTR: ${reflexCount}`));
-      if (myotomeCount > 0) parts.push(bi(`عضلي عصبي: ${myotomeCount}`, `Myotomes: ${myotomeCount}`));
+      if (umnTested.length > 0 && umnPositive.length === 0) {
+        parts.push(bi(`UMN سلبي: ${umnTested.length}`, `UMN Neg: ${umnTested.length}`));
+      }
+      if (hasSacral) {
+        const sacralBits: string[] = [];
+        if (ns?.asiaSacral?.vac) sacralBits.push(`VAC: ${ns.asiaSacral.vac.toUpperCase()}`);
+        if (ns?.asiaSacral?.dap) sacralBits.push(`DAP: ${ns.asiaSacral.dap.toUpperCase()}`);
+        parts.push(sacralBits.join(' · '));
+      }
+      const asiaClass = ns
+        ? classifyAsiaIsncsci2019({
+            sensoryTable: ns.sensoryTable,
+            dermatomes: ns.dermatomes,
+            myotomes: ns.myotomes,
+            asiaSacral: ns.asiaSacral,
+          })
+        : null;
       const lines: SummaryLine[] = [];
+      if (asiaClass && (asiaClass.aisGrade || asiaClass.nli)) {
+        const asiaBits: string[] = [];
+        if (asiaClass.nli) asiaBits.push(`NLI: ${asiaClass.nli}`);
+        if (asiaClass.aisGrade) asiaBits.push(`AIS ${asiaClass.aisGrade}`);
+        if (asiaClass.completeness === 'complete') asiaBits.push(bi('كاملة', 'Complete'));
+        else if (asiaClass.completeness === 'incomplete') asiaBits.push(bi('غير كاملة', 'Incomplete'));
+        const tone: SummaryLine['tone'] =
+          asiaClass.aisGrade === 'A'
+            ? 'danger'
+            : asiaClass.aisGrade === 'B' || asiaClass.aisGrade === 'C'
+              ? 'warn'
+              : asiaClass.aisGrade === 'E'
+                ? 'success'
+                : 'primary';
+        lines.push({
+          label: 'ASIA/ISNCSCI',
+          text: asiaBits.join(' · '),
+          tone,
+        });
+      }
+      if (umnPositive.length > 0) {
+        lines.push({
+          text: umnPositive.map((p) => `${bi(p.labelAr, p.labelEn)} (+)`).join(' · '),
+          tone: 'danger',
+        });
+      }
       if (parts.length > 0) lines.push({ text: parts.join(' · ') });
       if (notes) lines.push({ text: notes });
       return {
         key,
         title: bi(
-          'الفحص العصبي (Dermatomes · DTR · Myotomes)',
-          'Neurological Screening',
+          'الفحص العصبي (Dermatomes · Myotomes · DTR/UMN)',
+          'Neurological Screening (ASIA & Clinical)',
           'پشکنینی دەماری'
         ),
         shortTitle: bi('الفحص العصبي', 'Neuro', 'دەماری'),
         subtitle: bi(
-          'القطاعات الجلدية الحسية والمنعكسات الوترية والجذور الحركية',
-          'ASIA sensory levels, DTR, and myotomes'
+          'القطاعات الجلدية، المايوتوم الشامل و ASIA، المنعكسات وعلامات UMN',
+          'ASIA sensory/motor, clinical myotomes, DTR & UMN signs'
         ),
         icon: <Brain className="size-4 text-purple-600 dark:text-purple-400 shrink-0" />,
-        hasData: sensoryCount > 0 || reflexCount > 0 || myotomeCount > 0 || notes.length > 0,
+        hasData:
+          sensoryCount > 0 ||
+          reflexCount > 0 ||
+          myotomeCount > 0 ||
+          umnTested.length > 0 ||
+          hasSacral ||
+          notes.length > 0,
         lines,
       };
     }

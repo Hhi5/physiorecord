@@ -4,7 +4,11 @@
 // DeJong's Neurologic Examination (8th Ed), Campbell WW (2013)
 // =======================================================================
 
-import type { DtrDefinition, DtrGradeDefinition } from '../../types/clinicalToolkit';
+import type {
+  DtrDefinition,
+  DtrGradeDefinition,
+  PathologicalSignDefinition,
+} from '../../types/clinicalToolkit';
 
 export const DTR_ASYMMETRY_RULE_EN =
   'Bilateral side-to-side asymmetry (e.g., 1+ on the involved side vs. 2+ on the uninvolved side) is far more diagnostically significant than symmetric hyporeflexia or briskness, which can represent normal physiological variation. True asymmetry strongly points to focal radiculopathy or peripheral nerve injury.';
@@ -38,25 +42,25 @@ export const DTR_DEFINITIONS: DtrDefinition[] = [
   {
     reflexId: 'brachioradialis',
     nameEn: 'Brachioradialis Reflex (Supinator Reflex)',
-    nameAr: 'منعكس العضدية الكعبرية (منعكس الكب)',
+    nameAr: 'منعكس العضدية الكعبرية (منعكس الاستلقاء)',
     primaryRoot: 'C6',
     contributingRoots: ['C5', 'C6'],
     peripheralNerveEn: 'Radial Nerve',
     peripheralNerveAr: 'العصب الكعبري',
     tappingSiteEn: 'Styloid process of the radius, approximately 2–3 cm proximal to the wrist with forearm in neutral mid-pronation',
-    tappingSiteAr: 'فوق الناتئ الإبري لعظم الكعبرة بمسافة 2-3 سم أعلى الرسغ مع وضع الساعد في وضع نصف كب مسترخٍ',
-    normalResponseEn: 'Elbow flexion accompanied by slight forearm pronation and radial deviation of the hand',
-    normalResponseAr: 'ثني مفصل المرفق مع كب خفيف للساعد وانحراف كعبري خفيف لليد',
+    tappingSiteAr: 'فوق الناتئ الإبري لعظم الكعبرة بمسافة 2-3 سم أعلى الرسغ مع وضع الساعد في وضع محايد مسترخٍ',
+    normalResponseEn: 'Elbow flexion accompanied by slight forearm supination (toward neutral) and radial deviation',
+    normalResponseAr: 'ثني مفصل المرفق مع استلقاء خفيف للساعد نحو الوضع المحايد وانحراف كعبري طفيف',
     reinforcementTechniqueEn: 'Clenching teeth or squeezing eyes shut during the strike',
     reinforcementTechniqueAr: 'إطباق الأسنان بقوة أثناء نقر الشاكوش',
-    clinicalSignificanceAr: 'المنعكس الأساسي المعتمد لجذر C6. ظاهرة المنعكس المعكوس (Inverted Reflex) بعطف أصابع اليد دون ثني المرفق علامة كلاسيكية على اعتلال النخاع الشوكي الرقبي (Cervical Spondylotic Myelopathy).'
+    clinicalSignificanceAr: 'المنعكس الأساسي المعتمد لجذر C6 (بمشاركة C5). ظاهرة المنعكس المعكوس (Inverted Reflex) بعطف أصابع اليد دون ثني المرفق علامة كلاسيكية على اعتلال النخاع الشوكي الرقبي (Cervical Spondylotic Myelopathy).'
   },
   {
     reflexId: 'triceps',
     nameEn: 'Triceps Reflex',
     nameAr: 'منعكس ثلاثية الرؤوس العضدية',
     primaryRoot: 'C7',
-    contributingRoots: ['C7', 'C8'],
+    contributingRoots: ['C6', 'C7', 'C8'],
     peripheralNerveEn: 'Radial Nerve',
     peripheralNerveAr: 'العصب الكعبري',
     tappingSiteEn: 'Triceps tendon directly above the olecranon process with arm supported at 90° abduction and flexion',
@@ -72,7 +76,7 @@ export const DTR_DEFINITIONS: DtrDefinition[] = [
     nameEn: 'Patellar Reflex (Knee Jerk)',
     nameAr: 'منعكس الرضفة (نفضة الركبة)',
     primaryRoot: 'L4',
-    contributingRoots: ['L3', 'L4'],
+    contributingRoots: ['L2', 'L3', 'L4'],
     peripheralNerveEn: 'Femoral Nerve',
     peripheralNerveAr: 'العصب الفخذي',
     tappingSiteEn: 'Patellar tendon midway between the inferior pole of the patella and the tibial tuberosity with knee hanging freely at 90°',
@@ -144,12 +148,52 @@ export const NINDS_REFLEX_GRADES: DtrGradeDefinition[] = [
   }
 ];
 
+export const PATHOLOGICAL_REFLEX_DEFINITIONS: PathologicalSignDefinition[] = [
+  {
+    signId: 'babinski',
+    nameEn: 'Babinski Sign (Plantar Response)',
+    nameAr: 'علامة بابينسكي (المنعكس الأخمصي)',
+    nameCkb: 'نیشانەی بابینسکی',
+    pathwayEn: 'Corticospinal Tract (UMN)',
+    pathwayAr: 'السبيل القشري الشوكي (UMN)',
+    elicitationEn: 'Firm stroke along lateral plantar border curving medially across metatarsal heads',
+    elicitationAr: 'تمرير أداة غير حادة على الحافة الوحشية لباطن القدم ثم الانعطاف إنسياً تحت الأمشاط',
+    positiveMeaningEn: 'Great toe dorsiflexion (extension) ± fanning of other toes — indicates UMN lesion',
+    positiveMeaningAr: 'بسط إبهام القدم للأعلى ± تفرّق بقية الأصابع (إيجابي = آفة عصبون محرك علوي UMN)',
+  },
+  {
+    signId: 'hoffmann',
+    nameEn: 'Hoffmann Sign',
+    nameAr: 'علامة هوفمان (Hoffmann)',
+    nameCkb: 'نیشانەی هۆفمان',
+    pathwayEn: 'Cervical Corticospinal Tract (C8–T1 UMN)',
+    pathwayAr: 'النخاع الرقبي / السبيل القشري الشوكي',
+    elicitationEn: 'Flicking the distal phalanx of the relaxed middle finger downward',
+    elicitationAr: 'نقر الظفر/السلامى البعيدة للإصبع الأوسط المسترخي نحو الأسفل بسرعة',
+    positiveMeaningEn: 'Reflex flexion/adduction of thumb and/or index finger — suggests cervical myelopathy when asymmetric or paired with hyperreflexia',
+    positiveMeaningAr: 'انثناء لا إرادي لإبهام اليد و/أو السبابة — يرجّح اعتلال النخاع الرقبي خاصة عند عدم التناظر',
+  },
+  {
+    signId: 'clonus',
+    nameEn: 'Ankle Clonus',
+    nameAr: 'الرمع الكاحلي (Ankle Clonus)',
+    nameCkb: 'کلۆنەسی پاژنە',
+    pathwayEn: 'Corticospinal Tract (UMN)',
+    pathwayAr: 'السبيل القشري الشوكي (UMN)',
+    elicitationEn: 'Sudden, sustained passive dorsiflexion of the relaxed ankle with knee slightly flexed',
+    elicitationAr: 'عطف ظهري منفعل وسريع ومستمر للكاحل مع ثني خفيف للركبة',
+    positiveMeaningEn: '≥3–4 rhythmic involuntary beats (sustained clonus strongly indicates UMN pathology)',
+    positiveMeaningAr: 'تكرار 3–4 ارتعاشات إيقاعية لا إرادية أو أكثر (دلالة قوية على آفة عصبون محرك علوي UMN)',
+  },
+];
+
 export function getDtrById(id: string): DtrDefinition | undefined {
   return DTR_DEFINITIONS.find(d => d.reflexId === id);
 }
 
 export const DTR_CATALOG_GOVERNANCE = {
-  source: 'NINDS Myotatic Reflex Scale (Hallett 1993) Clinical Recording Reference',
+  source: 'NINDS Myotatic Reflex Scale (Hallett 1993) & DeJong Neurologic Examination Reference',
   reviewedBy: null as string | null,
   reviewedDate: null as string | null,
 };
+
