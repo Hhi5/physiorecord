@@ -2,7 +2,7 @@
   "name": "physiorecord",
   "private": true,
   "version": "1.1.0",
-  "description": "Offline-first, WebCrypto AES-256-GCM encrypted physical therapy EHR for clinics in Iraq (Arabic/Kurdish RTL & English LTR).",
+  "description": "Local-first, zero-backend, AES-256-GCM encrypted physical therapy EHR & clinic management suite (Web PWA, Android APK, Windows EXE) with optional LAN Wi-Fi and E2EE Google Drive sync (Arabic/Kurdish RTL & English LTR).",
   "homepage": "https://github.com/Hhi5/physiorecord",
   "repository": {
     "type": "git",

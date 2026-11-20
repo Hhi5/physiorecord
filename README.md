@@ -16,13 +16,14 @@
     <img src="https://img.shields.io/badge/License-GPL--3.0--or--later-0F766E?style=flat-square" alt="License: GPL-3.0-or-later" />
   </a>
   <img src="https://img.shields.io/badge/Version-v1.1.0-115E59?style=flat-square" alt="Version v1.1.0" />
-  <img src="https://img.shields.io/badge/Architecture-Local--First%20%C2%B7%20Zero--Cloud-16A34A?style=flat-square" alt="Local-First Zero-Cloud" />
+  <img src="https://img.shields.io/badge/Architecture-Local--First%20%C2%B7%20Zero--Backend-16A34A?style=flat-square" alt="Local-First Zero-Backend" />
   <img src="https://img.shields.io/badge/Encryption-AES--256--GCM-0284C7?style=flat-square" alt="AES-256-GCM Encryption" />
+  <img src="https://img.shields.io/badge/Sync-LAN%20Wi--Fi%20%C2%B7%20E2EE%20Google%20Drive-0D9488?style=flat-square" alt="Optional LAN Wi-Fi and E2EE Google Drive Sync" />
   <img src="https://img.shields.io/badge/Languages-AR%20%C2%B7%20CKB%20%C2%B7%20EN-D97706?style=flat-square" alt="Languages: Arabic, Kurdish Sorani, English" />
   <img src="https://img.shields.io/badge/Platforms-Web%20PWA%20%7C%20Android%20APK%20%7C%20Windows%20EXE-334155?style=flat-square" alt="Platforms: Web PWA, Android APK, Windows EXE" />
 </p>
 
-[Overview](#overview) · [Screenshots](#interface-preview) · [Features](#core-capabilities) · [Security](#security--local-first-architecture) · [Quick Start](#quick-start) · [Builds](#multi-platform-builds) · [Docs](#documentation-portal)
+[Overview](#overview) · [Screenshots](#interface-preview) · [Features](#core-capabilities) · [Multi-Device Sync](#multi-device-sync-setup-optional--0) · [Security](#security--local-first-architecture) · [Quick Start](#quick-start) · [Builds](#multi-platform-builds) · [Docs](#documentation-portal)
 
 </div>
 
@@ -30,13 +31,14 @@
 
 ## Overview
 
-**PhysioRecord** (`v1.1.0`) is an open-source, zero-telemetry physical therapy EHR and clinic management suite designed for solo clinicians and multi-therapist practices. Every patient chart, clinical assessment, appointment, and financial ledger entry stays encrypted at rest on the clinic's own device—running identically as an installable **Web PWA**, **Android Universal APK**, or **Windows Desktop (`.exe`)** application with native **Arabic (RTL)**, **Kurdish Sorani (`ckb` RTL)**, and **English (LTR)** interfaces.
+**PhysioRecord** (`v1.1.0`) is an open-source, **offline-first, zero-backend** physical therapy EHR and clinic management suite designed for solo clinicians and multi-therapist practices. Every patient chart, clinical assessment, appointment, and financial ledger entry stays encrypted at rest on the clinic's own device—running identically as an installable **Web PWA**, **Android Universal APK**, or **Windows Desktop (`.exe`)** application with native **Arabic (RTL)**, **Kurdish Sorani (`ckb` RTL)**, and **English (LTR)** interfaces. When a clinic needs multi-device sync, clinicians can opt in to **Local Clinic Wi-Fi (LAN)** or **End-to-End Encrypted Google Drive (`$0` BYOC)**—keeping full ownership of their data with zero subscriptions or vendor servers.
 
 ### Why PhysioRecord?
 
-- **Complete Data Sovereignty:** Zero external servers, zero cloud accounts, and zero third-party network requests (`Same-Origin` strict `CSP` enforced by automated E2E tests).
+- **Local-First & Zero-Backend Sovereignty:** Works 100% offline out of the box with zero PhysioRecord backend servers, zero mandatory accounts, and zero telemetry (`Same-Origin` strict `CSP` enforced by automated offline E2E tests).
+- **Optional `$0` Multi-Device Sync (User-Controlled & Non-Destructive):** Opt in only if needed via **Local Clinic Wi-Fi (LAN Hub)** over your regular clinic router, **End-to-End Encrypted Google Drive** (`drive.file` scope — encrypted locally with `AES-256-GCM` before upload so Google never sees plaintext PHI), or manual encrypted `.ptsync.json` files. Merging is strictly additive and never deletes local therapist records.
 - **Power-Cut Resilient Drafting:** Encrypted `IndexedDB` draft buffers (`Dexie v10`) auto-save clinical notes, flowsheets, invoices, and appointments every 2 seconds and flush on page hide so sudden power outages never erase active charting.
-- **Built for Real PT Clinical Flow:** Interactive front/back anatomical Body Charts, `ROM`, `MMT`, Orthopedic Special Tests, `ASIA` Neuro tables, `MCID/MDC`-linked outcome calculators, and immutable `SHA-256` finalized `SOAP` notes.
+- **Built for Real PT Clinical Flow:** Interactive front/back anatomical Body Charts, `ROM`, `MMT`, Orthopedic Special Tests, `ASIA` Neuro tables, `MCID/MDC`-linked outcome calculators, immutable `SHA-256` finalized `SOAP` notes with append-only addenda, and audited deliberate deletion of mistaken finalized sessions.
 - **Tailored for Iraqi Clinic Operations:** Supports solo and team RBAC modes, weekly recurring appointments, Iraqi home-visit addresses, multi-currency `ISO 4217` invoicing defaulting to IQD (`25,000 د.ع`), local payment channels (`نقداً`, `ZainCash`, `QiCard`, `أخرى`), installment debt aging, and A4/A6 thermal/office printouts.
 
 ---
@@ -104,6 +106,32 @@
 
 ---
 
+## Multi-Device Sync Setup (Optional, $0)
+
+Sync is **disabled by default**—PhysioRecord makes zero external network connections unless you explicitly enable one of the two optional sync modes in **Settings → Data & Sync**:
+
+| Sync Mode | Best For | Internet Needed? | Clinic PC Must Stay On? | Data Privacy |
+| --- | --- | --- | --- | --- |
+| **1. Local Wi-Fi (LAN Hub)** | Devices on the same clinic Wi-Fi router | **No (100% Offline)** | Only during the moment of sync (offline outbox queues edits when PC is off) | Strictly RFC1918 local Wi-Fi + 64-bit Pairing Token + `AES-256-GCM` envelopes |
+| **2. Encrypted Google Drive (BYOC)** | Syncing when clinic PC is off, across branches, or from home | Only during sync (auto-queues offline) | **No** | Client-side `AES-256-GCM` + `PBKDF2` (`310,000` iters) before upload; minimal `drive.file` scope only |
+| **3. Encrypted File (`.ptsync.json`)** | Air-gapped clinics, USB sticks, WhatsApp/AirDrop transfer | **No** | **No** | Client-side `AES-256-GCM` encrypted file with non-destructive merge |
+
+### How to Set Up Local Wi-Fi (LAN) Sync
+1. Connect the **Clinic Windows PC** and all **therapist phones/tablets** to the **same clinic Wi-Fi router** (no mobile hotspot is needed—just regular shared Wi-Fi).
+2. On the Clinic Windows PC (Electron Desktop app), open **Settings → Data & Sync → Clinic Multi-Device Sync**, select **Local Wi-Fi (LAN)**, and click **Start Clinic Wi-Fi Sync Hub**.
+3. Copy the displayed local address (e.g., `http://192.168.1.15:47821`) and **Pairing Token** into each therapist device, enter the same **Shared Clinic Sync Passphrase**, and click **Sync Now**.
+4. If the clinic PC is turned off, therapists keep working normally—encrypted changes queue in the **Offline Outbox** and sync cleanly once the PC is turned back on.
+
+### How to Set Up Encrypted Google Drive Sync (`$0` BYOC)
+1. Open **Settings → Data & Sync → Clinic Multi-Device Sync** and select **Encrypted Google Drive**.
+2. Click **Sign in with Google** and grant access strictly to the app's dedicated folder (`drive.file` scope — PhysioRecord **cannot** view or modify any other files in your Drive).
+3. Enter the same **Shared Clinic Sync Passphrase** on every clinic device (stored in memory only—never uploaded to Google) and click **Sync Now**.
+4. **Self-Hosting Note:** If you deploy your own copy of PhysioRecord on a custom domain, add that domain to Firebase Authentication **Authorized Domains** (and configure your Google Cloud OAuth consent screen) so the Google Sign-In popup completes without domain restrictions.
+
+> **Non-Destructive Guarantee:** Both LAN and Google Drive sync use strictly **additive merging**—syncing never deletes existing records from a therapist's device, and finalized SOAP notes remain protected.
+
+---
+
 ## Security & Local-First Architecture
 
 ```text
@@ -119,8 +147,9 @@ Clinician Password / WebAuthn PRF
 | **Encryption at Rest** | WebCrypto `AES-256-GCM` with atomic IV reservation & automatic 70% DEK rotation ([`src/crypto/vault.ts`](src/crypto/vault.ts)) |
 | **Key Derivation & Unlock** | `PBKDF2-HMAC-SHA256` (`>= 600,000` iterations) inside a Web Worker + optional `WebAuthn PRF` passkey unlock |
 | **Account Recovery & Lock** | Verified 32-character (`8×4` Base32) Emergency Recovery Key + configurable auto-lock (`Never` supported) |
-| **Audit & Immutability** | `SHA-256` hash-chained clinic audit logs; finalized `SOAP` notes cannot be overwritten or soft-deleted |
-| **Zero-Network Isolation** | Self-hosted `@fontsource/*` fonts, bundled assets, local service worker, strict `CSP`, verified by Playwright offline tests |
+| **Audit & Clinical Integrity** | `SHA-256` hash-chained clinic audit logs; finalized `SOAP` notes use append-only `clinicalAddenda` and require typed confirmation + audit trail for deliberate deletion |
+| **Zero-Network Default & E2EE Sync** | Self-hosted `@fontsource/*` fonts, bundled assets, local service worker, strict `CSP` verified by Playwright offline tests; optional Google Drive / LAN sync encrypts all records client-side (`AES-256-GCM`) before leaving the device |
+| **Desktop, Mobile & Parser Hardening** | Strict Electron `app://` path-boundary & IPC origin verification, RFC1918 LAN-only SSRF blocking, brute-force rate-limited LAN Hub, CSP-hardened HTML report exports, XLSX zip-bomb decompression limits, and prototype-pollution-safe JSON parsing |
 
 > Cryptographic vault primitives honor the `GPL-3.0` attribution to [`Niema-Lab/PhysioMeter`](https://github.com/Niema-Lab/PhysioMeter) — see [`NOTICE`](NOTICE).
 
