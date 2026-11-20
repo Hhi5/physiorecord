@@ -647,7 +647,7 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
                   'Short-Term Goals (2 to 4 weeks):'
                 )}
               </label>
-              <div className="flex gap-2 mb-2">
+              <div className="flex items-stretch gap-2 mb-2 min-w-0">
                 <input
                   id="episode-short-goal-input"
                   type="text"
@@ -664,25 +664,26 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
                     'أضف هدفاً قصير المدى ثم اضغط إضافة...',
                     'Add a short-term goal and press Add...'
                   )}
-                  className="flex-1 px-3 py-1.5 rounded-lg bg-surface border border-layer-line text-foreground text-xs"
+                  className="flex-1 min-w-0 w-full px-3 py-2 rounded-lg bg-surface border border-layer-line text-foreground text-xs"
                 />
                 <button
                   type="button"
                   onClick={handleAddShortGoal}
-                  className="px-3 py-1.5 bg-primary hover:bg-primary-hover text-primary-foreground rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  className="shrink-0 whitespace-nowrap px-3.5 py-2 bg-primary hover:bg-primary-hover text-primary-foreground rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" /> {bi('إضافة', 'Add')}
+                  <Plus className="w-3.5 h-3.5 shrink-0" />
+                  <span>{bi('إضافة', 'Add')}</span>
                 </button>
               </div>
               <div className="space-y-1.5">
                 {shortTermGoals.map((g, idx) => (
-                  <div key={idx} className="flex items-center justify-between px-3 py-1.5 bg-surface rounded-lg border border-layer-line text-xs text-foreground">
-                    <span>{g}</span>
+                  <div key={idx} className="flex items-center justify-between gap-2 px-3 py-1.5 bg-surface rounded-lg border border-layer-line text-xs text-foreground">
+                    <span className="min-w-0 break-words">{g}</span>
                     <button
                       type="button"
                       onClick={() => handleRemoveShortGoal(idx)}
                       aria-label={bi('حذف الهدف', 'Remove goal')}
-                      className="text-muted-foreground-2 hover:text-rose-600 transition-colors cursor-pointer"
+                      className="shrink-0 text-muted-foreground-2 hover:text-rose-600 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -699,7 +700,7 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
                   'Long-Term & Discharge Goals (6 to 12 weeks):'
                 )}
               </label>
-              <div className="flex gap-2 mb-2">
+              <div className="flex items-stretch gap-2 mb-2 min-w-0">
                 <input
                   id="episode-long-goal-input"
                   type="text"
@@ -716,25 +717,26 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
                     'أضف هدفاً طويل المدى ثم اضغط إضافة...',
                     'Add a long-term goal and press Add...'
                   )}
-                  className="flex-1 px-3 py-1.5 rounded-lg bg-surface border border-layer-line text-foreground text-xs"
+                  className="flex-1 min-w-0 w-full px-3 py-2 rounded-lg bg-surface border border-layer-line text-foreground text-xs"
                 />
                 <button
                   type="button"
                   onClick={handleAddLongGoal}
-                  className="px-3 py-1.5 bg-primary hover:bg-primary-hover text-primary-foreground rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  className="shrink-0 whitespace-nowrap px-3.5 py-2 bg-primary hover:bg-primary-hover text-primary-foreground rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" /> {bi('إضافة', 'Add')}
+                  <Plus className="w-3.5 h-3.5 shrink-0" />
+                  <span>{bi('إضافة', 'Add')}</span>
                 </button>
               </div>
               <div className="space-y-1.5">
                 {longTermGoals.map((g, idx) => (
-                  <div key={idx} className="flex items-center justify-between px-3 py-1.5 bg-surface rounded-lg border border-layer-line text-xs text-foreground">
-                    <span>{g}</span>
+                  <div key={idx} className="flex items-center justify-between gap-2 px-3 py-1.5 bg-surface rounded-lg border border-layer-line text-xs text-foreground">
+                    <span className="min-w-0 break-words">{g}</span>
                     <button
                       type="button"
                       onClick={() => handleRemoveLongGoal(idx)}
                       aria-label={bi('حذف الهدف', 'Remove goal')}
-                      className="text-muted-foreground-2 hover:text-rose-600 transition-colors cursor-pointer"
+                      className="shrink-0 text-muted-foreground-2 hover:text-rose-600 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

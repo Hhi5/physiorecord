@@ -7,6 +7,12 @@ import {
   saveTextFilePortable,
   triggerPlatformPrint,
 } from '../../platform/nativeBridge';
+import {
+  getGoogleDriveAuthState,
+  saveNativeGoogleOAuthConfig,
+  signInWithGoogleDrive,
+  signOutGoogleDrive,
+} from '../../services/googleDriveSync';
 import { isWebAuthnPrfSupported } from '../../crypto/webauthnPrf';
 import { isCredentialManagerStoreSupported } from '../../utils/passwordManagerHelper';
 
@@ -151,6 +157,55 @@ describe('Multi-Platform Native Bridge, Version Sync & Schema Downgrade Guard', 
     expect(printCurrentPageMock).toHaveBeenCalledWith({
       jobName: 'PhysioRecord_Invoice',
     });
+  });
+
+  it('routes Android Google Drive OAuth to native loopback bridge and blocks broken Firebase popup', async () => {
+    const store = new Map<string, string>();
+    const startGoogleDriveOAuthMock = vi.fn().mockResolvedValue({
+      accessToken: 'ya29.test-native-token',
+      email: 'clinic@example.com',
+      displayName: 'Clinic PT',
+      photoURL: '',
+    });
+
+    const win = (globalThis as Record<string, unknown>).window as Record<string, unknown>;
+    win.localStorage = {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => store.set(k, v),
+      removeItem: (k: string) => store.delete(k),
+    };
+    win.Capacitor = {
+      getPlatform: () => 'android',
+      isNativePlatform: () => true,
+      Plugins: {
+        PhysioRecordNative: {
+          startGoogleDriveOAuth: startGoogleDriveOAuthMock,
+        },
+      },
+    };
+
+    await signOutGoogleDrive();
+
+    // Without a Desktop OAuth Client ID, rejects clearly instead of launching broken Firebase popup
+    await expect(signInWithGoogleDrive()).rejects.toThrow(/Firebase|Google Drive/);
+    expect(startGoogleDriveOAuthMock).not.toHaveBeenCalled();
+
+    // With a valid Desktop OAuth Client ID, delegates to native PKCE loopback bridge
+    saveNativeGoogleOAuthConfig({
+      clientId: '1234567890-abc.apps.googleusercontent.com',
+      clientSecret: 'GOCSPX-demo',
+    });
+
+    const authState = await signInWithGoogleDrive();
+    expect(startGoogleDriveOAuthMock).toHaveBeenCalledTimes(1);
+    expect(authState.isSignedIn).toBe(true);
+    expect(authState.hasDriveToken).toBe(true);
+    expect(authState.email).toBe('clinic@example.com');
+    expect(getGoogleDriveAuthState().hasDriveToken).toBe(true);
+
+    await signOutGoogleDrive();
+    expect(getGoogleDriveAuthState().isSignedIn).toBe(false);
+    expect(getGoogleDriveAuthState().hasDriveToken).toBe(false);
   });
 
   it('strictly allowlists external URLs in openSafeExternalUrl (WhatsApp & Google Maps only)', async () => {

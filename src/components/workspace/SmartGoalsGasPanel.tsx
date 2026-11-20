@@ -169,15 +169,13 @@ export const SmartGoalsGasPanel: React.FC<SmartGoalsGasPanelProps> = ({
       >
         <div className="flex items-center gap-2 text-xs text-muted-foreground-1">
           <Target className="size-4 text-primary shrink-0" />
-          <span>
-            {bi(
-              'أهداف SMART التفصيلية ومقياس GAS ',
-              'Structured SMART Goals & GAS '
-            )}
-            <bdi dir="ltr">({bi('-2 إلى +2', '-2 to +2')})</bdi>
-            {bi(
-              ' مخفية لتبسيط الإدخال اليومي.',
-              ' are optional and hidden by default.'
+          <span className="leading-relaxed">
+            {isRtl ? (
+              <>
+                أهداف SMART التفصيلية ومقياس GAS (من <bdi dir="ltr">-2</bdi> إلى <bdi dir="ltr">+2</bdi>) مخفية لتبسيط الإدخال اليومي.
+              </>
+            ) : (
+              <>Structured SMART Goals &amp; GAS (-2 to +2) are optional and hidden by default.</>
             )}
           </span>
         </div>

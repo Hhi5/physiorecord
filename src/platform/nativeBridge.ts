@@ -54,6 +54,16 @@ export interface AndroidPhysioRecordPlugin {
     ok: boolean;
     releasesJson?: string;
   }>;
+  startGoogleDriveOAuth?: (options: {
+    clientId: string;
+    clientSecret?: string;
+    scope?: string;
+  }) => Promise<{
+    accessToken: string;
+    email?: string;
+    displayName?: string;
+    photoURL?: string;
+  }>;
 }
 
 export interface ElectronDesktopUpdateStatus {

@@ -8,6 +8,11 @@
 
 import type { EncryptedSyncEnvelope } from '../utils/clinicSyncEngine';
 import {
+  getAndroidNativePlugin,
+  isElectronDesktop,
+  isNativeAndroid,
+} from '../platform/nativeBridge';
+import {
   isSafeSyncDeviceId,
   isValidGoogleDriveId,
   randomHexCsprng,
@@ -19,6 +24,52 @@ export const DRIVE_SYNC_FOLDER_NAME = 'PhysioRecord-Clinic-Sync';
 const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
 const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3';
 const MAX_DRIVE_ENVELOPE_BYTES = 35 * 1024 * 1024;
+const NATIVE_OAUTH_CLIENT_ID_KEY = 'physiorecord_android_google_oauth_client_id_v1';
+const NATIVE_OAUTH_CLIENT_SECRET_KEY = 'physiorecord_android_google_oauth_client_secret_v1';
+
+export interface NativeGoogleOAuthConfig {
+  clientId: string;
+  clientSecret: string;
+}
+
+export function getNativeGoogleOAuthConfig(): NativeGoogleOAuthConfig {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return { clientId: '', clientSecret: '' };
+    }
+    return {
+      clientId: (window.localStorage.getItem(NATIVE_OAUTH_CLIENT_ID_KEY) || '').trim(),
+      clientSecret: (window.localStorage.getItem(NATIVE_OAUTH_CLIENT_SECRET_KEY) || '').trim(),
+    };
+  } catch {
+    return { clientId: '', clientSecret: '' };
+  }
+}
+
+export function saveNativeGoogleOAuthConfig(next: Partial<NativeGoogleOAuthConfig>): NativeGoogleOAuthConfig {
+  const current = getNativeGoogleOAuthConfig();
+  const merged: NativeGoogleOAuthConfig = {
+    clientId: (next.clientId ?? current.clientId).trim(),
+    clientSecret: (next.clientSecret ?? current.clientSecret).trim(),
+  };
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      if (merged.clientId) {
+        window.localStorage.setItem(NATIVE_OAUTH_CLIENT_ID_KEY, merged.clientId);
+      } else {
+        window.localStorage.removeItem(NATIVE_OAUTH_CLIENT_ID_KEY);
+      }
+      if (merged.clientSecret) {
+        window.localStorage.setItem(NATIVE_OAUTH_CLIENT_SECRET_KEY, merged.clientSecret);
+      } else {
+        window.localStorage.removeItem(NATIVE_OAUTH_CLIENT_SECRET_KEY);
+      }
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  return merged;
+}
 
 export interface GoogleDriveAuthState {
   isSignedIn: boolean;
@@ -104,10 +155,49 @@ export function getGoogleDriveAuthState(): GoogleDriveAuthState {
 }
 
 /**
- * Initiates Google Workspace OAuth popup requesting strictly `drive.file` scope.
+ * Initiates Google Workspace OAuth requesting strictly `drive.file` scope.
+ * - On Web: Firebase Auth `signInWithPopup`.
+ * - On Android APK: Native system-browser PKCE loopback OAuth (never opens broken firebaseapp.com popup).
  * MUST only be called from an explicit user click on the official "Sign in with Google" button.
  */
 export async function signInWithGoogleDrive(): Promise<GoogleDriveAuthState> {
+  if (isNativeAndroid()) {
+    const androidPlugin = getAndroidNativePlugin();
+    const nativeCfg = getNativeGoogleOAuthConfig();
+    if (!nativeCfg.clientId || !nativeCfg.clientId.endsWith('.apps.googleusercontent.com')) {
+      throw new Error(
+        'تسجيل الدخول عبر نافذة Firebase المنبثقة غير مدعوم داخل تطبيقات أندرويد (يظهر خطأ The requested action is invalid). استخدم أزرار «رفع/استيراد مباشر مع تطبيق Google Drive» أعلاه فوراً بدون إعداد، أو أدخل Google Desktop OAuth Client ID لتفعيل الربط التلقائي.'
+      );
+    }
+    if (!androidPlugin?.startGoogleDriveOAuth) {
+      throw new Error(
+        'يرجى تحديث تطبيق الأندرويد إلى أحدث إصدار لدعم ربط Google Drive الأصلي عبر المتصفح.'
+      );
+    }
+    const res = await androidPlugin.startGoogleDriveOAuth({
+      clientId: nativeCfg.clientId,
+      clientSecret: nativeCfg.clientSecret || undefined,
+      scope: `${GOOGLE_DRIVE_FILE_SCOPE} openid email profile`,
+    });
+    if (!res?.accessToken) {
+      throw new Error('لم يتم الحصول على رمز صلاحية Google Drive. يرجى المحاولة مرة أخرى.');
+    }
+    cachedAccessToken = res.accessToken;
+    cachedTokenAcquiredAt = Date.now();
+    cachedAuthUser = {
+      email: res.email || 'Google Drive',
+      displayName: res.displayName || res.email || 'Google Drive',
+      photoURL: res.photoURL || null,
+    };
+    return getGoogleDriveAuthState();
+  }
+
+  if (isElectronDesktop()) {
+    throw new Error(
+      'تسجيل الدخول عبر نافذة Firebase المنبثقة غير متاح في نسخة سطح المكتب المعزولة (app://). استخدم «مزامنة الواي فاي المحلي» أو مزامنة ملف .ptsync.json داخل مجلد Google Drive على جهازك.'
+    );
+  }
+
   const { auth, GoogleAuthProvider, signInWithPopup } = await ensureFirebaseAuth();
   const provider = new GoogleAuthProvider();
   provider.addScope(GOOGLE_DRIVE_FILE_SCOPE);
