@@ -1137,10 +1137,9 @@ body {
   place-items: center;
   width: 2.25rem;
   height: 2.25rem;
-  border-radius: 0.75rem;
-  color: var(--primary-foreground);
-  background-color: var(--primary);
-  box-shadow: var(--pr-shadow-1);
+  color: var(--primary);
+  background: transparent;
+  box-shadow: none;
   flex: 0 0 auto;
 }
 .pr-nav-label {

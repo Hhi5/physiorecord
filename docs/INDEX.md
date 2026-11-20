@@ -10,7 +10,7 @@ Welcome to the official documentation portal for **PhysioRecord (`v1.1.0`)** —
 
 | الوثيقة (Document) | الملخص بالعربية (Arabic Summary) | English Summary |
 | --- | --- | --- |
-| [`README.md`](../README.md) · [`README.ar.md`](../README.ar.md) | دليل التشغيل السريع باللغتين العربية والإنجليزية، معاينة الواجهات، الأمان والتشفير، وبناء المنصات (`?demo=1`). | Quick start guide (English & Arabic), interface preview, security architecture, multi-platform builds, and Demo Mode (`?demo=1`). |
+| [`README.md`](../README.md) · [`README.ar.md`](README.ar.md) | دليل التشغيل السريع باللغتين العربية والإنجليزية، معاينة الواجهات، الأمان والتشفير، وبناء المنصات (`?demo=1`). | Quick start guide (English & Arabic), interface preview, security architecture, multi-platform builds, and Demo Mode (`?demo=1`). |
 | [`CHANGELOG.md`](../CHANGELOG.md) | سجل الإصدارات الكامل بما في ذلك الإصدار `1.1.0` (المراحل الإضافية `A` إلى `F`: المسودات المقاومة لانقطاع الكهرباء، القوالب الإقليمية، العمليات العراقية، وجودة البيانات). | Full release history including `v1.1.0` (Addendum Phases `A`–`F`: power-cut resilient drafts, regional presets, Iraqi operations, and data quality). |
 | [`AGENTS.md`](../AGENTS.md) | الثوابت الهندسية والسريرية، التخصيصات المحمية لمالك العيادة، وسياسة التراخيص. | Architectural invariants, preserved clinic owner customizations, and open-source license enforcement rules. |
 
@@ -26,6 +26,7 @@ Welcome to the official documentation portal for **PhysioRecord (`v1.1.0`)** —
 | [`docs/MIGRATIONS.md`](MIGRATIONS.md) | دليل ترقيات مخطط `Dexie / IndexedDB` التفصيلي من الإصدار `v1` حتى `v10` (بما فيها جدول المسودات `drafts`) وترحيل `localStorage` الآمن. | Per-version `Dexie / IndexedDB` schema migration reference from `v1` through `v10` (including the `v10` `drafts` crash buffer) and idempotent `localStorage` migration. |
 | [`docs/DESKTOP_ANDROID_RELEASE.md`](DESKTOP_ANDROID_RELEASE.md) | دليل البناء والتوزيع لأندرويد (Capacitor Universal APK) وسطح المكتب (Windows Electron `.exe`) وحماية البيانات عند الترقية. | Build, distribution, and in-place data-survival testing guide for Android (Capacitor APK) and Windows Desktop (Electron NSIS/Portable). |
 | [`docs/UPDATES_AND_SIGNING.md`](UPDATES_AND_SIGNING.md) | دليل توقيع تطبيق الأندرويد (`Keystore`) وتوحيد أرقام الإصدارات (`sync-version.mjs`) والتحديثات الموضعية دون فقدان البيانات. | Android Release Keystore setup, single-source-of-truth versioning (`sync-version.mjs`), and in-place upgrade signing rules. |
+| [`docs/GITHUB_RELEASE_CLEANUP.md`](GITHUB_RELEASE_CLEANUP.md) | دليل تنظيف مستودع GitHub للنشر العام: حذف الإصدارات والوسوم القديمة، تنظيف سجل الكوميتات بأمان، وبوابات الفحص قبل الإطلاق. | Safe GitHub public release checklist: deleting old releases/tags, squashing commit ranges or resetting history with backup, and pre-release gates. |
 | [`docs/PERFORMANCE_BUDGET.json`](PERFORMANCE_BUDGET.json) | حدود الأداء وحجم الحزمة المستهدفة (`npm run check:perf`) للأجهزة الاقتصادية ومراقبة تقسيم الشيفرة البرمجية. | Target client bundle splitting thresholds and 6x-CPU runtime budgets enforced by `npm run check:perf`. |
 
 ---
@@ -45,12 +46,12 @@ Welcome to the official documentation portal for **PhysioRecord (`v1.1.0`)** —
 
 | الوثيقة (Document) | الملخص بالعربية (Arabic Summary) | English Summary |
 | --- | --- | --- |
-| [`CONTRIBUTING.md`](../CONTRIBUTING.md) | دليل المساهمة للمطورين والمعالجين الفيزيائيين، معايير الكود، وبوابات التحقق الآلية قبل فتح طلبات الدمج (`Pull Requests`). | Developer & clinician contribution guidelines, coding standards, and pre-PR automated verification gates. |
-| [`CODE_OF_CONDUCT.md`](../CODE_OF_CONDUCT.md) | ميثاق سلوك المجتمع المفتوح المصدر لضمان بيئة تعاونية مهنية ومحترمة. | Community Code of Conduct fostering a welcoming, respectful open-source environment. |
-| [`SECURITY.md`](../SECURITY.md) | سياسة الإبلاغ المسؤول عن الثغرات الأمنية وحدود الحماية التشفيرية المحلية. | Vulnerability disclosure policy and local cryptographic security boundaries. |
-| [`CONTENT_LICENSES.md`](../CONTENT_LICENSES.md) | السجل الكامل لجميع الرسومات التشريحية (`SVG`)، الخطوط المحلية، والبيانات السريرية المدمجة المتحققة عبر `npm run check:content`. | Registry of all anatomical `SVG` assets, self-hosted fonts, and clinical catalogs verified by `npm run check:content`. |
+| [`.github/CONTRIBUTING.md`](../.github/CONTRIBUTING.md) | دليل المساهمة للمطورين والمعالجين الفيزيائيين، معايير الكود، وبوابات التحقق الآلية قبل فتح طلبات الدمج (`Pull Requests`). | Developer & clinician contribution guidelines, coding standards, and pre-PR automated verification gates. |
+| [`.github/CODE_OF_CONDUCT.md`](../.github/CODE_OF_CONDUCT.md) | ميثاق سلوك المجتمع المفتوح المصدر لضمان بيئة تعاونية مهنية ومحترمة. | Community Code of Conduct fostering a welcoming, respectful open-source environment. |
+| [`.github/SECURITY.md`](../.github/SECURITY.md) | سياسة الإبلاغ المسؤول عن الثغرات الأمنية وحدود الحماية التشفيرية المحلية. | Vulnerability disclosure policy and local cryptographic security boundaries. |
+| [`docs/legal/CONTENT_LICENSES.md`](legal/CONTENT_LICENSES.md) | السجل الكامل لجميع الرسومات التشريحية (`SVG`)، الخطوط المحلية، والبيانات السريرية المدمجة المتحققة عبر `npm run check:content`. | Registry of all anatomical `SVG` assets, self-hosted fonts, and clinical catalogs verified by `npm run check:content`. |
 | [`LICENSE`](../LICENSE) & [`NOTICE`](../NOTICE) | رخصة المشروع (`GPL-3.0-or-later`) وإشعارات الإسناد لمشروع `Niema-Lab/PhysioMeter` والاعتماديات المفتوحة. | Project license (`GPL-3.0-or-later`), `Niema-Lab/PhysioMeter` cryptographic attribution, and third-party notices. |
-| [`PRIVACY.md`](../PRIVACY.md) & [`DISCLAIMER.md`](../DISCLAIMER.md) | بيان الخصوصية المحلي الصارم (صفر خوادم خارجية أو تتبع) وإخلاء المسؤولية الطبية والسريرية. | Zero-telemetry local privacy statement and clinical judgment / non-medical-device disclaimer. |
+| [`docs/legal/PRIVACY.md`](legal/PRIVACY.md) & [`docs/legal/DISCLAIMER.md`](legal/DISCLAIMER.md) | بيان الخصوصية المحلي الصارم (صفر خوادم خارجية أو تتبع) وإخلاء المسؤولية الطبية والسريرية. | Zero-telemetry local privacy statement and clinical judgment / non-medical-device disclaimer. |
 
 ---
 

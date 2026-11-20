@@ -1028,7 +1028,9 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
                       formState.postPainNrs === undefined &&
                       !formState.postPainNotRecorded && (
                         <span className="text-muted-foreground-1">
-                          {bi('لم يُسجل الألم بعد', 'Tap to record pain NPRS')}
+                          {isLocked
+                            ? bi('غير مسجّل في هذه الجلسة', 'Not recorded in this session', 'تۆمار نەکراوە')
+                            : bi('لم يُسجل الألم بعد', 'Tap to record pain NPRS', 'ئازار هێشتا تۆمار نەکراوە')}
                         </span>
                       )}
                   </div>

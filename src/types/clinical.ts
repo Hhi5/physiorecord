@@ -237,6 +237,10 @@ export interface PatientClinicalData {
   importedAt?: string;
   mergedFromPatientIds?: string[];
 
+  /** Responsible therapist assignment for clinic team oversight */
+  assignedStaffId?: string;
+  assignedTherapistName?: string;
+
   profileSummaryUpdatedAt?: string; // ISO 8601 timestamp of last profile edit
 }
 
@@ -386,6 +390,8 @@ export interface EpisodeClinicalData {
   dischargeSummary?: string;
   dischargeReason?: 'goals_met' | 'plateau' | 'medical_referral' | 'self_discharge';
   dischargeFinalOutcomeNote?: string;
+  assignedStaffId?: string;
+  assignedTherapistName?: string;
   statusNotes?: string;
   isOngoingLegacyEpisode?: boolean;
   knownVsUnknownHistoryFlags?: {

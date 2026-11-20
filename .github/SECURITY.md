@@ -14,4 +14,4 @@ If you discover a cryptographic flaw, XSS vector, plaintext storage leak, backup
 
 ## Known Security Boundaries
 
-For full transparency regarding what browser-based local encryption protects—and what it cannot protect against (compromised browser extensions, OS memory inspection while unlocked, shared physical devices, and unmigrated legacy `localStorage` keys if auto-migration is interrupted)—see [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
+For full transparency regarding what browser-based local encryption protects—and what it cannot protect against (compromised browser extensions, OS memory inspection while unlocked, shared physical devices, and unmigrated legacy `localStorage` keys if auto-migration is interrupted)—see [`docs/THREAT_MODEL.md`](../docs/THREAT_MODEL.md).

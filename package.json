@@ -25,12 +25,12 @@
     "android:prepare": "node scripts/prepare-android-template.mjs",
     "android:sync": "npm run build:android:web && node scripts/prepare-android-template.mjs && npx cap sync android",
     "electron:start": "npm run build:desktop:web && npx electron .",
-    "electron:dist": "npm run build:desktop:web && npx electron-builder --win nsis portable --publish never",
+    "electron:dist": "npm run build:desktop:web && npx electron-builder --config electron/electron-builder.yml --win nsis portable --publish never",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "test": "vitest run src",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --config e2e/playwright.config.ts",
     "check:licenses": "node scripts/check-licenses.mjs",
     "check:content": "node scripts/verify-content-licenses.mjs",
     "check:perf": "node scripts/check-perf-budget.mjs",
@@ -41,6 +41,7 @@
     "@fontsource/inter": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "dexie": "^4.4.7",
+    "firebase": "^13.4.0",
     "konva": "^10.9.1",
     "lucide-react": "^0.546.0",
     "minisearch": "^7.2.0",
@@ -65,5 +66,8 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.0",
     "vitest": "^5.1.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.7"
   }
 }

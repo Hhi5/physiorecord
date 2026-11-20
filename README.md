@@ -6,7 +6,7 @@
 
 **Offline-First, Zero-Server, AES-256-GCM Encrypted Electronic Health Record (EHR) & Clinic Operations Platform for Physical Therapy**
 
-[English](README.md) · [**العربية**](README.ar.md) · [Documentation Portal](docs/INDEX.md)
+[English](README.md) · [**العربية**](docs/README.ar.md) · [Documentation Portal](docs/INDEX.md)
 
 <p>
   <a href="https://github.com/Hhi5/physiorecord/actions/workflows/ci.yml">
@@ -97,8 +97,9 @@
 - **Scheduling & Home Visits:** Daily/weekly manual recurring schedules with non-blocking overbooking warnings, Iraqi home-visit addresses (Neighborhood / Mahalla / Zukak / Landmark + travel buffer & fee), branches, closed days, and waiting-room Patient Kiosk mode.
 - **Billing, Installments & Retention:** Blank-default invoice creation (`فحص`, `جلسة مفردة`, `كورس`), Iraqi payment methods (`نقداً`, `ZainCash`, `QiCard`, `أخرى`), multi-installment plans, `30/60/90+` day debt aging, recurring clinic expenses, daily `Z-Reports`, referring physician progress letters, and patient retention queues.
 
-### 3. Portability, Printing & Offline Sharing
-- **Print Portal (`A4` / `A6`):** Single-page auto-fitted invoices, receipts, referring physician reports, discharge summaries, full patient dossiers, visit/balance cards, HEP sheets, and signed informed consents.
+### 3. Portability, Printing & Multi-Device Clinic Sync
+- **Print Portal (`A4` / `A6`) & Discharge Summary:** Single-page auto-fitted invoices, receipts, referring physician reports, treatment journey & discharge summaries (with dedicated Completed Treatment archive), full patient dossiers, visit/balance cards, HEP sheets, and signed informed consents.
+- **Zero-Cost Multi-Therapist Sync (Optional, Strictly Non-Destructive):** Sync across clinic PC and therapists' phones via **Local Wi-Fi (LAN)** over the clinic's regular Wi-Fi router (no hotspot or internet needed) or **End-to-End Encrypted Google Drive (`$0`)** with offline outbox queueing and additive merging that never deletes therapist data.
 - **Standards & Backups:** Encrypted `.ptbackup` `V3.0` archives (streaming `gzip` + `AES-GCM` chunks, backward compatible with `V1.1`/`V2.0`), `HL7 FHIR R4` JSON Bundles, `CSV`/`XLSX` patient onboarding with rollback, and privacy-filtered `.ics` calendar exports.
 
 ---
@@ -193,11 +194,11 @@ See [`docs/DESKTOP_ANDROID_RELEASE.md`](docs/DESKTOP_ANDROID_RELEASE.md) and [`d
 
 ```text
 physiorecord/
-├── .github/                  # CI & Release workflows, Dependabot, Issue/PR templates
+├── .github/                  # CI/Release workflows, Dependabot, Templates, SECURITY & CONTRIBUTING
 ├── android/                  # Capacitor Android project (Universal APK, org.physiorecord.app)
-├── docs/                     # Bilingual technical & clinical documentation (docs/INDEX.md)
-├── e2e/                      # Playwright E2E, zero-network, axe-core & RTL visual tests
-├── electron/                 # Electron main/preload shell for Windows Desktop builds
+├── docs/                     # Documentation portal, Arabic README (README.ar.md) & legal/ notices
+├── e2e/                      # Playwright E2E tests, zero-network checks & playwright.config.ts
+├── electron/                 # Electron Windows Desktop shell & electron-builder.yml
 ├── public/                   # Static icons & deployment security headers (_headers)
 ├── scripts/                  # Build target, PWA plugin, license/content/perf gates, keystore & SBOM
 ├── src/
@@ -224,8 +225,9 @@ physiorecord/
 │   ├── types/                # Clinical, toolkit, widget & clinic management TypeScript types
 │   └── utils/                # MCID/MDC, FHIR R4 export, CSV/XLSX import, Iraqi finance/schedule
 ├── AGENTS.md                 # Architectural invariants, license rules & preserved customizations
-├── CONTENT_LICENSES.md       # Manifest for all SVGs, fonts & clinical datasets
-└── sbom.cdx.json             # Generated CycloneDX Software Bill of Materials
+├── CHANGELOG.md              # Release history & phase summary
+├── LICENSE                   # GPL-3.0-or-later license
+└── NOTICE                    # Upstream & third-party attribution notice
 ```
 
 </details>
@@ -238,12 +240,12 @@ Every pull request runs automated security, licensing, asset-manifest, performan
 
 ```bash
 npm run check:licenses                    # Verify SPDX licenses for all runtime & dev packages
-npm run check:content                     # Verify all SVGs, fonts & catalogs in CONTENT_LICENSES.md
+npm run check:content                     # Verify SVGs, fonts & catalogs in docs/legal/CONTENT_LICENSES.md
 npm run lint                              # TypeScript static typecheck (tsc --noEmit)
 npm test                                  # Vitest unit, crypto, Dexie migration & domain tests
 npm run build                             # Vite production bundle + strict CSP & PWA manifest
 npm run check:perf                        # Verify bundle sizes against docs/PERFORMANCE_BUDGET.json
-npm run sbom                              # Regenerate CycloneDX SBOM (sbom.cdx.json)
+npm run sbom                              # Generate CycloneDX SBOM (build/sbom.cdx.json)
 npm run test:e2e                          # Playwright E2E, zero-network, axe-core & RTL checks
 npm audit --omit=dev --audit-level=high   # Production dependency vulnerability audit
 ```
@@ -268,7 +270,7 @@ npm audit --omit=dev --audit-level=high   # Production dependency vulnerability 
 
 ## Clinical Disclaimer & License
 
-> **Clinical & Non-Medical-Device Notice:** **PhysioRecord** is a local clinic record-keeping and organizational software tool—not a certified medical device. Bundled clinical catalogs marked *"Pending Clinician Review"* require independent clinician verification prior to clinical use. See [`DISCLAIMER.md`](DISCLAIMER.md), [`PRIVACY.md`](PRIVACY.md), and [`SECURITY.md`](SECURITY.md).
+> **Clinical & Non-Medical-Device Notice:** **PhysioRecord** is a local clinic record-keeping and organizational software tool—not a certified medical device. Bundled clinical catalogs marked *"Pending Clinician Review"* require independent clinician verification prior to clinical use. See [`docs/legal/DISCLAIMER.md`](docs/legal/DISCLAIMER.md), [`docs/legal/PRIVACY.md`](docs/legal/PRIVACY.md), and [`.github/SECURITY.md`](.github/SECURITY.md).
 
-- **Contributing:** Read [`AGENTS.md`](AGENTS.md), [`CONTRIBUTING.md`](CONTRIBUTING.md), and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) before modifying Dexie schemas, cryptography, Iraqi defaults, or third-party dependencies.
-- **License:** Distributed under the **`GPL-3.0-or-later`** license — see [`LICENSE`](LICENSE), [`NOTICE`](NOTICE), [`CONTENT_LICENSES.md`](CONTENT_LICENSES.md), and [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+- **Contributing:** Read [`AGENTS.md`](AGENTS.md), [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md), and [`.github/CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md) before modifying Dexie schemas, cryptography, Iraqi defaults, or third-party dependencies.
+- **License:** Distributed under the **`GPL-3.0-or-later`** license — see [`LICENSE`](LICENSE), [`NOTICE`](NOTICE), [`docs/legal/CONTENT_LICENSES.md`](docs/legal/CONTENT_LICENSES.md), and [`docs/legal/THIRD_PARTY_NOTICES.md`](docs/legal/THIRD_PARTY_NOTICES.md).

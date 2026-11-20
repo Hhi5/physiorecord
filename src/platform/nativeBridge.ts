@@ -8,10 +8,10 @@
 
 import {
   OFFICIAL_GITHUB_RELEASES_API_URL,
-  isAllowedOfficialGithubUrl,
   normalizeGithubReleasesPayload,
   type SyncedGithubReleaseItem,
 } from '../utils/updateSafety';
+import { isAllowedExternalActionUrl } from '../utils/securityHardening';
 
 export type AppRuntimeTarget = 'web' | 'android' | 'desktop';
 
@@ -132,6 +132,31 @@ export interface ElectronDesktopBridge {
   fetchGithubReleases?: () => Promise<{
     ok: boolean;
     releases?: unknown[];
+    error?: string;
+  }>;
+  startLanSyncHub?: (options?: { port?: number }) => Promise<{
+    running: boolean;
+    port: number;
+    urls: string[];
+    pairingToken: string;
+    storedDevicesCount: number;
+    error?: string;
+  }>;
+  stopLanSyncHub?: () => Promise<{ running: boolean }>;
+  getLanSyncHubStatus?: () => Promise<{
+    running: boolean;
+    port: number;
+    urls: string[];
+    pairingToken: string;
+    storedDevicesCount: number;
+  }>;
+  lanSyncExchange?: (options: {
+    serverUrl: string;
+    pairingToken: string;
+    envelope: unknown;
+  }) => Promise<{
+    ok: boolean;
+    peerEnvelopes?: unknown[];
     error?: string;
   }>;
 }
@@ -512,10 +537,7 @@ export async function fetchOfficialGitHubReleases(): Promise<{
  * safely outside the app WebView/Electron window.
  */
 export async function openSafeExternalUrl(url: string): Promise<boolean> {
-  const isWhatsAppOrMaps =
-    Boolean(url) &&
-    /^https:\/\/(wa\.me|api\.whatsapp\.com|(www\.)?google\.com\/maps)\//i.test(url);
-  if (!isWhatsAppOrMaps && !isAllowedOfficialGithubUrl(url)) {
+  if (!isAllowedExternalActionUrl(url)) {
     return false;
   }
 
@@ -560,11 +582,7 @@ export function installNativeExternalLinkInterceptor(): void {
       const href = anchor.getAttribute('href') || '';
       if (!href || href === '#') return;
 
-      const isAllowedTarget =
-        /^https:\/\/(wa\.me|api\.whatsapp\.com|(www\.)?google\.com\/maps)\//i.test(href) ||
-        isAllowedOfficialGithubUrl(href);
-
-      if (isAllowedTarget) {
+      if (isAllowedExternalActionUrl(href)) {
         event.preventDefault();
         void openSafeExternalUrl(href);
       }

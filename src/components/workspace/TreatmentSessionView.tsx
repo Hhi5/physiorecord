@@ -95,6 +95,7 @@ interface TreatmentSessionViewProps {
   ) => void;
   onBack: () => void;
   onSessionUpdated: () => void;
+  onSessionDeleted?: () => void;
   onOpenMasterChart: () => void;
   onStartSessionTour?: () => void;
 }
@@ -108,6 +109,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
   onFinishCompleted,
   onBack,
   onSessionUpdated,
+  onSessionDeleted,
   onOpenMasterChart,
   onStartSessionTour,
 }) => {
@@ -273,6 +275,12 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
   const [isSavingAddendum, setIsSavingAddendum] = useState(false);
   const [addendumError, setAddendumError] = useState<string | null>(null);
 
+  // Delete Session Confirmation State (works for both finalized and draft sessions)
+  const [showDeleteSessionModal, setShowDeleteSessionModal] = useState(false);
+  const [deleteSessionReason, setDeleteSessionReason] = useState('');
+  const [isDeletingSession, setIsDeletingSession] = useState(false);
+  const [deleteSessionError, setDeleteSessionError] = useState<string | null>(null);
+
   const [formState, setFormState] = useState<UntouchedDraftFormState>(
     createUntouchedDraftFormState
   );
@@ -282,13 +290,13 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
     PT_EXERCISE_CATALOG[0].id
   );
 
-  // Self-declared staff label ("Recorded by") — NOT cryptographically authenticated identity
+  // Self-declared staff label ("Recorded by") — concise active-language display without nested parens
   const activeStaff = ClinicOperationsService.getActiveStaff();
   const perms = ROLE_PERMISSIONS[activeStaff.role];
   const recordedByName =
     language !== 'en'
-      ? `${activeStaff.nameAr} (${activeStaff.nameEn})`
-      : `${activeStaff.nameEn} (${activeStaff.nameAr})`;
+      ? activeStaff.nameAr || activeStaff.nameEn
+      : activeStaff.nameEn || activeStaff.nameAr;
 
   const updateField = useCallback(
     <K extends keyof UntouchedDraftFormState>(key: K, value: UntouchedDraftFormState[K]) => {
@@ -1480,6 +1488,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         summaryAr: `اعتماد وقفل الجلسة #${session.data.sessionNumber} (مسجل بواسطة: ${activeStaff.nameAr})`,
         summaryEn: `Signed and locked Session #${session.data.sessionNumber} (Recorded by: ${activeStaff.nameEn})`,
       });
+      setMissingLockFields([]);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
       onSessionUpdated();
@@ -1491,6 +1500,56 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
       return false;
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleConfirmDeleteSession = async () => {
+    if (!dek) return;
+    setDeleteSessionError(null);
+    setIsDeletingSession(true);
+    try {
+      const reasonClean =
+        deleteSessionReason.trim() ||
+        (isLocked
+          ? bi('اعتماد بالخطأ (جلسة فارغة)', 'Finalized by mistake (empty)')
+          : bi('حذف مسودة جلسة', 'Deleted draft session'));
+
+      if (isLocked) {
+        await SessionService.deleteFinalizedSession(session.id, dek);
+      } else {
+        await SessionService.deleteSession(session.id, dek);
+      }
+
+      ClinicOperationsService.clearSessionTimerSeconds(session.id);
+      await DraftRecoveryService.deleteDraftAsync('soap', session.id);
+      void refreshRecoveredDrafts();
+
+      ClinicOperationsService.appendAuditLog({
+        actionType: 'session_deleted',
+        entityType: 'session',
+        entityId: session.id,
+        patientId,
+        episodeId: session.episodeId,
+        summaryAr: `حذف ${isLocked ? 'الجلسة المعتمدة' : 'مسودة الجلسة'} #${session.data.sessionNumber} — السبب: ${reasonClean} (بواسطة: ${activeStaff.nameAr})`,
+        summaryEn: `Deleted ${isLocked ? 'finalized' : 'draft'} Session #${session.data.sessionNumber} — Reason: ${reasonClean} (by: ${activeStaff.nameEn})`,
+      });
+
+      setIsDirty(false);
+      setShowDeleteSessionModal(false);
+      if (onSessionDeleted) {
+        onSessionDeleted();
+      } else {
+        onSessionUpdated();
+        onBack();
+      }
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : bi('تعذر حذف الجلسة.', 'Failed to delete session.');
+      setDeleteSessionError(msg);
+    } finally {
+      setIsDeletingSession(false);
     }
   };
 
@@ -1601,6 +1660,10 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
           else onOpenMasterChart();
         }}
         onCancelPendingNav={() => setPendingNavAction(null)}
+        onRequestDeleteSession={() => {
+          setDeleteSessionError(null);
+          setShowDeleteSessionModal(true);
+        }}
       />
 
       {/* Main Session & Flowsheet Canvas */}
@@ -1610,6 +1673,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 md:pb-6 space-y-5 max-w-5xl mx-auto w-full focus:outline-none"
       >
         <SessionAlertsAndQuickBar
+          isLocked={isLocked}
           loadError={loadError}
           onRetryLoad={() => void loadSoapAndAddenda()}
           saveError={saveError}
@@ -1685,6 +1749,10 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
             isSavingAddendum={isSavingAddendum}
             addendumError={addendumError}
             onAddAddendum={handleAddAddendum}
+            onRequestDeleteSession={() => {
+              setDeleteSessionError(null);
+              setShowDeleteSessionModal(true);
+            }}
           />
         )}
       </div>
@@ -1791,6 +1859,14 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         setModalityOverrideReason={setModalityOverrideReason}
         onCancelModalityOverride={() => setPendingModalityCandidate(null)}
         onConfirmModalityOverride={handleConfirmModalityOverride}
+        showDeleteSessionModal={showDeleteSessionModal}
+        setShowDeleteSessionModal={setShowDeleteSessionModal}
+        isLocked={isLocked}
+        deleteSessionReason={deleteSessionReason}
+        setDeleteSessionReason={setDeleteSessionReason}
+        isDeletingSession={isDeletingSession}
+        deleteSessionError={deleteSessionError}
+        onConfirmDeleteSession={() => void handleConfirmDeleteSession()}
       />
     </div>
   );

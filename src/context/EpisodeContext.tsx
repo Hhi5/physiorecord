@@ -22,6 +22,8 @@ interface EpisodeContextType {
       endDate: string;
       dischargeSummary: string;
       dischargeCriteriaSummary?: string;
+      dischargeReason?: 'goals_met' | 'plateau' | 'medical_referral' | 'self_discharge';
+      dischargeFinalOutcomeNote?: string;
     }
   ) => Promise<EpisodeRecord>;
   archiveEpisode: (episodeId: string) => Promise<void>;
@@ -125,6 +127,8 @@ export const EpisodeProvider: React.FC<{ children: React.ReactNode }> = ({ child
       endDate: string;
       dischargeSummary: string;
       dischargeCriteriaSummary?: string;
+      dischargeReason?: 'goals_met' | 'plateau' | 'medical_referral' | 'self_discharge';
+      dischargeFinalOutcomeNote?: string;
     }
   ): Promise<EpisodeRecord> => {
     if (isLocked || !dek) throw new Error('الخزينة مقفلة');

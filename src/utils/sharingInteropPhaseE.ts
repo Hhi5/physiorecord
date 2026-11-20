@@ -33,6 +33,7 @@ import {
 } from './attachmentMedia';
 import { formatHomeVisitAddressDisplay } from './iraqScheduleLocationsC1C3';
 import { shareGeneratedFileOnAndroid } from '../platform/nativeBridge';
+import { sanitizeExportedDocumentHtml } from './securityHardening';
 
 // -----------------------------------------------------------------------
 // E1: Web Share API (file + text) with +964 WhatsApp & Copy Fallbacks
@@ -99,14 +100,15 @@ export function buildShareableDocumentHtmlFile(params: {
       .replace(/[^a-zA-Z0-9\u0600-\u06FF_-]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'physiorecord-document';
   const safeTitle = escapeHtmlBasic(params.title);
-  // Strip any script tags defensively before wrapping offline HTML file
-  const sanitizedSheet = params.sheetHtml.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
+  // Strip active HTML vectors (scripts, iframes, inline on* handlers, javascript:/data:text/html URIs)
+  const sanitizedSheet = sanitizeExportedDocumentHtml(params.sheetHtml);
 
   const html = `<!DOCTYPE html>
 <html lang="${params.lang}" dir="${params.dir}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data: blob:; font-src 'self' data:;" />
   <title>${safeTitle}</title>
   <style>
     * { box-sizing: border-box; }

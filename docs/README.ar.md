@@ -1,18 +1,18 @@
 <div align="center">
 
-<img src="public/icons/physiorecord-icon.svg" alt="شعار PhysioRecord" width="88" height="88" />
+<img src="../public/icons/physiorecord-icon.svg" alt="شعار PhysioRecord" width="88" height="88" />
 
 # PhysioRecord
 
 **نظام السجلات الصحية الإلكترونية (EHR) وإدارة عيادات العلاج الطبيعي — محلي بالكامل ومشفّر بمعيار AES-256-GCM**
 
-[English](README.md) · [**العربية**](README.ar.md) · [بوابة التوثيق](docs/INDEX.md)
+[English](../README.md) · [**العربية**](README.ar.md) · [بوابة التوثيق](INDEX.md)
 
 <p>
   <a href="https://github.com/Hhi5/physiorecord/actions/workflows/ci.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/Hhi5/physiorecord/ci.yml?branch=main&style=flat-square&label=CI" alt="حالة التكامل المستمر" />
   </a>
-  <a href="LICENSE">
+  <a href="../LICENSE">
     <img src="https://img.shields.io/badge/License-GPL--3.0--or--later-0F766E?style=flat-square" alt="الترخيص: GPL-3.0-or-later" />
   </a>
   <img src="https://img.shields.io/badge/الإصدار-v1.1.0-115E59?style=flat-square" alt="الإصدار v1.1.0" />
@@ -50,12 +50,12 @@
 <table>
   <tr>
     <td align="center" width="50%">
-      <img src="docs/ui-redesign/desktop-today-ar.png" alt="واجهة اليوم على الحاسوب — العربية" />
+      <img src="ui-redesign/desktop-today-ar.png" alt="واجهة اليوم على الحاسوب — العربية" />
       <br />
       <sub><b>الحاسوب — مركز قيادة اليوم (العربية RTL)</b></sub>
     </td>
     <td align="center" width="50%">
-      <img src="docs/ui-redesign/desktop-finance-en.png" alt="واجهة الحسابات والمالية على الحاسوب" />
+      <img src="ui-redesign/desktop-finance-en.png" alt="واجهة الحسابات والمالية على الحاسوب" />
       <br />
       <sub><b>الحاسوب — السجل المالي والباقات (الإنجليزية LTR)</b></sub>
     </td>
@@ -70,17 +70,17 @@
 <table>
   <tr>
     <td align="center" width="50%">
-      <img src="docs/ui-redesign/desktop-today-dark-ar.png" alt="الوضع الداكن على الحاسوب — العربية" />
+      <img src="ui-redesign/desktop-today-dark-ar.png" alt="الوضع الداكن على الحاسوب — العربية" />
       <br />
       <sub><b>الحاسوب — الوضع الداكن (العربية RTL)</b></sub>
     </td>
     <td align="center" width="25%">
-      <img src="docs/ui-redesign/mobile-today-ar.png" alt="واجهة اليوم على الهاتف" />
+      <img src="ui-redesign/mobile-today-ar.png" alt="واجهة اليوم على الهاتف" />
       <br />
       <sub><b>الهاتف — قائمة اليوم</b></sub>
     </td>
     <td align="center" width="25%">
-      <img src="docs/ui-redesign/mobile-patients-ar.png" alt="سجل المرضى على الهاتف" />
+      <img src="ui-redesign/mobile-patients-ar.png" alt="سجل المرضى على الهاتف" />
       <br />
       <sub><b>الهاتف — سجل المرضى</b></sub>
     </td>
@@ -103,8 +103,9 @@
 - **الجدولة وزيارات المنازل:** مواعيد يومية وسلاسل أسبوعية متكررة مع تنبيهات تضارب مرنة، دعم زيارات المنازل العراقية (الحي / المحلة / الزقاق / أقرب نقطة دالة مع وقت التنقل وأجرته)، إدارة الفروع، أيام الإغلاق، ووضع كشك المريض في صالة الانتظار.
 - **الفوترة، الأقساط ومتابعة المراجعين:** نماذج فواتير بأرقام فارغة افتراضياً (`فحص`، `جلسة مفردة`، `كورس`)، طرق الدفع المحلية (`نقداً`، `ZainCash`، `QiCard`، `أخرى`)، خطط الأقساط وتقادم الديون (`30/60/90+` يوم)، المصاريف المتكررة، إغلاق الصندوق اليومي (`Z-Report`)، رسائل الطبيب المحيل، وقوائم استبقاء المرضى.
 
-### 3. الطباعة، النسخ الاحتياطي والتبادل البيني
-- **بوابة الطباعة (`A4` / `A6`):** ملاءمة تلقائية لصفحة واحدة عند الطباعة أو التصدير بصيغة PDF لتقارير التقدم، ملخصات التخريج، كتب الطبيب المحيل، الوصولات، الفواتير، البطاقات المختصرة، وملف المريض الكامل.
+### 3. الطباعة، المزامنة بين أجهزة العيادة والنسخ الاحتياطي
+- **بوابة الطباعة (`A4` / `A6`) وملخص إتمام العلاج:** ملاءمة تلقائية لصفحة واحدة لتقارير التقدم، ملخص المسيرة العلاجية وإتمام العلاج (مع قسم أرشفة المرضى المكتملين)، كتب الطبيب المحيل، الوصولات، الفواتير، البطاقات المختصرة، وملف المريض الكامل.
+- **مزامنة متعددة الأجهزة للعيادة (اختيارية ومجانية بدون حذف):** اختر بين **مزامنة الواي فاي المحلي** عبر نفس راوتر العيادة (بدون نقطة اتصال أو إنترنت) أو **مزامنة Google Drive المشفّرة طرفياً (`AES-256-GCM`)** مجاناً مع حفظ تلقائي أوفلاين ودمج تجميعي لا يحذف أي سجل من أجهزة المعالجين.
 - **النسخ الاحتياطي والمعايير الطبية:** ملفات `.ptbackup` `V3.0` (ضغط `gzip` وتشفير مجزأ `AES-GCM` مع توافق عكسي للإصدارات `V1.1`/`V2.0`)، تصدير `HL7 FHIR R4 Bundle`، استيراد المرضى من `CSV`/`XLSX` مع التراجع الفوري، وتصدير المواعيد `.ics` الخالي من البيانات السريرية الحساسة.
 
 ---
@@ -129,13 +130,13 @@ Clinician Password / WebAuthn PRF
 
 | آلية الحماية | التفاصيل التقنية |
 | --- | --- |
-| **التشفير في وضع السكون** | `WebCrypto AES-256-GCM` مع حجز ذري لمتجهات التهيئة (`IV`) وتدوير تلقائي لمفاتيح التشفير عند 70% ([`src/crypto/vault.ts`](src/crypto/vault.ts)) |
+| **التشفير في وضع السكون** | `WebCrypto AES-256-GCM` مع حجز ذري لمتجهات التهيئة (`IV`) وتدوير تلقائي لمفاتيح التشفير عند 70% ([`src/crypto/vault.ts`](../src/crypto/vault.ts)) |
 | **اشتقاق المفاتيح والدخول** | `PBKDF2-HMAC-SHA256` (أكثر من `600,000` تكرار داخل Web Worker) مع دعم اختياري للفتح بالبصمة عبر `WebAuthn PRF` |
 | **الاسترداد والقفل التلقائي** | مفتاح استرداد طارئ مكوّن من `32` خانة (`8×4` Base32) + مؤقت قفل تلقائي قابل للتخصيص مع خيار «أبداً» |
 | **التدقيق وعدم التعديل** | سجل تدقيق متسلسل بختم `SHA-256`، ومنع تعديل أو حذف ملاحظات `SOAP` المثبّتة نهائياً |
 | **العزل التام عن الشبكة** | خطوط مستضافة محلياً (`@fontsource/*`)، مشغّل خدمة محلي (`PWA`)، وسياسة `CSP` صارمة مُختبرة تلقائياً |
 
-> تحترم دوال الخزينة التشفيرية إسناد رخصة `GPL-3.0` لمشروع [`Niema-Lab/PhysioMeter`](https://github.com/Niema-Lab/PhysioMeter) — راجع [`NOTICE`](NOTICE).
+> تحترم دوال الخزينة التشفيرية إسناد رخصة `GPL-3.0` لمشروع [`Niema-Lab/PhysioMeter`](https://github.com/Niema-Lab/PhysioMeter) — راجع [`NOTICE`](../NOTICE).
 
 ---
 
@@ -203,7 +204,7 @@ node scripts/sync-version.mjs --version=v1.1.0
 
 <div dir="rtl">
 
-راجع [`docs/DESKTOP_ANDROID_RELEASE.md`](docs/DESKTOP_ANDROID_RELEASE.md) و[`docs/UPDATES_AND_SIGNING.md`](docs/UPDATES_AND_SIGNING.md) لتفاصيل مفاتيح التوقيع واختبار بقاء البيانات أثناء الترقية.
+راجع [`docs/DESKTOP_ANDROID_RELEASE.md`](DESKTOP_ANDROID_RELEASE.md) و[`docs/UPDATES_AND_SIGNING.md`](UPDATES_AND_SIGNING.md) لتفاصيل مفاتيح التوقيع واختبار بقاء البيانات أثناء الترقية.
 
 ---
 
@@ -227,11 +228,11 @@ node scripts/sync-version.mjs --version=v1.1.0
 
 ```text
 physiorecord/
-├── .github/                  # مهام CI والإصدارات وقوالب المشاكل وطلبات الدمج
+├── .github/                  # مهام CI والإصدارات، القوالب، وملفات SECURITY وCONTRIBUTING
 ├── android/                  # مشروع أندرويد Capacitor (Universal APK)
-├── docs/                     # بوابة التوثيق التقني والسريري (docs/INDEX.md)
-├── e2e/                      # اختبارات Playwright الشاملة والعزل الشبكي وإمكانية الوصول
-├── electron/                 # غلاف Electron لبناء نسخة سطح المكتب لويندوز
+├── docs/                     # بوابة التوثيق (INDEX.md)، README.ar.md، ومجلد legal/
+├── e2e/                      # اختبارات Playwright الشاملة وإعدادات playwright.config.ts
+├── electron/                 # غلاف Electron وإعدادات التغليف electron-builder.yml
 ├── public/                   # الأيقونات الثابتة وترويسات الأمان (_headers)
 ├── scripts/                  # سكربتات البناء، PWA، فحص التراخيص والأداء، وSBOM
 ├── src/
@@ -258,8 +259,9 @@ physiorecord/
 │   ├── types/                # تعريفات TypeScript السريرية والتشغيلية
 │   └── utils/                # حسابات MCID/MDC، تصدير FHIR R4، استيراد CSV/XLSX
 ├── AGENTS.md                 # الثوابت الهندسية وتخصيصات العيادات العراقية وقواعد التراخيص
-├── CONTENT_LICENSES.md       # السجل الموثّق لجميع الرسومات والخطوط والبيانات السريرية
-└── sbom.cdx.json             # قائمة مكونات البرمجيات CycloneDX SBOM
+├── CHANGELOG.md              # سجل التحديثات الكامل
+├── LICENSE                   # رخصة GPL-3.0-or-later
+└── NOTICE                    # إشعارات الإسناد للمكتبات والمصادر المفتوحة
 ```
 
 </div>
@@ -280,12 +282,12 @@ physiorecord/
 
 ```bash
 npm run check:licenses                    # التحقق من تراخيص الحزم البرمجية (SPDX)
-npm run check:content                     # التحقق من توثيق الرسومات والبيانات في CONTENT_LICENSES.md
+npm run check:content                     # التحقق من توثيق الرسومات والبيانات في docs/legal/CONTENT_LICENSES.md
 npm run lint                              # الفحص الساكن لأنواع TypeScript
 npm test                                  # اختبارات الوحدة والتشفير والترقيات عبر Vitest
 npm run build                             # بناء نسخة الإنتاج والتحقق من PWA وCSP
 npm run check:perf                        # فحص أحجام الحزم مقابل ميزانية الأداء
-npm run sbom                              # تحديث ملف CycloneDX SBOM
+npm run sbom                              # توليد ملف build/sbom.cdx.json
 npm run test:e2e                          # اختبارات Playwright الشاملة والعزل الشبكي وRTL
 npm audit --omit=dev --audit-level=high   # فحص ثغرات اعتماديات الإنتاج
 ```
@@ -300,23 +302,23 @@ npm audit --omit=dev --audit-level=high   # فحص ثغرات اعتماديات
 
 | الدليل | المحتوى |
 | --- | --- |
-| **[`docs/INDEX.md`](docs/INDEX.md)** | الفهرس الشامل لجميع الوثائق التقنية والسريرية |
-| **[`CHANGELOG.md`](CHANGELOG.md)** | سجل التحديثات الكامل (`v1.0.0` و`v1.1.0`) |
-| **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** | البنية المحلية، خدمات الكتابة الموحدة وتوزيع جداول Dexie |
-| **[`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md)** | نموذج التهديدات الأمنية وتصميم التشفير المحلي |
-| **[`docs/MIGRATIONS.md`](docs/MIGRATIONS.md)** | دليل ترقيات قاعدة البيانات التسلسلي (`v1`–`v10`) |
-| **[`docs/BACKUP_FORMAT.md`](docs/BACKUP_FORMAT.md)** | المواصفة التشفيرية لملف `.ptbackup` `V3.0` |
-| **[`docs/FHIR_R4_MAPPING.md`](docs/FHIR_R4_MAPPING.md)** | ربط السجلات السريرية بمعيار `HL7 FHIR R4` |
-| **[`docs/TRANSLATION_GUIDE.md`](docs/TRANSLATION_GUIDE.md)** | دليل تعريب اللغات (`ar` / `ckb` / `en`) وقواعد `RTL` |
-| **[`docs/UI_DESIGN_SYSTEM_V2.md`](docs/UI_DESIGN_SYSTEM_V2.md)** | نظام التصميم الحديث والرموز التصميمية `pr-*` |
+| **[`docs/INDEX.md`](INDEX.md)** | الفهرس الشامل لجميع الوثائق التقنية والسريرية |
+| **[`CHANGELOG.md`](../CHANGELOG.md)** | سجل التحديثات الكامل (`v1.0.0` و`v1.1.0`) |
+| **[`docs/ARCHITECTURE.md`](ARCHITECTURE.md)** | البنية المحلية، خدمات الكتابة الموحدة وتوزيع جداول Dexie |
+| **[`docs/THREAT_MODEL.md`](THREAT_MODEL.md)** | نموذج التهديدات الأمنية وتصميم التشفير المحلي |
+| **[`docs/MIGRATIONS.md`](MIGRATIONS.md)** | دليل ترقيات قاعدة البيانات التسلسلي (`v1`–`v10`) |
+| **[`docs/BACKUP_FORMAT.md`](BACKUP_FORMAT.md)** | المواصفة التشفيرية لملف `.ptbackup` `V3.0` |
+| **[`docs/FHIR_R4_MAPPING.md`](FHIR_R4_MAPPING.md)** | ربط السجلات السريرية بمعيار `HL7 FHIR R4` |
+| **[`docs/TRANSLATION_GUIDE.md`](TRANSLATION_GUIDE.md)** | دليل تعريب اللغات (`ar` / `ckb` / `en`) وقواعد `RTL` |
+| **[`docs/UI_DESIGN_SYSTEM_V2.md`](UI_DESIGN_SYSTEM_V2.md)** | نظام التصميم الحديث والرموز التصميمية `pr-*` |
 
 ---
 
 ## إخلاء المسؤولية الطبية والترخيص
 
-> **تنبيه سريري مهم:** برنامج **PhysioRecord** أداة محلية لتنظيم السجلات السريرية وإدارة العيادة وليس جهازاً طبياً معتمداً. بعض الكتالوجات السريرية المدمجة موسومة بـ *"Pending Clinician Review"* وتستوجب مراجعة المعالج المختص قبل الاعتماد عليها. راجع [`DISCLAIMER.md`](DISCLAIMER.md) و[`PRIVACY.md`](PRIVACY.md) و[`SECURITY.md`](SECURITY.md).
+> **تنبيه سريري مهم:** برنامج **PhysioRecord** أداة محلية لتنظيم السجلات السريرية وإدارة العيادة وليس جهازاً طبياً معتمداً. بعض الكتالوجات السريرية المدمجة موسومة بـ *"Pending Clinician Review"* وتستوجب مراجعة المعالج المختص قبل الاعتماد عليها. راجع [`DISCLAIMER.md`](legal/DISCLAIMER.md) و[`PRIVACY.md`](legal/PRIVACY.md) و[`SECURITY.md`](../.github/SECURITY.md).
 
-- **المساهمة:** يُرجى قراءة [`AGENTS.md`](AGENTS.md) و[`CONTRIBUTING.md`](CONTRIBUTING.md) و[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) قبل تعديل مخطط قاعدة البيانات أو التشفير أو الإعدادات العراقية الافتراضية أو إضافة حزم جديدة.
-- **الترخيص:** المشروع مرخّص بموجب **`GPL-3.0-or-later`** — راجع [`LICENSE`](LICENSE) و[`NOTICE`](NOTICE) و[`CONTENT_LICENSES.md`](CONTENT_LICENSES.md) و[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+- **المساهمة:** يُرجى قراءة [`AGENTS.md`](../AGENTS.md) و[`CONTRIBUTING.md`](../.github/CONTRIBUTING.md) و[`CODE_OF_CONDUCT.md`](../.github/CODE_OF_CONDUCT.md) قبل تعديل مخطط قاعدة البيانات أو التشفير أو الإعدادات العراقية الافتراضية أو إضافة حزم جديدة.
+- **الترخيص:** المشروع مرخّص بموجب **`GPL-3.0-or-later`** — راجع [`LICENSE`](../LICENSE) و[`NOTICE`](../NOTICE) و[`CONTENT_LICENSES.md`](legal/CONTENT_LICENSES.md) و[`THIRD_PARTY_NOTICES.md`](legal/THIRD_PARTY_NOTICES.md).
 
 </div>

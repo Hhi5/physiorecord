@@ -148,9 +148,20 @@ public class PhysioRecordNativePlugin extends Plugin {
                 return;
             }
 
-            // Sanitize file name to prevent path traversal
-            String safeName = new File(filename).getName();
+            // Sanitize file name and enforce canonical directory containment
+            String safeName = new File(filename != null ? filename : "PhysioRecord_Export.ptbackup").getName();
+            safeName = safeName.replaceAll("[\\u0000-\\u001F\\u007F<>:\"/\\\\|?*]", "");
+            if (safeName.isEmpty() || ".".equals(safeName) || "..".equals(safeName)) {
+                call.reject("Invalid export filename.");
+                return;
+            }
             File outFile = new File(exportDir, safeName);
+            String canonicalExportDir = exportDir.getCanonicalPath();
+            String canonicalOutFile = outFile.getCanonicalPath();
+            if (!canonicalOutFile.startsWith(canonicalExportDir + File.separator)) {
+                call.reject("Blocked export path outside cache directory.");
+                return;
+            }
             try (FileOutputStream fos = new FileOutputStream(outFile, false)) {
                 fos.write(content.getBytes(StandardCharsets.UTF_8));
                 fos.flush();
@@ -224,11 +235,16 @@ public class PhysioRecordNativePlugin extends Plugin {
                     return;
                 }
 
+                final int maxResponseChars = 5 * 1024 * 1024;
                 StringBuilder sb = new StringBuilder();
                 try (BufferedReader reader = new BufferedReader(
                         new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
+                        if (sb.length() + line.length() > maxResponseChars) {
+                            call.reject("GitHub API response exceeded 5MB safety limit.");
+                            return;
+                        }
                         sb.append(line);
                     }
                 }
@@ -247,22 +263,50 @@ public class PhysioRecordNativePlugin extends Plugin {
         });
     }
 
+    private boolean isAllowedExternalUri(String rawUrl) {
+        if (rawUrl == null || rawUrl.trim().isEmpty()) {
+            return false;
+        }
+        String trimmed = rawUrl.trim();
+        for (int i = 0; i < trimmed.length(); i++) {
+            char ch = trimmed.charAt(i);
+            if (ch < 0x20 || ch == 0x7F) return false;
+        }
+        Uri uri = Uri.parse(trimmed);
+        if (uri == null || !"https".equalsIgnoreCase(uri.getScheme())) {
+            return false;
+        }
+        if (uri.getUserInfo() != null && !uri.getUserInfo().isEmpty()) {
+            return false;
+        }
+        int port = uri.getPort();
+        if (port != -1 && port != 443) {
+            return false;
+        }
+        String host = uri.getHost() != null ? uri.getHost().toLowerCase() : "";
+        String path = uri.getPath() != null ? uri.getPath() : "";
+        if ("wa.me".equals(host) || "api.whatsapp.com".equals(host)) {
+            return true;
+        }
+        if ("google.com".equals(host) || "www.google.com".equals(host)) {
+            return "/maps".equals(path) || path.startsWith("/maps/");
+        }
+        if ("github.com".equals(host)) {
+            return path.matches("(?i)^/Hhi5/physiorecord(/releases(/[^?#\\s]*)?)?/?$");
+        }
+        return false;
+    }
+
     @PluginMethod
     public void openExternalUrl(PluginCall call) {
         String url = call.getString("url", "");
-        boolean isAllowedGithub = url != null
-                && url.matches("^https://github\\.com/Hhi5/physiorecord(/releases(/.*)?)?/?(\\?[^\\s#]*)?(#[^\\s]*)?$");
-        if (url == null || (!url.startsWith("https://wa.me/")
-                && !url.startsWith("https://api.whatsapp.com/")
-                && !url.startsWith("https://www.google.com/maps/")
-                && !url.startsWith("https://google.com/maps/")
-                && !isAllowedGithub)) {
+        if (!isAllowedExternalUri(url)) {
             call.reject("Blocked non-allowlisted external URL.");
             return;
         }
 
         try {
-            Intent viewIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            Intent viewIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url.trim()));
             viewIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             getContext().startActivity(viewIntent);
 

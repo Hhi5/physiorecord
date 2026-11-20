@@ -28,6 +28,7 @@ import {
   hasAnyDemoPatients,
 } from '../../utils/mrn';
 import { DemoBadge } from '../ui/Primitives';
+import { BrandLogo } from '../ui/BrandLogo';
 import { ModalDialog } from '../ui/Dialog';
 import { PatientSearchEngine } from '../../utils/arabicSearch';
 import { isPublicDemoUrlOrEnv } from '../../utils/settingsOnboardingPhaseF';
@@ -136,7 +137,6 @@ import type {
   FinishUndoSnapshot,
 } from '../../types/clinicManagement';
 import {
-  Activity,
   User,
   AlertTriangle,
   X,
@@ -1232,9 +1232,7 @@ export const AppLayout: React.FC = () => {
             className="md:hidden relative z-30 shrink-0 px-3.5 pt-[env(safe-area-inset-top,0px)] h-[calc(52px+env(safe-area-inset-top,0px))] flex items-center justify-between gap-2 bg-card/85 backdrop-blur-md border-b border-line-2/50"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <span className="size-7 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-2xs">
-                <Activity className="size-4" strokeWidth={2.4} />
-              </span>
+              <BrandLogo className="size-7 text-primary shrink-0" />
               <span className="text-sm font-extrabold text-foreground truncate">
                 {mobileTopTitle}
               </span>

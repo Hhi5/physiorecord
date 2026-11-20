@@ -28,13 +28,13 @@ Contributors MUST preserve these workflows built specifically for solo physical 
    - **ROM**: No displayed normative `Normal: ...` reference ranges (`romMmtCatalog.ts` omits `normalRangeDegrees`).
    - **Special Tests**: Concise provocative test names + target anatomical structures across all 9 joint regions without verbose explanatory prose.
    - **Outcome Measures**: Score-entry calculators (`ODI`, `NDI`, `QuickDASH`, `SPADI`, `LEFS`) without copyrighted questionnaire item text; open functional procedures (`NPRS`, `PSFS`, `TUG`, `30s-CST`, `5xSTS`) + Custom Measure Builder.
-   - **Anatomical SVGs**: Preserve existing AI-generated SVGs (`AnatomicalBodySvgs.tsx`, `frontBodySvg.raw.svg`, `backBodySvg.raw.svg`) intact and documented in `CONTENT_LICENSES.md`.
+   - **Anatomical SVGs**: Preserve existing AI-generated SVGs (`AnatomicalBodySvgs.tsx`, `frontBodySvg.raw.svg`, `backBodySvg.raw.svg`) intact and documented in `docs/legal/CONTENT_LICENSES.md`.
 
 ## 3. Open-Source License Policy
 
 - **Project License (`LICENSE`)**: `GPL-3.0-or-later`, selected to honor the `GPL-3.0` attribution to `Niema-Lab/PhysioMeter` (`src/crypto/vault.ts` lines 4–6) without modifying audited vault cryptography or invalidating attribution integrity. Do not alter those attribution lines without explicit maintainer approval.
 - **Allowed Dependencies**: `MIT`, `ISC`, `BSD-*`, `0BSD`, `Apache-2.0`, `OFL-1.1`, `CC0-1.0`, `CC-BY-*`, `Unlicense` (`MPL-2.0` allowed for dev/build tools only; zero exceptions; Preline UI "Fair Use" permanently excluded). Enforced by `npm run check:licenses`.
-- **Content Registry**: Every SVG, binary asset, font package, and built-in clinical dataset MUST be indexed in `CONTENT_LICENSES.md` and pass `npm run check:content`.
+- **Content Registry**: Every SVG, binary asset, font package, and built-in clinical dataset MUST be indexed in `docs/legal/CONTENT_LICENSES.md` and pass `npm run check:content`.
 
 ## 4. Standard Verification Commands
 

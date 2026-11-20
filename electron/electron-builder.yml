@@ -11,9 +11,10 @@ files:
   - electron/**/*
   - LICENSE
   - NOTICE
-  - THIRD_PARTY_NOTICES.md
-  - CONTENT_LICENSES.md
+  - docs/legal/THIRD_PARTY_NOTICES.md
+  - docs/legal/CONTENT_LICENSES.md
   - package.json
+  - "!electron/electron-builder.yml"
   - "!node_modules/**/*"
 
 asar: true

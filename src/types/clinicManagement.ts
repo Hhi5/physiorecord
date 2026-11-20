@@ -62,6 +62,7 @@ export interface AuditLogEntry {
     | 'evaluation_saved'
     | 'session_finalized'
     | 'session_finalized_event'
+    | 'session_deleted'
     | 'package_manual_adjustment'
     | 'addendum_signed'
     | 'invoice_created'

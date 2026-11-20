@@ -50,13 +50,14 @@ export const SessionAlertsAndQuickBar: React.FC<SessionAlertsAndQuickBarProps> =
   requiresLegacyReview,
   legacyDraftReviewed,
   onToggleLegacyDraftReviewed,
+  isLocked = false,
 }) => {
   const { language, bi } = useLanguage();
 
   return (
     <>
       {loadError && (
-        <div className="p-4 rounded-2xl bg-card shadow-2xs text-xs text-rose-700 dark:text-rose-400 flex items-center justify-between gap-3">
+        <div className="max-w-3xl mx-auto w-full p-4 rounded-2xl bg-card shadow-2xs text-xs text-rose-700 dark:text-rose-400 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <AlertCircle className="size-4 shrink-0 text-rose-600" />
             <span>{loadError}</span>
@@ -73,14 +74,14 @@ export const SessionAlertsAndQuickBar: React.FC<SessionAlertsAndQuickBarProps> =
       )}
 
       {saveError && (
-        <div className="p-3.5 rounded-2xl bg-card shadow-2xs text-xs text-rose-700 dark:text-rose-400 flex items-center gap-2">
+        <div className="max-w-3xl mx-auto w-full p-3.5 rounded-2xl bg-card shadow-2xs text-xs text-rose-700 dark:text-rose-400 flex items-center gap-2">
           <AlertCircle className="size-4 shrink-0 text-rose-600" />
           <span>{saveError}</span>
         </div>
       )}
 
-      {missingLockFields.length > 0 && (
-        <div className="p-3.5 rounded-2xl bg-card shadow-2xs text-xs text-amber-700 dark:text-amber-400 space-y-1.5">
+      {!isLocked && missingLockFields.length > 0 && (
+        <div className="max-w-3xl mx-auto w-full p-3.5 rounded-2xl bg-card shadow-2xs text-xs text-amber-700 dark:text-amber-400 space-y-1.5">
           <div className="flex items-center gap-2 font-extrabold">
             <AlertTriangle className="size-4 shrink-0" />
             <span>

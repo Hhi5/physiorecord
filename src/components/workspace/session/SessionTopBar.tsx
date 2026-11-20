@@ -13,6 +13,7 @@ import {
   RotateCcw,
   Save,
   Timer,
+  Trash2,
 } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { ClinicOperationsService } from '../../../services/clinicOperationsService';
@@ -47,6 +48,7 @@ export interface SessionTopBarProps {
   onConfirmSaveAndLeave: () => void;
   onConfirmDiscardAndLeave: () => void;
   onCancelPendingNav: () => void;
+  onRequestDeleteSession?: () => void;
 }
 
 export const SessionTopBar: React.FC<SessionTopBarProps> = ({
@@ -76,6 +78,7 @@ export const SessionTopBar: React.FC<SessionTopBarProps> = ({
   onConfirmSaveAndLeave,
   onConfirmDiscardAndLeave,
   onCancelPendingNav,
+  onRequestDeleteSession,
 }) => {
   const { bi, isRtl } = useLanguage();
 
@@ -262,6 +265,28 @@ export const SessionTopBar: React.FC<SessionTopBarProps> = ({
             >
               <Compass className="size-3.5 text-primary" />
               <span className="hidden lg:inline">{bi('شرح', 'Guide', 'ڕێبەر')}</span>
+            </button>
+          )}
+
+          {onRequestDeleteSession && (
+            <button
+              type="button"
+              data-testid="session-delete-btn"
+              onClick={onRequestDeleteSession}
+              className="compact-btn h-8 px-2 sm:px-2.5 rounded-xl bg-surface/80 hover:bg-rose-500/12 text-muted-foreground-1 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors"
+              aria-label={
+                isLocked
+                  ? bi('حذف الجلسة المعتمدة', 'Delete Finalized Session', 'سڕینەوەی دانیشتنی پەسەندکراو')
+                  : bi('حذف الجلسة', 'Delete Session', 'سڕینەوەی دانیشتن')
+              }
+              title={
+                isLocked
+                  ? bi('حذف الجلسة المعتمدة', 'Delete Finalized Session', 'سڕینەوەی دانیشتنی پەسەندکراو')
+                  : bi('حذف الجلسة', 'Delete Session', 'سڕینەوەی دانیشتن')
+              }
+            >
+              <Trash2 className="size-3.5" />
+              <span className="hidden lg:inline">{bi('حذف', 'Delete', 'سڕینەوە')}</span>
             </button>
           )}
 

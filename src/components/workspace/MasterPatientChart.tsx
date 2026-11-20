@@ -16,6 +16,7 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 import { useVault } from '../../context/VaultContext';
 import { usePatients } from '../../context/PatientContext';
+import { useEpisodes } from '../../context/EpisodeContext';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
 import { EpisodeService } from '../../services/episodeService';
 import { SoapService } from '../../services/soapService';
@@ -69,6 +70,7 @@ import {
   ChartComparisonTab,
   ChartTreatmentTab,
 } from './chart/ChartTreatmentAndComparisonTab';
+import { DischargeEpisodeModal } from './DischargeEpisodeModal';
 
 interface MasterPatientChartProps {
   patient: PatientRecord;
@@ -103,6 +105,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
   const isRtlLang = language !== 'en';
   const { dek } = useVault();
   const { savePatient } = usePatients();
+  const { closeEpisode, setEpisodeStatus } = useEpisodes();
 
   const [activeTab, setActiveTab] = useState<ChartTabId>('overview');
   const [evalSubView, setEvalSubView] = useState<EvalPlanSubView>('plan');
@@ -114,6 +117,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
   const [activePrintDoc, setActivePrintDoc] = useState<PrintableDocumentType | null>(null);
   const [isCustomStudioOpen, setIsCustomStudioOpen] = useState(false);
   const [isExamShelfModalOpen, setIsExamShelfModalOpen] = useState(false);
+  const [isDischargeModalOpen, setIsDischargeModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
@@ -1086,6 +1090,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
           isContextCollapsed={isContextCollapsed}
           onToggleContextCollapsed={() => setIsContextCollapsed((v) => !v)}
           onStartChartTour={onStartChartTour}
+          onOpenDischargeModal={() => setIsDischargeModalOpen(true)}
         />
 
         {/* Tab 1: المتابعة (Live Clinical Pulse + Recorded Objective Snapshot + Sessions Timeline) */}
@@ -1337,6 +1342,36 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
         resolvedDoctor={resolvedDoctor}
         referringPhysician={referringPhysician}
         referringClinic={referringClinic}
+      />
+
+      <DischargeEpisodeModal
+        isOpen={isDischargeModalOpen}
+        onClose={() => setIsDischargeModalOpen(false)}
+        patient={patient}
+        episode={activeEpisode}
+        sessions={episodeSessions}
+        soaps={episodeSoaps}
+        episodeStore={episodeStore}
+        onConfirmDischarge={async (payload) => {
+          await closeEpisode(payload.episodeId, {
+            endDate: payload.endDate,
+            dischargeReason: payload.dischargeReason,
+            dischargeSummary: payload.dischargeSummary,
+            dischargeFinalOutcomeNote: payload.dischargeFinalOutcomeNote,
+          });
+          window.dispatchEvent(new CustomEvent('physiorecord-episodes-updated'));
+          onPatientUpdated();
+        }}
+        onReopenEpisode={async (episodeId) => {
+          await setEpisodeStatus(episodeId, 'active');
+          window.dispatchEvent(new CustomEvent('physiorecord-episodes-updated'));
+          onPatientUpdated();
+        }}
+        onStartNewEpisode={handleTriggerNewEpisode}
+        onPrintDischargeReport={() => {
+          setIsDischargeModalOpen(false);
+          setActivePrintDoc('medical_report');
+        }}
       />
     </div>
   );

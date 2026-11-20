@@ -2103,4 +2103,77 @@ describe('Phase 1A-i.5 — Unified SOAP + Flowsheet, No Fabricated Defaults, Sin
     expect(repairedSoap?.data.repairedDuringMigration).toBe(true);
     expect(repairedSoap?.data.legacyUnreviewed).toBe(true);
   }, 30000);
+
+  it('allows explicit deletion of a finalized session (atomically removing linked SOAP note and addenda) while keeping deleteSession draft-only', async () => {
+    const { db, dek, patientId, episodeId } = await bootstrapTestVaultAndEpisode();
+
+    const session = await SessionService.createSession(
+      patientId,
+      episodeId,
+      {
+        sessionDate: '2026-04-20',
+        sessionType: 'initial_evaluation',
+        attendanceStatus: 'attended',
+      },
+      dek,
+      'sess-final-del',
+      db
+    );
+
+    const soap = await SoapService.createSoapNote(
+      patientId,
+      episodeId,
+      session.id,
+      {
+        isFinalized: false,
+        subjective: {
+          chiefComplaint: 'Accidental empty evaluation finalized',
+          painNrsScore: 4,
+          postSessionPainNrs: 3,
+        },
+        objective: {
+          dailyInterventionsSummary: 'Initial screen',
+        },
+        assessment: {
+          clinicalImpressionCurrent: 'Screening note',
+          progressStatus: 'unchanged',
+        },
+        plan: {
+          nextSessionPlan: 'Re-evaluate',
+        },
+      },
+      dek,
+      'soap-final-del',
+      db
+    );
+
+    await SessionService.finalizeSession(session.id, 'Dr. Zaid', dek, db);
+
+    await SoapService.addClinicalAddendum(
+      session.id,
+      'soapNotes',
+      soap.id,
+      {
+        reasonForAmendment: 'late_entry',
+        amendmentText: 'Note finalized prematurely by mistake.',
+        signedByTherapistName: 'Dr. Zaid',
+      },
+      dek,
+      'addendum-final-del',
+      db
+    );
+
+    // Draft-only deleteSession MUST continue rejecting finalized sessions
+    await expect(SessionService.deleteSession(session.id, dek, db)).rejects.toThrow(
+      /لا يمكن حذف جلسة سريرية معتمدة/
+    );
+
+    // Explicit deleteFinalizedSession removes session, SOAP note, and clinical addenda atomically
+    await SessionService.deleteFinalizedSession(session.id, dek, db);
+
+    expect(await db.sessions.get(session.id)).toBeUndefined();
+    expect(await db.soapNotes.where('sessionId').equals(session.id).count()).toBe(0);
+    expect(await db.clinicalAddenda.where('sessionId').equals(session.id).count()).toBe(0);
+  });
 });
+

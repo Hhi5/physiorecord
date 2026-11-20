@@ -1935,4 +1935,56 @@ export class SessionService {
 
     await this.releaseSessionNumber(session.episodeId, session.sessionNumber, dek, database);
   }
+
+  /**
+   * Explicitly delete a finalized (or draft) session along with its linked SOAP notes
+   * and clinical addenda inside one atomic IndexedDB transaction.
+   * Intended strictly for deliberate clinician-confirmed removal (e.g., accidental empty finalization).
+   */
+  static async deleteFinalizedSession(
+    sessionId: string,
+    dek: CryptoKey,
+    database: PhysioRecordDatabase = defaultDb
+  ): Promise<{ episodeId: string; patientId: string; sessionNumber: number }> {
+    const existingEntity = await database.sessions.get(sessionId);
+    if (!existingEntity) {
+      throw new Error(`الجلسة بالمعرف "${sessionId}" غير موجودة.`);
+    }
+
+    const session = await this.getSessionById(sessionId, dek, database);
+    if (!session) {
+      throw new Error(`الجلسة بالمعرف "${sessionId}" غير موجودة.`);
+    }
+
+    await database.transaction(
+      'rw',
+      [database.sessions, database.soapNotes, database.clinicalAddenda],
+      async () => {
+        const soapList = await database.soapNotes
+          .where('sessionId')
+          .equals(sessionId)
+          .toArray();
+        if (soapList.length > 0) {
+          await database.soapNotes.bulkDelete(soapList.map((n) => n.id));
+        }
+
+        const addendaList = await database.clinicalAddenda
+          .where('sessionId')
+          .equals(sessionId)
+          .toArray();
+        if (addendaList.length > 0) {
+          await database.clinicalAddenda.bulkDelete(addendaList.map((a) => a.id));
+        }
+
+        await database.sessions.delete(sessionId);
+      }
+    );
+
+    await this.releaseSessionNumber(session.episodeId, session.sessionNumber, dek, database);
+    return {
+      episodeId: session.episodeId,
+      patientId: session.patientId,
+      sessionNumber: session.sessionNumber,
+    };
+  }
 }

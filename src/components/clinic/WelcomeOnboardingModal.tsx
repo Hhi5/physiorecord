@@ -9,7 +9,6 @@
 
 import React from 'react';
 import {
-  Activity,
   Stethoscope,
   CalendarClock,
   ShieldCheck,
@@ -20,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { ModalDialog } from '../ui/Dialog';
+import { BrandLogo } from '../ui/BrandLogo';
 import { PLATFORM_OVERVIEW_PILLARS } from '../../utils/pageSpotlightTours';
 
 export interface WelcomeOnboardingModalProps {
@@ -56,9 +56,7 @@ export const WelcomeOnboardingModal: React.FC<WelcomeOnboardingModalProps> = ({
       dir={isRtl ? 'rtl' : 'ltr'}
       title={
         <span className="inline-flex items-center gap-2.5 text-sm sm:text-base font-extrabold text-primary-foreground">
-          <span className="size-7 rounded-lg bg-primary-foreground/15 inline-flex items-center justify-center shrink-0">
-            <Activity className="size-4" strokeWidth={2.4} />
-          </span>
+          <BrandLogo className="size-7 text-primary-foreground shrink-0" />
           <span>
             {bi(
               'أهلاً بك في PhysioRecord',

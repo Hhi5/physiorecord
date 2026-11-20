@@ -1489,11 +1489,22 @@ function zeroIndexToColumnLetters(index: number): string {
   return result;
 }
 
+const MAX_XLSX_ARCHIVE_BYTES = 25 * 1024 * 1024; // 25 MB compressed archive cap
+const MAX_XLSX_ZIP_ENTRIES = 200;
+const MAX_XLSX_ENTRY_UNCOMPRESSED_BYTES = 15 * 1024 * 1024; // 15 MB per XML entry cap
+const MAX_XLSX_TOTAL_UNCOMPRESSED_BYTES = 30 * 1024 * 1024; // 30 MB total archive expansion cap
+const MAX_XLSX_COLUMNS = 256;
+const MAX_XLSX_ROWS = 50_000;
+
 async function decompressZipEntryBytes(
   compressed: Uint8Array,
-  compressionMethod: number
+  compressionMethod: number,
+  maxOutputBytes: number = MAX_XLSX_ENTRY_UNCOMPRESSED_BYTES
 ): Promise<Uint8Array> {
   if (compressionMethod === 0) {
+    if (compressed.byteLength > maxOutputBytes) {
+      throw new Error('حجم أحد ملفات XLSX الداخلية يتجاوز الحد الآمن المسموح به.');
+    }
     return compressed;
   }
   if (compressionMethod === 8) {
@@ -1505,13 +1516,41 @@ async function decompressZipEntryBytes(
     const stream = new Blob([copy.buffer])
       .stream()
       .pipeThrough(new DecompressionStream('deflate-raw'));
-    const ab = await new Response(stream).arrayBuffer();
-    return new Uint8Array(ab);
+    const reader = stream.getReader();
+    const chunks: Uint8Array[] = [];
+    let totalBytes = 0;
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (!value) continue;
+        totalBytes += value.byteLength;
+        if (totalBytes > maxOutputBytes) {
+          await reader.cancel();
+          throw new Error('تم حظر ملف XLSX لأنه يتجاوز الحد الآمن لفك الضغط (حماية من Zip Bomb).');
+        }
+        chunks.push(value);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    const out = new Uint8Array(totalBytes);
+    let offset = 0;
+    for (const chunk of chunks) {
+      out.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return out;
   }
   throw new Error(`Unsupported XLSX ZIP compression method: ${compressionMethod}`);
 }
 
 async function readZipArchiveEntries(buffer: ArrayBuffer): Promise<Map<string, Uint8Array>> {
+  if (buffer.byteLength > MAX_XLSX_ARCHIVE_BYTES) {
+    throw new Error('حجم ملف XLSX يتجاوز الحد الأقصى المسموح به (25 MB).');
+  }
   const bytes = new Uint8Array(buffer);
   const view = new DataView(buffer);
   const decoder = new TextDecoder('utf-8');
@@ -1531,7 +1570,11 @@ async function readZipArchiveEntries(buffer: ArrayBuffer): Promise<Map<string, U
   }
 
   const centralDirCount = view.getUint16(eocdOffset + 10, true);
+  if (centralDirCount > MAX_XLSX_ZIP_ENTRIES) {
+    throw new Error('ملف XLSX يحتوي على عدد مفرط من الملفات الداخلية وتم حظره أمنياً.');
+  }
   let cdOffset = view.getUint32(eocdOffset + 16, true);
+  let totalUncompressedBytes = 0;
 
   for (let i = 0; i < centralDirCount; i++) {
     if (cdOffset + 46 > bytes.length || view.getUint32(cdOffset, true) !== 0x02014b50) {
@@ -1539,11 +1582,16 @@ async function readZipArchiveEntries(buffer: ArrayBuffer): Promise<Map<string, U
     }
     const compressionMethod = view.getUint16(cdOffset + 10, true);
     const compressedSize = view.getUint32(cdOffset + 20, true);
+    const declaredUncompressedSize = view.getUint32(cdOffset + 24, true);
     const fileNameLen = view.getUint16(cdOffset + 28, true);
     const extraLen = view.getUint16(cdOffset + 30, true);
     const commentLen = view.getUint16(cdOffset + 32, true);
     const localHeaderOffset = view.getUint32(cdOffset + 42, true);
     const fileName = decoder.decode(bytes.subarray(cdOffset + 46, cdOffset + 46 + fileNameLen));
+
+    if (declaredUncompressedSize > MAX_XLSX_ENTRY_UNCOMPRESSED_BYTES) {
+      throw new Error('تم حظر ملف XLSX لأنه يعلن عن حجم فك ضغط غير آمن.');
+    }
 
     if (localHeaderOffset + 30 <= bytes.length && view.getUint32(localHeaderOffset, true) === 0x04034b50) {
       const localNameLen = view.getUint16(localHeaderOffset + 26, true);
@@ -1551,8 +1599,20 @@ async function readZipArchiveEntries(buffer: ArrayBuffer): Promise<Map<string, U
       const dataStart = localHeaderOffset + 30 + localNameLen + localExtraLen;
       const dataEnd = dataStart + compressedSize;
       if (compressedSize > 0 && dataEnd <= bytes.length && !fileName.endsWith('/')) {
+        const remainingBudget = Math.min(
+          MAX_XLSX_ENTRY_UNCOMPRESSED_BYTES,
+          MAX_XLSX_TOTAL_UNCOMPRESSED_BYTES - totalUncompressedBytes
+        );
+        if (remainingBudget <= 0) {
+          throw new Error('إجمالي حجم بيانات ملف XLSX بعد فك الضغط يتجاوز الحد الآمن (30 MB).');
+        }
         const rawSlice = bytes.subarray(dataStart, dataEnd);
-        const uncompressed = await decompressZipEntryBytes(rawSlice, compressionMethod);
+        const uncompressed = await decompressZipEntryBytes(
+          rawSlice,
+          compressionMethod,
+          remainingBudget
+        );
+        totalUncompressedBytes += uncompressed.byteLength;
         files.set(fileName, uncompressed);
       } else if (compressedSize === 0 && !fileName.endsWith('/')) {
         files.set(fileName, new Uint8Array(0));
@@ -1588,6 +1648,9 @@ function parseWorksheetXml(xml: string, sharedStrings: string[]): string[][] {
   let rowMatch: RegExpExecArray | null;
 
   while ((rowMatch = rowRegex.exec(xml)) !== null) {
+    if (rows.length >= MAX_XLSX_ROWS) {
+      break;
+    }
     const rowInner = rowMatch[1];
     const rowValues: string[] = [];
     const cellRegex = /<(?:\w+:)?c\b([^>]*)>([\s\S]*?)<\/(?:\w+:)?c>/g;
@@ -1597,9 +1660,12 @@ function parseWorksheetXml(xml: string, sharedStrings: string[]): string[][] {
     while ((cellMatch = cellRegex.exec(rowInner)) !== null) {
       const attrs = cellMatch[1];
       const cellBody = cellMatch[2];
-      const refMatch = attrs.match(/\br="([A-Z]+)\d+"/i);
+      const refMatch = attrs.match(/\br="([A-Z]{1,3})\d+"/i);
       const colIdx = refMatch ? columnLettersToZeroIndex(refMatch[1].toUpperCase()) : fallbackColIdx;
       fallbackColIdx = colIdx + 1;
+      if (colIdx < 0 || colIdx >= MAX_XLSX_COLUMNS) {
+        continue;
+      }
 
       const typeMatch = attrs.match(/\bt="([^"]+)"/i);
       const cellType = typeMatch ? typeMatch[1] : '';

@@ -22,7 +22,7 @@
 يرجى تأكيد تشغيل واجتياز الأوامر التالية محلياً:
 
 - [ ] `npm run check:licenses` — فحص توافق رخص الاعتماديات (`GPL-3.0-or-later` / `MIT` / `Apache-2.0` / `ISC` / `OFL-1.1`)
-- [ ] `npm run check:content` — فحص سجل التراخيص للملفات المرئية والسريرية في `CONTENT_LICENSES.md`
+- [ ] `npm run check:content` — فحص سجل التراخيص للملفات المرئية والسريرية في `docs/legal/CONTENT_LICENSES.md`
 - [ ] `npm run lint` — فحص الأنواع البرمجية (`tsc --noEmit`)
 - [ ] `npm test` — نجاح كافة اختبارات الوحدات والتشفير والترحيل (`Vitest`)
 - [ ] `npm run build` — نجاح بناء حزمة الإنتاج (`Vite`)

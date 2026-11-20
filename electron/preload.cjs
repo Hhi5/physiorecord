@@ -20,4 +20,8 @@ contextBridge.exposeInMainWorld('electronAPI', Object.freeze({
   openExternalUrl: (options) => ipcRenderer.invoke('physiorecord:open-external', options),
   checkForUpdates: () => ipcRenderer.invoke('physiorecord:check-for-updates'),
   fetchGithubReleases: () => ipcRenderer.invoke('physiorecord:fetch-github-releases'),
+  startLanSyncHub: (options) => ipcRenderer.invoke('physiorecord:lan-sync-start', options),
+  stopLanSyncHub: () => ipcRenderer.invoke('physiorecord:lan-sync-stop'),
+  getLanSyncHubStatus: () => ipcRenderer.invoke('physiorecord:lan-sync-status'),
+  lanSyncExchange: (options) => ipcRenderer.invoke('physiorecord:lan-sync-exchange', options),
 }));

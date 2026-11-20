@@ -56,6 +56,15 @@ export interface SessionModalsProps {
   setModalityOverrideReason: (v: string) => void;
   onCancelModalityOverride: () => void;
   onConfirmModalityOverride: () => void;
+
+  showDeleteSessionModal: boolean;
+  setShowDeleteSessionModal: (open: boolean) => void;
+  isLocked: boolean;
+  deleteSessionReason: string;
+  setDeleteSessionReason: (v: string) => void;
+  isDeletingSession: boolean;
+  deleteSessionError: string | null;
+  onConfirmDeleteSession: () => void;
 }
 
 export const SessionModals: React.FC<SessionModalsProps> = ({
@@ -93,6 +102,14 @@ export const SessionModals: React.FC<SessionModalsProps> = ({
   setModalityOverrideReason,
   onCancelModalityOverride,
   onConfirmModalityOverride,
+  showDeleteSessionModal,
+  setShowDeleteSessionModal,
+  isLocked,
+  deleteSessionReason,
+  setDeleteSessionReason,
+  isDeletingSession,
+  deleteSessionError,
+  onConfirmDeleteSession,
 }) => {
   const { bi } = useLanguage();
 
@@ -408,6 +425,149 @@ export const SessionModals: React.FC<SessionModalsProps> = ({
             </div>
           </div>
         )}
+      </ModalDialog>
+
+      {/* Delete Session Confirmation Dialog (Supports both Draft and Finalized Sessions) */}
+      <ModalDialog
+        isOpen={showDeleteSessionModal}
+        onOpenChange={(open) => {
+          if (!isDeletingSession) setShowDeleteSessionModal(open);
+        }}
+        title={
+          isLocked
+            ? bi(
+                `حذف الجلسة المعتمدة #${session.data.sessionNumber}`,
+                `Delete Finalized Session #${session.data.sessionNumber}`,
+                `سڕینەوەی دانیشتنی پەسەندکراو #${session.data.sessionNumber}`
+              )
+            : bi(
+                `حذف الجلسة #${session.data.sessionNumber}`,
+                `Delete Session #${session.data.sessionNumber}`,
+                `سڕینەوەی دانیشتن #${session.data.sessionNumber}`
+              )
+        }
+        subtitle={
+          isLocked
+            ? bi(
+                'إجراء نهائي لإزالة جلسة معتمدة بالخطأ أو بدون بيانات',
+                'Permanent removal of an accidentally finalized or empty session',
+                'لابردنی یەکجاریی دانیشتنی پەسەندکراو بە هەڵە یان بەتاڵ'
+              )
+            : bi(
+                'سيتم حذف هذه المسودة وملاحظات SOAP المرتبطة بها نهائياً',
+                'This draft session and its SOAP note will be permanently deleted',
+                'ئەم ڕەشنووسە و تۆمارە پەیوەستەکان بە یەکجاری دەسڕدرێنەوە'
+              )
+        }
+        size="md"
+      >
+        <div
+          data-testid="delete-session-confirm-modal"
+          className="p-5 space-y-4 text-xs"
+        >
+          <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-800 dark:text-rose-300 leading-relaxed flex items-start gap-2.5">
+            <AlertTriangle className="size-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+            <span>
+              {isLocked
+                ? bi(
+                    'سيتم حذف الجلسة المعتمدة مع ملاحظة SOAP وأي ملاحق سريرية مرتبطة بها نهائياً ولا يمكن التراجع عن هذا الإجراء. سيتم تسجيل سبب الحذف في سجل التدقيق.',
+                    'This finalized session, its SOAP note, and any attached clinical addenda will be permanently deleted and cannot be undone. The reason will be recorded in the audit log.',
+                    'ئەم دانیشتنە پەسەندکراوە لەگەڵ تۆماری SOAP و پاشکۆکان بە یەکجاری دەسڕدرێتەوە و ناگەڕێتەوە.'
+                  )
+                : bi(
+                    'هل أنت متأكد من حذف هذه الجلسة نهائياً؟ لا يمكن استرجاع البيانات بعد الحذف.',
+                    'Are you sure you want to permanently delete this session? This cannot be undone.',
+                    'دڵنیایت لە سڕینەوەی یەکجاریی ئەم دانیشتنە؟ دوای سڕینەوە ناگەڕێتەوە.'
+                  )}
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            <div className="font-bold text-foreground">
+              {bi('سبب الحذف (يُحفظ في سجل التدقيق):', 'Deletion Reason (recorded in audit log):', 'هۆکاری سڕینەوە:')}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                {
+                  ar: 'اعتماد بالخطأ (جلسة فارغة)',
+                  en: 'Finalized by mistake (empty)',
+                },
+                {
+                  ar: 'جلسة مكررة',
+                  en: 'Duplicate session',
+                },
+                {
+                  ar: 'أُنشئت لمريض خاطئ',
+                  en: 'Created for wrong patient',
+                },
+                {
+                  ar: 'إلغاء / خطأ إدخال',
+                  en: 'Cancelled / entry error',
+                },
+              ].map((preset) => {
+                const label = bi(preset.ar, preset.en);
+                const selected = deleteSessionReason.trim() === label;
+                return (
+                  <button
+                    key={preset.en}
+                    type="button"
+                    onClick={() => setDeleteSessionReason(label)}
+                    className={`compact-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
+                      selected
+                        ? 'bg-rose-600 text-white'
+                        : 'bg-surface hover:bg-surface/80 text-foreground border border-card-line'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <input
+              type="text"
+              data-testid="delete-session-reason-input"
+              value={deleteSessionReason}
+              onChange={(e) => setDeleteSessionReason(e.target.value)}
+              placeholder={bi(
+                'اكتب سبب الحذف (اختياري)...',
+                'Enter deletion reason (optional)...',
+                'هۆکاری سڕینەوە بنووسە (دڵخوازانە)...'
+              )}
+              className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-surface/80 text-foreground focus:outline-none focus:ring-2 focus:ring-rose-500/25"
+            />
+          </div>
+
+          {deleteSessionError && (
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-semibold">
+              {deleteSessionError}
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-card-divider">
+            <button
+              type="button"
+              disabled={isDeletingSession}
+              onClick={() => setShowDeleteSessionModal(false)}
+              className="compact-btn h-9 px-3.5 rounded-xl bg-layer border border-layer-line text-foreground font-semibold cursor-pointer"
+            >
+              {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
+            </button>
+            <button
+              type="button"
+              data-testid="confirm-delete-session-btn"
+              disabled={isDeletingSession}
+              onClick={onConfirmDeleteSession}
+              className="compact-btn h-9 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <Trash2 className="size-3.5" />
+              <span>
+                {isDeletingSession
+                  ? bi('جاري الحذف...', 'Deleting...', 'دەسڕدرێتەوە...')
+                  : bi('تأكيد الحذف النهائي', 'Confirm Permanent Delete', 'دڵنیابوونەوە لە سڕینەوە')}
+              </span>
+            </button>
+          </div>
+        </div>
       </ModalDialog>
     </>
   );

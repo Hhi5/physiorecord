@@ -4,6 +4,7 @@ node_modules/
 # Build & typecheck artifacts
 build/
 dist/
+sbom.cdx.json
 *.tsbuildinfo
 
 # Environment & secrets (keep template only)
@@ -29,12 +30,16 @@ dist/
 *.db3
 *.bak
 
+# Container / alternative package manager lockfiles (repo uses package-lock.json for npm ci)
+bun.lock
+
 # Logs, test, audit & temporary files
 *.log
 coverage/
 test-results/
 playwright-report/
 playwright/.cache/
+.playwright-cli/
 blob-report/
 ui-audit/
 ux-evidence/

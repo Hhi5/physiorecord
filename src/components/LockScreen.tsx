@@ -8,6 +8,7 @@ import { useVault } from '../context/VaultContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { LanguageSwitcher } from './ui/LanguageSwitcher';
+import { BrandLogo } from './ui/BrandLogo';
 import { ModalDialog } from './ui/Dialog';
 import { copySecretWithAutoClear } from '../utils/clipboardPrivacy';
 import { VAULT_CREDENTIAL_USERNAME } from '../utils/passwordManagerHelper';
@@ -29,7 +30,6 @@ import {
   EyeOff,
   Sun,
   Moon,
-  Activity,
   Download,
   Printer,
   Fingerprint,
@@ -502,7 +502,7 @@ export const LockScreen: React.FC = () => {
           <div className="w-full space-y-4">
             <div className="text-center">
               <div className="inline-flex items-center justify-center gap-1.5 text-primary text-xs font-bold tracking-wide mb-1">
-                <Activity className="size-3.5" strokeWidth={2.4} />
+                <BrandLogo className="size-5 shrink-0" />
                 <span>PhysioRecord</span>
               </div>
               <p className="text-xs text-muted-foreground-1 leading-relaxed">
@@ -683,7 +683,7 @@ export const LockScreen: React.FC = () => {
         <div className="w-full max-w-sm mx-auto">
           <div className="text-center space-y-1.5 mb-6">
             <div className="inline-flex items-center justify-center gap-1.5 text-primary text-xs font-bold tracking-wide">
-              <Activity className="size-4" strokeWidth={2.4} />
+              <BrandLogo className="size-6 shrink-0" />
               <span>PhysioRecord</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-foreground leading-tight tracking-tight">

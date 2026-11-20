@@ -160,6 +160,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({
         };
       }
     } else {
+      const currentStaff = ClinicOperationsService.getActiveStaff();
       setFormData({
         fullName: '',
         fullNameAr: '',
@@ -190,6 +191,8 @@ export const PatientModal: React.FC<PatientModalProps> = ({
         referralSourceType: undefined,
         referringDoctorId: undefined,
         referralNotes: '',
+        assignedStaffId: currentStaff?.id,
+        assignedTherapistName: currentStaff?.nameAr || currentStaff?.nameEn,
       });
     }
     setError(null);
@@ -553,6 +556,47 @@ export const PatientModal: React.FC<PatientModalProps> = ({
                 />
               </div>
             </div>
+
+            {(() => {
+              const staffRoster = ClinicOperationsService.getStaffRoster();
+              const isTeamClinic = !ClinicOperationsService.isSoloMode() || staffRoster.length > 1;
+              if (!isTeamClinic || staffRoster.length === 0) return null;
+              return (
+                <div>
+                  <label
+                    htmlFor="patient-assigned-therapist-select"
+                    className="block text-xs font-semibold text-foreground mb-1"
+                  >
+                    {bi('المعالج المسؤول عن المريض', 'Assigned Therapist')}
+                  </label>
+                  <select
+                    id="patient-assigned-therapist-select"
+                    data-testid="patient-assigned-therapist-select"
+                    value={formData.assignedStaffId || ''}
+                    onChange={(e) => {
+                      const chosen = staffRoster.find((s) => s.id === e.target.value);
+                      setFormData({
+                        ...formData,
+                        assignedStaffId: chosen?.id || undefined,
+                        assignedTherapistName: chosen
+                          ? language === 'en'
+                            ? chosen.nameEn
+                            : chosen.nameAr
+                          : undefined,
+                      });
+                    }}
+                    className="w-full h-10 px-3 rounded-xl bg-surface border border-layer-line text-foreground text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  >
+                    <option value="">{bi('— غير محدد —', '— Unassigned —')}</option>
+                    {staffRoster.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {language === 'en' ? member.nameEn : member.nameAr}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              );
+            })()}
 
             {isPediatricMinor && (
               <div

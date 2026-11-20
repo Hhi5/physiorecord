@@ -12,6 +12,7 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  Cloud,
   Coins,
   Database,
   Dumbbell,
@@ -68,8 +69,13 @@ const WhatsNewChangelogModal = React.lazy(() =>
     default: m.WhatsNewChangelogModal,
   }))
 );
+const ClinicSyncSettingsTab = React.lazy(() =>
+  import('./settings/ClinicSyncSettingsTab').then((m) => ({
+    default: m.ClinicSyncSettingsTab,
+  }))
+);
 
-type SettingsTabId = 'currency' | 'clinic' | 'display' | 'staff' | 'security' | 'modules' | 'developer';
+type SettingsTabId = 'currency' | 'clinic' | 'display' | 'staff' | 'sync' | 'security' | 'modules' | 'developer';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -265,6 +271,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         'چالاککردن یان شاردنەوەی بەشە کلینیکییەکان و خزمەتگوزارییەکان'
       ),
       icon: <Dumbbell className="size-4 shrink-0" />,
+      visible: true,
+    },
+    {
+      id: 'sync',
+      label: bi('المزامنة والعيادة', 'Clinic Sync', 'هاوکاتکردنی کلینیک'),
+      subtitle: bi(
+        'مزامنة الواي فاي المحلي (بدون إنترنت) أو Google Drive المشفّر مجاناً ودليل التنصيب',
+        'Local Wi-Fi (LAN) non-destructive sync, Encrypted Google Drive ($0) & setup guide',
+        'هاوکاتکردنی وایفای ناوخۆیی یان گووگڵ درایڤی کۆدکراو بە خۆڕایی'
+      ),
+      icon: <Cloud className="size-4 shrink-0" />,
       visible: true,
     },
     {
@@ -643,6 +660,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 )}
 
                 {activeTab === 'staff' && <StaffRosterSettingsTab isModalOpen={isOpen} />}
+
+                {activeTab === 'sync' && (
+                  <Suspense fallback={null}>
+                    <ClinicSyncSettingsTab />
+                  </Suspense>
+                )}
 
                 {activeTab === 'security' && (
                   <SecuritySettingsTab

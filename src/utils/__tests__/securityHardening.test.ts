@@ -1,0 +1,196 @@
+import { describe, expect, it } from 'vitest';
+import {
+  isAllowedExternalActionUrl,
+  isPrivateLanSyncUrl,
+  isSafeSyncDeviceId,
+  isValidGoogleDriveId,
+  safeJsonParse,
+  sanitizeExportedDocumentHtml,
+} from '../securityHardening';
+import {
+  PRODUCTION_MIN_SYNC_PBKDF2_ITERATIONS,
+  decryptSyncEnvelope,
+  encryptSyncEnvelope,
+  type ClinicSyncPayload,
+} from '../clinicSyncEngine';
+import { buildShareableDocumentHtmlFile } from '../sharingInteropPhaseE';
+import { buildMinimalXlsxBuffer, parseXlsxBufferToMatrix } from '../dataQualityPhaseD';
+
+describe('Security Hardening — SSRF & Private LAN Sync URL Validation', () => {
+  it('allows valid RFC1918, loopback, and .local LAN Hub URLs', () => {
+    expect(isPrivateLanSyncUrl('http://192.168.1.15:47821')).toBe(true);
+    expect(isPrivateLanSyncUrl('http://10.0.0.5:47821')).toBe(true);
+    expect(isPrivateLanSyncUrl('http://172.16.4.20:47821')).toBe(true);
+    expect(isPrivateLanSyncUrl('http://172.31.255.1:47821')).toBe(true);
+    expect(isPrivateLanSyncUrl('http://127.0.0.1:47821')).toBe(true);
+    expect(isPrivateLanSyncUrl('http://localhost:47821')).toBe(true);
+    expect(isPrivateLanSyncUrl('http://clinic-pc.local:47821')).toBe(true);
+  });
+
+  it('blocks public internet hosts, cloud metadata IPs, userinfo, and non-HTTP schemes', () => {
+    expect(isPrivateLanSyncUrl('http://169.254.169.254')).toBe(false);
+    expect(isPrivateLanSyncUrl('http://169.254.169.254:80')).toBe(false);
+    expect(isPrivateLanSyncUrl('https://evil.example.com')).toBe(false);
+    expect(isPrivateLanSyncUrl('http://8.8.8.8:47821')).toBe(false);
+    expect(isPrivateLanSyncUrl('http://172.32.0.1:47821')).toBe(false);
+    expect(isPrivateLanSyncUrl('http://010.0.0.1:47821')).toBe(false);
+    expect(isPrivateLanSyncUrl('http://user:pass@192.168.1.15:47821')).toBe(false);
+    expect(isPrivateLanSyncUrl('http://192.168.1.15:47821/evil')).toBe(false);
+    expect(isPrivateLanSyncUrl('javascript:alert(1)')).toBe(false);
+    expect(isPrivateLanSyncUrl('file:///etc/passwd')).toBe(false);
+  });
+});
+
+describe('Security Hardening — External URL Allowlist', () => {
+  it('allows verified WhatsApp, Google Maps, and official GitHub release URLs', () => {
+    expect(isAllowedExternalActionUrl('https://wa.me/9647701234567?text=Hi')).toBe(true);
+    expect(isAllowedExternalActionUrl('https://api.whatsapp.com/send?phone=9647701234567')).toBe(true);
+    expect(isAllowedExternalActionUrl('https://www.google.com/maps/search/?api=1&query=Baghdad')).toBe(true);
+    expect(isAllowedExternalActionUrl('https://google.com/maps/@33.3,44.4,15z')).toBe(true);
+    expect(isAllowedExternalActionUrl('https://github.com/Hhi5/physiorecord/releases/latest')).toBe(true);
+  });
+
+  it('blocks downgraded HTTP, userinfo tricks, arbitrary hosts, and non-Maps Google paths', () => {
+    expect(isAllowedExternalActionUrl('http://wa.me/9647701234567')).toBe(false);
+    expect(isAllowedExternalActionUrl('https://wa.me@evil.com/path')).toBe(false);
+    expect(isAllowedExternalActionUrl('https://evil.com/?u=https://wa.me/123')).toBe(false);
+    expect(isAllowedExternalActionUrl('https://google.com/search?q=test')).toBe(false);
+    expect(isAllowedExternalActionUrl('https://github.com/other/repo')).toBe(false);
+    expect(isAllowedExternalActionUrl('javascript:alert(1)')).toBe(false);
+    expect(isAllowedExternalActionUrl('https://wa.me/123\r\nInjected')).toBe(false);
+  });
+});
+
+describe('Security Hardening — Google Drive ID & Device ID Validation', () => {
+  it('accepts valid Drive IDs and blocks query-injection payloads', () => {
+    expect(isValidGoogleDriveId('1aBcDeFgHiJkLmNoPqRsTuVwXyZ_012345')).toBe(true);
+    expect(isValidGoogleDriveId("' or trashed = false or '")).toBe(false);
+    expect(isValidGoogleDriveId("12345678' in parents")).toBe(false);
+    expect(isValidGoogleDriveId('../etc/passwd')).toBe(false);
+    expect(isValidGoogleDriveId('short')).toBe(false);
+  });
+
+  it('validates safe sync device identifiers', () => {
+    expect(isSafeSyncDeviceId('dev_1234abcd5678')).toBe(true);
+    expect(isSafeSyncDeviceId('../../etc/passwd')).toBe(false);
+    expect(isSafeSyncDeviceId('bad device id!')).toBe(false);
+  });
+});
+
+describe('Security Hardening — Exported HTML XSS Sanitization & CSP', () => {
+  it('strips scripts, nested script smuggling, inline event handlers, iframes, and dangerous URIs', () => {
+    const malicious =
+      '<h1>تقرير طبي</h1>' +
+      '<script>alert(1)</script>' +
+      '<scr<script>ipt>alert(2)</script>' +
+      '<img src="x" onerror="alert(3)" />' +
+      '<svg onload=alert(4)></svg>' +
+      '<iframe src="https://evil.example"></iframe>' +
+      '<a href="javascript:alert(5)">bad</a>' +
+      '<a href="data:text/html,<script>alert(6)</script>">bad2</a>' +
+      '<img src="data:image/png;base64,AAAA" alt="logo" />';
+
+    const cleaned = sanitizeExportedDocumentHtml(malicious);
+    expect(cleaned).toContain('<h1>تقرير طبي</h1>');
+    expect(cleaned).toContain('data:image/png;base64,AAAA');
+    expect(cleaned.toLowerCase()).not.toContain('<script');
+    expect(cleaned.toLowerCase()).not.toContain('<iframe');
+    expect(cleaned.toLowerCase()).not.toContain('onerror');
+    expect(cleaned.toLowerCase()).not.toContain('onload');
+    expect(cleaned.toLowerCase()).not.toContain('javascript:');
+    expect(cleaned.toLowerCase()).not.toContain('data:text/html');
+  });
+
+  it('embeds strict offline CSP meta header into shareable HTML files', async () => {
+    const file = buildShareableDocumentHtmlFile({
+      title: 'Clinical Report',
+      docType: 'soap',
+      sheetHtml: '<p>Safe content</p><img src=x onerror=alert(1)>',
+      dir: 'rtl',
+      lang: 'ar',
+      fileNameBase: 'report',
+    });
+    const html = await file.text();
+    expect(html).toContain('http-equiv="Content-Security-Policy"');
+    expect(html).toContain("default-src 'none'");
+    expect(html).toContain('<p>Safe content</p>');
+    expect(html.toLowerCase()).not.toContain('onerror');
+  });
+});
+
+describe('Security Hardening — Prototype Pollution & Sync Crypto Bounds', () => {
+  it('strips __proto__, constructor, and prototype keys via safeJsonParse', () => {
+    const raw = '{"ok":true,"__proto__":{"polluted":true},"nested":{"constructor":{"x":1},"prototype":{"y":2},"safe":42}}';
+    const parsed = safeJsonParse<Record<string, unknown>>(raw);
+    expect(parsed.ok).toBe(true);
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(parsed, '__proto__')).toBe(false);
+    const nested = parsed.nested as Record<string, unknown>;
+    expect(nested.safe).toBe(42);
+    expect(Object.prototype.hasOwnProperty.call(nested, 'constructor')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(nested, 'prototype')).toBe(false);
+  });
+
+  it('blocks tampered sync envelopes with downgraded or excessive PBKDF2 iterations', async () => {
+    const payload: ClinicSyncPayload = {
+      schemaVersion: 1,
+      deviceId: 'dev_test_0001',
+      deviceLabel: 'Test Device',
+      exportedAt: new Date().toISOString(),
+      patients: [],
+      episodes: [],
+      sessions: [],
+      soapNotes: [],
+      clinicalAddenda: [],
+      appointments: [],
+      invoices: [],
+      episodeClinicalStores: [],
+      staffRoster: [],
+    };
+    const env = await encryptSyncEnvelope(payload, 'ClinicPass2026!', 1000);
+
+    // Production minIterations check rejects downgraded 1000-iteration envelope
+    await expect(
+      decryptSyncEnvelope(env, 'ClinicPass2026!', {
+        minIterations: PRODUCTION_MIN_SYNC_PBKDF2_ITERATIONS,
+      })
+    ).rejects.toThrow();
+
+    // CPU-exhaustion DoS iterations rejected immediately before deriving key
+    await expect(
+      decryptSyncEnvelope({ ...env, iterations: 99_000_000 }, 'ClinicPass2026!')
+    ).rejects.toThrow();
+
+    // Malformed deviceId path traversal rejected
+    await expect(
+      decryptSyncEnvelope({ ...env, deviceId: '../../etc/passwd' }, 'ClinicPass2026!')
+    ).rejects.toThrow();
+  });
+});
+
+describe('Security Hardening — XLSX Zip Bomb & Matrix Bounds', () => {
+  it('preserves normal XLSX parsing while rejecting archives declaring oversized entries', async () => {
+    const normal = buildMinimalXlsxBuffer([
+      ['الاسم', 'الهاتف'],
+      ['أحمد علي', '07701234567'],
+    ]);
+    const parsed = await parseXlsxBufferToMatrix(new Uint8Array(normal).buffer);
+    expect(parsed.length).toBe(2);
+    expect(parsed[1][0]).toBe('أحمد علي');
+
+    // Tamper the first central-directory header's declared uncompressed size to 50 MB
+    const tampered = new Uint8Array(normal);
+    const dv = new DataView(tampered.buffer);
+    let cdPos = -1;
+    for (let i = 0; i <= tampered.length - 4; i++) {
+      if (dv.getUint32(i, true) === 0x02014b50) {
+        cdPos = i;
+        break;
+      }
+    }
+    expect(cdPos).toBeGreaterThan(0);
+    dv.setUint32(cdPos + 24, 50 * 1024 * 1024, true); // 50 MB > 15 MB entry cap
+
+    await expect(parseXlsxBufferToMatrix(tampered.buffer)).rejects.toThrow();
+  });
+});

@@ -88,7 +88,7 @@ jobs:
           if [[ "$VERSION_TAG" != v* ]]; then
             VERSION_TAG="v${VERSION_TAG}"
           fi
-          cp LICENSE NOTICE THIRD_PARTY_NOTICES.md CONTENT_LICENSES.md dist/
+          cp LICENSE NOTICE docs/legal/THIRD_PARTY_NOTICES.md docs/legal/CONTENT_LICENSES.md dist/
           cd dist && zip -r "../PhysioRecord-Web-PWA-${VERSION_TAG}.zip" .
 
       - name: Upload Web PWA bundle for GitHub Release
@@ -101,7 +101,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: compliance-sbom
-          path: sbom.cdx.json
+          path: build/sbom.cdx.json
 
   build-android-apk:
     name: Build Universal Android APK (Capacitor 8)
@@ -266,7 +266,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: |
           npm run build:desktop:web
-          npx electron-builder --win nsis portable --publish never
+          npx electron-builder --config electron/electron-builder.yml --win nsis portable --publish never
 
       - name: Upload Windows EXE installers for GitHub Release
         uses: actions/upload-artifact@v4

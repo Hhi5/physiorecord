@@ -9,7 +9,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Activity,
   Users,
   MonitorCheck,
   Calendar,
@@ -31,6 +30,7 @@ import { usePatients } from '../../context/PatientContext';
 import type { PatientRecord } from '../../types/clinical';
 import type { ClinicRoleId, ClinicStaffMember } from '../../types/clinicManagement';
 import { Num, DemoBadge } from '../ui/Primitives';
+import { BrandLogo } from '../ui/BrandLogo';
 import { QuickAddMenu } from './QuickAddMenu';
 import { AccountMenuPopover } from './AccountMenuPopover';
 
@@ -251,7 +251,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="pr-brand-mark">
-            <Activity className="size-[1.1rem]" strokeWidth={2.4} />
+            <BrandLogo className="size-8" />
           </div>
           {isExpanded && (
             <div className="min-w-0">

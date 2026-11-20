@@ -6,10 +6,12 @@
 
 import React, { useState, useMemo, useEffect, useRef, Suspense, lazy } from 'react';
 import { usePatients } from '../context/PatientContext';
+import { useVault } from '../context/VaultContext';
 import { useLanguage } from '../context/LanguageContext';
 import { ClinicOperationsService } from '../services/clinicOperationsService';
-import type { PatientRecord } from '../types/clinical';
-import { computePatientAge, formatIraqiPhoneDisplay } from '../utils/date';
+import { EpisodeService } from '../services/episodeService';
+import type { EpisodeRecord, PatientRecord } from '../types/clinical';
+import { computePatientAge, formatDateDDMMYYYY, formatIraqiPhoneDisplay } from '../utils/date';
 import {
   getPatientMrn,
   isDemoPatient,
@@ -17,6 +19,11 @@ import {
   getPatientDisplayName,
 } from '../utils/mrn';
 import { findAllDirectoryDuplicatePairs } from '../utils/dataQualityPhaseD';
+import {
+  computeTherapistCaseloadSummary,
+  getPatientCompletionMeta,
+  type PatientCompletionMeta,
+} from '../utils/treatmentJourneySummary';
 import { Num, DemoBadge, Money } from './ui/Primitives';
 import { ClampedMenuPanel } from './ui/ClampedMenuPanel';
 import { useViewportClampedMenu } from '../utils/menuViewportClamp';
@@ -27,6 +34,7 @@ import {
   UserPlus,
   FileSpreadsheet,
   AlertCircle,
+  Award,
   Star,
   ChevronLeft,
   ChevronRight,
@@ -39,6 +47,7 @@ import {
   Wallet,
   MoreHorizontal,
   FolderOpen,
+  Users,
 } from 'lucide-react';
 
 const PatientMergeModal = lazy(() => import('./clinic/PatientMergeModal'));
@@ -49,7 +58,7 @@ const PatientQuickViewModal = lazy(() =>
   import('./PatientQuickViewModal').then((m) => ({ default: m.PatientQuickViewModal }))
 );
 
-type DirectoryLens = 'all' | 'debt' | 'red_flags' | 'pinned' | 'archived';
+type DirectoryLens = 'all' | 'completed' | 'debt' | 'red_flags' | 'pinned' | 'archived';
 
 interface PatientMetrics {
   debtIQD: number;
@@ -75,10 +84,14 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
     archivePatient,
     unarchivePatient,
   } = usePatients();
+  const { dek } = useVault();
   const { bi, isRtl, language } = useLanguage();
 
   const [activeLens, setActiveLens] = useState<DirectoryLens>('all');
   const activeTab: 'active' | 'archived' = activeLens === 'archived' ? 'archived' : 'active';
+  const [allEpisodes, setAllEpisodes] = useState<EpisodeRecord[]>([]);
+  const [episodesRefreshNonce, setEpisodesRefreshNonce] = useState(0);
+  const [selectedTherapistFilter, setSelectedTherapistFilter] = useState<string>('all');
 
   const [undoArchivedPatient, setUndoArchivedPatient] = useState<{ id: string; name: string } | null>(
     null
@@ -128,13 +141,34 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
       setImportWizardEnabled(ClinicOperationsService.isImportWizardEnabled());
       setOpsVersion((v) => v + 1);
     };
+    const onEpisodesUpdated = () => setEpisodesRefreshNonce((n) => n + 1);
     const unsub = ClinicOperationsService.subscribe(syncMem);
     window.addEventListener('physiorecord-modules-updated', syncMem);
+    window.addEventListener('physiorecord-episodes-updated', onEpisodesUpdated);
     return () => {
       unsub();
       window.removeEventListener('physiorecord-modules-updated', syncMem);
+      window.removeEventListener('physiorecord-episodes-updated', onEpisodesUpdated);
     };
   }, []);
+
+  useEffect(() => {
+    if (!dek) {
+      setAllEpisodes([]);
+      return;
+    }
+    let alive = true;
+    void EpisodeService.getAllEpisodes(dek)
+      .then((eps) => {
+        if (alive) setAllEpisodes(eps);
+      })
+      .catch(() => {
+        if (alive) setAllEpisodes([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [dek, patients.length, episodesRefreshNonce]);
 
   // Close header or row popovers on outside click / Escape
   useEffect(() => {
@@ -220,6 +254,52 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
     [activePatients, patientMetricsMap]
   );
 
+  const staffRoster = useMemo(() => {
+    void opsVersion;
+    return ClinicOperationsService.getStaffRoster();
+  }, [opsVersion]);
+
+  const isSoloMode = useMemo(() => {
+    void opsVersion;
+    return ClinicOperationsService.isSoloMode();
+  }, [opsVersion]);
+
+  const completionMetaByPatient = useMemo(() => {
+    const epsByPatient = new Map<string, EpisodeRecord[]>();
+    for (const ep of allEpisodes) {
+      const arr = epsByPatient.get(ep.patientId) || [];
+      arr.push(ep);
+      epsByPatient.set(ep.patientId, arr);
+    }
+    const map = new Map<string, PatientCompletionMeta>();
+    for (const p of patients) {
+      map.set(p.id, getPatientCompletionMeta(p, epsByPatient.get(p.id) || []));
+    }
+    return map;
+  }, [patients, allEpisodes]);
+
+  const therapistCaseload = useMemo(
+    () =>
+      computeTherapistCaseloadSummary({
+        patients,
+        episodes: allEpisodes,
+        staffRoster,
+      }),
+    [patients, allEpisodes, staffRoster]
+  );
+
+  const showTeamOversight = !isSoloMode || staffRoster.length > 1;
+
+  const ongoingActivePatients = useMemo(
+    () => activePatients.filter((p) => !completionMetaByPatient.get(p.id)?.isCompleted),
+    [activePatients, completionMetaByPatient]
+  );
+
+  const completedPatients = useMemo(
+    () => activePatients.filter((p) => Boolean(completionMetaByPatient.get(p.id)?.isCompleted)),
+    [activePatients, completionMetaByPatient]
+  );
+
   const displayedList = activeTab === 'active' ? activePatients : archivedPatients;
   const [searchIndexActivated, setSearchIndexActivated] = useState(false);
 
@@ -242,7 +322,20 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
 
     const filtered = baseMatches.filter((patient) => {
       const p = patient.data;
+      const meta = completionMetaByPatient.get(patient.id);
       if (filterGender !== 'all' && p.gender !== filterGender) return false;
+
+      if (selectedTherapistFilter !== 'all') {
+        if (selectedTherapistFilter === '__unassigned__') {
+          if (meta?.assignedStaffId) return false;
+        } else if (meta?.assignedStaffId !== selectedTherapistFilter) {
+          return false;
+        }
+      }
+
+      if (activeLens === 'completed') return Boolean(meta?.isCompleted);
+      // In 'all' lens without active search query, show ongoing patients so discharged patients live cleanly in «أنهوا العلاج»
+      if (activeLens === 'all' && !trimmedQuery) return !meta?.isCompleted;
       if (activeLens === 'pinned') return pinnedIds.includes(patient.id);
       if (activeLens === 'debt') return (patientMetricsMap.get(patient.id)?.debtIQD ?? 0) > 0;
       if (activeLens === 'red_flags') return hasPatientRedFlagsOrContraindications(p);
@@ -277,10 +370,12 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
     displayedList,
     searchQuery,
     filterGender,
+    selectedTherapistFilter,
     activeLens,
     pinnedIds,
     recentIds,
     patientMetricsMap,
+    completionMetaByPatient,
   ]);
 
   const patientVirtualWindow = useVirtualWindow({
@@ -313,11 +408,20 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
   }> = [
     {
       id: 'all',
-      ar: 'الكل',
-      en: 'All',
-      ckb: 'هەموو',
-      count: activePatients.length,
+      ar: 'النشطون',
+      en: 'Active',
+      ckb: 'چالاکەکان',
+      count: ongoingActivePatients.length,
       alwaysShowCount: true,
+    },
+    {
+      id: 'completed',
+      ar: 'أنهوا العلاج',
+      en: 'Completed',
+      ckb: 'تەواوبووان',
+      count: completedPatients.length,
+      alwaysShowCount: true,
+      icon: <Award className="size-3.5 shrink-0" />,
     },
     {
       id: 'debt',
@@ -558,6 +662,56 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
           )}
         </div>
 
+        {/* Clinic Manager Multi-Therapist Oversight Strip (Team Mode / Multi-Staff) */}
+        {showTeamOversight && therapistCaseload.rows.length > 0 && (
+          <div
+            data-testid="manager-therapist-oversight-strip"
+            className="flex items-center gap-2 overflow-x-auto pr-hide-scrollbar py-0.5"
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedTherapistFilter('all')}
+              className={`h-8 px-3 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors ${
+                selectedTherapistFilter === 'all'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-card border border-card-line text-foreground hover:bg-surface'
+              }`}
+            >
+              <Users className="size-3.5 shrink-0" />
+              <span>{bi('كل المعالجين', 'All Therapists')}</span>
+              <span className="font-mono opacity-80">
+                (<Num value={therapistCaseload.totalActive + therapistCaseload.totalCompleted} />)
+              </span>
+            </button>
+            {therapistCaseload.rows.map((row) => {
+              const active = selectedTherapistFilter === row.staffId;
+              return (
+                <button
+                  key={row.staffId}
+                  type="button"
+                  data-testid={`therapist-filter-chip-${row.staffId}`}
+                  onClick={() =>
+                    setSelectedTherapistFilter(active ? 'all' : row.staffId)
+                  }
+                  className={`h-8 px-3 rounded-xl text-xs font-bold inline-flex items-center gap-2 shrink-0 cursor-pointer transition-colors ${
+                    active
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card border border-card-line text-foreground hover:bg-surface'
+                  }`}
+                >
+                  <span className="truncate max-w-[140px]">
+                    {language === 'en' ? row.nameEn : row.nameAr}
+                  </span>
+                  <span className="font-mono text-xs opacity-80">
+                    {row.activePatients}
+                    {row.completedPatients > 0 ? ` · ✓${row.completedPatients}` : ''}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Minimalist Underline Filter Tabs (Zero Pill Soup) */}
         <div
           role="tablist"
@@ -567,13 +721,15 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
           {lenses.map((lens) => {
             const active = activeLens === lens.id;
             const inactiveColor =
-              lens.id === 'debt'
-                ? 'text-orange-600 dark:text-orange-400'
-                : lens.id === 'red_flags'
-                  ? 'text-rose-700 dark:text-rose-400'
-                  : lens.id === 'pinned'
-                    ? 'text-amber-500'
-                    : '';
+              lens.id === 'completed'
+                ? 'text-emerald-700 dark:text-emerald-400'
+                : lens.id === 'debt'
+                  ? 'text-orange-600 dark:text-orange-400'
+                  : lens.id === 'red_flags'
+                    ? 'text-rose-700 dark:text-rose-400'
+                    : lens.id === 'pinned'
+                      ? 'text-amber-500'
+                      : '';
 
             return (
               <button
@@ -727,10 +883,40 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                           </span>
                         )}
                         <span className="text-muted-foreground-1 truncate max-w-[200px] sm:max-w-md">
-                          {p.medicalHistory ||
-                            p.occupation ||
-                            bi('ملف سريري نشط', 'Active clinical chart', 'دۆسیەی چالاک')}
+                          {completionMetaByPatient.get(patient.id)?.isCompleted &&
+                          completionMetaByPatient.get(patient.id)?.dischargeSummary
+                            ? completionMetaByPatient.get(patient.id)!.dischargeSummary
+                            : p.medicalHistory ||
+                              p.occupation ||
+                              bi('ملف سريري نشط', 'Active clinical chart', 'دۆسیەی چالاک')}
                         </span>
+
+                        {completionMetaByPatient.get(patient.id)?.isCompleted && (
+                          <span
+                            data-testid={`patient-completed-badge-${patient.id}`}
+                            className="text-emerald-700 dark:text-emerald-400 font-extrabold inline-flex items-center gap-1 shrink-0"
+                          >
+                            <Award className="size-3.5 shrink-0" />
+                            <span>
+                              {bi('أنهى العلاج', 'Completed')}
+                              {completionMetaByPatient.get(patient.id)?.dischargeDate
+                                ? ` · ${formatDateDDMMYYYY(
+                                    completionMetaByPatient.get(patient.id)!.dischargeDate!
+                                  )}`
+                                : ''}
+                            </span>
+                          </span>
+                        )}
+
+                        {showTeamOversight &&
+                          completionMetaByPatient.get(patient.id)?.assignedTherapistName && (
+                            <span className="text-primary font-bold inline-flex items-center gap-1 shrink-0">
+                              <Users className="size-3 shrink-0" />
+                              <span>
+                                {completionMetaByPatient.get(patient.id)!.assignedTherapistName}
+                              </span>
+                            </span>
+                          )}
 
                         {hasRedFlags && (
                           <span

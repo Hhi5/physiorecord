@@ -103,6 +103,73 @@ export class EpisodeService {
   }
 
   /**
+   * Fetch and decrypt all episodes across all patients in one pass
+   * (used for directory completion badges, manager caseload analytics, and sync).
+   */
+  static async getAllEpisodes(
+    dek: CryptoKey,
+    database: PhysioRecordDatabase = defaultDb
+  ): Promise<EpisodeRecord[]> {
+    const encryptedEntities = await database.episodes.toArray();
+    const records: EpisodeRecord[] = [];
+
+    for (const entity of encryptedEntities) {
+      try {
+        const decryptedData = await decryptRecordPayload<EpisodeClinicalData>(
+          dek,
+          'episodes',
+          entity.id,
+          [entity.patientId],
+          entity.iv,
+          entity.ciphertext,
+          entity.recordCryptoVersion || CURRENT_RECORD_CRYPTO_VERSION,
+          entity.dekVersion || CURRENT_DEK_VERSION,
+          entity.recordSalt
+        );
+
+        const legacyEntity = entity as LegacyEncryptedEpisodeEntity;
+        const status: EpisodeStatus = decryptedData.status || legacyEntity.status || 'active';
+        const primarySpecialty: ClinicalSpecialty =
+          decryptedData.primarySpecialty || legacyEntity.primarySpecialty || 'general';
+        const startDate: string =
+          decryptedData.startDate ||
+          decryptedData.onsetDate ||
+          legacyEntity.startDate ||
+          localDate(entity.createdAt);
+        const endDate: string | undefined = decryptedData.endDate || legacyEntity.endDate;
+
+        records.push({
+          id: entity.id,
+          patientId: entity.patientId,
+          status,
+          primarySpecialty,
+          startDate,
+          endDate,
+          createdAt: entity.createdAt,
+          updatedAt: entity.updatedAt,
+          data: {
+            ...decryptedData,
+            status,
+            primarySpecialty,
+            startDate,
+            endDate,
+          },
+        });
+      } catch (err) {
+        console.error(`Failed to decrypt episode record ${entity.id}:`, err);
+      }
+    }
+
+    records.sort((a, b) => {
+      const timeA = new Date(a.startDate || a.createdAt).getTime();
+      const timeB = new Date(b.startDate || b.createdAt).getTime();
+      return timeB - timeA;
+    });
+
+    return records;
+  }
+
+  /**
    * Fetch and decrypt a single episode by ID.
    */
   static async getEpisodeById(
@@ -402,6 +469,8 @@ export class EpisodeService {
       endDate: string;
       dischargeSummary: string;
       dischargeCriteriaSummary?: string;
+      dischargeReason?: 'goals_met' | 'plateau' | 'medical_referral' | 'self_discharge';
+      dischargeFinalOutcomeNote?: string;
     },
     dek: CryptoKey,
     database: PhysioRecordDatabase = defaultDb
@@ -422,6 +491,10 @@ export class EpisodeService {
       endDate: dischargeInfo.endDate || localDate(),
       dischargeSummary: dischargeInfo.dischargeSummary.trim(),
       dischargeCriteriaSummary: dischargeInfo.dischargeCriteriaSummary?.trim(),
+      ...(dischargeInfo.dischargeReason ? { dischargeReason: dischargeInfo.dischargeReason } : {}),
+      ...(dischargeInfo.dischargeFinalOutcomeNote?.trim()
+        ? { dischargeFinalOutcomeNote: dischargeInfo.dischargeFinalOutcomeNote.trim() }
+        : {}),
     };
 
     const meta = await database.vaultMeta.get('auth');

@@ -187,6 +187,11 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({
               setSelectedSessionId(null);
             }}
             onSessionUpdated={loadPatientClinicalData}
+            onSessionDeleted={() => {
+              setAutoOpenFinish(false);
+              setSelectedSessionId(null);
+              void loadPatientClinicalData();
+            }}
             onStartSessionTour={onStartSessionTour}
           />
         ) : (

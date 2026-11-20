@@ -17,7 +17,7 @@ assignees: []
 قبل البدء، يرجى مراجعة [`AGENTS.md`](../../AGENTS.md) و[`docs/INDEX.md`](../../docs/INDEX.md):
 1. **صفر اتصالات خارجية (Zero Runtime Network Requests):** يُمنع استدعاء أي CDN خارجي أو خطوط سحابية أو خدمات تتبع.
 2. **الاتجاه ثنائي اللغة (`RTL` / `LTR`) والأرقام اللاتينية (`0-9`):** استخدم خصائص Tailwind المنطقية (`ms-*`, `me-*`, `ps-*`, `pe-*`) والمكونات المساعدة (`<Num />`, `<Fraction />`, `<Money />`) مع حجم خط لا يقل عن `12px` (`text-xs`).
-3. **حزم المحتوى والترخيص (`Content & SPDX License Gate`):** أي قوالب سريرية أو ملفات `SVG` يجب أن تلتزم بمعيار [`docs/CONTENT_PACK_CONVENTION.md`](../../docs/CONTENT_PACK_CONVENTION.md) وتُسجّل في [`CONTENT_LICENSES.md`](../../CONTENT_LICENSES.md).
+3. **حزم المحتوى والترخيص (`Content & SPDX License Gate`):** أي قوالب سريرية أو ملفات `SVG` يجب أن تلتزم بمعيار [`docs/CONTENT_PACK_CONVENTION.md`](../../docs/CONTENT_PACK_CONVENTION.md) وتُسجّل في [`docs/legal/CONTENT_LICENSES.md`](../../docs/legal/CONTENT_LICENSES.md).
 4. **عدم تعديل مخططات Dexie السابقة (`v1`–`v10` Immutable):** لا تقم بتعديل إصدارات `src/db/db.ts` التاريخية.
 
 ## 4. معايير القبول وأوامر التحقق / Acceptance Criteria & Verification Commands

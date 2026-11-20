@@ -12,7 +12,7 @@ import path from 'node:path';
 const ROOT_DIR = process.cwd();
 const PKG_PATH = path.join(ROOT_DIR, 'package.json');
 const LOCK_PATH = path.join(ROOT_DIR, 'package-lock.json');
-const SBOM_PATH = path.join(ROOT_DIR, 'sbom.cdx.json');
+const SBOM_PATH = path.join(ROOT_DIR, 'build', 'sbom.cdx.json');
 
 function splitPackageName(fullName) {
   if (fullName.startsWith('@')) {
@@ -251,8 +251,9 @@ function main() {
     dependencies,
   };
 
+  fs.mkdirSync(path.dirname(SBOM_PATH), { recursive: true });
   fs.writeFileSync(SBOM_PATH, JSON.stringify(sbom, null, 2) + '\n', 'utf8');
-  console.log(`📦 Wrote sbom.cdx.json (${components.length} components, specVersion 1.5).`);
+  console.log(`📦 Wrote build/sbom.cdx.json (${components.length} components, specVersion 1.5).`);
 }
 
 main();

@@ -10,7 +10,7 @@ import path from 'node:path';
 const ROOT_DIR = process.cwd();
 const LOCK_PATH = path.join(ROOT_DIR, 'package-lock.json');
 const PKG_PATH = path.join(ROOT_DIR, 'package.json');
-const NOTICES_PATH = path.join(ROOT_DIR, 'THIRD_PARTY_NOTICES.md');
+const NOTICES_PATH = path.join(ROOT_DIR, 'docs', 'legal', 'THIRD_PARTY_NOTICES.md');
 
 const PROD_ALLOWED = new Set([
   'MIT',
@@ -203,7 +203,7 @@ function main() {
 
   if (writeNotices) {
     fs.writeFileSync(NOTICES_PATH, buildNoticesMarkdown(records), 'utf8');
-    console.log(`📝 Wrote THIRD_PARTY_NOTICES.md (${records.length} packages)`);
+    console.log(`📝 Wrote docs/legal/THIRD_PARTY_NOTICES.md (${records.length} packages)`);
   }
 
   if (violations.length > 0) {

@@ -4,6 +4,15 @@ All notable changes to **PhysioRecord** are documented in this file.
 
 ## [Unreleased]
 
+### Clinic Operations, Multi-Device Sync & Discharge Summary
+- **Custom Adaptive Brand Logo**: Replaced platform, PWA, Android, and Windows Desktop icons with a transparent, theme-adaptive clinic emblem (`BrandLogo.tsx`, `public/icons/physiorecord-icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png`).
+- **Patient Discharge & Treatment Journey Summary**: Added complete episode discharge workflow (`DischargeEpisodeModal.tsx`, `treatmentJourneySummary.ts`) generating a structured clinical treatment journey & pain/outcome improvement summary and moving discharged patients cleanly into a dedicated **Completed Treatment** section.
+- **Multi-Therapist Clinic Sync Options (Zero Ongoing Cost, Strictly Non-Destructive)**:
+  - **Local Wi-Fi Clinic Sync (LAN)**: Connects clinic PC and therapists' phones over the same regular clinic Wi-Fi router (no PC hotspot or internet required), with 1-paste `URL|Token` quick pairing, offline encrypted outbox queueing, and strictly additive merging that never deletes therapist data.
+  - **Optional End-to-End Encrypted Google Drive Sync (`$0`)**: Lazy-loaded OAuth (`drive.file` scope only, zero startup network calls) encrypting per-device `.ptsync.json` envelopes client-side with `AES-256-GCM` before upload, paired with an in-app setup guide and offline queue.
+- **Deliberate Deletion of Finalized Sessions & Mobile RTL Polish**: Added explicit confirmation modal with quick deletion reasons and audit trail (`session_deleted`) to delete accidentally finalized empty sessions atomically (`SessionService.deleteFinalizedSession`), fixed finalized-session mobile RTL layout (hiding stale pre-finalization advisories, clean single-line addenda badge, non-clipped `Recorded by` box).
+- **Public GitHub Release Hygiene**: Generated verified `package-lock.json`, pinned `@grpc/grpc-js >= 1.14.7` to pass `npm audit --omit=dev --audit-level=high`, refreshed `docs/legal/THIRD_PARTY_NOTICES.md`, removed temporary AI Studio scratch uploads from `public/`, and added [`docs/GITHUB_RELEASE_CLEANUP.md`](docs/GITHUB_RELEASE_CLEANUP.md).
+
 ### UI — Modern App Shell v2 (Desktop + Mobile Redesign)
 - **Design tokens v2**: Soft ambient canvas, layered elevation (`--pr-shadow-1..3`), hairline borders, glass surfaces, and a 10/12/14/16/24px radius scale (still driven by the user's corner-radius preference in `appearancePrefs.ts`).
 - **Unified components (`src/index.css`)**: `pr-page-header`, `pr-hero`, `pr-kpi`, `pr-seg`, `pr-btn`, `pr-icon-btn`, `pr-chip`, `pr-field`, `pr-search`, `pr-surface`, `pr-topbar`, `pr-sidebar`, `pr-nav-item`, `pr-tabbar`, `pr-tab`, `pr-sheet-panel`, `pr-avatar` — all inside `@layer components` so Tailwind responsiveness keeps priority.

@@ -9,7 +9,7 @@ const useLocalChrome =
   !process.env.CI && fs.existsSync(localChromePath);
 
 export default defineConfig({
-  testDir: './e2e',
+  testDir: '.',
   snapshotPathTemplate: '{testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}',
   timeout: 90_000,
   expect: {

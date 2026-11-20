@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT_DIR = process.cwd();
-const MANIFEST_PATH = path.join(ROOT_DIR, 'CONTENT_LICENSES.md');
+const MANIFEST_PATH = path.join(ROOT_DIR, 'docs', 'legal', 'CONTENT_LICENSES.md');
 
 const BINARY_ASSET_EXTS = new Set([
   '.svg',
@@ -124,7 +124,7 @@ function parseManifestEntries(mdContent) {
 
 function main() {
   if (!fs.existsSync(MANIFEST_PATH)) {
-    console.error('❌ CONTENT_LICENSES.md is missing.');
+    console.error('❌ docs/legal/CONTENT_LICENSES.md is missing.');
     process.exit(1);
   }
 
@@ -174,7 +174,7 @@ function main() {
   }
 
   console.log(
-    `✅ Content License Check PASSED: ${requiredFiles.length} built-in content & SVG/asset files verified in CONTENT_LICENSES.md.`
+    `✅ Content License Check PASSED: ${requiredFiles.length} built-in content & SVG/asset files verified in docs/legal/CONTENT_LICENSES.md.`
   );
 }
 
