@@ -26,6 +26,14 @@ export interface AndroidPhysioRecordPlugin {
     uri?: string;
     filename?: string;
   }>;
+  openFileFromDevice?: (options?: {
+    mimeType?: string;
+  }) => Promise<{
+    opened: boolean;
+    cancelled?: boolean;
+    filename?: string;
+    content?: string;
+  }>;
   shareFile?: (options: {
     filename: string;
     content: string;
@@ -189,6 +197,27 @@ export interface ElectronDesktopBridge {
     status: number;
     text: string;
     contentLength?: number;
+  }>;
+  pickSyncDirectory?: () => Promise<{
+    configured: boolean;
+    cancelled?: boolean;
+    folderPath?: string;
+    folderName?: string;
+  }>;
+  getConfiguredSyncDirectory?: () => Promise<{
+    configured: boolean;
+    folderPath?: string;
+    folderName?: string;
+  }>;
+  clearConfiguredSyncDirectory?: () => Promise<void>;
+  exchangeSyncFolderEnvelopes?: (options: {
+    localEnvelope: unknown;
+  }) => Promise<{
+    ok: boolean;
+    folderName?: string;
+    writtenFile?: string;
+    peerEnvelopes?: unknown[];
+    error?: string;
   }>;
 }
 
@@ -437,6 +466,21 @@ export async function shareGeneratedFileOnAndroid(params: {
   } catch {
     return false;
   }
+}
+
+/**
+ * Opens a text/sync file directly via Android Storage Access Framework (ACTION_OPEN_DOCUMENT),
+ * allowing reliable selection from Google Drive and all OEM document providers.
+ */
+export async function openTextFileFromAndroid(mimeType = '*/*'): Promise<{
+  opened: boolean;
+  cancelled?: boolean;
+  filename?: string;
+  content?: string;
+} | null> {
+  const androidPlugin = getAndroidNativePlugin();
+  if (!androidPlugin?.openFileFromDevice) return null;
+  return await androidPlugin.openFileFromDevice({ mimeType });
 }
 
 /**

@@ -1,15 +1,19 @@
 package org.physiorecord.app;
 
 import android.app.Activity;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.os.ParcelFileDescriptor;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintManager;
+import android.provider.OpenableColumns;
 import android.webkit.WebView;
 
 import androidx.activity.result.ActivityResult;
@@ -27,6 +31,7 @@ import android.util.Base64;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -51,9 +56,9 @@ import java.util.concurrent.Executors;
 /**
  * PhysioRecordNativePlugin — Zero-permission native Android bridge for:
  * 1. Native Print / Save as PDF via Android PrintManager (supports all 12 clinical print documents)
- * 2. Storage Access Framework (ACTION_CREATE_DOCUMENT) for .ptbackup, .csv, .ics, .html, .txt exports
- * 3. Native Android Share Sheet via FileProvider (WhatsApp, Telegram, Google Drive, Local Files)
- * 4. Safe External Intent opening for user-initiated WhatsApp and Google Maps links
+ * 2. Storage Access Framework (ACTION_CREATE_DOCUMENT & ACTION_OPEN_DOCUMENT) with Google Drive sync() support
+ * 3. Native Android Share Sheet via FileProvider with ClipData URI permissions (Google Drive, WhatsApp, Files)
+ * 4. Safe External Intent opening and Native PKCE Loopback OAuth via system browser
  */
 @CapacitorPlugin(name = "PhysioRecordNative")
 public class PhysioRecordNativePlugin extends Plugin {
@@ -103,7 +108,7 @@ public class PhysioRecordNativePlugin extends Plugin {
 
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        // Use octet-stream or the provided MIME type so all Android OEM file managers (Samsung, Xiaomi, Huawei, Infinix) allow saving custom extensions like .ptbackup
+        // Use octet-stream or the provided MIME type so Android OEM file managers & Google Drive SAF allow saving custom extensions
         intent.setType(mimeType != null && !mimeType.isEmpty() ? mimeType : "application/octet-stream");
         intent.putExtra(Intent.EXTRA_TITLE, filename);
 
@@ -127,15 +132,37 @@ public class PhysioRecordNativePlugin extends Plugin {
         Uri uri = result.getData().getData();
         String content = call.getString("content", "");
         String filename = call.getString("filename", "PhysioRecord_Export.ptbackup");
+        byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
 
-        try (OutputStream out = getContext().getContentResolver().openOutputStream(uri, "wt")) {
-            if (out == null) {
-                call.reject("Unable to open OutputStream for selected URI.");
-                return;
+        try {
+            boolean writtenViaPfd = false;
+            try (ParcelFileDescriptor pfd = getContext().getContentResolver().openFileDescriptor(uri, "w")) {
+                if (pfd != null) {
+                    try (FileOutputStream fos = new FileOutputStream(pfd.getFileDescriptor())) {
+                        fos.write(bytes);
+                        fos.flush();
+                        // Explicit sync() is required by Google Drive DocumentProvider on Android 7-15 so files are never uploaded empty (0 bytes)
+                        try {
+                            pfd.getFileDescriptor().sync();
+                        } catch (Exception ignored) {
+                        }
+                    }
+                    writtenViaPfd = true;
+                }
+            } catch (Exception ignored) {
+                // Fall back to openOutputStream if provider does not support ParcelFileDescriptor write mode
             }
-            byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
-            out.write(bytes);
-            out.flush();
+
+            if (!writtenViaPfd) {
+                try (OutputStream out = getContext().getContentResolver().openOutputStream(uri, "wt")) {
+                    if (out == null) {
+                        call.reject("Unable to open OutputStream for selected URI.");
+                        return;
+                    }
+                    out.write(bytes);
+                    out.flush();
+                }
+            }
 
             JSObject ret = new JSObject();
             ret.put("saved", true);
@@ -145,6 +172,75 @@ public class PhysioRecordNativePlugin extends Plugin {
             call.resolve(ret);
         } catch (Exception ex) {
             call.reject("Failed writing file via SAF: " + ex.getMessage(), ex);
+        }
+    }
+
+    @PluginMethod
+    public void openFileFromDevice(PluginCall call) {
+        String mimeType = call.getString("mimeType", "*/*");
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType(mimeType != null && !mimeType.isEmpty() ? mimeType : "*/*");
+        startActivityForResult(call, intent, "handleOpenDocumentResult");
+    }
+
+    @ActivityCallback
+    private void handleOpenDocumentResult(PluginCall call, ActivityResult result) {
+        if (call == null) {
+            return;
+        }
+
+        if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null || result.getData().getData() == null) {
+            JSObject cancelledRet = new JSObject();
+            cancelledRet.put("opened", false);
+            cancelledRet.put("cancelled", true);
+            call.resolve(cancelledRet);
+            return;
+        }
+
+        Uri uri = result.getData().getData();
+        String displayName = "sync.ptsync.json";
+        try (Cursor cursor = getContext().getContentResolver().query(uri, null, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                if (idx >= 0) {
+                    String name = cursor.getString(idx);
+                    if (name != null && !name.isEmpty()) {
+                        displayName = name;
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        final int maxBytes = 35 * 1024 * 1024;
+        try (InputStream is = getContext().getContentResolver().openInputStream(uri)) {
+            if (is == null) {
+                call.reject("Unable to open selected file.");
+                return;
+            }
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[16384];
+            int total = 0;
+            int read;
+            while ((read = is.read(buffer)) != -1) {
+                total += read;
+                if (total > maxBytes) {
+                    call.reject("Selected file exceeds 35MB safety limit.");
+                    return;
+                }
+                baos.write(buffer, 0, read);
+            }
+            String content = baos.toString("UTF-8");
+
+            JSObject ret = new JSObject();
+            ret.put("opened", true);
+            ret.put("cancelled", false);
+            ret.put("filename", displayName);
+            ret.put("content", content);
+            call.resolve(ret);
+        } catch (Exception ex) {
+            call.reject("Failed reading selected file: " + ex.getMessage(), ex);
         }
     }
 
@@ -180,23 +276,37 @@ public class PhysioRecordNativePlugin extends Plugin {
             try (FileOutputStream fos = new FileOutputStream(outFile, false)) {
                 fos.write(content.getBytes(StandardCharsets.UTF_8));
                 fos.flush();
+                try {
+                    fos.getFD().sync();
+                } catch (Exception ignored) {
+                }
             }
 
             String authority = getContext().getPackageName() + ".fileprovider";
             Uri contentUri = FileProvider.getUriForFile(getContext(), authority, outFile);
 
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
-            shareIntent.setType(mimeType != null && !mimeType.isEmpty() ? mimeType : "*/*");
+            String effectiveMime = (mimeType != null && !mimeType.isEmpty()) ? mimeType : "*/*";
+            shareIntent.setType(effectiveMime);
             shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
             shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
             if (text != null && !text.isEmpty()) {
                 shareIntent.putExtra(Intent.EXTRA_TEXT, text);
             }
+            // Attach ClipData so Android 10-15 Share Sheet properly propagates READ URI permission to Google Drive ("Save to Drive")
+            shareIntent.setClipData(ClipData.newRawUri(safeName, contentUri));
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
             Intent chooser = Intent.createChooser(shareIntent, title);
-            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            getContext().startActivity(chooser);
+            chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            Activity activity = getActivity();
+            if (activity != null) {
+                activity.runOnUiThread(() -> activity.startActivity(chooser));
+            } else {
+                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getContext().startActivity(chooser);
+            }
 
             JSObject ret = new JSObject();
             ret.put("shared", true);

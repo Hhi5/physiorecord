@@ -815,3 +815,61 @@ export async function importAndMergeEncryptedSyncFile(
     messageEn,
   };
 }
+
+/**
+ * Option 1 (Desktop Windows): 1-Click Sync via configured local Google Drive / Cloud folder.
+ * Atomically writes this PC's encrypted sync file and merges all other devices' sync files in the folder.
+ */
+export async function syncWithDesktopSyncFolder(params: {
+  dek: CryptoKey;
+  passphrase: string;
+}): Promise<ClinicSyncExecutionResult> {
+  const bridge = getElectronDesktopBridge();
+  if (!bridge?.exchangeSyncFolderEnvelopes) {
+    throw new Error('يرجى تحديث تطبيق الحاسبة إلى أحدث إصدار لدعم مزامنة مجلد Google Drive.');
+  }
+  const localPayload = await collectLocalClinicSyncPayload(params.dek);
+  const localEnvelope = await encryptSyncEnvelope(localPayload, params.passphrase);
+
+  const res = await bridge.exchangeSyncFolderEnvelopes({ localEnvelope });
+  if (!res?.ok) {
+    throw new Error(res?.error || 'تعذّرت المزامنة مع مجلد Google Drive المختار.');
+  }
+
+  const peerEnvelopes = Array.isArray(res.peerEnvelopes)
+    ? (res.peerEnvelopes as EncryptedSyncEnvelope[])
+    : [];
+
+  const { stats, peerPayloadsCount } = await decryptAndApplyPeerEnvelopes(
+    localPayload,
+    peerEnvelopes,
+    params.passphrase,
+    params.dek
+  );
+
+  clearOfflineSyncOutbox();
+  const folderLabel = res.folderName || 'Google Drive';
+  const messageAr =
+    peerPayloadsCount > 0
+      ? `تم حفظ بيانات هذه الحاسبة ودمج ملفات ${peerPayloadsCount} جهاز آخر داخل مجلد «${folderLabel}» بنجاح (${summarizeStatsAr(stats, peerPayloadsCount)}).`
+      : `تم حفظ ملف المزامنة المشفّر داخل مجلد «${folderLabel}» بنجاح. يمكنك الآن فتحه ودمجه من الموبايل أو الأجهزة الأخرى.`;
+  const messageEn =
+    peerPayloadsCount > 0
+      ? `Saved this PC and merged ${peerPayloadsCount} peer device(s) in "${folderLabel}" (${summarizeStatsEn(stats, peerPayloadsCount)}).`
+      : `Saved encrypted sync file to "${folderLabel}". You can now import and merge it on your phone or other devices.`;
+
+  saveClinicSyncConfig({
+    mode: 'google_drive',
+    lastSyncAt: new Date().toISOString(),
+    lastSyncMode: 'google_drive',
+    lastSyncSummary: messageAr,
+  });
+
+  return {
+    ok: true,
+    peerEnvelopesCount: peerPayloadsCount,
+    stats,
+    messageAr,
+    messageEn,
+  };
+}

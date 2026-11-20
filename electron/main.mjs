@@ -1238,6 +1238,105 @@ function registerIpcHandlers() {
     });
   });
 
+  // 1-Click Desktop Google Drive / Cloud Sync Folder (works with Google Drive for Desktop with ZERO OAuth setup)
+  ipcMain.handle('physiorecord:pick-sync-dir', async (event) => {
+    assertTrustedIpcSender(event);
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'اختر مجلد المزامنة (مثلاً مجلد Google Drive على الحاسبة)',
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    if (result.canceled || !result.filePaths?.[0]) {
+      return { configured: false, cancelled: true };
+    }
+    const folderPath = result.filePaths[0];
+    const current = await readDesktopConfig();
+    await writeDesktopConfig({ ...current, syncDirectoryPath: folderPath });
+    return {
+      configured: true,
+      cancelled: false,
+      folderPath,
+      folderName: path.basename(folderPath) || folderPath,
+    };
+  });
+
+  ipcMain.handle('physiorecord:get-sync-dir', async (event) => {
+    assertTrustedIpcSender(event);
+    const current = await readDesktopConfig();
+    const folderPath = typeof current.syncDirectoryPath === 'string' ? current.syncDirectoryPath : '';
+    if (!folderPath) {
+      return { configured: false };
+    }
+    try {
+      const stat = await fs.stat(folderPath);
+      if (!stat.isDirectory()) return { configured: false };
+      return {
+        configured: true,
+        folderPath,
+        folderName: path.basename(folderPath) || folderPath,
+      };
+    } catch {
+      return { configured: false };
+    }
+  });
+
+  ipcMain.handle('physiorecord:clear-sync-dir', async (event) => {
+    assertTrustedIpcSender(event);
+    const current = await readDesktopConfig();
+    delete current.syncDirectoryPath;
+    await writeDesktopConfig(current);
+  });
+
+  ipcMain.handle('physiorecord:sync-folder-exchange', async (event, payload) => {
+    assertTrustedIpcSender(event);
+    const current = await readDesktopConfig();
+    const folderPath = typeof current.syncDirectoryPath === 'string' ? current.syncDirectoryPath : '';
+    if (!folderPath) {
+      return { ok: false, error: 'لم يتم اختيار مجلد المزامنة بعد.' };
+    }
+    const localEnvelope = payload?.localEnvelope;
+    const rawDeviceId = String(localEnvelope?.deviceId || '').trim();
+    if (!localEnvelope || localEnvelope.magic !== 'PHYSIORECORD_SYNC_V1' || !/^[a-zA-Z0-9_-]{3,80}$/.test(rawDeviceId)) {
+      return { ok: false, error: 'بيانات ملف المزامنة غير صالحة.' };
+    }
+
+    const stat = await fs.stat(folderPath).catch(() => null);
+    if (!stat || !stat.isDirectory()) {
+      return { ok: false, error: 'مجلد المزامنة المختار غير موجود حالياً — يرجى اختياره مجدداً.' };
+    }
+
+    const localFileName = `sync_${rawDeviceId}.ptsync.json`;
+    const localTargetPath = path.join(folderPath, localFileName);
+    await writeTextFileAtomically(localTargetPath, JSON.stringify(localEnvelope, null, 2));
+
+    const entries = await fs.readdir(folderPath, { withFileTypes: true });
+    const peerEnvelopes = [];
+    const MAX_FILE_BYTES = 35 * 1024 * 1024;
+    for (const entry of entries) {
+      if (!entry.isFile()) continue;
+      if (!entry.name.endsWith('.ptsync.json')) continue;
+      if (entry.name === localFileName) continue;
+      const fullPath = path.join(folderPath, entry.name);
+      try {
+        const fStat = await fs.stat(fullPath);
+        if (fStat.size > MAX_FILE_BYTES) continue;
+        const raw = await fs.readFile(fullPath, 'utf8');
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.magic === 'PHYSIORECORD_SYNC_V1' && parsed.deviceId !== rawDeviceId) {
+          peerEnvelopes.push(parsed);
+        }
+      } catch {
+        // Ignore unreadable or partially synced peer files
+      }
+    }
+
+    return {
+      ok: true,
+      folderName: path.basename(folderPath) || folderPath,
+      writtenFile: localFileName,
+      peerEnvelopes,
+    };
+  });
+
   app.on('before-quit', () => {
     if (lanSyncServer) {
       try {

@@ -33,17 +33,37 @@ export interface NativeGoogleOAuthConfig {
   clientSecret: string;
 }
 
-export function getNativeGoogleOAuthConfig(): NativeGoogleOAuthConfig {
+function getBuildTimeNativeGoogleOAuthConfig(): NativeGoogleOAuthConfig {
   try {
-    if (typeof window === 'undefined' || !window.localStorage) {
-      return { clientId: '', clientSecret: '' };
-    }
+    const env = typeof import.meta !== 'undefined' ? (import.meta.env as Record<string, string | undefined>) : undefined;
     return {
-      clientId: (window.localStorage.getItem(NATIVE_OAUTH_CLIENT_ID_KEY) || '').trim(),
-      clientSecret: (window.localStorage.getItem(NATIVE_OAUTH_CLIENT_SECRET_KEY) || '').trim(),
+      clientId: String(env?.VITE_GOOGLE_OAUTH_CLIENT_ID || '').trim(),
+      clientSecret: String(env?.VITE_GOOGLE_OAUTH_CLIENT_SECRET || '').trim(),
     };
   } catch {
     return { clientId: '', clientSecret: '' };
+  }
+}
+
+export function hasBuiltInNativeGoogleOAuth(): boolean {
+  const builtIn = getBuildTimeNativeGoogleOAuthConfig();
+  return Boolean(builtIn.clientId && builtIn.clientId.endsWith('.apps.googleusercontent.com'));
+}
+
+export function getNativeGoogleOAuthConfig(): NativeGoogleOAuthConfig {
+  const builtIn = getBuildTimeNativeGoogleOAuthConfig();
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return builtIn;
+    }
+    const storedId = (window.localStorage.getItem(NATIVE_OAUTH_CLIENT_ID_KEY) || '').trim();
+    const storedSecret = (window.localStorage.getItem(NATIVE_OAUTH_CLIENT_SECRET_KEY) || '').trim();
+    return {
+      clientId: storedId || builtIn.clientId,
+      clientSecret: storedSecret || builtIn.clientSecret,
+    };
+  } catch {
+    return builtIn;
   }
 }
 
@@ -168,9 +188,7 @@ export async function signInWithGoogleDrive(): Promise<GoogleDriveAuthState> {
     const nativeCfg = getNativeGoogleOAuthConfig();
     if (!nativeCfg.clientId || !nativeCfg.clientId.endsWith('.apps.googleusercontent.com')) {
       throw new Error(
-        isDesktop
-          ? 'تسجيل الدخول عبر نافذة Firebase المنبثقة غير مدعوم في تطبيق الحاسبة (app://). استخدم أزرار «حفظ / استيراد مباشر مع Google Drive» أعلاه فوراً بدون إعداد، أو أدخل Google Desktop OAuth Client ID لتفعيل الربط التلقائي عبر المتصفح.'
-          : 'تسجيل الدخول عبر نافذة Firebase المنبثقة غير مدعوم داخل تطبيقات أندرويد (يظهر خطأ The requested action is invalid). استخدم أزرار «رفع/استيراد مباشر مع تطبيق Google Drive» أعلاه فوراً بدون إعداد، أو أدخل Google Desktop OAuth Client ID لتفعيل الربط التلقائي.'
+        'الربط المباشر بحساب Google غير مفعّل بعد — استخدم «الطريقة الأولى» أعلاه (تعمل فوراً بدون تسجيل دخول)، أو أدخل معرّف التطبيق والمفتاح السري من Google Cloud لتفعيل تسجيل الدخول المباشر.'
       );
     }
 
@@ -181,8 +199,8 @@ export async function signInWithGoogleDrive(): Promise<GoogleDriveAuthState> {
     if (!nativeOAuthFn) {
       throw new Error(
         isDesktop
-          ? 'يرجى تحديث تطبيق الحاسبة (ويندوز) إلى أحدث إصدار لدعم ربط Google Drive الأصلي عبر المتصفح.'
-          : 'يرجى تحديث تطبيق الأندرويد إلى أحدث إصدار لدعم ربط Google Drive الأصلي عبر المتصفح.'
+          ? 'يرجى تحديث تطبيق الحاسبة (ويندوز) إلى أحدث إصدار لتفعيل ربط Google Drive.'
+          : 'يرجى تحديث تطبيق الأندرويد إلى أحدث إصدار لتفعيل ربط Google Drive.'
       );
     }
 
@@ -192,7 +210,7 @@ export async function signInWithGoogleDrive(): Promise<GoogleDriveAuthState> {
       scope: `${GOOGLE_DRIVE_FILE_SCOPE} openid email profile`,
     });
     if (!res?.accessToken) {
-      throw new Error('لم يتم الحصول على رمز صلاحية Google Drive. يرجى المحاولة مرة أخرى.');
+      throw new Error('لم تكتمل عملية تسجيل الدخول بحساب Google. يرجى المحاولة مرة أخرى.');
     }
     cachedAccessToken = res.accessToken;
     cachedTokenAcquiredAt = Date.now();
