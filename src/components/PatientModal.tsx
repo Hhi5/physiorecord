@@ -1273,7 +1273,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({
                         }
                       }}
                       placeholder={bi('إضافة محذور مخصص جديد...', 'Add new custom precaution...')}
-                      className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-surface border border-layer-line text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:border-rose-500"
+                      className="flex-1 min-w-0 w-full px-3 py-1.5 text-xs rounded-xl bg-surface border border-layer-line text-foreground placeholder:text-muted-foreground-2 focus:outline-none focus:border-rose-500"
                     />
                     <button
                       type="button"

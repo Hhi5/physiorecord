@@ -143,14 +143,14 @@ export const SessionTopBar: React.FC<SessionTopBarProps> = ({
               </span>
             )}
             {!isLocked && autosaveStatus === 'saving' && (
-              <span className="hidden sm:inline text-xs text-amber-600 dark:text-amber-400 font-medium shrink-0">
+              <span className="inline-flex text-xs text-amber-600 dark:text-amber-400 font-medium shrink-0">
                 {bi('جاري الحفظ...', 'Saving...', 'پاشەکەوتکردن...')}
               </span>
             )}
             {!isLocked && lastSavedAt && !isDirty && (
-              <span className="hidden sm:inline-flex text-xs text-emerald-600 dark:text-emerald-400 font-medium items-center gap-1 shrink-0">
-                <CheckCircle2 className="size-3.5" />
-                <span>{bi('تم الحفظ ', 'Saved ', 'پاشەکەوت کرا ')}</span>
+              <span className="inline-flex text-xs text-emerald-600 dark:text-emerald-400 font-medium items-center gap-1 shrink-0">
+                <CheckCircle2 className="size-3.5 shrink-0" />
+                <span className="hidden sm:inline">{bi('تم الحفظ ', 'Saved ', 'پاشەکەوت کرا ')}</span>
                 <bdi dir="ltr" className="font-mono tabular-nums">
                   {lastSavedAt}
                 </bdi>
@@ -322,8 +322,18 @@ export const SessionTopBar: React.FC<SessionTopBarProps> = ({
                     : 'bg-primary/10 hover:bg-primary/15 text-primary'
                 }`}
               >
-                <Save className="size-3.5" />
-                <span>{bi('حفظ', 'Save', 'پاشەکەوتکردن')}</span>
+                {saveSuccess ? (
+                  <CheckCircle2 className="size-3.5 shrink-0" />
+                ) : (
+                  <Save className="size-3.5 shrink-0" />
+                )}
+                <span>
+                  {isSaving
+                    ? bi('جاري الحفظ...', 'Saving...', 'پاشەکەوتکردن...')
+                    : saveSuccess
+                      ? bi('تم الحفظ', 'Saved', 'پاشەکەوت کرا')
+                      : bi('حفظ', 'Save', 'پاشەکەوتکردن')}
+                </span>
               </button>
 
               {canFinalizeAndLockNotes && (

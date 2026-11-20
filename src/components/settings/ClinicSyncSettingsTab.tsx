@@ -31,7 +31,12 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 import { useVault } from '../../context/VaultContext';
 import { usePatients } from '../../context/PatientContext';
-import { getElectronDesktopBridge, saveTextFilePortable } from '../../platform/nativeBridge';
+import {
+  getElectronDesktopBridge,
+  isNativeAndroid,
+  saveTextFilePortable,
+  shareGeneratedFileOnAndroid,
+} from '../../platform/nativeBridge';
 import {
   clearOfflineSyncOutbox,
   exportEncryptedSyncFileString,
@@ -47,6 +52,8 @@ import {
 } from '../../services/clinicSyncService';
 import {
   getGoogleDriveAuthState,
+  getNativeGoogleOAuthConfig,
+  saveNativeGoogleOAuthConfig,
   signInWithGoogleDrive,
   signOutGoogleDrive,
   type GoogleDriveAuthState,
@@ -80,6 +87,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
 
   const electronBridge = getElectronDesktopBridge();
   const isElectronDesktop = Boolean(electronBridge?.startLanSyncHub);
+  const isAndroidApk = isNativeAndroid();
+  const isNativeAppPlatform = isAndroidApk || Boolean(electronBridge);
 
   const [config, setConfig] = useState<ClinicSyncConfig>(() => getClinicSyncConfig());
   const [outbox, setOutbox] = useState<OfflineSyncOutboxRecord | null>(() => getOfflineSyncOutbox());
@@ -98,6 +107,10 @@ export const ClinicSyncSettingsTab: React.FC = () => {
 
   // Google Drive Auth state (in-memory only)
   const [driveAuth, setDriveAuth] = useState<GoogleDriveAuthState>(() => getGoogleDriveAuthState());
+  const [nativeOAuthCfg, setNativeOAuthCfg] = useState(() => getNativeGoogleOAuthConfig());
+  const [showNativeOAuthSetup, setShowNativeOAuthSetup] = useState(
+    () => Boolean(getNativeGoogleOAuthConfig().clientId)
+  );
   const [showDriveConfirmModal, setShowDriveConfirmModal] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(true);
 
@@ -332,6 +345,76 @@ export const ClinicSyncSettingsTab: React.FC = () => {
       setFeedback({
         kind: 'error',
         text: err instanceof Error ? err.message : bi('فشل تصدير حزمة المزامنة.', 'Export failed.'),
+      });
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleShareSyncToAndroidDrive = async () => {
+    if (!dek) return;
+    if (syncPassphrase.trim().length < 6) {
+      setFeedback({
+        kind: 'error',
+        text: bi(
+          'أدخل كلمة مرور المزامنة المشتركة (6 أحرف على الأقل) لتشفير الملف قبل إرساله إلى Google Drive.',
+          'Enter the shared clinic sync passphrase (min 6 chars) to encrypt the file before sending to Google Drive.'
+        ),
+      });
+      return;
+    }
+    setBusyAction('android-drive-share');
+    setFeedback(null);
+    try {
+      const exported = await exportEncryptedSyncFileString(dek, syncPassphrase);
+      if (isAndroidApk) {
+        const shared = await shareGeneratedFileOnAndroid({
+          filename: exported.filename,
+          content: exported.content,
+          mimeType: 'application/json',
+          title: bi('حفظ حزمة مزامنة PhysioRecord إلى Google Drive', 'Save PhysioRecord Sync to Google Drive'),
+        });
+        if (!shared) {
+          await saveTextFilePortable({
+            filename: exported.filename,
+            content: exported.content,
+            mimeType: 'application/json',
+            description: 'PhysioRecord Encrypted Sync Package',
+            extensions: ['json'],
+          });
+        }
+        setFeedback({
+          kind: 'success',
+          text: bi(
+            `تم تجهيز الحزمة المشفّرة (${exported.filename}). اختر «حفظ في Drive» من قائمة المشاركة لرفعها مباشرة إلى Google Drive.`,
+            `Prepared encrypted package (${exported.filename}). Pick "Save to Drive" to upload directly to Google Drive.`
+          ),
+        });
+      } else {
+        const savedRes = await saveTextFilePortable({
+          filename: exported.filename,
+          content: exported.content,
+          mimeType: 'application/json',
+          description: 'PhysioRecord Encrypted Sync Package',
+          extensions: ['json'],
+        });
+        if (savedRes.confirmedSaved) {
+          setFeedback({
+            kind: 'success',
+            text: bi(
+              `تم حفظ الحزمة المشفّرة (${exported.filename}) بنجاح. إذا حفظتها داخل مجلد Google Drive على الحاسبة ستُرفع تلقائياً، ويمكنك استيرادها من هاتفك بدون حذف أي سجل.`,
+              `Saved encrypted package (${exported.filename}). Save it inside your Google Drive desktop folder (or upload to drive.google.com) to merge on other devices.`
+            ),
+          });
+        }
+      }
+    } catch (err) {
+      setFeedback({
+        kind: 'error',
+        text:
+          err instanceof Error
+            ? err.message
+            : bi('تعذّر إرسال ملف المزامنة إلى Google Drive.', 'Could not export sync file for Google Drive.'),
       });
     } finally {
       setBusyAction(null);
@@ -827,35 +910,178 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             )}
           </div>
 
-          {/* Official Google Sign-In Control */}
-          {!driveAuth.isSignedIn ? (
-            <div className="p-4 rounded-xl bg-surface/80 border border-line-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Native App (Android & Windows Desktop) Instant Zero-Setup Google Drive Sync */}
+          {isNativeAppPlatform && !driveAuth.isSignedIn && (
+            <div className="p-4 rounded-xl bg-primary/[0.06] border border-primary/25 space-y-3">
               <div className="space-y-1">
                 <div className="text-xs font-extrabold text-foreground">
-                  {bi('ربط حساب Google Drive للعيادة', 'Connect Clinic Google Drive Account')}
+                  {isAndroidApk
+                    ? bi(
+                        'مزامنة فورية مع تطبيق Google Drive على الأندرويد (جاهزة بدون إعداد)',
+                        'Instant Android Google Drive App Sync (Ready — No Setup Needed)'
+                      )
+                    : bi(
+                        'مزامنة فورية مع Google Drive على الحاسبة (جاهزة بدون إعداد)',
+                        'Instant Desktop Google Drive Sync (Ready — No Setup Needed)'
+                      )}
                 </div>
                 <p className="text-xs text-muted-foreground-1 leading-relaxed">
-                  {bi(
-                    'يستخدم التطبيق صلاحية drive.file المحدودة فقط (لا يستطيع رؤية أي ملف آخر في حسابك، بل فقط مجلد PhysioRecord-Clinic-Sync الذي ينشئه التطبيق).',
-                    'Uses minimal drive.file scope only—the app can solely access encrypted sync files it creates inside PhysioRecord-Clinic-Sync.'
-                  )}
+                  {isAndroidApk
+                    ? bi(
+                        'يحفظ التطبيق ملف مزامنة مشفّر (.ptsync.json) مباشرة إلى تطبيق Google Drive على هاتفك، ويدمج ملفات الأجهزة الأخرى من Drive بدون حذف أي سجل.',
+                        'Uploads your AES-256-GCM encrypted sync package directly to the Google Drive app on your phone and merges peer files from Drive non-destructively.'
+                      )
+                    : bi(
+                        'يحفظ التطبيق ملف المزامنة المشفّر (.ptsync.json) مباشرة داخل مجلد Google Drive على الحاسبة (أو لرفعه على drive.google.com)، ويدمج ملفات الموبايل والأجهزة الأخرى بدون حذف أي سجل.',
+                        'Saves your AES-256-GCM encrypted sync package (.ptsync.json) directly into your Google Drive desktop folder (or upload to drive.google.com) and merges peer files non-destructively.'
+                      )}
                 </p>
               </div>
-              <button
-                type="button"
-                data-testid="google-drive-signin-btn"
-                disabled={busyAction === 'google-signin'}
-                onClick={handleSignInGoogle}
-                className="h-10 px-4 rounded-xl bg-white hover:bg-neutral-50 text-[#1f1f1f] border border-[#747775] font-semibold text-xs inline-flex items-center justify-center gap-2.5 shadow-xs cursor-pointer shrink-0 transition-colors"
-              >
-                <GoogleBrandMark />
-                <span>
-                  {busyAction === 'google-signin'
-                    ? bi('جاري الربط...', 'Signing in...')
-                    : 'Sign in with Google'}
-                </span>
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  data-testid="android-drive-share-btn"
+                  disabled={busyAction !== null}
+                  onClick={handleShareSyncToAndroidDrive}
+                  className="h-10 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  <Upload className="size-4 shrink-0" />
+                  <span>
+                    {busyAction === 'android-drive-share'
+                      ? bi('جاري التشفير والتجهيز...', 'Encrypting...')
+                      : isAndroidApk
+                        ? bi('رفع / حفظ إلى Google Drive', 'Save / Share to Google Drive')
+                        : bi('حفظ ملف المزامنة إلى Google Drive', 'Save Sync File to Google Drive')}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  data-testid="android-drive-import-btn"
+                  disabled={busyAction !== null}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-10 px-4 rounded-xl bg-card hover:bg-surface border border-line-2 text-foreground text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  <Download className="size-4 shrink-0 text-primary" />
+                  <span>{bi('استيراد ودمج من Google Drive', 'Import & Merge from Google Drive')}</span>
+                </button>
+              </div>
             </div>
+          )}
+
+          {/* Official Google Sign-In Control (Web Firebase Popup | Android & Windows Native PKCE Loopback) */}
+          {!driveAuth.isSignedIn ? (
+            isNativeAppPlatform ? (
+              <div className="rounded-xl bg-surface/80 border border-line-2 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowNativeOAuthSetup((v) => !v)}
+                  className="w-full px-4 py-3 flex items-center justify-between gap-2 text-start text-xs font-bold text-foreground cursor-pointer hover:bg-surface transition-colors"
+                >
+                  <span>
+                    {isAndroidApk
+                      ? bi(
+                          'ربط API تلقائي بحساب Google Drive على الأندرويد (اختياري)',
+                          'Automatic Google Drive API OAuth on Android (Optional)'
+                        )
+                      : bi(
+                          'ربط API تلقائي بحساب Google Drive على الحاسبة عبر المتصفح (اختياري)',
+                          'Automatic Google Drive API OAuth on Desktop via Browser (Optional)'
+                        )}
+                  </span>
+                  {showNativeOAuthSetup ? (
+                    <ChevronUp className="size-4 text-muted-foreground-1 shrink-0" />
+                  ) : (
+                    <ChevronDown className="size-4 text-muted-foreground-1 shrink-0" />
+                  )}
+                </button>
+                {showNativeOAuthSetup && (
+                  <div className="px-4 pb-4 pt-2 border-t border-card-divider space-y-3">
+                    <p className="text-xs text-muted-foreground-1 leading-relaxed">
+                      {bi(
+                        'للمزامنة التلقائية بضغطة زر عبر متصفح الجهاز الأصلي (بدون خطأ نافذة Firebase)، أدخل معرّف عميل OAuth من نوع Desktop app من Google Cloud Console (يمكن استخدام نفس المعرّف على الحاسبة والأندرويد):',
+                        'For 1-tap automatic Drive API sync via your default system browser, enter a free Google Cloud "Desktop app" OAuth Client ID (works on both Windows Desktop and Android):'
+                      )}
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div>
+                        <label htmlFor="android-oauth-client-id" className="block text-xs font-bold text-foreground mb-1">
+                          {bi('معرّف العميل (OAuth Client ID)', 'OAuth Client ID')}
+                        </label>
+                        <input
+                          id="android-oauth-client-id"
+                          type="text"
+                          dir="ltr"
+                          value={nativeOAuthCfg.clientId}
+                          onChange={(e) =>
+                            setNativeOAuthCfg(saveNativeGoogleOAuthConfig({ clientId: e.target.value }))
+                          }
+                          placeholder="123456789-xxxx.apps.googleusercontent.com"
+                          className="w-full min-w-0 h-10 px-3 rounded-xl bg-card border border-line-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="android-oauth-client-secret" className="block text-xs font-bold text-foreground mb-1">
+                          {bi('السر (Client Secret — اختياري)', 'Client Secret (Optional)')}
+                        </label>
+                        <input
+                          id="android-oauth-client-secret"
+                          type="password"
+                          dir="ltr"
+                          value={nativeOAuthCfg.clientSecret}
+                          onChange={(e) =>
+                            setNativeOAuthCfg(saveNativeGoogleOAuthConfig({ clientSecret: e.target.value }))
+                          }
+                          placeholder="GOCSPX-..."
+                          className="w-full min-w-0 h-10 px-3 rounded-xl bg-card border border-line-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      data-testid="google-drive-signin-btn"
+                      disabled={busyAction === 'google-signin'}
+                      onClick={handleSignInGoogle}
+                      className="h-10 px-4 rounded-xl bg-white hover:bg-neutral-50 text-[#1f1f1f] border border-[#747775] font-semibold text-xs inline-flex items-center justify-center gap-2.5 shadow-xs cursor-pointer shrink-0 transition-colors"
+                    >
+                      <GoogleBrandMark />
+                      <span>
+                        {busyAction === 'google-signin'
+                          ? bi('جاري الربط عبر المتصفح...', 'Signing in via browser...')
+                          : 'Sign in with Google'}
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-surface/80 border border-line-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="text-xs font-extrabold text-foreground">
+                    {bi('ربط حساب Google Drive للعيادة', 'Connect Clinic Google Drive Account')}
+                  </div>
+                  <p className="text-xs text-muted-foreground-1 leading-relaxed">
+                    {bi(
+                      'يستخدم التطبيق صلاحية drive.file المحدودة فقط (لا يستطيع رؤية أي ملف آخر في حسابك، بل فقط مجلد PhysioRecord-Clinic-Sync الذي ينشئه التطبيق).',
+                      'Uses minimal drive.file scope only—the app can solely access encrypted sync files it creates inside PhysioRecord-Clinic-Sync.'
+                    )}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  data-testid="google-drive-signin-btn"
+                  disabled={busyAction === 'google-signin'}
+                  onClick={handleSignInGoogle}
+                  className="h-10 px-4 rounded-xl bg-white hover:bg-neutral-50 text-[#1f1f1f] border border-[#747775] font-semibold text-xs inline-flex items-center justify-center gap-2.5 shadow-xs cursor-pointer shrink-0 transition-colors"
+                >
+                  <GoogleBrandMark />
+                  <span>
+                    {busyAction === 'google-signin'
+                      ? bi('جاري الربط...', 'Signing in...')
+                      : 'Sign in with Google'}
+                  </span>
+                </button>
+              </div>
+            )
           ) : (
             <div className="p-3.5 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/25 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
@@ -1037,7 +1263,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".json,.ptsync"
+              accept=".json,.ptsync,application/json,application/octet-stream"
               className="hidden"
               onChange={handleImportSyncFile}
             />

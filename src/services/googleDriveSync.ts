@@ -8,6 +8,12 @@
 
 import type { EncryptedSyncEnvelope } from '../utils/clinicSyncEngine';
 import {
+  getAndroidNativePlugin,
+  getElectronDesktopBridge,
+  isElectronDesktop,
+  isNativeAndroid,
+} from '../platform/nativeBridge';
+import {
   isSafeSyncDeviceId,
   isValidGoogleDriveId,
   randomHexCsprng,
@@ -19,6 +25,52 @@ export const DRIVE_SYNC_FOLDER_NAME = 'PhysioRecord-Clinic-Sync';
 const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
 const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3';
 const MAX_DRIVE_ENVELOPE_BYTES = 35 * 1024 * 1024;
+const NATIVE_OAUTH_CLIENT_ID_KEY = 'physiorecord_android_google_oauth_client_id_v1';
+const NATIVE_OAUTH_CLIENT_SECRET_KEY = 'physiorecord_android_google_oauth_client_secret_v1';
+
+export interface NativeGoogleOAuthConfig {
+  clientId: string;
+  clientSecret: string;
+}
+
+export function getNativeGoogleOAuthConfig(): NativeGoogleOAuthConfig {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return { clientId: '', clientSecret: '' };
+    }
+    return {
+      clientId: (window.localStorage.getItem(NATIVE_OAUTH_CLIENT_ID_KEY) || '').trim(),
+      clientSecret: (window.localStorage.getItem(NATIVE_OAUTH_CLIENT_SECRET_KEY) || '').trim(),
+    };
+  } catch {
+    return { clientId: '', clientSecret: '' };
+  }
+}
+
+export function saveNativeGoogleOAuthConfig(next: Partial<NativeGoogleOAuthConfig>): NativeGoogleOAuthConfig {
+  const current = getNativeGoogleOAuthConfig();
+  const merged: NativeGoogleOAuthConfig = {
+    clientId: (next.clientId ?? current.clientId).trim(),
+    clientSecret: (next.clientSecret ?? current.clientSecret).trim(),
+  };
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      if (merged.clientId) {
+        window.localStorage.setItem(NATIVE_OAUTH_CLIENT_ID_KEY, merged.clientId);
+      } else {
+        window.localStorage.removeItem(NATIVE_OAUTH_CLIENT_ID_KEY);
+      }
+      if (merged.clientSecret) {
+        window.localStorage.setItem(NATIVE_OAUTH_CLIENT_SECRET_KEY, merged.clientSecret);
+      } else {
+        window.localStorage.removeItem(NATIVE_OAUTH_CLIENT_SECRET_KEY);
+      }
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  return merged;
+}
 
 export interface GoogleDriveAuthState {
   isSignedIn: boolean;
@@ -104,10 +156,54 @@ export function getGoogleDriveAuthState(): GoogleDriveAuthState {
 }
 
 /**
- * Initiates Google Workspace OAuth popup requesting strictly `drive.file` scope.
+ * Initiates Google Workspace OAuth requesting strictly `drive.file` scope.
+ * - On Web: Firebase Auth `signInWithPopup`.
+ * - On Android APK & Windows Electron Desktop: Native system-browser PKCE loopback OAuth
+ *   (never opens broken firebaseapp.com popup).
  * MUST only be called from an explicit user click on the official "Sign in with Google" button.
  */
 export async function signInWithGoogleDrive(): Promise<GoogleDriveAuthState> {
+  if (isNativeAndroid() || isElectronDesktop()) {
+    const isDesktop = isElectronDesktop();
+    const nativeCfg = getNativeGoogleOAuthConfig();
+    if (!nativeCfg.clientId || !nativeCfg.clientId.endsWith('.apps.googleusercontent.com')) {
+      throw new Error(
+        isDesktop
+          ? 'تسجيل الدخول عبر نافذة Firebase المنبثقة غير مدعوم في تطبيق الحاسبة (app://). استخدم أزرار «حفظ / استيراد مباشر مع Google Drive» أعلاه فوراً بدون إعداد، أو أدخل Google Desktop OAuth Client ID لتفعيل الربط التلقائي عبر المتصفح.'
+          : 'تسجيل الدخول عبر نافذة Firebase المنبثقة غير مدعوم داخل تطبيقات أندرويد (يظهر خطأ The requested action is invalid). استخدم أزرار «رفع/استيراد مباشر مع تطبيق Google Drive» أعلاه فوراً بدون إعداد، أو أدخل Google Desktop OAuth Client ID لتفعيل الربط التلقائي.'
+      );
+    }
+
+    const nativeOAuthFn = isDesktop
+      ? getElectronDesktopBridge()?.startGoogleDriveOAuth
+      : getAndroidNativePlugin()?.startGoogleDriveOAuth;
+
+    if (!nativeOAuthFn) {
+      throw new Error(
+        isDesktop
+          ? 'يرجى تحديث تطبيق الحاسبة (ويندوز) إلى أحدث إصدار لدعم ربط Google Drive الأصلي عبر المتصفح.'
+          : 'يرجى تحديث تطبيق الأندرويد إلى أحدث إصدار لدعم ربط Google Drive الأصلي عبر المتصفح.'
+      );
+    }
+
+    const res = await nativeOAuthFn({
+      clientId: nativeCfg.clientId,
+      clientSecret: nativeCfg.clientSecret || undefined,
+      scope: `${GOOGLE_DRIVE_FILE_SCOPE} openid email profile`,
+    });
+    if (!res?.accessToken) {
+      throw new Error('لم يتم الحصول على رمز صلاحية Google Drive. يرجى المحاولة مرة أخرى.');
+    }
+    cachedAccessToken = res.accessToken;
+    cachedTokenAcquiredAt = Date.now();
+    cachedAuthUser = {
+      email: res.email || 'Google Drive',
+      displayName: res.displayName || res.email || 'Google Drive',
+      photoURL: res.photoURL || null,
+    };
+    return getGoogleDriveAuthState();
+  }
+
   const { auth, GoogleAuthProvider, signInWithPopup } = await ensureFirebaseAuth();
   const provider = new GoogleAuthProvider();
   provider.addScope(GOOGLE_DRIVE_FILE_SCOPE);
@@ -170,22 +266,68 @@ async function getValidDriveAccessToken(): Promise<string> {
   return cachedAccessToken;
 }
 
-async function driveFetchJson<T>(url: string, init: RequestInit = {}): Promise<T> {
+async function driveHttpRequest(
+  url: string,
+  options: {
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+  } = {}
+): Promise<{ ok: boolean; status: number; text: string; contentLength: number }> {
   const token = await getValidDriveAccessToken();
-  const headers = new Headers(init.headers);
-  headers.set('Authorization', `Bearer ${token}`);
+  const mergedHeaders: Record<string, string> = {
+    ...(options.headers || {}),
+    Authorization: `Bearer ${token}`,
+  };
 
-  const response = await fetch(url, { ...init, headers });
+  if (isElectronDesktop()) {
+    const electronBridge = getElectronDesktopBridge();
+    if (!electronBridge?.googleDriveApiRequest) {
+      throw new Error('يرجى تحديث تطبيق الحاسبة إلى أحدث إصدار لدعم المزامنة مع Google Drive.');
+    }
+    const resp = await electronBridge.googleDriveApiRequest({
+      url,
+      method: options.method || 'GET',
+      headers: mergedHeaders,
+      body: options.body,
+    });
+    return {
+      ok: Boolean(resp.ok),
+      status: resp.status,
+      text: resp.text || '',
+      contentLength: Number(resp.contentLength || 0),
+    };
+  }
+
+  const response = await fetch(url, {
+    method: options.method || 'GET',
+    headers: mergedHeaders,
+    body: options.body,
+  });
+  const text = await response.text().catch(() => '');
+  const contentLength = Number(response.headers.get('content-length') || 0) || text.length;
+  return {
+    ok: response.ok,
+    status: response.status,
+    text,
+    contentLength,
+  };
+}
+
+async function driveFetchJson<T>(
+  url: string,
+  init: { method?: string; headers?: Record<string, string>; body?: string } = {}
+): Promise<T> {
+  const response = await driveHttpRequest(url, init);
   if (response.status === 401) {
     cachedAccessToken = null;
     cachedTokenAcquiredAt = 0;
     throw new Error('انتهت جلسة Google Drive — يرجى إعادة تسجيل الدخول والمحاولة مجدداً.');
   }
   if (!response.ok) {
-    const errText = await response.text().catch(() => '');
-    throw new Error(`خطأ من Google Drive (${response.status}): ${errText.slice(0, 180)}`);
+    throw new Error(`خطأ من Google Drive (${response.status}): ${response.text.slice(0, 180)}`);
   }
-  return (await response.json()) as T;
+  return JSON.parse(response.text) as T;
 }
 
 /**
@@ -255,17 +397,13 @@ export async function listDriveSyncFiles(folderId: string): Promise<GoogleDriveS
 
 async function downloadDriveSyncEnvelope(fileId: string): Promise<EncryptedSyncEnvelope | null> {
   if (!isValidGoogleDriveId(fileId)) return null;
-  const token = await getValidDriveAccessToken();
-  const res = await fetch(
-    `${DRIVE_API_BASE}/files/${encodeURIComponent(fileId.trim())}?alt=media`,
-    { headers: { Authorization: `Bearer ${token}` } }
+  const res = await driveHttpRequest(
+    `${DRIVE_API_BASE}/files/${encodeURIComponent(fileId.trim())}?alt=media`
   );
   if (!res.ok) return null;
-  const contentLen = Number(res.headers.get('content-length') || 0);
-  if (contentLen > MAX_DRIVE_ENVELOPE_BYTES) return null;
-  const rawText = await res.text();
-  if (rawText.length > MAX_DRIVE_ENVELOPE_BYTES) return null;
-  const parsed = safeJsonParse<EncryptedSyncEnvelope>(rawText);
+  if (res.contentLength > MAX_DRIVE_ENVELOPE_BYTES) return null;
+  if (res.text.length > MAX_DRIVE_ENVELOPE_BYTES) return null;
+  const parsed = safeJsonParse<EncryptedSyncEnvelope>(res.text);
   return parsed?.magic === 'PHYSIORECORD_SYNC_V1' ? parsed : null;
 }
 
@@ -280,17 +418,15 @@ async function uploadOrUpdateDeviceEnvelope(
   if (!isSafeSyncDeviceId(localEnvelope.deviceId)) {
     throw new Error('معرّف الجهاز في حزمة المزامنة غير صالح.');
   }
-  const token = await getValidDriveAccessToken();
   const fileName = `sync_${localEnvelope.deviceId}.ptsync.json`;
   const jsonBody = JSON.stringify(localEnvelope);
 
   if (existingFileId && isValidGoogleDriveId(existingFileId)) {
-    const res = await fetch(
+    const res = await driveHttpRequest(
       `${DRIVE_UPLOAD_BASE}/files/${encodeURIComponent(existingFileId.trim())}?uploadType=media&fields=id`,
       {
         method: 'PATCH',
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json; charset=UTF-8',
         },
         body: jsonBody,
@@ -299,7 +435,7 @@ async function uploadOrUpdateDeviceEnvelope(
     if (!res.ok) {
       throw new Error(`تعذّر تحديث ملف المزامنة على Google Drive (${res.status}).`);
     }
-    const data = (await res.json()) as { id: string };
+    const data = JSON.parse(res.text) as { id: string };
     return data.id;
   }
 
@@ -321,10 +457,9 @@ async function uploadOrUpdateDeviceEnvelope(
     `--${boundary}--`,
   ].join('\r\n');
 
-  const res = await fetch(`${DRIVE_UPLOAD_BASE}/files?uploadType=multipart&fields=id`, {
+  const res = await driveHttpRequest(`${DRIVE_UPLOAD_BASE}/files?uploadType=multipart&fields=id`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token}`,
       'Content-Type': `multipart/related; boundary=${boundary}`,
     },
     body: multipartBody,
@@ -333,7 +468,7 @@ async function uploadOrUpdateDeviceEnvelope(
   if (!res.ok) {
     throw new Error(`تعذّر رفع ملف المزامنة المشفّر إلى Google Drive (${res.status}).`);
   }
-  const created = (await res.json()) as { id: string };
+  const created = JSON.parse(res.text) as { id: string };
   return created.id;
 }
 

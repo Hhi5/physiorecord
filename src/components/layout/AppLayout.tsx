@@ -198,8 +198,8 @@ export const AppLayout: React.FC = () => {
   const [isSeedModalOpen, setIsSeedModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<
-    'currency' | 'clinic' | 'display' | 'staff' | 'security' | 'modules' | 'developer'
-  >('currency');
+    'currency' | 'clinic' | 'display' | 'staff' | 'sync' | 'security' | 'modules' | 'developer'
+  >('clinic');
   const [isSessionFocusMode, setIsSessionFocusMode] = useState(false);
   const [isMobileAccountMenuOpen, setIsMobileAccountMenuOpen] = useState(false);
   const mobileAccountBtnRef = useRef<HTMLButtonElement | null>(null);

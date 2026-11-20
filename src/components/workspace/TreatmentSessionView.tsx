@@ -11,7 +11,7 @@
 // =======================================================================
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Copy, Lock, Save, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Copy, Loader2, Lock, Save, X } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useVault } from '../../context/VaultContext';
 import { usePatients } from '../../context/PatientContext';
@@ -211,6 +211,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const saveSuccessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -988,7 +989,13 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         } else if (notifyParent) {
           setAutosaveStatus('saved');
           setSaveSuccess(true);
-          setTimeout(() => setSaveSuccess(false), 3000);
+          if (saveSuccessTimerRef.current) {
+            clearTimeout(saveSuccessTimerRef.current);
+          }
+          saveSuccessTimerRef.current = setTimeout(() => {
+            setSaveSuccess(false);
+            saveSuccessTimerRef.current = null;
+          }, 3500);
           onSessionUpdated();
         }
         return savedSoap;
@@ -1765,10 +1772,26 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
             data-tour="session-save-btn"
             onClick={() => void persistDraftSoap(false)}
             disabled={isSaving}
-            className="flex-1 compact-btn h-10 px-3 rounded-xl bg-surface/85 hover:bg-surface text-foreground text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+            className={`flex-1 compact-btn h-10 px-3 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+              saveSuccess
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-surface/85 hover:bg-surface text-foreground'
+            }`}
           >
-            <Save className="size-4 text-primary" />
-            <span>{bi('حفظ المسودة', 'Save Draft', 'پاشەکەوتکردنی ڕەشنووس')}</span>
+            {isSaving ? (
+              <Loader2 className="size-4 animate-spin text-primary shrink-0" />
+            ) : saveSuccess ? (
+              <CheckCircle2 className="size-4 shrink-0" />
+            ) : (
+              <Save className="size-4 text-primary shrink-0" />
+            )}
+            <span>
+              {isSaving
+                ? bi('جاري الحفظ...', 'Saving...', 'پاشەکەوتکردن...')
+                : saveSuccess
+                  ? bi('تم حفظ المسودة', 'Draft Saved', 'ڕەشنووس پاشەکەوت کرا')
+                  : bi('حفظ المسودة', 'Save Draft', 'پاشەکەوتکردنی ڕەشنووس')}
+            </span>
           </button>
           {perms.canFinalizeAndLockNotes && (
             <button
@@ -1778,10 +1801,54 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
               disabled={isSaving}
               className="flex-1 compact-btn h-10 px-3 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold shadow-xs shadow-primary/20 inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all"
             >
-              <Lock className="size-4" />
+              <Lock className="size-4 shrink-0" />
               <span>{bi('إنهاء واعتماد', 'Finish & Sign', 'تەواوکردن و پەسەندکردن')}</span>
             </button>
           )}
+        </div>
+      )}
+
+      {/* Instant Floating Save Draft Confirmation Toast (Visible on Mobile & Desktop) */}
+      {saveSuccess && !localUndoToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          data-testid="session-draft-saved-toast"
+          className="fixed bottom-16 md:bottom-5 inset-x-4 sm:inset-x-auto sm:end-5 z-50 max-w-sm bg-emerald-600 text-white shadow-xl rounded-2xl px-4 py-3 flex items-center justify-between gap-2.5 text-xs font-bold"
+        >
+          <span className="inline-flex items-center gap-2 min-w-0">
+            <CheckCircle2 className="size-4 shrink-0" />
+            <span className="truncate">
+              {bi(
+                'تم حفظ المسودة وتشفيرها بنجاح',
+                'Draft saved & encrypted',
+                'ڕەشنووس بە سەرکەوتوویی پاشەکەوت کرا'
+              )}
+              {lastSavedAt ? ` (${lastSavedAt})` : ''}
+            </span>
+          </span>
+        </div>
+      )}
+
+      {/* Floating Save Error Toast so mobile users see validation/save failures even when scrolled down */}
+      {saveError && !localUndoToast && (
+        <div
+          role="alert"
+          data-testid="session-draft-error-toast"
+          className="fixed bottom-16 md:bottom-5 inset-x-4 sm:inset-x-auto sm:end-5 z-50 max-w-md bg-rose-600 text-white shadow-xl rounded-2xl px-4 py-3 flex items-center justify-between gap-2.5 text-xs font-bold"
+        >
+          <span className="inline-flex items-center gap-2 min-w-0">
+            <AlertCircle className="size-4 shrink-0" />
+            <span className="break-words">{saveError}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setSaveError(null)}
+            aria-label={bi('إغلاق', 'Dismiss', 'داخستن')}
+            className="shrink-0 p-1 rounded-lg hover:bg-white/15 cursor-pointer"
+          >
+            <X className="size-4" />
+          </button>
         </div>
       )}
 

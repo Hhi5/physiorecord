@@ -127,11 +127,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
+    setActiveTab(initialTab);
     setMobileView('menu');
     setSettingsSearchQuery('');
     void ClinicOperationsService.ensureColdStoreLoadedAsync('noteTemplates');
     void ClinicOperationsService.ensureColdStoreLoadedAsync('customWidgets');
-  }, [isOpen]);
+  }, [isOpen, initialTab]);
 
   // Live tab switching on Desktop during Settings Spotlight Tour (keep menu visible on Mobile so all tab anchors stay spotlightable)
   useEffect(() => {
@@ -333,14 +334,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         onClick={() => handleSelectTab(item.id)}
         className={`w-full min-h-[44px] md:min-h-[38px] px-3 py-2 rounded-xl text-start flex items-center justify-between gap-2.5 cursor-pointer transition-colors ${
           selected
-            ? 'bg-primary/10 text-primary font-bold md:bg-primary md:text-primary-foreground md:shadow-2xs'
+            ? 'text-foreground hover:bg-layer-hover font-semibold md:bg-primary md:text-primary-foreground md:hover:bg-primary md:font-bold md:shadow-2xs'
             : 'text-foreground hover:bg-layer-hover font-semibold'
         }`}
       >
         <span className="flex items-center gap-2.5 min-w-0 flex-1">
           <span
             className={`shrink-0 ${
-              selected ? 'text-primary md:text-primary-foreground' : 'text-muted-foreground-1'
+              selected ? 'text-muted-foreground-1 md:text-primary-foreground' : 'text-muted-foreground-1'
             }`}
           >
             {item.icon}

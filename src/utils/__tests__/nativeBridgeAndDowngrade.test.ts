@@ -7,6 +7,13 @@ import {
   saveTextFilePortable,
   triggerPlatformPrint,
 } from '../../platform/nativeBridge';
+import {
+  ensurePhysioRecordDriveFolder,
+  getGoogleDriveAuthState,
+  saveNativeGoogleOAuthConfig,
+  signInWithGoogleDrive,
+  signOutGoogleDrive,
+} from '../../services/googleDriveSync';
 import { isWebAuthnPrfSupported } from '../../crypto/webauthnPrf';
 import { isCredentialManagerStoreSupported } from '../../utils/passwordManagerHelper';
 
@@ -151,6 +158,108 @@ describe('Multi-Platform Native Bridge, Version Sync & Schema Downgrade Guard', 
     expect(printCurrentPageMock).toHaveBeenCalledWith({
       jobName: 'PhysioRecord_Invoice',
     });
+  });
+
+  it('routes Android Google Drive OAuth to native loopback bridge and blocks broken Firebase popup', async () => {
+    const store = new Map<string, string>();
+    const startGoogleDriveOAuthMock = vi.fn().mockResolvedValue({
+      accessToken: 'ya29.test-native-token',
+      email: 'clinic@example.com',
+      displayName: 'Clinic PT',
+      photoURL: '',
+    });
+
+    const win = (globalThis as Record<string, unknown>).window as Record<string, unknown>;
+    win.localStorage = {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => store.set(k, v),
+      removeItem: (k: string) => store.delete(k),
+    };
+    win.Capacitor = {
+      getPlatform: () => 'android',
+      isNativePlatform: () => true,
+      Plugins: {
+        PhysioRecordNative: {
+          startGoogleDriveOAuth: startGoogleDriveOAuthMock,
+        },
+      },
+    };
+
+    await signOutGoogleDrive();
+
+    // Without a Desktop OAuth Client ID, rejects clearly instead of launching broken Firebase popup
+    await expect(signInWithGoogleDrive()).rejects.toThrow(/Firebase|Google Drive/);
+    expect(startGoogleDriveOAuthMock).not.toHaveBeenCalled();
+
+    // With a valid Desktop OAuth Client ID, delegates to native PKCE loopback bridge
+    saveNativeGoogleOAuthConfig({
+      clientId: '1234567890-abc.apps.googleusercontent.com',
+      clientSecret: 'GOCSPX-demo',
+    });
+
+    const authState = await signInWithGoogleDrive();
+    expect(startGoogleDriveOAuthMock).toHaveBeenCalledTimes(1);
+    expect(authState.isSignedIn).toBe(true);
+    expect(authState.hasDriveToken).toBe(true);
+    expect(authState.email).toBe('clinic@example.com');
+    expect(getGoogleDriveAuthState().hasDriveToken).toBe(true);
+
+    await signOutGoogleDrive();
+    expect(getGoogleDriveAuthState().isSignedIn).toBe(false);
+    expect(getGoogleDriveAuthState().hasDriveToken).toBe(false);
+  });
+
+  it('routes Windows Electron Desktop Google Drive OAuth and API calls through Main-Process IPC (preserving connect-src none)', async () => {
+    const store = new Map<string, string>();
+    const startOAuthMock = vi.fn().mockResolvedValue({
+      accessToken: 'ya29.desktop-native-token',
+      email: 'desktop-clinic@example.com',
+      displayName: 'Clinic PC',
+      photoURL: '',
+    });
+    const driveApiMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: JSON.stringify({ files: [{ id: 'folder_1234567890', name: 'PhysioRecord-Clinic-Sync' }] }),
+      contentLength: 72,
+    });
+
+    const win = (globalThis as Record<string, unknown>).window as Record<string, unknown>;
+    win.localStorage = {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => store.set(k, v),
+      removeItem: (k: string) => store.delete(k),
+    };
+    win.electronAPI = {
+      isElectron: true,
+      startGoogleDriveOAuth: startOAuthMock,
+      googleDriveApiRequest: driveApiMock,
+    };
+
+    await signOutGoogleDrive();
+
+    // Unconfigured rejects cleanly without Firebase popup
+    await expect(signInWithGoogleDrive()).rejects.toThrow(/Firebase|Google Drive/);
+    expect(startOAuthMock).not.toHaveBeenCalled();
+
+    // Configured delegates OAuth AND Drive v3 API requests through Electron Main Process
+    saveNativeGoogleOAuthConfig({
+      clientId: '987654321-pc.apps.googleusercontent.com',
+    });
+
+    const authState = await signInWithGoogleDrive();
+    expect(startOAuthMock).toHaveBeenCalledTimes(1);
+    expect(authState.isSignedIn).toBe(true);
+    expect(authState.email).toBe('desktop-clinic@example.com');
+
+    const folderId = await ensurePhysioRecordDriveFolder();
+    expect(folderId).toBe('folder_1234567890');
+    expect(driveApiMock).toHaveBeenCalledTimes(1);
+    expect(driveApiMock.mock.calls[0][0].headers.Authorization).toBe(
+      'Bearer ya29.desktop-native-token'
+    );
+
+    await signOutGoogleDrive();
   });
 
   it('strictly allowlists external URLs in openSafeExternalUrl (WhatsApp & Google Maps only)', async () => {
