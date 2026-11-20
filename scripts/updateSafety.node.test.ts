@@ -88,3 +88,40 @@ test('evaluateBackupRecencyForUpdate distinguishes recent, stale, and missing ba
   assert.equal(missing.hasBackup, false);
   assert.equal(missing.status, 'none');
 });
+
+test('Android sync-version.mjs matches nativeBridge versionCode formula above legacy 10102 floor', async () => {
+  const { computeAndroidVersionCode: scriptCompute } = await import('./sync-version.mjs');
+  const { computeAndroidVersionCode: appCompute } = await import('../src/platform/nativeBridge');
+  const versions = ['0.0.1', '0.0.2', '1.0.0', '1.0.3', '1.0.4', '1.1.0', '1.2.3', '2.0.0'];
+  let prev = 10102;
+  for (const v of versions) {
+    const sc = scriptCompute(v);
+    const ac = appCompute(v);
+    assert.equal(sc, ac, `versionCode mismatch for ${v}`);
+    assert.ok(sc > prev, `versionCode for ${v} (${sc}) must exceed previous (${prev})`);
+    prev = sc;
+  }
+});
+
+test('Android data_extraction_rules.xml includes required path attribute on all exclude rules', async () => {
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const xmlPath = path.join(
+    process.cwd(),
+    'android',
+    'app',
+    'src',
+    'main',
+    'res',
+    'xml',
+    'data_extraction_rules.xml'
+  );
+  const xml = fs.readFileSync(xmlPath, 'utf8');
+  const excludeTags = xml.match(/<exclude\b[^>]*>/g) || [];
+  assert.ok(excludeTags.length >= 10, 'Expected cloud-backup and device-transfer exclude rules');
+  for (const tag of excludeTags) {
+    assert.match(tag, /\bdomain="[^"]+"/, `Missing domain attribute in ${tag}`);
+    assert.match(tag, /\bpath="[^"]+"/, `Missing required path attribute in ${tag}`);
+  }
+});
+

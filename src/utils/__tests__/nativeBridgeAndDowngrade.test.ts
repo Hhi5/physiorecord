@@ -27,17 +27,24 @@ describe('Multi-Platform Native Bridge, Version Sync & Schema Downgrade Guard', 
     }
   });
 
-  it('computes deterministic monotonic Android versionCode from semver', () => {
-    expect(computeAndroidVersionCode('1.0.0')).toBe(10000);
-    expect(computeAndroidVersionCode('1.0.1')).toBe(10001);
-    expect(computeAndroidVersionCode('1.1.0')).toBe(10100);
-    expect(computeAndroidVersionCode('0.0.2')).toBe(10102);
-    expect(computeAndroidVersionCode('0.0.3')).toBe(10103);
-    expect(computeAndroidVersionCode('0.0.2')).toBeGreaterThan(
-      computeAndroidVersionCode('1.1.0')
+  it('computes deterministic monotonic Android versionCode from semver above legacy builds', () => {
+    expect(computeAndroidVersionCode('0.0.1')).toBe(100001);
+    expect(computeAndroidVersionCode('0.0.2')).toBe(100002);
+    expect(computeAndroidVersionCode('1.0.0')).toBe(110000);
+    expect(computeAndroidVersionCode('1.0.3')).toBe(110003);
+    expect(computeAndroidVersionCode('v1.0.4')).toBe(110004);
+    expect(computeAndroidVersionCode('1.1.0')).toBe(110100);
+    expect(computeAndroidVersionCode('1.2.3')).toBe(110203);
+    expect(computeAndroidVersionCode('2.10.5')).toBe(121005);
+    // Regression guard: every tag series must stay strictly above legacy v1.1.0 (10100) and 0.0.2 (10102)
+    expect(computeAndroidVersionCode('0.0.1')).toBeGreaterThan(10102);
+    expect(computeAndroidVersionCode('1.0.3')).toBeGreaterThan(10102);
+    expect(computeAndroidVersionCode('1.0.4')).toBeGreaterThan(
+      computeAndroidVersionCode('1.0.3')
     );
-    expect(computeAndroidVersionCode('1.2.3')).toBe(10203);
-    expect(computeAndroidVersionCode('2.10.5')).toBe(21005);
+    expect(computeAndroidVersionCode('1.1.0')).toBeGreaterThan(
+      computeAndroidVersionCode('1.0.9')
+    );
     expect(computeAndroidVersionCode('1.2.0')).toBeGreaterThan(
       computeAndroidVersionCode('1.1.9')
     );

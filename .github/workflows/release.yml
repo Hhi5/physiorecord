@@ -184,11 +184,12 @@ jobs:
             ./gradlew assembleDebug --no-daemon
           fi
 
-      - name: Rename Universal APK & Verify Signing Certificate Continuity
+      - name: Rename Universal APK & Verify Signing, Alignment & Manifest Integrity
         env:
           INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
           EXPECTED_SHA256: ${{ secrets.ANDROID_CERT_SHA256 }}
         run: |
+          set -euo pipefail
           VERSION_TAG="${INPUT_RELEASE_TAG:-${GITHUB_REF_NAME:-}}"
           if [[ ! "$VERSION_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             VERSION_TAG="v$(node -p "require('./package.json').version")"
@@ -198,10 +199,31 @@ jobs:
           fi
           if [ "${{ steps.keystore.outputs.signed }}" = "true" ]; then
             OUT_APK="PhysioRecord-Android-Universal-${VERSION_TAG}.apk"
-            cp android/app/build/outputs/apk/release/*.apk "$OUT_APK"
-            APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)"
-            if [ -n "$APKSIGNER" ]; then
-              "$APKSIGNER" verify --print-certs "$OUT_APK" | tee ANDROID_SIGNING_SHA256.txt
+            if compgen -G "android/app/build/outputs/apk/release/*-unsigned.apk" > /dev/null; then
+              echo "::error::Unsigned release APK detected! Refusing to publish an un-installable APK."
+              exit 1
+            fi
+            SRC_APK="$(find android/app/build/outputs/apk/release -maxdepth 1 -name '*.apk' ! -name '*-unsigned.apk' | head -n 1)"
+            if [ -z "$SRC_APK" ] || [ ! -f "$SRC_APK" ]; then
+              echo "::error::Expected signed release APK was not produced."
+              exit 1
+            fi
+            cp "$SRC_APK" "$OUT_APK"
+
+            BUILD_TOOLS_DIR="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+            ZIPALIGN="${BUILD_TOOLS_DIR}/zipalign"
+            APKSIGNER="${BUILD_TOOLS_DIR}/apksigner"
+            AAPT2="${BUILD_TOOLS_DIR}/aapt2"
+
+            if [ -x "$ZIPALIGN" ]; then
+              echo "Verifying 4-byte APK alignment (required for resources.arsc on Android 11+)..."
+              "$ZIPALIGN" -c -v 4 "$OUT_APK" >/dev/null
+              echo "✅ zipalign -c 4 PASSED"
+            fi
+
+            if [ -x "$APKSIGNER" ]; then
+              echo "Verifying APK Signature Schemes (v1, v2, v3) for minSdk 24+..."
+              "$APKSIGNER" verify --verbose --min-sdk-version 24 --print-certs "$OUT_APK" | tee ANDROID_SIGNING_SHA256.txt
               if [ -n "$EXPECTED_SHA256" ]; then
                 NORM_EXPECTED="$(echo "$EXPECTED_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
                 if ! grep -iFq "$NORM_EXPECTED" ANDROID_SIGNING_SHA256.txt; then
@@ -210,6 +232,25 @@ jobs:
                 fi
               fi
             fi
+
+            if [ -x "$AAPT2" ]; then
+              echo "Verifying compiled AndroidManifest badging..."
+              BADGING="$("$AAPT2" dump badging "$OUT_APK")"
+              echo "$BADGING" | grep -E "^(package:|sdkVersion:|targetSdkVersion:|launchable-activity:|testOnly)" || true
+              if echo "$BADGING" | grep -q "testOnly='-1'"; then
+                echo "::error::APK has android:testOnly=true which blocks sideload installation!"
+                exit 1
+              fi
+              APK_VCODE="$(echo "$BADGING" | sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p" | head -n 1)"
+              if [ -z "$APK_VCODE" ] || [ "$APK_VCODE" -lt 100000 ]; then
+                echo "::error::APK versionCode (${APK_VCODE:-missing}) must be >= 100000 to prevent Android downgrade errors."
+                exit 1
+              fi
+              echo "✅ Verified APK package badging (versionCode=${APK_VCODE})"
+            fi
+
+            sha256sum "$OUT_APK" | tee -a ANDROID_SIGNING_SHA256.txt
+            ls -lh "$OUT_APK"
           else
             cp android/app/build/outputs/apk/debug/*.apk "PhysioRecord-Android-Universal-${VERSION_TAG}-debug.apk"
           fi

@@ -3,16 +3,18 @@
 // PhysioRecord — Cross-Platform Version Synchronizer
 // Keeps package.json, Android (versionName + deterministic versionCode),
 // and Capacitor metadata strictly in sync from a single semver source.
-// Formula: versionCode = major * 10000 + minor * 100 + patch
+// Formula: versionCode = 100000 + major * 10000 + minor * 100 + patch
 // =======================================================================
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const ROOT_DIR = process.cwd();
 const PKG_PATH = path.join(ROOT_DIR, 'package.json');
 const SETTINGS_PHASE_F_PATH = path.join(ROOT_DIR, 'src', 'utils', 'settingsOnboardingPhaseF.ts');
 const ANDROID_GRADLE_PATH = path.join(ROOT_DIR, 'android', 'app', 'build.gradle');
+const ANDROID_VERSION_CODE_BASE = 100000;
 
 export function normalizeSemver(semverStr) {
   const clean = String(semverStr || '1.0.0')
@@ -31,13 +33,11 @@ export function computeAndroidVersionCode(semverStr) {
   const clean = normalizeSemver(semverStr);
   const parts = clean.split('.').map((n) => parseInt(n, 10));
   const [major, minor, patch] = parts;
-  const rawCode = major * 10000 + minor * 100 + patch;
-  // Prevent INSTALL_FAILED_VERSION_DOWNGRADE ("Package appears to be invalid") on phones
-  // that already installed v1.1.0 (versionCode 10100) if a user tags a release as 0.x.y.
-  if (major === 0) {
-    return 10100 + minor * 100 + patch;
-  }
-  return rawCode;
+  // Base offset of 100000 guarantees every future release (0.x.y, 1.0.x, 1.1.x, ...)
+  // is strictly higher than all previously shipped APKs (1..10102) so Android never
+  // rejects installs with INSTALL_FAILED_VERSION_DOWNGRADE ("Package appears to be invalid")
+  // while preserving strict semver monotonicity across all version series.
+  return ANDROID_VERSION_CODE_BASE + major * 10000 + minor * 100 + patch;
 }
 
 function parseCliVersionArg(argv = process.argv.slice(2)) {
@@ -102,6 +102,6 @@ export function syncAndroidVersion(explicitVersion = '') {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   syncAndroidVersion();
 }
