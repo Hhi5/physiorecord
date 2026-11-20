@@ -16,12 +16,14 @@ import {
   Download,
   Eye,
   EyeOff,
+  FolderOpen,
   HardDrive,
   Laptop,
   Lock,
   LogOut,
   RefreshCw,
   Server,
+  Share2,
   ShieldCheck,
   Upload,
   Wifi,
@@ -34,6 +36,7 @@ import { usePatients } from '../../context/PatientContext';
 import {
   getElectronDesktopBridge,
   isNativeAndroid,
+  openTextFileFromAndroid,
   saveTextFilePortable,
   shareGeneratedFileOnAndroid,
 } from '../../platform/nativeBridge';
@@ -44,6 +47,7 @@ import {
   getOfflineSyncOutbox,
   importAndMergeEncryptedSyncFile,
   saveClinicSyncConfig,
+  syncWithDesktopSyncFolder,
   syncWithEncryptedGoogleDrive,
   syncWithLocalLanHub,
   type ClinicSyncConfig,
@@ -53,6 +57,7 @@ import {
 import {
   getGoogleDriveAuthState,
   getNativeGoogleOAuthConfig,
+  hasBuiltInNativeGoogleOAuth,
   saveNativeGoogleOAuthConfig,
   signInWithGoogleDrive,
   signOutGoogleDrive,
@@ -89,11 +94,13 @@ export const ClinicSyncSettingsTab: React.FC = () => {
   const isElectronDesktop = Boolean(electronBridge?.startLanSyncHub);
   const isAndroidApk = isNativeAndroid();
   const isNativeAppPlatform = isAndroidApk || Boolean(electronBridge);
+  const builtInGoogleOAuth = hasBuiltInNativeGoogleOAuth();
 
   const [config, setConfig] = useState<ClinicSyncConfig>(() => getClinicSyncConfig());
   const [outbox, setOutbox] = useState<OfflineSyncOutboxRecord | null>(() => getOfflineSyncOutbox());
   const [syncPassphrase, setSyncPassphrase] = useState('');
   const [showPassphrase, setShowPassphrase] = useState(false);
+  const [passphraseError, setPassphraseError] = useState(false);
 
   // Electron LAN Hub status
   const [hubStatus, setHubStatus] = useState<{
@@ -105,32 +112,67 @@ export const ClinicSyncSettingsTab: React.FC = () => {
   } | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
+  // Electron 1-Click Sync Folder (Google Drive for Desktop / cloud folder)
+  const [syncFolderInfo, setSyncFolderInfo] = useState<{
+    configured: boolean;
+    folderPath?: string;
+    folderName?: string;
+  }>({ configured: false });
+
   // Google Drive Auth state (in-memory only)
   const [driveAuth, setDriveAuth] = useState<GoogleDriveAuthState>(() => getGoogleDriveAuthState());
   const [nativeOAuthCfg, setNativeOAuthCfg] = useState(() => getNativeGoogleOAuthConfig());
   const [showNativeOAuthSetup, setShowNativeOAuthSetup] = useState(
-    () => Boolean(getNativeGoogleOAuthConfig().clientId)
+    () => !builtInGoogleOAuth && Boolean(getNativeGoogleOAuthConfig().clientId)
   );
   const [showDriveConfirmModal, setShowDriveConfirmModal] = useState(false);
-  const [isGuideOpen, setIsGuideOpen] = useState(true);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ kind: 'success' | 'info' | 'error'; text: string } | null>(
     null
   );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const passphraseInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    if (!electronBridge?.getLanSyncHubStatus) return;
-    void electronBridge.getLanSyncHubStatus().then((st) => {
-      setHubStatus(st);
-    });
+    if (electronBridge?.getLanSyncHubStatus) {
+      void electronBridge.getLanSyncHubStatus().then((st) => {
+        setHubStatus(st);
+      });
+    }
+    if (electronBridge?.getConfiguredSyncDirectory) {
+      void electronBridge.getConfiguredSyncDirectory().then((dir) => {
+        if (dir) setSyncFolderInfo(dir);
+      });
+    }
   }, [electronBridge]);
+
+  const requireSyncPassphrase = (actionLabelAr?: string, actionLabelEn?: string): boolean => {
+    if (syncPassphrase.trim().length >= 6) {
+      setPassphraseError(false);
+      return true;
+    }
+    setPassphraseError(true);
+    setFeedback({
+      kind: 'error',
+      text: bi(
+        `يرجى كتابة «كلمة سر المزامنة المشتركة» (6 أحرف أو أرقام على الأقل) أولاً ${actionLabelAr || 'لحماية بيانات المرضى قبل المزامنة'}.`,
+        `Please enter your Shared Sync Password (at least 6 characters) first ${actionLabelEn || 'to protect patient records before syncing'}.`
+      ),
+    });
+    if (passphraseInputRef.current) {
+      passphraseInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      passphraseInputRef.current.focus();
+    }
+    return false;
+  };
 
   const handleModeChange = (mode: ClinicSyncMode) => {
     const next = saveClinicSyncConfig({ mode });
     setConfig(next);
     setFeedback(null);
+    setPassphraseError(false);
   };
 
   const handleCopy = (key: string, text: string) => {
@@ -165,8 +207,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
           setFeedback({
             kind: 'success',
             text: bi(
-              `تم تشغيل خادم الواي فاي المحلي بنجاح على ${st.urls[0]} — يمكنك الآن ربط أجهزة المعالجين على نفس الشبكة.`,
-              `Clinic LAN Hub started at ${st.urls[0]}. Peer therapist devices on the same Wi-Fi can now sync.`
+              `تم تشغيل مزامنة الواي فاي بنجاح على الرابط ${st.urls[0]} — يمكنك الآن ربط موبايلات العيادة على نفس الشبكة.`,
+              `Clinic Wi-Fi Sync started at ${st.urls[0]}. Peer devices on the same router can now sync.`
             ),
           });
         }
@@ -178,14 +220,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
 
   const handleSyncLanNow = async () => {
     if (!dek) return;
-    if (syncPassphrase.trim().length < 6) {
-      setFeedback({
-        kind: 'error',
-        text: bi(
-          'أدخل كلمة مرور المزامنة المشتركة للعيادة (6 أحرف على الأقل) لتشفير البيانات قبل الإرسال.',
-          'Enter the shared clinic sync passphrase (at least 6 characters) to encrypt records before syncing.'
-        ),
-      });
+    if (!requireSyncPassphrase('قبل إرسال البيانات عبر الواي فاي', 'before syncing over Wi-Fi')) {
       return;
     }
 
@@ -215,7 +250,71 @@ export const ClinicSyncSettingsTab: React.FC = () => {
     } catch (err) {
       setFeedback({
         kind: 'error',
-        text: err instanceof Error ? err.message : bi('فشلت المزامنة المحلية.', 'LAN sync failed.'),
+        text: err instanceof Error ? err.message : bi('تعذّرت المزامنة عبر الواي فاي.', 'Wi-Fi sync failed.'),
+      });
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handlePickDesktopSyncFolder = async () => {
+    if (!electronBridge?.pickSyncDirectory) return;
+    setBusyAction('pick-sync-folder');
+    setFeedback(null);
+    try {
+      const res = await electronBridge.pickSyncDirectory();
+      if (res?.configured) {
+        setSyncFolderInfo(res);
+        setFeedback({
+          kind: 'success',
+          text: bi(
+            `تم اختيار مجلد المزامنة «${res.folderName}» بنجاح. اكتب كلمة سر المزامنة واضغط «مزامنة الآن بضغطة واحدة».`,
+            `Selected sync folder "${res.folderName}". Enter your sync password and click "Sync Now".`
+          ),
+        });
+      }
+    } catch (err) {
+      setFeedback({
+        kind: 'error',
+        text: err instanceof Error ? err.message : bi('تعذّر اختيار المجلد.', 'Could not pick folder.'),
+      });
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleClearDesktopSyncFolder = async () => {
+    if (!electronBridge?.clearConfiguredSyncDirectory) return;
+    await electronBridge.clearConfiguredSyncDirectory();
+    setSyncFolderInfo({ configured: false });
+    setFeedback({
+      kind: 'info',
+      text: bi('تم إلغاء ربط مجلد المزامنة على الحاسبة.', 'Disconnected desktop sync folder.'),
+    });
+  };
+
+  const handleSyncDesktopFolderNow = async () => {
+    if (!dek) return;
+    if (!requireSyncPassphrase('قبل المزامنة مع مجلد Google Drive', 'before syncing with your Google Drive folder')) {
+      return;
+    }
+    setBusyAction('desktop-folder-sync');
+    setFeedback(null);
+    try {
+      const res = await syncWithDesktopSyncFolder({ dek, passphrase: syncPassphrase });
+      setConfig(getClinicSyncConfig());
+      setOutbox(getOfflineSyncOutbox());
+      if (res.ok) {
+        await refreshPatients();
+        setFeedback({ kind: 'success', text: bi(res.messageAr, res.messageEn) });
+      }
+    } catch (err) {
+      setFeedback({
+        kind: 'error',
+        text:
+          err instanceof Error
+            ? err.message
+            : bi('تعذّرت المزامنة مع مجلد Google Drive.', 'Folder sync failed.'),
       });
     } finally {
       setBusyAction(null);
@@ -232,8 +331,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
       setFeedback({
         kind: 'success',
         text: bi(
-          `تم تسجيل الدخول بنجاح بحساب ${st.email || 'Google'}. التوكن محفوظ بالذاكرة المؤقتة فقط ولا يُخزّن على القرص.`,
-          `Signed in as ${st.email || 'Google'}. Access token is kept strictly in memory.`
+          `تم ربط حساب ${st.email || 'Google'} بنجاح! يمكنك الآن الضغط على «مزامنة مع Google Drive الآن».`,
+          `Connected ${st.email || 'Google'} successfully! Click "Sync with Google Drive Now" to start.`
         ),
       });
     } catch (err) {
@@ -255,8 +354,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
     setFeedback({
       kind: 'info',
       text: bi(
-        'تم تسجيل الخروج من Google Drive ومسح رمز الوصول من الذاكرة. سجلاتك المحلية تبقى آمنة على جهازك.',
-        'Signed out from Google Drive and cleared access token from memory. Local records remain intact.'
+        'تم فصل حساب Google Drive. جميع سجلات مرضاك محفوظة بأمان على جهازك.',
+        'Disconnected Google Drive. All patient records remain safely on your device.'
       ),
     });
   };
@@ -269,17 +368,9 @@ export const ClinicSyncSettingsTab: React.FC = () => {
       });
       return;
     }
-    if (syncPassphrase.trim().length < 6) {
-      setFeedback({
-        kind: 'error',
-        text: bi(
-          'أدخل كلمة مرور المزامنة المشتركة للعيادة (6 أحرف على الأقل) — يتم تشفير ملفات المرضى بها قبل رفعها إلى Google Drive.',
-          'Enter the shared clinic sync passphrase (min 6 chars) — patient data is AES-256-GCM encrypted before upload.'
-        ),
-      });
+    if (!requireSyncPassphrase('قبل الرفع إلى Google Drive', 'before uploading to Google Drive')) {
       return;
     }
-    // Mandatory explicit confirmation dialog before any Drive upload/write mutation
     setShowDriveConfirmModal(true);
   };
 
@@ -313,39 +404,91 @@ export const ClinicSyncSettingsTab: React.FC = () => {
 
   const handleExportSyncFile = async () => {
     if (!dek) return;
-    if (syncPassphrase.trim().length < 6) {
-      setFeedback({
-        kind: 'error',
-        text: bi(
-          'أدخل كلمة مرور المزامنة المشتركة (6 أحرف على الأقل) لتشفير ملف `.ptsync.json`.',
-          'Enter the shared clinic sync passphrase (min 6 chars) to encrypt the .ptsync.json file.'
-        ),
-      });
+    if (!requireSyncPassphrase('لحفظ ملف المزامنة', 'to save the sync file')) {
       return;
     }
     setBusyAction('export-file');
     setFeedback(null);
     try {
       const exported = await exportEncryptedSyncFileString(dek, syncPassphrase);
-      await saveTextFilePortable({
+      const savedRes = await saveTextFilePortable({
         filename: exported.filename,
         content: exported.content,
-        mimeType: 'application/json',
-        description: 'PhysioRecord Encrypted Sync Package',
+        mimeType: 'application/octet-stream',
+        description: 'PhysioRecord Sync File',
         extensions: ['json'],
       });
-      setFeedback({
-        kind: 'success',
-        text: bi(
-          `تم تصدير حزمة المزامنة المشفّرة (${exported.filename}) بنجاح. يمكنك نقلها لأي جهاز آخر ودمجها بدون حذف أي سجل.`,
-          `Exported encrypted sync package (${exported.filename}). Import it on any peer device for a non-destructive merge.`
-        ),
-      });
+      if (savedRes.confirmedSaved || savedRes.method === 'web-download') {
+        setFeedback({
+          kind: 'success',
+          text: bi(
+            `تم حفظ ملف المزامنة المحمي (${exported.filename}) بنجاح! يمكنك الآن جلبه من الجهاز الآخر ودمجه بدون حذف أي مريض.`,
+            `Saved protected sync file (${exported.filename})! Import it on your other device to merge safely.`
+          ),
+        });
+      }
     } catch (err) {
-      setFeedback({
-        kind: 'error',
-        text: err instanceof Error ? err.message : bi('فشل تصدير حزمة المزامنة.', 'Export failed.'),
+      if (err instanceof Error && err.name === 'AbortError') {
+        setFeedback({
+          kind: 'info',
+          text: bi('تم إلغاء الحفظ.', 'Save cancelled.'),
+        });
+      } else {
+        setFeedback({
+          kind: 'error',
+          text: err instanceof Error ? err.message : bi('تعذّر حفظ ملف المزامنة.', 'Could not save sync file.'),
+        });
+      }
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleSaveSyncDirectlyToDrive = async () => {
+    if (!dek) return;
+    if (!requireSyncPassphrase('قبل الحفظ إلى Google Drive', 'before saving to Google Drive')) {
+      return;
+    }
+    setBusyAction('drive-direct-save');
+    setFeedback(null);
+    try {
+      const exported = await exportEncryptedSyncFileString(dek, syncPassphrase);
+      const savedRes = await saveTextFilePortable({
+        filename: exported.filename,
+        content: exported.content,
+        mimeType: 'application/octet-stream',
+        description: 'PhysioRecord Google Drive Sync File',
+        extensions: ['json'],
       });
+      if (savedRes.confirmedSaved || savedRes.method === 'web-download') {
+        setFeedback({
+          kind: 'success',
+          text: isAndroidApk
+            ? bi(
+                `تم حفظ ملف المزامنة (${exported.filename}) بنجاح! إذا اخترت Google Drive من القائمة، سيُرفع تلقائياً ويمكنك جلبه من الحاسبة.`,
+                `Saved sync file (${exported.filename})! If saved in Google Drive, it uploads automatically and can be merged on your PC.`
+              )
+            : bi(
+                `تم حفظ ملف المزامنة (${exported.filename}) بنجاح! احفظه داخل مجلد Google Drive على الحاسبة أو ارفعه على drive.google.com.`,
+                `Saved sync file (${exported.filename})! Place it in your Google Drive folder or upload to drive.google.com.`
+              ),
+        });
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        setFeedback({
+          kind: 'info',
+          text: bi('تم إلغاء الحفظ.', 'Save cancelled.'),
+        });
+      } else {
+        setFeedback({
+          kind: 'error',
+          text:
+            err instanceof Error
+              ? err.message
+              : bi('تعذّر حفظ ملف المزامنة في Google Drive.', 'Could not save sync file to Google Drive.'),
+        });
+      }
     } finally {
       setBusyAction(null);
     }
@@ -353,72 +496,91 @@ export const ClinicSyncSettingsTab: React.FC = () => {
 
   const handleShareSyncToAndroidDrive = async () => {
     if (!dek) return;
-    if (syncPassphrase.trim().length < 6) {
-      setFeedback({
-        kind: 'error',
-        text: bi(
-          'أدخل كلمة مرور المزامنة المشتركة (6 أحرف على الأقل) لتشفير الملف قبل إرساله إلى Google Drive.',
-          'Enter the shared clinic sync passphrase (min 6 chars) to encrypt the file before sending to Google Drive.'
-        ),
-      });
+    if (!requireSyncPassphrase('قبل المشاركة إلى Google Drive', 'before sharing to Google Drive')) {
       return;
     }
     setBusyAction('android-drive-share');
     setFeedback(null);
     try {
       const exported = await exportEncryptedSyncFileString(dek, syncPassphrase);
-      if (isAndroidApk) {
-        const shared = await shareGeneratedFileOnAndroid({
+      const shared = await shareGeneratedFileOnAndroid({
+        filename: exported.filename,
+        content: exported.content,
+        mimeType: 'application/octet-stream',
+        title: bi('مشاركة ملف مزامنة PhysioRecord إلى Google Drive', 'Share PhysioRecord Sync to Google Drive'),
+      });
+      if (!shared) {
+        await saveTextFilePortable({
           filename: exported.filename,
           content: exported.content,
-          mimeType: 'application/json',
-          title: bi('حفظ حزمة مزامنة PhysioRecord إلى Google Drive', 'Save PhysioRecord Sync to Google Drive'),
-        });
-        if (!shared) {
-          await saveTextFilePortable({
-            filename: exported.filename,
-            content: exported.content,
-            mimeType: 'application/json',
-            description: 'PhysioRecord Encrypted Sync Package',
-            extensions: ['json'],
-          });
-        }
-        setFeedback({
-          kind: 'success',
-          text: bi(
-            `تم تجهيز الحزمة المشفّرة (${exported.filename}). اختر «حفظ في Drive» من قائمة المشاركة لرفعها مباشرة إلى Google Drive.`,
-            `Prepared encrypted package (${exported.filename}). Pick "Save to Drive" to upload directly to Google Drive.`
-          ),
-        });
-      } else {
-        const savedRes = await saveTextFilePortable({
-          filename: exported.filename,
-          content: exported.content,
-          mimeType: 'application/json',
-          description: 'PhysioRecord Encrypted Sync Package',
+          mimeType: 'application/octet-stream',
+          description: 'PhysioRecord Sync File',
           extensions: ['json'],
         });
-        if (savedRes.confirmedSaved) {
-          setFeedback({
-            kind: 'success',
-            text: bi(
-              `تم حفظ الحزمة المشفّرة (${exported.filename}) بنجاح. إذا حفظتها داخل مجلد Google Drive على الحاسبة ستُرفع تلقائياً، ويمكنك استيرادها من هاتفك بدون حذف أي سجل.`,
-              `Saved encrypted package (${exported.filename}). Save it inside your Google Drive desktop folder (or upload to drive.google.com) to merge on other devices.`
-            ),
-          });
-        }
       }
+      setFeedback({
+        kind: 'success',
+        text: bi(
+          `تم فتح قائمة المشاركة للملف (${exported.filename}) — اختر «حفظ في Drive» (أو واتساب / الملفات).`,
+          `Opened Share Sheet for (${exported.filename}) — choose "Save to Drive" (or WhatsApp / Files).`
+        ),
+      });
     } catch (err) {
       setFeedback({
         kind: 'error',
         text:
           err instanceof Error
             ? err.message
-            : bi('تعذّر إرسال ملف المزامنة إلى Google Drive.', 'Could not export sync file for Google Drive.'),
+            : bi('تعذّرت مشاركة الملف إلى Google Drive.', 'Could not share sync file to Google Drive.'),
       });
     } finally {
       setBusyAction(null);
     }
+  };
+
+  const handleImportRawSyncText = async (rawText: string) => {
+    if (!dek) return;
+    setBusyAction('import-file');
+    setFeedback(null);
+    try {
+      const res = await importAndMergeEncryptedSyncFile(rawText, dek, syncPassphrase);
+      setConfig(getClinicSyncConfig());
+      await refreshPatients();
+      setFeedback({ kind: 'success', text: bi(res.messageAr, res.messageEn) });
+    } catch (err) {
+      setFeedback({
+        kind: 'error',
+        text: err instanceof Error ? err.message : bi('تعذّر دمج ملف المزامنة — تأكد من صحة كلمة سر المزامنة.', 'Import merge failed — check your sync password.'),
+      });
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleImportSyncSmart = async () => {
+    if (!dek) return;
+    if (!requireSyncPassphrase('لفك قفل الملف ودمج المرضى', 'to unlock and merge the sync file')) {
+      return;
+    }
+    if (isAndroidApk) {
+      try {
+        const opened = await openTextFileFromAndroid('*/*');
+        if (opened) {
+          if (opened.cancelled) return;
+          if (opened.opened && typeof opened.content === 'string') {
+            await handleImportRawSyncText(opened.content);
+            return;
+          }
+        }
+      } catch (err) {
+        setFeedback({
+          kind: 'error',
+          text: err instanceof Error ? err.message : bi('تعذّر فتح الملف من الجهاز.', 'Could not open file.'),
+        });
+        return;
+      }
+    }
+    fileInputRef.current?.click();
   };
 
   const handleImportSyncFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -426,33 +588,11 @@ export const ClinicSyncSettingsTab: React.FC = () => {
     e.target.value = '';
     if (!file || !dek) return;
 
-    if (syncPassphrase.trim().length < 6) {
-      setFeedback({
-        kind: 'error',
-        text: bi(
-          'أدخل كلمة مرور المزامنة المشتركة أولاً لفك تشفير الحزمة المستوردة.',
-          'Enter the shared clinic sync passphrase first to decrypt the imported file.'
-        ),
-      });
+    if (!requireSyncPassphrase('لفك قفل الملف ودمج المرضى', 'to unlock and merge the sync file')) {
       return;
     }
-
-    setBusyAction('import-file');
-    setFeedback(null);
-    try {
-      const text = await file.text();
-      const res = await importAndMergeEncryptedSyncFile(text, dek, syncPassphrase);
-      setConfig(getClinicSyncConfig());
-      await refreshPatients();
-      setFeedback({ kind: 'success', text: bi(res.messageAr, res.messageEn) });
-    } catch (err) {
-      setFeedback({
-        kind: 'error',
-        text: err instanceof Error ? err.message : bi('فشل دمج ملف المزامنة.', 'Import merge failed.'),
-      });
-    } finally {
-      setBusyAction(null);
-    }
+    const text = await file.text();
+    await handleImportRawSyncText(text);
   };
 
   return (
@@ -465,22 +605,22 @@ export const ClinicSyncSettingsTab: React.FC = () => {
           </div>
           <div className="space-y-1">
             <h3 className="text-sm font-black text-foreground">
-              {bi('مزامنة العيادة متعددة الأجهزة (مجانية $0 وآمنة بالتشفير الطرفي)', 'Free Multi-Device Clinic Sync (End-to-End Encrypted)')}
+              {bi('مزامنة بيانات العيادة بين أجهزتك (مجانية وآمنة)', 'Free & Safe Multi-Device Clinic Sync')}
             </h3>
             <p className="text-xs text-muted-foreground-1 leading-relaxed">
               {bi(
-                'اختر الطريقة المناسبة لعيادتك: مزامنة الواي فاي المحلي داخل العيادة (بدون إنترنت)، أو مزامنة Google Drive المشفّرة بحسابك الشخصي (مجانية للأبد وتعمل من أي مكان).',
-                'Choose what fits your clinic: Local Wi-Fi Clinic Sync (offline LAN) or Encrypted Google Drive Sync using your own free Google account.'
+                'انقل وادمج ملفات المرضى بين الموبايل والحاسبة بسهولة — إما عبر واي فاي العيادة (بدون إنترنت) أو عبر حسابك الشخصي في Google Drive (مجاني للأبد ويعمل من أي مكان).',
+                'Sync and merge patient records between your phone and PC — either over your clinic Wi-Fi (no internet needed) or via your own free Google Drive.'
               )}
             </p>
             <div className="flex flex-wrap gap-2 pt-1 text-xs font-bold">
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
                 <CheckCircle2 className="size-3.5" />
-                {bi('دمج تراكمي فقط — لا يُحذف أي سجل من تطبيق المعالج', 'Additive merge only — never deletes therapist data')}
+                {bi('دمج آمن — لا يُحذف أي مريض أو جلسة من جهازك', 'Safe merge — never deletes any patient or session')}
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary">
                 <Lock className="size-3.5" />
-                {bi('تشفير AES-256-GCM قبل مغادرة الجهاز', 'AES-256-GCM encrypted before leaving device')}
+                {bi('ملفاتك مقفلة بكلمة سر خاصة بعيادتك فقط', 'Locked with your clinic’s private password')}
               </span>
             </div>
           </div>
@@ -498,14 +638,14 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             <div className="space-y-0.5">
               <div className="font-extrabold text-amber-800 dark:text-amber-300">
                 {bi(
-                  'توجد حزمة مزامنة مشفّرة بانتظار الإرسال (صندوق أوفلاين)',
-                  'Pending encrypted sync package queued offline'
+                  'توجد تعديلات محفوظة بانتظار المزامنة',
+                  'Saved changes waiting to sync'
                 )}
               </div>
               <p className="text-muted-foreground-1">
                 {bi(
-                  'تم حفظ عملك محلياً بأمان أثناء إطفاء الحاسبة أو انقطاع الاتصال — اضغط «مزامنة الآن» فور توفر الشبكة.',
-                  'Your work was queued locally while offline — click "Sync Now" once connected.'
+                  'تم حفظ عملك محلياً بأمان أثناء انقطاع الاتصال — اضغط «مزامنة الآن» فور توفر الشبكة.',
+                  'Your work was saved safely while offline — click "Sync Now" once connected.'
                 )}
               </p>
             </div>
@@ -518,7 +658,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             }}
             className="text-xs font-bold text-amber-800 dark:text-amber-300 hover:underline cursor-pointer"
           >
-            {bi('مسح التنبيه', 'Dismiss')}
+            {bi('إخفاء', 'Dismiss')}
           </button>
         </div>
       )}
@@ -547,26 +687,26 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             {
               id: 'off' as ClinicSyncMode,
               icon: HardDrive,
-              titleAr: 'محلي فقط (جهاز واحد)',
-              titleEn: 'Local Only',
-              descAr: 'العمل أوفلاين بالكامل على هذا الجهاز فقط.',
-              descEn: 'Fully standalone on this device.',
+              titleAr: 'على هذا الجهاز فقط',
+              titleEn: 'This Device Only',
+              descAr: 'بياناتك محفوظة على هذا الجهاز فقط بدون مزامنة.',
+              descEn: 'All records stay on this device only.',
             },
             {
               id: 'lan' as ClinicSyncMode,
               icon: Wifi,
-              titleAr: 'واي فاي العيادة (LAN)',
-              titleEn: 'Local Wi-Fi (LAN)',
-              descAr: 'مزامنة داخل العيادة بدون إنترنت + عمل أوفلاين عند إطفاء الحاسبة.',
-              descEn: 'In-clinic Wi-Fi sync without internet + offline queue.',
+              titleAr: 'واي فاي العيادة (بدون إنترنت)',
+              titleEn: 'Clinic Wi-Fi (Offline)',
+              descAr: 'نقل مباشر بين الحاسبة والموبايل على نفس راوتر العيادة.',
+              descEn: 'Direct sync between PC and phone on the same Wi-Fi router.',
             },
             {
               id: 'google_drive' as ClinicSyncMode,
               icon: Cloud,
-              titleAr: 'Google Drive المشفّر',
-              titleEn: 'Encrypted Google Drive',
-              descAr: 'مجاني 15GB للأبد — يزامن من أي مكان حتى والحاسبة مطفية.',
-              descEn: 'Free 15GB forever — sync anywhere even when PC is off.',
+              titleAr: 'مزامنة Google Drive',
+              titleEn: 'Google Drive Sync',
+              descAr: 'احفظ وادمج بيانات عيادتك عبر حسابك في Google Drive من أي مكان.',
+              descEn: 'Save and merge clinic records via your free Google Drive from anywhere.',
             },
           ] as const
         ).map((opt) => {
@@ -601,24 +741,36 @@ export const ClinicSyncSettingsTab: React.FC = () => {
 
       {/* Shared Clinic Sync Passphrase & Device Label (Shown whenever sync mode is LAN or Google Drive) */}
       {config.mode !== 'off' && (
-        <div className="p-4 rounded-2xl bg-card border border-card-line space-y-3">
+        <div
+          className={`p-4 rounded-2xl bg-card border space-y-3 transition-colors ${
+            passphraseError ? 'border-rose-500 ring-2 ring-rose-500/20' : 'border-card-line'
+          }`}
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label
                 htmlFor="sync-passphrase-input"
                 className="block text-xs font-bold text-foreground mb-1"
               >
-                {bi('كلمة مرور المزامنة المشتركة للعيادة (للتشفير الطرفي)', 'Shared Clinic Sync Passphrase (E2EE)')}
+                {bi('الخطوة 1: اكتب كلمة سر المزامنة المشتركة لعيادتك (6 أحرف أو أرقام على الأقل)', 'Step 1: Shared Clinic Sync Password (min 6 characters)')}
               </label>
               <div className="relative">
                 <input
+                  ref={passphraseInputRef}
                   id="sync-passphrase-input"
                   data-testid="sync-passphrase-input"
                   type={showPassphrase ? 'text' : 'password'}
                   value={syncPassphrase}
-                  onChange={(e) => setSyncPassphrase(e.target.value)}
-                  placeholder={bi('كلمة مرور موحّدة تُكتب على جميع أجهزة العيادة...', 'Same passphrase across all clinic devices...')}
-                  className="w-full h-10 ps-3 pe-10 rounded-xl bg-surface border border-line-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
+                  onChange={(e) => {
+                    setSyncPassphrase(e.target.value);
+                    if (e.target.value.trim().length >= 6) setPassphraseError(false);
+                  }}
+                  placeholder={bi('مثلاً: Clinic2026 (اكتب نفس الكلمة في الموبايل والحاسبة)', 'e.g. Clinic2026 (use the same password on all devices)')}
+                  className={`w-full h-10 ps-3 pe-10 rounded-xl bg-surface border text-xs text-foreground focus:outline-none focus:ring-2 ${
+                    passphraseError
+                      ? 'border-rose-500 focus:ring-rose-500/25'
+                      : 'border-line-2 focus:ring-primary/25'
+                  }`}
                 />
                 <button
                   type="button"
@@ -631,8 +783,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
               </div>
               <p className="text-xs text-muted-foreground-1 mt-1">
                 {bi(
-                  'تُستخدم لتشفير ملفات المزامنة بـ AES-256-GCM قبل خروجها من الجهاز (ولا تُحفظ بالملفات السحابية).',
-                  'Encrypts sync envelopes with AES-256-GCM before leaving your device.'
+                  'تُستخدم لقفل ملفات المرضى قبل رفعها حتى لا يستطيع أحد فتحها غيرك — اكتب نفس الكلمة عند الدمج على الجهاز الآخر.',
+                  'Locks patient files before leaving your device so only you can open them—enter the same password on your other device.'
                 )}
               </p>
             </div>
@@ -642,7 +794,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                 htmlFor="sync-device-label-input"
                 className="block text-xs font-bold text-foreground mb-1"
               >
-                {bi('اسم هذا الجهاز في العيادة', 'This Device Label')}
+                {bi('اسم هذا الجهاز (للتمييز بين الموبايل والحاسبة)', 'Device Name (to tell phone & PC apart)')}
               </label>
               <input
                 id="sync-device-label-input"
@@ -651,9 +803,6 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                 onChange={(e) => setConfig(saveClinicSyncConfig({ deviceLabel: e.target.value }))}
                 className="w-full h-10 px-3 rounded-xl bg-surface border border-line-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
               />
-              <p className="text-xs text-muted-foreground-1 mt-1 font-mono">
-                ID: {config.deviceId}
-              </p>
             </div>
           </div>
         </div>
@@ -900,7 +1049,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             <div className="flex items-center gap-2">
               <Cloud className="size-4.5 text-primary" />
               <h4 className="text-xs sm:text-sm font-black text-foreground">
-                {bi('مزامنة Google Drive المشفّرة (حساب العيادة المجاني)', 'Encrypted Google Drive Sync (Your Own Free Drive)')}
+                {bi('الخطوة 2: مزامنة عيادتك عبر Google Drive', 'Step 2: Sync Your Clinic via Google Drive')}
               </h4>
             </div>
             {config.lastSyncAt && config.lastSyncMode === 'google_drive' && (
@@ -910,67 +1059,235 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             )}
           </div>
 
-          {/* Native App (Android & Windows Desktop) Instant Zero-Setup Google Drive Sync */}
-          {isNativeAppPlatform && !driveAuth.isSignedIn && (
-            <div className="p-4 rounded-xl bg-primary/[0.06] border border-primary/25 space-y-3">
-              <div className="space-y-1">
-                <div className="text-xs font-extrabold text-foreground">
-                  {isAndroidApk
-                    ? bi(
-                        'مزامنة فورية مع تطبيق Google Drive على الأندرويد (جاهزة بدون إعداد)',
-                        'Instant Android Google Drive App Sync (Ready — No Setup Needed)'
-                      )
-                    : bi(
-                        'مزامنة فورية مع Google Drive على الحاسبة (جاهزة بدون إعداد)',
-                        'Instant Desktop Google Drive Sync (Ready — No Setup Needed)'
-                      )}
-                </div>
-                <p className="text-xs text-muted-foreground-1 leading-relaxed">
-                  {isAndroidApk
-                    ? bi(
-                        'يحفظ التطبيق ملف مزامنة مشفّر (.ptsync.json) مباشرة إلى تطبيق Google Drive على هاتفك، ويدمج ملفات الأجهزة الأخرى من Drive بدون حذف أي سجل.',
-                        'Uploads your AES-256-GCM encrypted sync package directly to the Google Drive app on your phone and merges peer files from Drive non-destructively.'
-                      )
-                    : bi(
-                        'يحفظ التطبيق ملف المزامنة المشفّر (.ptsync.json) مباشرة داخل مجلد Google Drive على الحاسبة (أو لرفعه على drive.google.com)، ويدمج ملفات الموبايل والأجهزة الأخرى بدون حذف أي سجل.',
-                        'Saves your AES-256-GCM encrypted sync package (.ptsync.json) directly into your Google Drive desktop folder (or upload to drive.google.com) and merges peer files non-destructively.'
-                      )}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  data-testid="android-drive-share-btn"
-                  disabled={busyAction !== null}
-                  onClick={handleShareSyncToAndroidDrive}
-                  className="h-10 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
-                >
-                  <Upload className="size-4 shrink-0" />
-                  <span>
-                    {busyAction === 'android-drive-share'
-                      ? bi('جاري التشفير والتجهيز...', 'Encrypting...')
-                      : isAndroidApk
-                        ? bi('رفع / حفظ إلى Google Drive', 'Save / Share to Google Drive')
-                        : bi('حفظ ملف المزامنة إلى Google Drive', 'Save Sync File to Google Drive')}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  data-testid="android-drive-import-btn"
-                  disabled={busyAction !== null}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="h-10 px-4 rounded-xl bg-card hover:bg-surface border border-line-2 text-foreground text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
-                >
-                  <Download className="size-4 shrink-0 text-primary" />
-                  <span>{bi('استيراد ودمج من Google Drive', 'Import & Merge from Google Drive')}</span>
-                </button>
-              </div>
+          {/* Inline Passphrase Reminder (Prevents silent off-screen errors) */}
+          {syncPassphrase.trim().length < 6 && (
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-2">
+              <Lock className="size-4 shrink-0" />
+              <span>
+                {bi(
+                  'تذكير: اكتب «كلمة سر المزامنة» في المربع بالأعلى (6 أحرف أو أرقام على الأقل) قبل الضغط على أزرار الحفظ أو الدمج.',
+                  'Reminder: Enter your Sync Password above (at least 6 characters) before saving or merging.'
+                )}
+              </span>
             </div>
           )}
 
-          {/* Official Google Sign-In Control (Web Firebase Popup | Android & Windows Native PKCE Loopback) */}
+          {/* Inline Feedback right next to Google Drive actions so mobile & desktop users always see it */}
+          {feedback && (
+            <div
+              role="status"
+              className={`p-3 rounded-xl border text-xs font-bold leading-relaxed ${
+                feedback.kind === 'error'
+                  ? 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400'
+                  : feedback.kind === 'info'
+                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300'
+                    : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+              }`}
+            >
+              {feedback.text}
+            </div>
+          )}
+
+          {/* METHOD 1 (Works Immediately — Zero Google Cloud Setup Required) */}
+          {isNativeAppPlatform && (
+            <div className="p-4 rounded-xl bg-primary/[0.06] border border-primary/25 space-y-3">
+              {isAndroidApk ? (
+                <>
+                  <div className="space-y-1">
+                    <div className="text-xs font-extrabold text-foreground">
+                      {bi(
+                        'الطريقة الأولى (الأسهل — جاهزة فوراً بدون تسجيل دخول)',
+                        'Method 1 (Easiest — Ready Instantly, No Sign-In Needed)'
+                      )}
+                    </div>
+                    <ol className="list-decimal list-inside text-xs text-muted-foreground-1 space-y-1 leading-relaxed">
+                      <li>
+                        {bi(
+                          'لرفع بيانات هذا الموبايل: اضغط «حفظ في Google Drive» (أو «مشاركة إلى Drive») واختر مجلد عيادتك في تطبيق Google Drive ثم اضغط حفظ.',
+                          'To upload from this phone: tap "Save to Google Drive" (or "Share to Drive"), pick your clinic folder in Google Drive, and save.'
+                        )}
+                      </li>
+                      <li>
+                        {bi(
+                          'لجلب بيانات الحاسبة أو جهاز آخر: اضغط «جلب ودمج من Google Drive» واختر الملف — تُدمج البيانات فوراً بدون حذف أي مريض.',
+                          'To bring records from your PC or another phone: tap "Import & Merge from Google Drive" and pick the file — merges safely without deleting anything.'
+                        )}
+                      </li>
+                    </ol>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      data-testid="android-drive-save-btn"
+                      disabled={busyAction !== null}
+                      onClick={handleSaveSyncDirectlyToDrive}
+                      className="h-10 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                    >
+                      <Upload className="size-4 shrink-0" />
+                      <span>
+                        {busyAction === 'drive-direct-save'
+                          ? bi('جاري التجهيز...', 'Preparing...')
+                          : bi('حفظ في Google Drive', 'Save to Google Drive')}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="android-drive-share-btn"
+                      disabled={busyAction !== null}
+                      onClick={handleShareSyncToAndroidDrive}
+                      className="h-10 px-3.5 rounded-xl bg-card hover:bg-surface border border-line-2 text-foreground text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                    >
+                      <Share2 className="size-4 shrink-0 text-primary" />
+                      <span>
+                        {busyAction === 'android-drive-share'
+                          ? bi('جاري التجهيز...', 'Preparing...')
+                          : bi('مشاركة إلى Drive / واتساب', 'Share to Drive / WhatsApp')}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="android-drive-import-btn"
+                      disabled={busyAction !== null}
+                      onClick={handleImportSyncSmart}
+                      className="h-10 px-4 rounded-xl bg-card hover:bg-surface border border-line-2 text-foreground text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                    >
+                      <Download className="size-4 shrink-0 text-primary" />
+                      <span>
+                        {busyAction === 'import-file'
+                          ? bi('جاري الدمج...', 'Merging...')
+                          : bi('جلب ودمج من Google Drive', 'Import & Merge from Google Drive')}
+                      </span>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-1">
+                    <div className="text-xs font-extrabold text-foreground">
+                      {bi(
+                        'الطريقة الأولى (الأسهل على الحاسبة — مزامنة مجلد Google Drive بضغطة واحدة بدون تسجيل دخول)',
+                        'Method 1 (Easiest on PC — 1-Click Google Drive Folder Sync, No Sign-In Needed)'
+                      )}
+                    </div>
+                    <ol className="list-decimal list-inside text-xs text-muted-foreground-1 space-y-1 leading-relaxed">
+                      <li>
+                        {bi(
+                          'إذا كان لديك برنامج Google Drive للحاسبة، اختر مجلد عيادتك بداخله مرة واحدة فقط (مثلاً: My Drive ← PhysioRecord).',
+                          'If you use Google Drive for Desktop, pick your clinic folder inside it once (e.g. My Drive -> PhysioRecord).'
+                        )}
+                      </li>
+                      <li>
+                        {bi(
+                          'بعدها كل ما تضغط «مزامنة الآن بضغطة واحدة»، يحفظ البرنامج ملف الحاسبة ويدمج ملفات الموبايل تلقائياً.',
+                          'After that, clicking "Sync Now (1 Click)" automatically saves this PC’s records and merges files from your phones.'
+                        )}
+                      </li>
+                    </ol>
+                  </div>
+
+                  {syncFolderInfo.configured ? (
+                    <div className="space-y-2.5">
+                      <div className="p-2.5 rounded-xl bg-card border border-emerald-500/30 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FolderOpen className="size-4 text-emerald-600 shrink-0" />
+                          <div className="min-w-0">
+                            <div className="font-extrabold text-foreground truncate">
+                              {bi('المجلد المربوط:', 'Linked folder:')} {syncFolderInfo.folderName}
+                            </div>
+                            {syncFolderInfo.folderPath && (
+                              <div className="text-xs text-muted-foreground-1 truncate" dir="ltr">
+                                {syncFolderInfo.folderPath}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={handlePickDesktopSyncFolder}
+                            className="h-8 px-2.5 rounded-lg bg-surface hover:bg-surface/80 border border-line-2 text-xs font-bold text-foreground cursor-pointer"
+                          >
+                            {bi('تغيير المجلد', 'Change')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleClearDesktopSyncFolder}
+                            className="h-8 px-2.5 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-500/10 cursor-pointer"
+                          >
+                            {bi('إلغاء الربط', 'Unlink')}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          data-testid="desktop-folder-sync-now-btn"
+                          disabled={busyAction !== null}
+                          onClick={handleSyncDesktopFolderNow}
+                          className="h-10 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                        >
+                          <RefreshCw className={`size-4 shrink-0 ${busyAction === 'desktop-folder-sync' ? 'animate-spin' : ''}`} />
+                          <span>
+                            {busyAction === 'desktop-folder-sync'
+                              ? bi('جاري الحفظ والدمج...', 'Syncing...')
+                              : bi('مزامنة الآن بضغطة واحدة', 'Sync Now (1 Click)')}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          data-testid="android-drive-import-btn"
+                          disabled={busyAction !== null}
+                          onClick={handleImportSyncSmart}
+                          className="h-10 px-4 rounded-xl bg-card hover:bg-surface border border-line-2 text-foreground text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                        >
+                          <Download className="size-4 shrink-0 text-primary" />
+                          <span>{bi('جلب ملف يدوياً', 'Import File Manually')}</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        data-testid="desktop-pick-sync-folder-btn"
+                        disabled={busyAction !== null}
+                        onClick={handlePickDesktopSyncFolder}
+                        className="h-10 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                      >
+                        <FolderOpen className="size-4 shrink-0" />
+                        <span>{bi('اختيار مجلد Google Drive على الحاسبة', 'Choose Google Drive Folder on PC')}</span>
+                      </button>
+                      <button
+                        type="button"
+                        data-testid="android-drive-share-btn"
+                        disabled={busyAction !== null}
+                        onClick={handleSaveSyncDirectlyToDrive}
+                        className="h-10 px-3.5 rounded-xl bg-card hover:bg-surface border border-line-2 text-foreground text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                      >
+                        <Upload className="size-4 shrink-0 text-primary" />
+                        <span>{bi('حفظ ملف للرفع يدوياً', 'Save File to Upload Manually')}</span>
+                      </button>
+                      <button
+                        type="button"
+                        data-testid="android-drive-import-btn"
+                        disabled={busyAction !== null}
+                        onClick={handleImportSyncSmart}
+                        className="h-10 px-3.5 rounded-xl bg-card hover:bg-surface border border-line-2 text-foreground text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                      >
+                        <Download className="size-4 shrink-0 text-primary" />
+                        <span>{bi('جلب ودمج ملف', 'Import & Merge File')}</span>
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* METHOD 2: Direct Google Account Sign-In (Web | Built-In Native OAuth | Optional Owner Setup) */}
           {!driveAuth.isSignedIn ? (
-            isNativeAppPlatform ? (
+            isNativeAppPlatform && !builtInGoogleOAuth ? (
               <div className="rounded-xl bg-surface/80 border border-line-2 overflow-hidden">
                 <button
                   type="button"
@@ -978,15 +1295,10 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                   className="w-full px-4 py-3 flex items-center justify-between gap-2 text-start text-xs font-bold text-foreground cursor-pointer hover:bg-surface transition-colors"
                 >
                   <span>
-                    {isAndroidApk
-                      ? bi(
-                          'ربط API تلقائي بحساب Google Drive على الأندرويد (اختياري)',
-                          'Automatic Google Drive API OAuth on Android (Optional)'
-                        )
-                      : bi(
-                          'ربط API تلقائي بحساب Google Drive على الحاسبة عبر المتصفح (اختياري)',
-                          'Automatic Google Drive API OAuth on Desktop via Browser (Optional)'
-                        )}
+                    {bi(
+                      'الطريقة الثانية (اختيارية): تسجيل الدخول المباشر بحساب Google',
+                      'Method 2 (Optional): Direct Sign in with Google Account'
+                    )}
                   </span>
                   {showNativeOAuthSetup ? (
                     <ChevronUp className="size-4 text-muted-foreground-1 shrink-0" />
@@ -998,14 +1310,14 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                   <div className="px-4 pb-4 pt-2 border-t border-card-divider space-y-3">
                     <p className="text-xs text-muted-foreground-1 leading-relaxed">
                       {bi(
-                        'للمزامنة التلقائية بضغطة زر عبر متصفح الجهاز الأصلي (بدون خطأ نافذة Firebase)، أدخل معرّف عميل OAuth من نوع Desktop app من Google Cloud Console (يمكن استخدام نفس المعرّف على الحاسبة والأندرويد):',
-                        'For 1-tap automatic Drive API sync via your default system browser, enter a free Google Cloud "Desktop app" OAuth Client ID (works on both Windows Desktop and Android):'
+                        'إذا أردت ربط حساب Google مباشرة حتى تتم المزامنة التلقائية بضغطة زر على الموبايل والحاسبة، أدخل مفتاحي الربط من حسابك المجاني في Google Cloud (تُطلب مرة واحدة فقط، أو استخدم الطريقة الأولى أعلاه بدون أي إعداد):',
+                        'To enable 1-tap automatic cloud sync directly with your Google account, enter your free Google Cloud Desktop credentials below (one-time setup — or use Method 1 above with zero setup):'
                       )}
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <div>
                         <label htmlFor="android-oauth-client-id" className="block text-xs font-bold text-foreground mb-1">
-                          {bi('معرّف العميل (OAuth Client ID)', 'OAuth Client ID')}
+                          {bi('معرّف التطبيق (Client ID)', 'App Client ID')}
                         </label>
                         <input
                           id="android-oauth-client-id"
@@ -1021,7 +1333,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                       </div>
                       <div>
                         <label htmlFor="android-oauth-client-secret" className="block text-xs font-bold text-foreground mb-1">
-                          {bi('السر (Client Secret — اختياري)', 'Client Secret (Optional)')}
+                          {bi('المفتاح السري (Client Secret — مطلوب من Google)', 'Client Secret (Required by Google)')}
                         </label>
                         <input
                           id="android-oauth-client-secret"
@@ -1046,8 +1358,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                       <GoogleBrandMark />
                       <span>
                         {busyAction === 'google-signin'
-                          ? bi('جاري الربط عبر المتصفح...', 'Signing in via browser...')
-                          : 'Sign in with Google'}
+                          ? bi('جاري فتح المتصفح لتسجيل الدخول...', 'Opening browser to sign in...')
+                          : bi('تسجيل الدخول بحساب Google', 'Sign in with Google')}
                       </span>
                     </button>
                   </div>
@@ -1057,12 +1369,14 @@ export const ClinicSyncSettingsTab: React.FC = () => {
               <div className="p-4 rounded-xl bg-surface/80 border border-line-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="text-xs font-extrabold text-foreground">
-                    {bi('ربط حساب Google Drive للعيادة', 'Connect Clinic Google Drive Account')}
+                    {isNativeAppPlatform
+                      ? bi('الطريقة الثانية: ربط مباشر بحساب Google (بضغطة زر)', 'Method 2: Direct Google Account Sync (1 Click)')
+                      : bi('ربط حساب Google Drive للعيادة', 'Connect Clinic Google Drive Account')}
                   </div>
                   <p className="text-xs text-muted-foreground-1 leading-relaxed">
                     {bi(
-                      'يستخدم التطبيق صلاحية drive.file المحدودة فقط (لا يستطيع رؤية أي ملف آخر في حسابك، بل فقط مجلد PhysioRecord-Clinic-Sync الذي ينشئه التطبيق).',
-                      'Uses minimal drive.file scope only—the app can solely access encrypted sync files it creates inside PhysioRecord-Clinic-Sync.'
+                      'سجّل دخولك بحساب Gmail الخاص بالعيادة — لا يستطيع التطبيق رؤية أي صور أو ملفات أخرى في حسابك، بل فقط المجلد الخاص بملفات العيادة.',
+                      'Sign in with your clinic Gmail — the app cannot see any personal photos or files, only the dedicated clinic sync folder.'
                     )}
                   </p>
                 </div>
@@ -1077,7 +1391,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                   <span>
                     {busyAction === 'google-signin'
                       ? bi('جاري الربط...', 'Signing in...')
-                      : 'Sign in with Google'}
+                      : bi('تسجيل الدخول بحساب Google', 'Sign in with Google')}
                   </span>
                 </button>
               </div>
@@ -1106,7 +1420,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                   <RefreshCw className={`size-3.5 ${busyAction === 'drive-sync' ? 'animate-spin' : ''}`} />
                   <span>
                     {busyAction === 'drive-sync'
-                      ? bi('جاري المزامنة المشفّرة...', 'Syncing...')
+                      ? bi('جاري المزامنة...', 'Syncing...')
                       : bi('مزامنة مع Google Drive الآن', 'Sync with Google Drive Now')}
                   </span>
                 </button>
@@ -1122,7 +1436,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             </div>
           )}
 
-          {/* Built-In Step-by-Step Setup, Security Audit & Offline Resilience Guide */}
+          {/* Simple Non-Technical Guide for Clinic Owners */}
           <div className="rounded-2xl border border-card-line bg-surface/50 overflow-hidden">
             <button
               type="button"
@@ -1135,8 +1449,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                 <BookOpen className="size-4 text-primary shrink-0" />
                 <span>
                   {bi(
-                    'دليل تنصيب Google Drive للعيادة + تقييم الأمان وتحسينات العمل أوفلاين',
-                    'Google Drive Setup Guide + Medical Security & Offline Resilience Review'
+                    'شرح مبسّط: كيف أزامن بياناتي بين الموبايل والحاسبة؟',
+                    'Simple Guide: How to Sync Between Phone & PC'
                   )}
                 </span>
               </div>
@@ -1148,34 +1462,28 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             </button>
 
             {isGuideOpen && (
-              <div className="px-4 pb-4 pt-1 space-y-3 text-xs leading-relaxed border-t border-card-divider">
+              <div className="px-4 pb-4 pt-2 space-y-3 text-xs leading-relaxed border-t border-card-divider">
                 <div className="space-y-1.5">
                   <div className="font-extrabold text-primary">
-                    {bi('1) خطوات التنصيب للعيادة (دقيقتان فقط — مجاني للأبد):', '1) Clinic Setup Steps (2 minutes — $0 forever):')}
+                    {bi('خطوات المزامنة اليومية (ببساطة):', 'Simple Daily Sync Steps:')}
                   </div>
                   <ol className="list-decimal list-inside space-y-1 text-muted-foreground-1">
                     <li>
                       {bi(
-                        'أنشئ حساب Gmail واحد خاص بعيادتك (مثلاً: clinic.name.pt@gmail.com) وفعّل عليه التحقق بخطوتين (2FA).',
-                        'Create one dedicated clinic Gmail account and enable 2-Step Verification (2FA).'
+                        'اختر كلمة سر واحدة خاصة بعيادتك (مثلاً 6 أحرف أو أرقام) واكتبها في خانة «كلمة سر المزامنة» على الموبايل وعلى الحاسبة.',
+                        'Pick one private password for your clinic (at least 6 characters) and use the same password on both your phone and PC.'
                       )}
                     </li>
                     <li>
                       {bi(
-                        'من جهاز المدير وكل جهاز معالج: افتح الإعدادات ← المزامنة والعيادة ← اختر «Google Drive المشفّر» واضغط «Sign in with Google».',
-                        'On the manager PC and each therapist device, select "Encrypted Google Drive" and click "Sign in with Google".'
+                        'على الحاسبة: اختَر مجلد Google Drive مرة واحدة، وبعدها كل ما تدوس «مزامنة الآن» يحفظ ملف الحاسبة ويدمج ملفات الموبايل تلقائياً.',
+                        'On PC: pick your Google Drive folder once, then click "Sync Now" anytime to save and merge automatically.'
                       )}
                     </li>
                     <li>
                       {bi(
-                        'اتفق مع فريقك على «كلمة مرور مزامنة مشتركة» قوية (تُكتب على كل جهاز لفتح التشفير) — لا تشاركها خارج العيادة.',
-                        'Set one strong shared Clinic Sync Passphrase across your team devices.'
-                      )}
-                    </li>
-                    <li>
-                      {bi(
-                        'اضغط «مزامنة الآن»: كل جهاز يرفع ملفاً مشفّراً باسمه الخاص (sync_device.ptsync.json) داخل مجلد PhysioRecord-Clinic-Sync ويدمج ملفات زملائه تلقائياً دون أي تعارض أو مسح.',
-                        'Click "Sync Now": each device writes its own encrypted file inside PhysioRecord-Clinic-Sync and merges peers non-destructively.'
+                        'على الموبايل: اضغط «حفظ في Google Drive» واختر مجلد عيادتك لحفظ مرضى الموبايل، واضغط «جلب ودمج» لاختيار ملف الحاسبة وإضافته إلى موبايلك.',
+                        'On Phone: tap "Save to Google Drive" to save your phone’s records, and tap "Import & Merge" to bring in updates from your PC.'
                       )}
                     </li>
                   </ol>
@@ -1183,50 +1491,24 @@ export const ClinicSyncSettingsTab: React.FC = () => {
 
                 <div className="space-y-1.5 pt-2 border-t border-card-divider">
                   <div className="font-extrabold text-emerald-700 dark:text-emerald-400">
-                    {bi('2) هل Google Drive آمن طبياً لحفظ بيانات المرضى؟', '2) Is Google Drive Safe for Clinical Data?')}
+                    {bi('هل بيانات المرضى آمنة في Google Drive؟', 'Are Patient Records Safe on Google Drive?')}
                   </div>
                   <p className="text-muted-foreground-1">
                     {bi(
-                      'نعم بنسبة عالية جداً بفضل 4 طبقات حماية مدمجة في PhysioRecord: (أ) كل البيانات تُشفّر محلياً على جهازك بخوارزمية AES-256-GCM + PBKDF2-SHA256 (310,000 دورة) قبل أن تصل إلى Google — أي حتى Google نفسه لا يستطيع قراءة اسم مريض واحد بدون كلمة مرور المزامنة. (ب) نطلب صلاحية drive.file المحدودة فقط، فلا يمكن للتطبيق لمس أي صور أو ملفات شخصية أخرى في حسابك. (ج) رمز الدخول (OAuth Token) يُحفظ بالذاكرة المؤقتة فقط ويُمسح فوراً عند تسجيل الخروج. (د) السجلات المعتمدة (SOAP Finalized) والملاحق الطبية محمية ضد الكتابة فوقها أو حذفها.',
-                      'Yes—4 built-in layers protect PHI: (a) Client-side AES-256-GCM + PBKDF2-SHA256 (310k iterations) before upload so Google only stores unreadable ciphertext; (b) Minimal drive.file scope; (c) In-memory OAuth tokens only; (d) Finalized SOAP notes and addenda are strictly immutable.'
+                      'نعم تماماً: التطبيق يقفل ملفات المرضى بكلمة سر عيادتك قبل مغادرة جهازك — لا يستطيع Google ولا أي شخص آخر قراءة اسم مريض واحد بدون كلمة السر. كما أن المزامنة تضيف السجلات الجديدة فقط ولا تحذف أي مريض أو جلسة محفوظة لديك.',
+                      'Yes — your files are locked with your clinic password before leaving your device so neither Google nor anyone else can read them. Sync only adds new records and never deletes existing patients or sessions.'
                     )}
                   </p>
                 </div>
 
                 <div className="space-y-1.5 pt-2 border-t border-card-divider">
                   <div className="font-extrabold text-foreground">
-                    {bi('3) تحسينات العمل أوفلاين (عند إطفاء الحاسبة أو انقطاع الكهرباء/الإنترنت):', '3) Offline & Power-Cut Resilience Improvements:')}
-                  </div>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground-1">
-                    <li>
-                      {bi(
-                        'لا حاجة لإبقاء حاسبة العيادة مفتوحة في وضع Google Drive — المعالج يزامن بأي وقت ومن البيت أو العيادة.',
-                        'In Google Drive mode, the main clinic PC never needs to stay powered on.'
-                      )}
-                    </li>
-                    <li>
-                      {bi(
-                        'ملف منفصل لكل جهاز (Per-Device Envelope): يمنع تلف أو استبدال بيانات معالج آخر إذا عملا بنفس الوقت أوفلاين.',
-                        'Per-device encrypted envelopes eliminate file-overwrite conflicts when multiple therapists work offline.'
-                      )}
-                    </li>
-                    <li>
-                      {bi(
-                        'صندوق المزامنة المشفّر المحلي (Offline Outbox): عند انقطاع الإنترنت أو إطفاء خادم الواي فاي، تُحفظ حزمة التغييرات المشفّرة محلياً وتبقى جميع سجلات المعالج كاملة دون حذف أي حرف.',
-                        'Local Encrypted Outbox queues pending envelopes automatically whenever offline or when the LAN PC is powered off.'
-                      )}
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="space-y-1.5 pt-2 border-t border-card-divider">
-                  <div className="font-extrabold text-amber-700 dark:text-amber-400">
-                    {bi('4) إذا ظهرت رسالة «لم تتحقق Google من هذا التطبيق» أثناء التجربة:', '4) If Google Shows "Unverified App" During Preview/Testing:')}
+                    {bi('ماذا لو انقطع الإنترنت أو أُطفئت الحاسبة؟', 'What if Internet Goes Out or the PC is Off?')}
                   </div>
                   <p className="text-muted-foreground-1">
                     {bi(
-                      'هذا أمر طبيعي قبل النشر العام؛ اضغط «إعدادات متقدمة (Advanced)» ثم «الانتقال إلى التطبيق» للمتابعة بأمان على حسابك. وعند نشر التطبيق للعيادات بشكل عام، قم بتقديم شاشة موافقة OAuth للتحقق المجاني من Google مرة واحدة لإزالة هذا التنبيه لجميع المستخدمين.',
-                      'This is normal before public OAuth verification. Click "Advanced" -> "Go to app" to continue during testing. Before public release, submit your Google Cloud OAuth Consent Screen for free verification of the drive.file scope once.'
+                      'أكمل عملك وتسجيل مرضاك بشكل طبيعي تماماً بدون إنترنت؛ كل شيء يُحفظ على جهازك أولاً، وعندما يتوفر الإنترنت لاحقاً قم بالمزامنة لتندمج جميع السجلات معاً بأمان.',
+                      'Keep working completely offline as usual; everything saves safely on your device first, and merges smoothly once you sync later.'
                     )}
                   </p>
                 </div>
@@ -1236,17 +1518,17 @@ export const ClinicSyncSettingsTab: React.FC = () => {
         </div>
       )}
 
-      {/* Always-Available Zero-Network .ptsync File Exchange Fallback */}
+      {/* Always-Available Zero-Network File Exchange Fallback */}
       <div className="p-4 rounded-2xl bg-card border border-card-line space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h4 className="text-xs font-extrabold text-foreground">
-              {bi('تبادل ملف مزامنة مشفّر بدون شبكة (.ptsync.json)', 'Zero-Network Encrypted File Merge (.ptsync.json)')}
+              {bi('نقل ودمج الملفات بدون إنترنت (عبر فلاش أو واتساب)', 'Offline File Transfer & Merge (USB or WhatsApp)')}
             </h4>
             <p className="text-xs text-muted-foreground-1 mt-0.5">
               {bi(
-                'خيار احتياطي يعمل دائماً عبر فلاش USB أو بلوتوث أو واتساب — يدمج سجلات الأجهزة معاً دون حذف أي سجل محلي.',
-                'Always-available fallback via USB, AirDrop, or chat—merges devices safely without deleting local records.'
+                'خيار احتياطي يعمل دائماً — احفظ ملفاً مقفلاً بكلمة سرك وأرسله لجهازك الآخر لدمج المرضى بدون حذف أي سجل.',
+                'Always-available backup option — save a password-locked file and import it on your other device without deleting anything.'
               )}
             </p>
           </div>
@@ -1258,7 +1540,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
               className="h-9 px-3 rounded-xl bg-surface hover:bg-surface/80 border border-line-2 text-xs font-bold text-foreground inline-flex items-center gap-1.5 cursor-pointer"
             >
               <Download className="size-3.5 text-primary" />
-              <span>{bi('تصدير حزمة مزامنة', 'Export Sync File')}</span>
+              <span>{bi('حفظ ملف مزامنة', 'Save Sync File')}</span>
             </button>
             <input
               ref={fileInputRef}
@@ -1270,11 +1552,11 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             <button
               type="button"
               disabled={busyAction !== null}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={handleImportSyncSmart}
               className="h-9 px-3 rounded-xl bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
             >
               <Upload className="size-3.5" />
-              <span>{bi('استيراد ودمج حزمة', 'Import & Merge File')}</span>
+              <span>{bi('جلب ودمج ملف', 'Import & Merge File')}</span>
             </button>
           </div>
         </div>
@@ -1295,12 +1577,12 @@ export const ClinicSyncSettingsTab: React.FC = () => {
               </div>
               <div className="space-y-1">
                 <h4 className="text-sm font-black text-foreground">
-                  {bi('تأكيد المزامنة المشفّرة مع Google Drive', 'Confirm Encrypted Google Drive Sync')}
+                  {bi('تأكيد المزامنة مع Google Drive', 'Confirm Google Drive Sync')}
                 </h4>
                 <p className="text-xs text-muted-foreground-1 leading-relaxed">
                   {bi(
-                    `سيقوم التطبيق الآن بتشفير سجلات هذا الجهاز (AES-256-GCM) ورفع الملف المشفّر sync_${config.deviceId}.ptsync.json إلى مجلد PhysioRecord-Clinic-Sync في حساب ${driveAuth.email || 'Google Drive'}، ثم تنزيل ودمج ملفات الأجهزة الأخرى بدون حذف أي سجل محلي. هل تريد المتابعة؟`,
-                    `PhysioRecord will AES-256-GCM encrypt your local records, upload sync_${config.deviceId}.ptsync.json to PhysioRecord-Clinic-Sync in ${driveAuth.email || 'Google Drive'}, and merge peer envelopes non-destructively. Proceed?`
+                    `سيقوم التطبيق الآن بقفل سجلات هذا الجهاز بكلمة سر المزامنة ورفعها إلى حساب ${driveAuth.email || 'Google Drive'}، ثم جلب ودمج سجلات الأجهزة الأخرى بدون حذف أي مريض. هل تريد المتابعة؟`,
+                    `PhysioRecord will lock this device’s records with your sync password, upload them to ${driveAuth.email || 'Google Drive'}, and merge updates from your other devices without deleting anything. Continue?`
                   )}
                 </p>
               </div>
@@ -1319,7 +1601,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                 onClick={handleConfirmedGoogleDriveSync}
                 className="h-9 px-4 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold cursor-pointer"
               >
-                {bi('نعم، ابدأ المزامنة المشفّرة', 'Yes, Sync Encrypted Now')}
+                {bi('نعم، ابدأ المزامنة الآن', 'Yes, Sync Now')}
               </button>
             </div>
           </div>

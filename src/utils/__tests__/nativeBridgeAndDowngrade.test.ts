@@ -4,6 +4,7 @@ import {
   detectDexieSchemaDowngradeError,
   getAppRuntimeTarget,
   openSafeExternalUrl,
+  openTextFileFromAndroid,
   saveTextFilePortable,
   triggerPlatformPrint,
 } from '../../platform/nativeBridge';
@@ -168,6 +169,12 @@ describe('Multi-Platform Native Bridge, Version Sync & Schema Downgrade Guard', 
       displayName: 'Clinic PT',
       photoURL: '',
     });
+    const openFileFromDeviceMock = vi.fn().mockResolvedValue({
+      opened: true,
+      cancelled: false,
+      filename: 'sync_pc.ptsync.json',
+      content: '{"magic":"PHYSIORECORD_SYNC_V1"}',
+    });
 
     const win = (globalThis as Record<string, unknown>).window as Record<string, unknown>;
     win.localStorage = {
@@ -181,14 +188,20 @@ describe('Multi-Platform Native Bridge, Version Sync & Schema Downgrade Guard', 
       Plugins: {
         PhysioRecordNative: {
           startGoogleDriveOAuth: startGoogleDriveOAuthMock,
+          openFileFromDevice: openFileFromDeviceMock,
         },
       },
     };
 
+    const opened = await openTextFileFromAndroid('*/*');
+    expect(openFileFromDeviceMock).toHaveBeenCalledWith({ mimeType: '*/*' });
+    expect(opened?.opened).toBe(true);
+    expect(opened?.filename).toBe('sync_pc.ptsync.json');
+
     await signOutGoogleDrive();
 
     // Without a Desktop OAuth Client ID, rejects clearly instead of launching broken Firebase popup
-    await expect(signInWithGoogleDrive()).rejects.toThrow(/Firebase|Google Drive/);
+    await expect(signInWithGoogleDrive()).rejects.toThrow(/Google/);
     expect(startGoogleDriveOAuthMock).not.toHaveBeenCalled();
 
     // With a valid Desktop OAuth Client ID, delegates to native PKCE loopback bridge
@@ -239,7 +252,7 @@ describe('Multi-Platform Native Bridge, Version Sync & Schema Downgrade Guard', 
     await signOutGoogleDrive();
 
     // Unconfigured rejects cleanly without Firebase popup
-    await expect(signInWithGoogleDrive()).rejects.toThrow(/Firebase|Google Drive/);
+    await expect(signInWithGoogleDrive()).rejects.toThrow(/Google/);
     expect(startOAuthMock).not.toHaveBeenCalled();
 
     // Configured delegates OAuth AND Drive v3 API requests through Electron Main Process

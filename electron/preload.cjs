@@ -28,4 +28,9 @@ contextBridge.exposeInMainWorld('electronAPI', Object.freeze({
     ipcRenderer.invoke('physiorecord:google-drive-oauth', options),
   googleDriveApiRequest: (options) =>
     ipcRenderer.invoke('physiorecord:google-drive-api', options),
+  pickSyncDirectory: () => ipcRenderer.invoke('physiorecord:pick-sync-dir'),
+  getConfiguredSyncDirectory: () => ipcRenderer.invoke('physiorecord:get-sync-dir'),
+  clearConfiguredSyncDirectory: () => ipcRenderer.invoke('physiorecord:clear-sync-dir'),
+  exchangeSyncFolderEnvelopes: (options) =>
+    ipcRenderer.invoke('physiorecord:sync-folder-exchange', options),
 }));
