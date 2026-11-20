@@ -169,6 +169,27 @@ export interface ElectronDesktopBridge {
     peerEnvelopes?: unknown[];
     error?: string;
   }>;
+  startGoogleDriveOAuth?: (options: {
+    clientId: string;
+    clientSecret?: string;
+    scope?: string;
+  }) => Promise<{
+    accessToken: string;
+    email?: string;
+    displayName?: string;
+    photoURL?: string;
+  }>;
+  googleDriveApiRequest?: (options: {
+    url: string;
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+  }) => Promise<{
+    ok: boolean;
+    status: number;
+    text: string;
+    contentLength?: number;
+  }>;
 }
 
 interface GlobalNativeWindow extends Window {

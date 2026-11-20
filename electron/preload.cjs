@@ -24,4 +24,8 @@ contextBridge.exposeInMainWorld('electronAPI', Object.freeze({
   stopLanSyncHub: () => ipcRenderer.invoke('physiorecord:lan-sync-stop'),
   getLanSyncHubStatus: () => ipcRenderer.invoke('physiorecord:lan-sync-status'),
   lanSyncExchange: (options) => ipcRenderer.invoke('physiorecord:lan-sync-exchange', options),
+  startGoogleDriveOAuth: (options) =>
+    ipcRenderer.invoke('physiorecord:google-drive-oauth', options),
+  googleDriveApiRequest: (options) =>
+    ipcRenderer.invoke('physiorecord:google-drive-api', options),
 }));

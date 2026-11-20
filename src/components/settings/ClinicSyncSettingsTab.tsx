@@ -88,6 +88,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
   const electronBridge = getElectronDesktopBridge();
   const isElectronDesktop = Boolean(electronBridge?.startLanSyncHub);
   const isAndroidApk = isNativeAndroid();
+  const isNativeAppPlatform = isAndroidApk || Boolean(electronBridge);
 
   const [config, setConfig] = useState<ClinicSyncConfig>(() => getClinicSyncConfig());
   const [outbox, setOutbox] = useState<OfflineSyncOutboxRecord | null>(() => getOfflineSyncOutbox());
@@ -366,35 +367,54 @@ export const ClinicSyncSettingsTab: React.FC = () => {
     setFeedback(null);
     try {
       const exported = await exportEncryptedSyncFileString(dek, syncPassphrase);
-      const shared = await shareGeneratedFileOnAndroid({
-        filename: exported.filename,
-        content: exported.content,
-        mimeType: 'application/json',
-        title: bi('حفظ حزمة مزامنة PhysioRecord إلى Google Drive', 'Save PhysioRecord Sync to Google Drive'),
-      });
-      if (!shared) {
-        await saveTextFilePortable({
+      if (isAndroidApk) {
+        const shared = await shareGeneratedFileOnAndroid({
+          filename: exported.filename,
+          content: exported.content,
+          mimeType: 'application/json',
+          title: bi('حفظ حزمة مزامنة PhysioRecord إلى Google Drive', 'Save PhysioRecord Sync to Google Drive'),
+        });
+        if (!shared) {
+          await saveTextFilePortable({
+            filename: exported.filename,
+            content: exported.content,
+            mimeType: 'application/json',
+            description: 'PhysioRecord Encrypted Sync Package',
+            extensions: ['json'],
+          });
+        }
+        setFeedback({
+          kind: 'success',
+          text: bi(
+            `تم تجهيز الحزمة المشفّرة (${exported.filename}). اختر «حفظ في Drive» من قائمة المشاركة لرفعها مباشرة إلى Google Drive.`,
+            `Prepared encrypted package (${exported.filename}). Pick "Save to Drive" to upload directly to Google Drive.`
+          ),
+        });
+      } else {
+        const savedRes = await saveTextFilePortable({
           filename: exported.filename,
           content: exported.content,
           mimeType: 'application/json',
           description: 'PhysioRecord Encrypted Sync Package',
           extensions: ['json'],
         });
+        if (savedRes.confirmedSaved) {
+          setFeedback({
+            kind: 'success',
+            text: bi(
+              `تم حفظ الحزمة المشفّرة (${exported.filename}) بنجاح. إذا حفظتها داخل مجلد Google Drive على الحاسبة ستُرفع تلقائياً، ويمكنك استيرادها من هاتفك بدون حذف أي سجل.`,
+              `Saved encrypted package (${exported.filename}). Save it inside your Google Drive desktop folder (or upload to drive.google.com) to merge on other devices.`
+            ),
+          });
+        }
       }
-      setFeedback({
-        kind: 'success',
-        text: bi(
-          `تم تجهيز الحزمة المشفّرة (${exported.filename}). اختر «حفظ في Drive» من قائمة المشاركة لرفعها مباشرة إلى Google Drive.`,
-          `Prepared encrypted package (${exported.filename}). Pick "Save to Drive" to upload directly to Google Drive.`
-        ),
-      });
     } catch (err) {
       setFeedback({
         kind: 'error',
         text:
           err instanceof Error
             ? err.message
-            : bi('تعذّر إرسال ملف المزامنة إلى Google Drive.', 'Could not share sync file to Google Drive.'),
+            : bi('تعذّر إرسال ملف المزامنة إلى Google Drive.', 'Could not export sync file for Google Drive.'),
       });
     } finally {
       setBusyAction(null);
@@ -890,21 +910,31 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             )}
           </div>
 
-          {/* Android Instant Direct Google Drive App Sync (Zero OAuth / Zero firebaseapp.com error) */}
-          {isAndroidApk && !driveAuth.isSignedIn && (
+          {/* Native App (Android & Windows Desktop) Instant Zero-Setup Google Drive Sync */}
+          {isNativeAppPlatform && !driveAuth.isSignedIn && (
             <div className="p-4 rounded-xl bg-primary/[0.06] border border-primary/25 space-y-3">
               <div className="space-y-1">
                 <div className="text-xs font-extrabold text-foreground">
-                  {bi(
-                    'مزامنة فورية مع تطبيق Google Drive على الأندرويد (جاهزة بدون إعداد)',
-                    'Instant Android Google Drive App Sync (Ready — No Setup Needed)'
-                  )}
+                  {isAndroidApk
+                    ? bi(
+                        'مزامنة فورية مع تطبيق Google Drive على الأندرويد (جاهزة بدون إعداد)',
+                        'Instant Android Google Drive App Sync (Ready — No Setup Needed)'
+                      )
+                    : bi(
+                        'مزامنة فورية مع Google Drive على الحاسبة (جاهزة بدون إعداد)',
+                        'Instant Desktop Google Drive Sync (Ready — No Setup Needed)'
+                      )}
                 </div>
                 <p className="text-xs text-muted-foreground-1 leading-relaxed">
-                  {bi(
-                    'يحفظ التطبيق ملف مزامنة مشفّر (.ptsync.json) مباشرة إلى تطبيق Google Drive على هاتفك، ويدمج ملفات الأجهزة الأخرى من Drive بدون حذف أي سجل.',
-                    'Uploads your AES-256-GCM encrypted sync package directly to the Google Drive app on your phone and merges peer files from Drive non-destructively.'
-                  )}
+                  {isAndroidApk
+                    ? bi(
+                        'يحفظ التطبيق ملف مزامنة مشفّر (.ptsync.json) مباشرة إلى تطبيق Google Drive على هاتفك، ويدمج ملفات الأجهزة الأخرى من Drive بدون حذف أي سجل.',
+                        'Uploads your AES-256-GCM encrypted sync package directly to the Google Drive app on your phone and merges peer files from Drive non-destructively.'
+                      )
+                    : bi(
+                        'يحفظ التطبيق ملف المزامنة المشفّر (.ptsync.json) مباشرة داخل مجلد Google Drive على الحاسبة (أو لرفعه على drive.google.com)، ويدمج ملفات الموبايل والأجهزة الأخرى بدون حذف أي سجل.',
+                        'Saves your AES-256-GCM encrypted sync package (.ptsync.json) directly into your Google Drive desktop folder (or upload to drive.google.com) and merges peer files non-destructively.'
+                      )}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -919,7 +949,9 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                   <span>
                     {busyAction === 'android-drive-share'
                       ? bi('جاري التشفير والتجهيز...', 'Encrypting...')
-                      : bi('رفع / حفظ إلى Google Drive', 'Save / Share to Google Drive')}
+                      : isAndroidApk
+                        ? bi('رفع / حفظ إلى Google Drive', 'Save / Share to Google Drive')
+                        : bi('حفظ ملف المزامنة إلى Google Drive', 'Save Sync File to Google Drive')}
                   </span>
                 </button>
                 <button
@@ -936,9 +968,9 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             </div>
           )}
 
-          {/* Official Google Sign-In Control (Web Firebase Popup | Android Native PKCE Loopback) */}
+          {/* Official Google Sign-In Control (Web Firebase Popup | Android & Windows Native PKCE Loopback) */}
           {!driveAuth.isSignedIn ? (
-            isAndroidApk ? (
+            isNativeAppPlatform ? (
               <div className="rounded-xl bg-surface/80 border border-line-2 overflow-hidden">
                 <button
                   type="button"
@@ -946,10 +978,15 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                   className="w-full px-4 py-3 flex items-center justify-between gap-2 text-start text-xs font-bold text-foreground cursor-pointer hover:bg-surface transition-colors"
                 >
                   <span>
-                    {bi(
-                      'ربط API تلقائي بحساب Google Drive على الأندرويد (اختياري)',
-                      'Automatic Google Drive API OAuth on Android (Optional)'
-                    )}
+                    {isAndroidApk
+                      ? bi(
+                          'ربط API تلقائي بحساب Google Drive على الأندرويد (اختياري)',
+                          'Automatic Google Drive API OAuth on Android (Optional)'
+                        )
+                      : bi(
+                          'ربط API تلقائي بحساب Google Drive على الحاسبة عبر المتصفح (اختياري)',
+                          'Automatic Google Drive API OAuth on Desktop via Browser (Optional)'
+                        )}
                   </span>
                   {showNativeOAuthSetup ? (
                     <ChevronUp className="size-4 text-muted-foreground-1 shrink-0" />
@@ -961,8 +998,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                   <div className="px-4 pb-4 pt-2 border-t border-card-divider space-y-3">
                     <p className="text-xs text-muted-foreground-1 leading-relaxed">
                       {bi(
-                        'للمزامنة التلقائية بضغطة زر داخل تطبيق الأندرويد عبر متصفح Chrome الأصلي، أدخل معرّف عميل OAuth من نوع Desktop app من Google Cloud Console:',
-                        'For 1-tap automatic Drive API sync via system Chrome on Android, enter a free Google Cloud "Desktop app" OAuth Client ID:'
+                        'للمزامنة التلقائية بضغطة زر عبر متصفح الجهاز الأصلي (بدون خطأ نافذة Firebase)، أدخل معرّف عميل OAuth من نوع Desktop app من Google Cloud Console (يمكن استخدام نفس المعرّف على الحاسبة والأندرويد):',
+                        'For 1-tap automatic Drive API sync via your default system browser, enter a free Google Cloud "Desktop app" OAuth Client ID (works on both Windows Desktop and Android):'
                       )}
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
