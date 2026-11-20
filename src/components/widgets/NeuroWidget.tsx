@@ -8,7 +8,7 @@
 // =======================================================================
 
 import React, { useMemo, useState } from 'react';
-import { CheckCircle2, ChevronDown, ChevronUp, Info, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, ChevronDown, ChevronUp, ShieldAlert } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import type {
   AsiaSacralFinding,
@@ -24,6 +24,7 @@ import { AsiaClassificationCard } from '../toolkit/AsiaClassificationCard';
 import { classifyAsiaIsncsci2019 } from '../../utils/asiaIsncsciClassifier';
 import {
   ASIA_ISNCSCI_KEY_MUSCLES,
+  ASIA_ISNCSCI_NON_KEY_MUSCLES,
   CLINICAL_PT_MYOTOMES,
   computeAsiaMotorTotals,
   findMyotomeEntry,
@@ -54,6 +55,7 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
   const [activeTab, setActiveTab] = useState<'dermatomes' | 'myotomes' | 'reflexes'>('dermatomes');
   const [myotomeRegionFilter, setMyotomeRegionFilter] = useState<'all' | 'cervical' | 'lumbar_sacral'>('all');
   const [expandedRoots, setExpandedRoots] = useState<Record<string, boolean>>({});
+  const [showAsiaNonKeyMuscles, setShowAsiaNonKeyMuscles] = useState(false);
 
   const dermatomes = value?.dermatomes || [];
   const sensoryTable = value?.sensoryTable || {};
@@ -429,20 +431,13 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
 
     return (
       <div key={km.testId} className="p-3 rounded-2xl bg-surface/65 space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-start gap-2 min-w-0">
-            <span className="min-w-[36px] h-6 px-1.5 rounded-md font-bold font-mono text-xs flex items-center justify-center bg-primary/10 text-primary shrink-0 mt-0.5">
-              {km.rootLevel}
-            </span>
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-foreground">
-                {bi(km.functionAr, km.functionEn, km.functionCkb)}
-              </div>
-              <div className="text-xs text-muted-foreground-1 leading-snug">
-                {bi(km.musclesAr, km.musclesEn)}
-              </div>
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="min-w-[36px] h-6 px-1.5 rounded-md font-bold font-mono text-xs flex items-center justify-center bg-primary/10 text-primary shrink-0">
+            {km.rootLevel}
+          </span>
+          <span className="text-xs font-bold text-foreground">
+            {bi(km.functionAr, km.functionEn, km.functionCkb)}
+          </span>
         </div>
 
         {renderGradeRow(rGrade, lGrade, (side, grade) =>
@@ -466,8 +461,7 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
   };
 
   const getClinicalTestGrades = (root: string, test: ClinicalMyotomeMovementTest, isPrimary: boolean) => {
-    // Allow legacy root fallback for primary movements whose root matches legacy C5-S1 (note: legacy C5 was Shoulder Abduction)
-    const allowLegacy = isPrimary && (root === 'C5' || root === 'C6' || root === 'C7' || root === 'C8' || root === 'T1' || root === 'L3' || root === 'L4' || root === 'L5' || root === 'S1');
+    const allowLegacy = isPrimary && (root === 'C6' || root === 'C7' || root === 'C8' || root === 'T1' || root === 'L3' || root === 'L4' || root === 'L5' || root === 'S1');
     const found = findMyotomeEntry(myotomes, test.testId, root, test.asiaTestId, allowLegacy);
     return {
       rGrade: found?.rightGrade ?? null,
@@ -478,7 +472,7 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
   return (
     <div className="space-y-4">
       {/* Sub-tab switcher */}
-      <div className="rounded-2xl bg-surface/60 p-1.5 space-y-1.5 overflow-hidden">
+      <div className="rounded-2xl bg-surface/60 p-1.5 overflow-hidden">
         <div className="pr-hscroll overflow-x-auto flex items-center gap-1 whitespace-nowrap pb-1 pt-0.5 px-0.5">
           <button
             type="button"
@@ -523,19 +517,9 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
             {bi('المنعكسات الوترية (DTR) و UMN', 'Reflexes (DTR) & UMN', 'پەرچەکردارەکان (DTR) و UMN')}
           </button>
         </div>
-
-        <div className="text-xs text-primary font-semibold px-2">
-          {activeTab === 'dermatomes'
-            ? bi('معيار ASIA / ISNCSCI (2019) الحسي ثنائي الجانب مع نقاط الفحص التشريحية', 'ASIA / ISNCSCI (2019) bilateral sensory mapping & landmarks', 'پێوانەی هەستەوەری ASIA (2019)')
-            : activeTab === 'myotomes'
-              ? myotomeMode === 'asia'
-                ? bi('معيار ASIA / ISNCSCI (2019) — العضلات العشر الأساسية (C5–T1 · L2–S1) وحساب UEMS / LEMS', 'ASIA / ISNCSCI (2019) — 10 Key Muscles (C5–T1, L2–S1) with UEMS/LEMS scoring')
-                : bi('الفحص السريري الشامل للمايوتوم (C1–S2) — الحركة الأساسية مع الحركات الثانوية للتفريق العصبي', 'Comprehensive PT myotome screening (C1–S2) — primary + secondary differential tests')
-              : bi('2+ طبيعي · اضغط مرة أخرى لإلغاء الاختيار · يتضمن علامات العصبون المحرك العلوي (UMN)', '2+ is normal · tap again to clear · includes Upper Motor Neuron (UMN) signs')}
-        </div>
       </div>
 
-      {/* Automatic ASIA / ISNCSCI (2019) NLI & AIS A–E Classification Summary */}
+      {/* Automatic ASIA / ISNCSCI NLI & AIS A–E Classification Summary */}
       {(activeTab === 'dermatomes' || activeTab === 'myotomes') &&
         (asiaClassification.hasAnyAsiaData || (activeTab === 'myotomes' && myotomeMode === 'asia')) && (
           <AsiaClassificationCard
@@ -551,7 +535,7 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
           />
         )}
 
-      {/* Tab 1: Table-First ASIA / ISNCSCI (2019) Sensory Screening */}
+      {/* Tab 1: Table-First ASIA / ISNCSCI Sensory Screening */}
       {activeTab === 'dermatomes' && (
         <AsiaSensoryTable
           dermatomes={dermatomes}
@@ -563,10 +547,10 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
         />
       )}
 
-      {/* Tab 2: Dual-Protocol Myotomes (Comprehensive Clinical PT C1–S2 + Strict ASIA ISNCSCI 2019) */}
+      {/* Tab 2: Dual-Protocol Myotomes (Comprehensive Clinical PT C1–S2 + Strict ASIA ISNCSCI) */}
       {activeTab === 'myotomes' && (
         <div className="space-y-3">
-          {/* Protocol Toggle: Clinical PT vs ASIA ISNCSCI 2019 */}
+          {/* Protocol Toggle: Clinical PT vs ASIA ISNCSCI */}
           <div className="flex flex-wrap items-center justify-between gap-2 p-2 rounded-2xl bg-surface/65">
             <div className="inline-flex items-center gap-1 bg-card p-1 rounded-xl">
               <button
@@ -621,143 +605,110 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
 
           {/* MODE A: Comprehensive Clinical PT Myotome Screening (C1–S2, Primary + Secondary Movements) */}
           {myotomeMode === 'clinical' && (
-            <div className="space-y-2.5">
-              <div className="flex items-start gap-2 px-3 py-2 rounded-2xl bg-surface/55 text-xs text-muted-foreground-1">
-                <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <p className="leading-relaxed">
-                  {bi(
-                    'كل جذر يعرض الحركة الأساسية للفحص السريع، ويمكنك فتح «الحركات الثانوية» لتقييم عضلات إضافية لنفس الجذر عبر أعصاب محيطية مختلفة (مثل تبعيد الكتف + ثني المرفق في C5، أو بسط الإبهام + تبعيد الورك في L5) للتفريق بين اعتلال الجذر وانضغاط العصب المحيطي.',
-                    'Each root lists its primary screening movement plus expandable secondary tests across distinct peripheral nerves (e.g., C5 Deltoid + Biceps, L5 EHL + Gluteus medius) to differentiate radiculopathy from peripheral nerve entrapment.'
-                  )}
-                </p>
-              </div>
+            <div className="grid grid-cols-1 gap-2.5">
+              {filteredClinicalMyotomes.map((group) => {
+                const primaryGrades = getClinicalTestGrades(group.root, group.primaryTest, true);
+                const isExpanded = Boolean(expandedRoots[group.root]);
+                const recordedSecondaryCount = group.secondaryTests.filter((st) => {
+                  const g = getClinicalTestGrades(group.root, st, false);
+                  return g.rGrade !== null || g.lGrade !== null;
+                }).length;
 
-              <div className="grid grid-cols-1 gap-2.5">
-                {filteredClinicalMyotomes.map((group) => {
-                  const primaryGrades = getClinicalTestGrades(group.root, group.primaryTest, true);
-                  const isExpanded = Boolean(expandedRoots[group.root]);
-                  const recordedSecondaryCount = group.secondaryTests.filter((st) => {
-                    const g = getClinicalTestGrades(group.root, st, false);
-                    return g.rGrade !== null || g.lGrade !== null;
-                  }).length;
-
-                  return (
-                    <div key={group.root} className="p-3 rounded-2xl bg-surface/65 space-y-2.5">
-                      {/* Primary Movement Header */}
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div className="flex items-start gap-2 min-w-0">
-                          <span className="min-w-[48px] h-6 px-1.5 rounded-md font-bold font-mono text-xs flex items-center justify-center bg-primary/10 text-primary shrink-0 mt-0.5">
-                            {group.root}
-                          </span>
-                          <div className="min-w-0">
-                            <div className="text-xs font-bold text-foreground">
-                              {bi(group.primaryTest.movementAr, group.primaryTest.movementEn)}
-                            </div>
-                            <div className="text-xs text-muted-foreground-1 leading-snug">
-                              {bi(group.primaryTest.muscleAr, group.primaryTest.muscleEn)} ·{' '}
-                              <span className="text-foreground/80">
-                                {bi(group.primaryTest.peripheralNerveAr, group.primaryTest.peripheralNerveEn)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {group.secondaryTests.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setExpandedRoots((prev) => ({ ...prev, [group.root]: !prev[group.root] }))
-                            }
-                            className={`compact-btn h-7 px-2.5 rounded-xl text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer shrink-0 ${
-                              isExpanded || recordedSecondaryCount > 0
-                                ? 'bg-primary/12 text-primary'
-                                : 'bg-card text-muted-foreground-1 hover:text-foreground'
-                            }`}
-                          >
-                            <span>
-                              {bi(
-                                `حركات ثانوية (${group.secondaryTests.length})${recordedSecondaryCount > 0 ? ` · ${recordedSecondaryCount} مسجّل` : ''}`,
-                                `Secondary (${group.secondaryTests.length})${recordedSecondaryCount > 0 ? ` · ${recordedSecondaryCount} scored` : ''}`
-                              )}
-                            </span>
-                            {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                          </button>
-                        )}
+                return (
+                  <div key={group.root} className="p-3 rounded-2xl bg-surface/65 space-y-2">
+                    {/* Primary Movement Header */}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="min-w-[48px] h-6 px-1.5 rounded-md font-bold font-mono text-xs flex items-center justify-center bg-primary/10 text-primary shrink-0">
+                          {group.root}
+                        </span>
+                        <span className="text-xs font-bold text-foreground">
+                          {bi(group.primaryTest.movementAr, group.primaryTest.movementEn)}
+                        </span>
                       </div>
 
-                      {/* Primary R/L Grades */}
-                      {renderGradeRow(primaryGrades.rGrade, primaryGrades.lGrade, (side, grade) =>
-                        handleUpdateMyotomeTest({
-                          testId: group.primaryTest.testId,
-                          linkedTestId: group.primaryTest.asiaTestId,
-                          rootLevel: group.root,
-                          protocol: 'clinical',
-                          isPrimary: true,
-                          movementLabelEn: group.primaryTest.movementEn,
-                          movementLabelAr: group.primaryTest.movementAr,
-                          muscleLabelEn: group.primaryTest.muscleEn,
-                          muscleLabelAr: group.primaryTest.muscleAr,
-                          allowLegacyFallback: true,
-                          side,
-                          grade,
-                        })
-                      )}
-
-                      {/* Expandable Secondary / Differential Movements */}
-                      {isExpanded && group.secondaryTests.length > 0 && (
-                        <div className="pt-2 border-t border-black/[0.05] dark:border-white/[0.06] space-y-2">
-                          {group.secondaryTests.map((sec) => {
-                            const secGrades = getClinicalTestGrades(group.root, sec, false);
-                            return (
-                              <div key={sec.testId} className="p-2.5 rounded-xl bg-card/70 space-y-2">
-                                <div className="min-w-0">
-                                  <div className="text-xs font-bold text-foreground">
-                                    {bi(sec.movementAr, sec.movementEn)}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground-1">
-                                    {bi(sec.muscleAr, sec.muscleEn)} ·{' '}
-                                    <span className="text-foreground/80">
-                                      {bi(sec.peripheralNerveAr, sec.peripheralNerveEn)}
-                                    </span>
-                                  </div>
-                                </div>
-                                {renderGradeRow(secGrades.rGrade, secGrades.lGrade, (side, grade) =>
-                                  handleUpdateMyotomeTest({
-                                    testId: sec.testId,
-                                    linkedTestId: sec.asiaTestId,
-                                    rootLevel: group.root,
-                                    protocol: 'clinical',
-                                    isPrimary: false,
-                                    movementLabelEn: sec.movementEn,
-                                    movementLabelAr: sec.movementAr,
-                                    muscleLabelEn: sec.muscleEn,
-                                    muscleLabelAr: sec.muscleAr,
-                                    allowLegacyFallback: false,
-                                    side,
-                                    grade,
-                                  })
-                                )}
-                              </div>
-                            );
-                          })}
-
-                          <p className="text-xs text-muted-foreground-1 px-1 leading-relaxed">
-                            <strong className="text-primary">{bi('ملاحظة سريرية: ', 'Clinical pearl: ')}</strong>
-                            {bi(group.clinicalPearlAr, group.clinicalPearlEn)}
-                          </p>
-                        </div>
+                      {group.secondaryTests.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedRoots((prev) => ({ ...prev, [group.root]: !prev[group.root] }))
+                          }
+                          className={`compact-btn h-7 px-2.5 rounded-xl text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer shrink-0 ${
+                            isExpanded || recordedSecondaryCount > 0
+                              ? 'bg-primary/12 text-primary'
+                              : 'bg-card text-muted-foreground-1 hover:text-foreground'
+                          }`}
+                        >
+                          <span>
+                            {bi(
+                              `عضلات غير أساسية (${group.secondaryTests.length})${recordedSecondaryCount > 0 ? ` · ${recordedSecondaryCount}` : ''}`,
+                              `Non-Key (${group.secondaryTests.length})${recordedSecondaryCount > 0 ? ` · ${recordedSecondaryCount}` : ''}`
+                            )}
+                          </span>
+                          {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        </button>
                       )}
                     </div>
-                  );
-                })}
-              </div>
+
+                    {/* Primary R/L Grades */}
+                    {renderGradeRow(primaryGrades.rGrade, primaryGrades.lGrade, (side, grade) =>
+                      handleUpdateMyotomeTest({
+                        testId: group.primaryTest.testId,
+                        linkedTestId: group.primaryTest.asiaTestId,
+                        rootLevel: group.root,
+                        protocol: 'clinical',
+                        isPrimary: true,
+                        movementLabelEn: group.primaryTest.movementEn,
+                        movementLabelAr: group.primaryTest.movementAr,
+                        muscleLabelEn: group.primaryTest.muscleEn,
+                        muscleLabelAr: group.primaryTest.muscleAr,
+                        allowLegacyFallback: true,
+                        side,
+                        grade,
+                      })
+                    )}
+
+                    {/* Expandable Secondary / Non-Key Movements */}
+                    {isExpanded && group.secondaryTests.length > 0 && (
+                      <div className="pt-2 border-t border-black/[0.05] dark:border-white/[0.06] space-y-2">
+                        {group.secondaryTests.map((sec) => {
+                          const secGrades = getClinicalTestGrades(group.root, sec, false);
+                          return (
+                            <div key={sec.testId} className="p-2.5 rounded-xl bg-card/70 space-y-2">
+                              <div className="text-xs font-bold text-foreground">
+                                {bi(sec.movementAr, sec.movementEn)}
+                              </div>
+                              {renderGradeRow(secGrades.rGrade, secGrades.lGrade, (side, grade) =>
+                                handleUpdateMyotomeTest({
+                                  testId: sec.testId,
+                                  linkedTestId: sec.asiaTestId,
+                                  rootLevel: group.root,
+                                  protocol: 'clinical',
+                                  isPrimary: false,
+                                  movementLabelEn: sec.movementEn,
+                                  movementLabelAr: sec.movementAr,
+                                  muscleLabelEn: sec.muscleEn,
+                                  muscleLabelAr: sec.muscleAr,
+                                  allowLegacyFallback: false,
+                                  side,
+                                  grade,
+                                })
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
-          {/* MODE B: Strict Official ASIA / ISNCSCI (2019 Revised) — 10 Key Muscles + UEMS/LEMS + VAC */}
+          {/* MODE B: Official ASIA / ISNCSCI (9th Edition 2026) — 10 Key Muscles + Non-Key Muscles + UEMS/LEMS + VAC */}
           {myotomeMode === 'asia' && (
             <div className="space-y-3">
-              {/* ASIA Motor Score Strip */}
+              {/* ASIA Motor Score Strip (UER + UEL = UEMS & LER + LEL = LEMS) */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <div className="p-2.5 rounded-2xl bg-surface/65 flex items-center justify-between gap-2 text-xs">
                   <span className="font-bold text-foreground">
@@ -766,7 +717,7 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
                   <span className="font-mono font-bold text-primary tabular-nums" dir="ltr">
                     {asiaMotorTotals.rightUEMSRecorded === 0 && asiaMotorTotals.leftUEMSRecorded === 0
                       ? '—/50'
-                      : `R ${asiaMotorTotals.rightUEMSRecorded > 0 ? asiaMotorTotals.rightUEMS : '—'}/25 · L ${asiaMotorTotals.leftUEMSRecorded > 0 ? asiaMotorTotals.leftUEMS : '—'}/25 (${asiaMotorTotals.totalUEMS}/50${asiaMotorTotals.rightUEMSHasNT || asiaMotorTotals.leftUEMSHasNT ? ' NT' : ''})`}
+                      : `UER ${asiaMotorTotals.rightUEMSRecorded > 0 ? asiaMotorTotals.rightUEMS : '—'}/25 · UEL ${asiaMotorTotals.leftUEMSRecorded > 0 ? asiaMotorTotals.leftUEMS : '—'}/25 (${asiaMotorTotals.totalUEMS}/50${asiaMotorTotals.rightUEMSHasNT || asiaMotorTotals.leftUEMSHasNT ? ' NT' : ''})`}
                   </span>
                 </div>
                 <div className="p-2.5 rounded-2xl bg-surface/65 flex items-center justify-between gap-2 text-xs">
@@ -776,7 +727,7 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
                   <span className="font-mono font-bold text-primary tabular-nums" dir="ltr">
                     {asiaMotorTotals.rightLEMSRecorded === 0 && asiaMotorTotals.leftLEMSRecorded === 0
                       ? '—/50'
-                      : `R ${asiaMotorTotals.rightLEMSRecorded > 0 ? asiaMotorTotals.rightLEMS : '—'}/25 · L ${asiaMotorTotals.leftLEMSRecorded > 0 ? asiaMotorTotals.leftLEMS : '—'}/25 (${asiaMotorTotals.totalLEMS}/50${asiaMotorTotals.rightLEMSHasNT || asiaMotorTotals.leftLEMSHasNT ? ' NT' : ''})`}
+                      : `LER ${asiaMotorTotals.rightLEMSRecorded > 0 ? asiaMotorTotals.rightLEMS : '—'}/25 · LEL ${asiaMotorTotals.leftLEMSRecorded > 0 ? asiaMotorTotals.leftLEMS : '—'}/25 (${asiaMotorTotals.totalLEMS}/50${asiaMotorTotals.rightLEMSHasNT || asiaMotorTotals.leftLEMSHasNT ? ' NT' : ''})`}
                   </span>
                 </div>
                 <div className="p-2.5 rounded-2xl bg-primary/10 flex items-center justify-between gap-2 text-xs">
@@ -789,16 +740,6 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
                       : `${asiaMotorTotals.totalMotor}/100${asiaMotorTotals.anyNT ? ' (NT)' : ''}`}
                   </span>
                 </div>
-              </div>
-
-              <div className="flex items-start gap-2 px-3 py-2 rounded-2xl bg-surface/55 text-xs text-muted-foreground-1">
-                <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <p className="leading-relaxed">
-                  {bi(
-                    'وفق معيار ASIA / ISNCSCI (2019) الرسمي، يعتمد التقييم الحركي حصراً على 10 عضلات أساسية معيارية (C5 = ثني المرفق، C6 = بسط الرسغ، C7 = بسط المرفق، C8 = ثني السلامى البعيدة للإصبع الأوسط، T1 = تبعيد الخنصر؛ و L2–S1 للطرف السفلي). لإضافة فحوصات أخرى كـ تبعيد الكتف أو تبعيد الورك استخدم وضع «الفحص السريري الشامل».',
-                    'Per official ASIA / ISNCSCI (2019 Revised) standards, motor scoring uses strictly 10 standardized key muscles (C5 = Elbow flexors, C6 = Wrist extensors, C7 = Elbow extensors, C8 = Finger DIP flexors, T1 = Little finger abductors; L2–S1 lower extremity). Switch to Clinical PT Screening for additional roots and non-key muscles.'
-                  )}
-                </p>
               </div>
 
               {/* Upper Extremity (C5–T1) */}
@@ -833,30 +774,80 @@ export const NeuroWidget: React.FC<NeuroWidgetProps> = ({
                 </div>
               </div>
 
-              {/* Voluntary Anal Contraction (VAC) — Official ASIA Motor Sacral Sparing */}
-              <div className="p-3 rounded-2xl bg-surface/65 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                <div className="flex items-start gap-2">
-                  <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                  <div>
-                    <div className="text-xs font-bold text-foreground">
-                      {bi(
-                        'الانقباض الإرادي للمصرة الشرجية — VAC (ASIA Motor Sacral Sparing)',
-                        'Voluntary Anal Contraction — VAC (ASIA Motor Sacral Sparing)'
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground-1 mt-0.5">
-                      {bi(
-                        'عنصر حاسم في ISNCSCI لتحديد الإبقاء الحركي العجزي (Motor Incomplete vs. Complete SCI).',
-                        'Required in ISNCSCI to establish motor sacral sparing (complete vs. motor-incomplete SCI).'
-                      )}
-                    </p>
+              {/* Official ISNCSCI Non-Key Muscles (C5–S1) for AIS B vs C/D differentiation */}
+              <div className="rounded-2xl bg-surface/65 p-3 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAsiaNonKeyMuscles((prev) => !prev)}
+                  className="w-full flex items-center justify-between gap-2 text-xs font-bold text-foreground cursor-pointer"
+                >
+                  <span>
+                    {bi(
+                      'العضلات غير الأساسية في ISNCSCI (C5–S1 — للتفريق بين AIS B و AIS C/D)',
+                      'ISNCSCI Non-Key Muscles (C5–S1 — Differentiate AIS B vs. C/D)'
+                    )}
+                  </span>
+                  {showAsiaNonKeyMuscles ? (
+                    <ChevronUp className="w-4 h-4 text-muted-foreground-1" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground-1" />
+                  )}
+                </button>
+
+                {showAsiaNonKeyMuscles && (
+                  <div className="pt-2 border-t border-black/[0.05] dark:border-white/[0.06] grid grid-cols-1 gap-2">
+                    {ASIA_ISNCSCI_NON_KEY_MUSCLES.map((nk) => {
+                      const found = findMyotomeEntry(myotomes, nk.testId, nk.rootLevel, undefined, false);
+                      const rGrade = found?.rightGrade ?? null;
+                      const lGrade = found?.leftGrade ?? null;
+                      return (
+                        <div key={nk.testId} className="p-2.5 rounded-xl bg-card/75 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="min-w-[36px] h-6 px-1.5 rounded-md font-bold font-mono text-xs flex items-center justify-center bg-primary/10 text-primary shrink-0">
+                              {nk.rootLevel}
+                            </span>
+                            <span className="text-xs font-bold text-foreground">
+                              {bi(nk.movementAr, nk.movementEn)}
+                            </span>
+                          </div>
+                          {renderGradeRow(rGrade, lGrade, (side, grade) =>
+                            handleUpdateMyotomeTest({
+                              testId: nk.testId,
+                              rootLevel: nk.rootLevel,
+                              protocol: 'asia',
+                              isPrimary: false,
+                              movementLabelEn: nk.movementEn,
+                              movementLabelAr: nk.movementAr,
+                              muscleLabelEn: nk.movementEn,
+                              muscleLabelAr: nk.movementAr,
+                              allowLegacyFallback: false,
+                              side,
+                              grade,
+                            })
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
+                )}
+              </div>
+
+              {/* Voluntary Anal Contraction (VAC) — Official ASIA Motor Sacral Sparing */}
+              <div className="p-3 rounded-2xl bg-surface/65 flex flex-wrap items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span className="text-xs font-bold text-foreground">
+                    {bi(
+                      'الانقباض الإرادي للمصرة الشرجية (VAC)',
+                      'Voluntary Anal Contraction (VAC)'
+                    )}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {(
                     [
-                      { value: 'yes', ar: 'نعم (موجود)', en: 'Yes' },
-                      { value: 'no', ar: 'لا (غائب)', en: 'No' },
+                      { value: 'yes', ar: 'نعم (Yes)', en: 'Yes' },
+                      { value: 'no', ar: 'لا (No)', en: 'No' },
                       { value: 'NT', ar: 'NT', en: 'NT' },
                     ] as const
                   ).map((opt) => {

@@ -31,7 +31,13 @@ export function computeAndroidVersionCode(semverStr) {
   const clean = normalizeSemver(semverStr);
   const parts = clean.split('.').map((n) => parseInt(n, 10));
   const [major, minor, patch] = parts;
-  return major * 10000 + minor * 100 + patch;
+  const rawCode = major * 10000 + minor * 100 + patch;
+  // Prevent INSTALL_FAILED_VERSION_DOWNGRADE ("Package appears to be invalid") on phones
+  // that already installed v1.1.0 (versionCode 10100) if a user tags a release as 0.x.y.
+  if (major === 0) {
+    return 10100 + minor * 100 + patch;
+  }
+  return rawCode;
 }
 
 function parseCliVersionArg(argv = process.argv.slice(2)) {

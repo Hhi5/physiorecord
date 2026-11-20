@@ -30,6 +30,12 @@ describe('Multi-Platform Native Bridge, Version Sync & Schema Downgrade Guard', 
   it('computes deterministic monotonic Android versionCode from semver', () => {
     expect(computeAndroidVersionCode('1.0.0')).toBe(10000);
     expect(computeAndroidVersionCode('1.0.1')).toBe(10001);
+    expect(computeAndroidVersionCode('1.1.0')).toBe(10100);
+    expect(computeAndroidVersionCode('0.0.2')).toBe(10102);
+    expect(computeAndroidVersionCode('0.0.3')).toBe(10103);
+    expect(computeAndroidVersionCode('0.0.2')).toBeGreaterThan(
+      computeAndroidVersionCode('1.1.0')
+    );
     expect(computeAndroidVersionCode('1.2.3')).toBe(10203);
     expect(computeAndroidVersionCode('2.10.5')).toBe(21005);
     expect(computeAndroidVersionCode('1.2.0')).toBeGreaterThan(

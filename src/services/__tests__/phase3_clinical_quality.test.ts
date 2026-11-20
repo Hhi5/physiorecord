@@ -266,10 +266,13 @@ describe('Phase 3 — Clinical Quality, Safety & Data Integrity', () => {
       'C1-C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'T1', 'L1-L2', 'L3', 'L4', 'L5', 'S1', 'S2',
     ]);
     const c5Group = CLINICAL_PT_MYOTOMES.find((g) => g.root === 'C5')!;
-    expect(c5Group.primaryTest.movementEn).toContain('Shoulder abduction');
-    expect(c5Group.secondaryTests.some((s) => s.asiaTestId === 'asia:C5')).toBe(true);
+    expect(c5Group.primaryTest.movementEn).toContain('Elbow flexors');
+    expect(c5Group.primaryTest.asiaTestId).toBe('asia:C5');
+    expect(c5Group.secondaryTests.some((s) => s.movementEn.includes('Shoulder: Flexion, extension, abduction'))).toBe(true);
+    const l4Group = CLINICAL_PT_MYOTOMES.find((g) => g.root === 'L4')!;
+    expect(l4Group.secondaryTests.some((s) => s.movementEn.includes('Hip: Extension, abduction, internal rotation'))).toBe(true);
     const l5Group = CLINICAL_PT_MYOTOMES.find((g) => g.root === 'L5')!;
-    expect(l5Group.secondaryTests.some((s) => s.muscleEn.includes('Gluteus medius'))).toBe(true);
+    expect(l5Group.secondaryTests.some((s) => s.movementEn.includes('Hallux and Toe: DIP and PIP flexion and abduction'))).toBe(true);
 
     // Motor scoring math (including linked Clinical PT -> ASIA C5 cross-mapping & NT flag)
     const motorTotals = computeAsiaMotorTotals([

@@ -230,7 +230,10 @@ export async function getAndroidAppVersionInfo(): Promise<{
 }
 
 /**
- * Deterministic monotonic Android versionCode from semver (major * 10000 + minor * 100 + patch).
+ * Deterministic monotonic Android versionCode from semver.
+ * Note: Because v1.0.0 (10000) and v1.1.0 (10100) were already published,
+ * any 0.x.y tag is offset above 10100 so Android never rejects it with
+ * INSTALL_FAILED_VERSION_DOWNGRADE ("Package appears to be invalid").
  */
 export function computeAndroidVersionCode(semver: string): number {
   const clean = String(semver || '1.0.0').trim().split('-')[0];
@@ -238,6 +241,9 @@ export function computeAndroidVersionCode(semver: string): number {
   const major = Number.isFinite(parts[0]) ? parts[0] : 1;
   const minor = Number.isFinite(parts[1]) ? parts[1] : 0;
   const patch = Number.isFinite(parts[2]) ? parts[2] : 0;
+  if (major === 0) {
+    return 10100 + minor * 100 + patch;
+  }
   return major * 10000 + minor * 100 + patch;
 }
 

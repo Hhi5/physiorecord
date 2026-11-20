@@ -759,8 +759,9 @@ export function classifyAsiaIsncsci2019(
 
     // Check Motor Incomplete criteria:
     // (1) VAC === 'yes' OR
-    // (2) Sensory sacral sparing present AND motor function spared > 3 levels below motor level on EITHER side
+    // (2) Sensory sacral sparing present AND motor function (key OR non-key muscle) spared > 3 levels below motor level on EITHER side
     const checkMotorSparingMoreThan3Below = (
+      side: 'R' | 'L',
       sideMotorRes: LevelResolution,
       sideKeyMuscles: Record<KeyMuscleRoot, number | 'NT' | null>
     ): 'yes' | 'no' | 'nd' | 'incomplete' => {
@@ -772,8 +773,20 @@ export function classifyAsiaIsncsci2019(
       let anyMissing = false;
       for (const k of ALL_KEY_INDICES) {
         if (k <= thresholdIdx) continue;
-        const g = sideKeyMuscles[IDX_TO_KEY_ROOT[k]!];
+        const root = IDX_TO_KEY_ROOT[k]!;
+        const g = sideKeyMuscles[root];
         if (typeof g === 'number' && g >= 1) return 'yes';
+
+        // Per ISNCSCI 9th Edition (2026, REV 04/26): Also check any tested non-key muscle at this segment (>3 below motor level)
+        const nonKeyPreserved = myotomes.some((entry) => {
+          const normalizedRoot = entry.rootLevel === 'L1-L2' ? 'L2' : entry.rootLevel;
+          if (normalizedRoot !== root) return false;
+          const rawScore = side === 'R' ? entry.rightGrade : entry.leftGrade;
+          const num = parseMotorScore(rawScore);
+          return typeof num === 'number' && num >= 1;
+        });
+        if (nonKeyPreserved) return 'yes';
+
         if (g === 'NT') anyNt = true;
         else if (g === null) anyMissing = true;
       }
@@ -789,8 +802,8 @@ export function classifyAsiaIsncsci2019(
       motorIncompleteStatus = 'yes';
     } else if (hasMotorSacralSparing === false) {
       // VAC === 'no', sensory sacral sparing === true -> check >3 levels below motor level on either side
-      const rMore3 = checkMotorSparingMoreThan3Below(rMotor, keyMuscles.R);
-      const lMore3 = checkMotorSparingMoreThan3Below(lMotor, keyMuscles.L);
+      const rMore3 = checkMotorSparingMoreThan3Below('R', rMotor, keyMuscles.R);
+      const lMore3 = checkMotorSparingMoreThan3Below('L', lMotor, keyMuscles.L);
 
       if (rMore3 === 'yes' || lMore3 === 'yes') {
         motorIncompleteStatus = 'yes';
@@ -806,8 +819,8 @@ export function classifyAsiaIsncsci2019(
       // VAC is missing or NT
       if (vac === 'NT') {
         // Even if VAC is NT, if >3 levels below motor level has sparing, it's ALREADY motor incomplete!
-        const rMore3 = checkMotorSparingMoreThan3Below(rMotor, keyMuscles.R);
-        const lMore3 = checkMotorSparingMoreThan3Below(lMotor, keyMuscles.L);
+        const rMore3 = checkMotorSparingMoreThan3Below('R', rMotor, keyMuscles.R);
+        const lMore3 = checkMotorSparingMoreThan3Below('L', lMotor, keyMuscles.L);
         if (rMore3 === 'yes' || lMore3 === 'yes') {
           motorIncompleteStatus = 'yes';
           motorIncompleteVia3Levels = true;
