@@ -31,7 +31,7 @@
 
 ## Overview
 
-**PhysioRecord** (`v1.1.0`) is an open-source, **offline-first, zero-backend** physical therapy EHR and clinic management suite designed for solo clinicians and multi-therapist practices. Every patient chart, clinical assessment, appointment, and financial ledger entry stays encrypted at rest on the clinic's own device—running identically as an installable **Web PWA**, **Android Universal APK**, or **Windows Desktop (`.exe`)** application with native **Arabic (RTL)**, **Kurdish Sorani (`ckb` RTL)**, and **English (LTR)** interfaces. When a clinic needs multi-device sync, clinicians can opt in to **Local Clinic Wi-Fi (LAN)** or **End-to-End Encrypted Google Drive (`$0` BYOC)**—keeping full ownership of their data with zero subscriptions or vendor servers.
+**PhysioRecord** is an open-source, **offline-first, zero-backend** physical therapy EHR and clinic management suite designed for solo clinicians and multi-therapist practices. Every patient chart, clinical assessment, appointment, and financial ledger entry stays encrypted at rest on the clinic's own device—running identically as an installable **Web PWA**, **Android Universal APK**, or **Windows Desktop (`.exe`)** application with native **Arabic (RTL)**, **Kurdish Sorani (`ckb` RTL)**, and **English (LTR)** interfaces. When a clinic needs multi-device sync, clinicians can opt in to **Local Clinic Wi-Fi (LAN)** or **End-to-End Encrypted Google Drive (`$0` BYOC)**—keeping full ownership of their data with zero subscriptions or vendor servers.
 
 ### Why PhysioRecord?
 
