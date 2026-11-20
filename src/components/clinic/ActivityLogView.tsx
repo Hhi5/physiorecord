@@ -196,7 +196,7 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
         </h1>
 
         {/* Persistence Status Badge */}
-        <div className="inline-flex items-center gap-2 py-2 px-3 rounded-xl border border-layer-line text-xs font-semibold bg-layer shadow-2xs">
+        <div data-tour="activity-storage-badge" className="inline-flex items-center gap-2 py-2 px-3 rounded-xl border border-layer-line text-xs font-semibold bg-layer shadow-2xs">
           <Database className="size-4 text-primary" />
           <span className="text-muted-foreground-1">
             {bi('حالة التخزين المحلي:', 'Local Storage:', 'دۆخی هەڵگرتنی ناوخۆیی:')}
@@ -243,7 +243,7 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
       </div>
 
       {/* Staff Label Switcher Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div data-tour="activity-staff-cards" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {staffRoster.map((staff) => {
           const isCurrent = activeStaff.id === staff.id;
           const rolePerm = ROLE_PERMISSIONS[staff.role];

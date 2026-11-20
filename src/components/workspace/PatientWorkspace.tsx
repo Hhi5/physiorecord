@@ -24,11 +24,14 @@ interface PatientWorkspaceProps {
   initialSessionId?: string | null;
   initialAutoOpenFinish?: boolean;
   onFocusModeChange?: (active: boolean) => void;
+  onActiveSessionChange?: (active: boolean) => void;
   onFinishCompleted?: (
     undoSnapshot: FinishUndoSnapshot,
     summaryAr: string,
     summaryEn: string
   ) => void;
+  onStartChartTour?: () => void;
+  onStartSessionTour?: () => void;
 }
 
 export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({
@@ -37,7 +40,10 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({
   initialSessionId = null,
   initialAutoOpenFinish = false,
   onFocusModeChange,
+  onActiveSessionChange,
   onFinishCompleted,
+  onStartChartTour,
+  onStartSessionTour,
 }) => {
   const { dek } = useVault();
   const { loadFullPatientById } = usePatients();
@@ -82,8 +88,16 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({
         onBackToDirectory();
       }
     };
+    const handleCloseSessionForChartTour = () => {
+      setAutoOpenFinish(false);
+      setSelectedSessionId(null);
+    };
     window.addEventListener('physiorecord-patient-back', handleHardwarePatientBack);
-    return () => window.removeEventListener('physiorecord-patient-back', handleHardwarePatientBack);
+    window.addEventListener('physiorecord-chart-close-session', handleCloseSessionForChartTour);
+    return () => {
+      window.removeEventListener('physiorecord-patient-back', handleHardwarePatientBack);
+      window.removeEventListener('physiorecord-chart-close-session', handleCloseSessionForChartTour);
+    };
   }, [selectedSessionId, onBackToDirectory]);
 
   // Drawers
@@ -120,6 +134,13 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({
 
   const activeEpisode = episodes.find((e) => e.id === selectedEpisodeId) || episodes[0];
   const activeSession = sessions.find((s) => s.id === selectedSessionId);
+
+  useEffect(() => {
+    onActiveSessionChange?.(Boolean(activeSession));
+    return () => {
+      onActiveSessionChange?.(false);
+    };
+  }, [activeSession, onActiveSessionChange]);
 
   useEffect(() => {
     const inActiveTreatmentFocus = Boolean(
@@ -166,6 +187,7 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({
               setSelectedSessionId(null);
             }}
             onSessionUpdated={loadPatientClinicalData}
+            onStartSessionTour={onStartSessionTour}
           />
         ) : (
           <MasterPatientChart
@@ -185,6 +207,7 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({
             onOpenNewEpisode={() => setIsEpisodeDrawerOpen(true)}
             onBackToDirectory={onBackToDirectory}
             onPatientUpdated={loadPatientClinicalData}
+            onStartChartTour={onStartChartTour}
           />
         )}
       </div>

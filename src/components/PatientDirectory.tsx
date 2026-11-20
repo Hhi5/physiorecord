@@ -368,6 +368,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
+            data-tour="directory-new-patient-btn"
             onClick={onOpenNewPatientModal}
             className="min-h-[44px] sm:min-h-[38px] px-4 py-1.5 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
           >

@@ -1,17 +1,17 @@
 // =======================================================================
-// PhysioRecord — Clinic Settings & Developer Modal
-// - Currency: Select primary world currency (Default: IQD)
-// - Clinic: Encrypted Clinic Profile, WhatsApp Templates, Workspace Mode & Custom Services
-// - Display: Interface Language (AR / CKB / EN), Theme Mode/Palette & Typography
-// - Staff: Edit and customize clinic staff roster (Admin, Senior PT, PT, Reception)
-// - Security: Backup Hub, Inactivity Auto-Lock, Admin PIN, PRF Passkey & DEK Rotation
-// - Modules: Modular Clinical, Iraq Operations (Phase C), Data Quality (D) & Interop (E)
-// - Developer: Load Demo Data & One-Click Delete All Demo Data
+// PhysioRecord — Clinic Settings Modal
+// - Desktop: Wide two-column macOS / Linear-style split (fixed sidebar + content)
+// - Mobile: Native iOS / Android drill-down (searchable menu -> full-screen section)
+// - Default tab: Clinic Profile (most relevant daily setup)
 // =======================================================================
 
 import React, { Suspense, useEffect, useState } from 'react';
 import {
+  ArrowLeft,
+  ArrowRight,
   Building2,
+  ChevronLeft,
+  ChevronRight,
   Coins,
   Database,
   Dumbbell,
@@ -25,7 +25,6 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { usePatients } from '../context/PatientContext';
-import { GeometricHeaderBackdrop } from './ui/Dialog';
 import { DemoBadge } from './ui/Primitives';
 import { ClinicOperationsService } from '../services/clinicOperationsService';
 import type { SettingsViewMode } from '../types/clinicManagement';
@@ -87,12 +86,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onOpenDemoModal,
   onOpenBackupModal,
   onStartTour,
-  initialTab = 'currency',
+  initialTab = 'clinic',
 }) => {
   const { isRtl, bi } = useLanguage();
   const { patients } = usePatients();
 
   const [activeTab, setActiveTab] = useState<SettingsTabId>(initialTab);
+  const [mobileView, setMobileView] = useState<'menu' | 'detail'>('menu');
   const [settingsViewMode, setSettingsViewMode] = useState<SettingsViewMode>(() =>
     ClinicOperationsService.getSettingsViewMode()
   );
@@ -120,17 +120,39 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   useEffect(() => {
-    if (isOpen) {
-      void ClinicOperationsService.ensureColdStoreLoadedAsync('noteTemplates');
-      void ClinicOperationsService.ensureColdStoreLoadedAsync('customWidgets');
-    }
+    if (!isOpen) return;
+    setMobileView('menu');
+    setSettingsSearchQuery('');
+    void ClinicOperationsService.ensureColdStoreLoadedAsync('noteTemplates');
+    void ClinicOperationsService.ensureColdStoreLoadedAsync('customWidgets');
+  }, [isOpen]);
+
+  // Live tab switching on Desktop during Settings Spotlight Tour (keep menu visible on Mobile so all tab anchors stay spotlightable)
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleSelectTab = (event: Event) => {
+      const detail = (event as CustomEvent<{ tab?: SettingsTabId }>).detail;
+      if (!detail?.tab) return;
+      if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+        setActiveTab(detail.tab);
+      } else {
+        setMobileView('menu');
+      }
+    };
+    window.addEventListener('physiorecord-settings-select-tab', handleSelectTab);
+    return () => {
+      window.removeEventListener('physiorecord-settings-select-tab', handleSelectTab);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
     const syncShellState = () => {
       const nextSolo = ClinicOperationsService.isSoloMode();
       setIsSoloMode(nextSolo);
       setCustomWidgets(ClinicOperationsService.getCustomWidgets());
       setSettingsViewMode(ClinicOperationsService.getSettingsViewMode());
-      if (nextSolo && activeTab === 'staff') {
-        setActiveTab('clinic');
+      if (nextSolo) {
+        setActiveTab((prev) => (prev === 'staff' ? 'clinic' : prev));
       }
     };
     syncShellState();
@@ -140,7 +162,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       unsubOps();
       window.removeEventListener('physiorecord-modules-updated', syncShellState);
     };
-  }, [isOpen, activeTab]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -175,13 +197,151 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const hasDemoRecords =
     hasAnyDemoPatients(patients) || ClinicOperationsService.hasDemoOperationsData();
+  const isSearching = settingsSearchQuery.trim().length > 0;
+
+  interface NavItemDef {
+    id: SettingsTabId;
+    label: string;
+    subtitle: string;
+    icon: React.ReactNode;
+    visible: boolean;
+    hasDemoBadge?: boolean;
+  }
+
+  const clinicGroupItems: NavItemDef[] = [
+    {
+      id: 'clinic',
+      label: bi('العيادة', 'Clinic', 'کلینیک'),
+      subtitle: bi(
+        'اسم العيادة، المعالج، الدوام، الشعار، قوالب واتساب والخدمات',
+        'Clinic identity, working hours, logo, WhatsApp templates & services',
+        'ناوی کلینیک، کاتی کار، لۆگۆ، داڕشتەی واتساپ و خزمەتگوزارییەکان'
+      ),
+      icon: <Building2 className="size-4 shrink-0" />,
+      visible: true,
+    },
+    {
+      id: 'display',
+      label: bi('اللغة والمظهر', 'Display', 'زمان و شێواز'),
+      subtitle: bi(
+        'اللغة، الوضع الليلي والنهاري، الألوان، حجم الخط وخيارات الأداء',
+        'Interface language, dark/light mode, accent color, typography & performance',
+        'زمان، دۆخی شەو/ڕۆژ، ڕەنگەکان، قەبارەی فۆنت و کارایی'
+      ),
+      icon: <Type className="size-4 shrink-0" />,
+      visible: true,
+    },
+    {
+      id: 'currency',
+      label: bi('العملة', 'Currency', 'دراو'),
+      subtitle: bi(
+        'اختيار العملة المعتمدة للفواتير والسجل المالي والمصاريف',
+        'Select primary clinic currency for invoices, ledger & expenses',
+        'هەڵبژاردنی دراوی پەسەندکراو بۆ پسوڵە و تۆماری دارایی'
+      ),
+      icon: <Coins className="size-4 shrink-0" />,
+      visible: true,
+    },
+    {
+      id: 'staff',
+      label: bi('الكادر', 'Staff', 'ستاف'),
+      subtitle: bi(
+        'إدارة المعالجين وموظفي الاستقبال وتخصيص الأدوار الوظيفية',
+        'Manage therapists, receptionists & role permissions',
+        'بەڕێوەبردنی چارەسەرکاران و کارمەندانی پێشوازی'
+      ),
+      icon: <Users className="size-4 shrink-0" />,
+      visible: !isSoloMode && settingsViewMode === 'advanced',
+    },
+  ];
+
+  const systemGroupItems: NavItemDef[] = [
+    {
+      id: 'modules',
+      label: bi('الأقسام', 'Modules', 'بەشەکان'),
+      subtitle: bi(
+        'تفعيل أو إخفاء الوحدات السريرية، الزيارات المنزلية، الأقساط والمشاركة',
+        'Enable or hide clinical tools, home visits, installments & sharing',
+        'چالاککردن یان شاردنەوەی بەشە کلینیکییەکان و خزمەتگوزارییەکان'
+      ),
+      icon: <Dumbbell className="size-4 shrink-0" />,
+      visible: true,
+    },
+    {
+      id: 'security',
+      label: bi('الأمان', 'Security', 'ئاسایش'),
+      subtitle: bi(
+        'النسخ الاحتياطي والاسترداد، القفل التلقائي، البصمة والتحديثات',
+        'Encrypted backups, recovery key drill, auto-lock, biometrics & updates',
+        'کۆپی یەدەگ، قفڵی خۆکار، پەنجەمۆر و نوێکردنەوەکان'
+      ),
+      icon: <Shield className="size-4 shrink-0" />,
+      visible: true,
+    },
+    {
+      id: 'developer',
+      label: bi('المطور', 'Developer', 'گەشەپێدەر'),
+      subtitle: bi(
+        'تحميل بيانات تجريبية للاستعراض وحذفها بنقرة واحدة',
+        'Load synthetic demonstration cases and clear them in one click',
+        'بارکردنی داتای تاقیکاری و سڕینەوەیان بە یەک کلیک'
+      ),
+      icon: <Database className="size-4 shrink-0" />,
+      visible: settingsViewMode === 'advanced',
+      hasDemoBadge: hasDemoRecords,
+    },
+  ];
+
+  const allNavItems = [...clinicGroupItems, ...systemGroupItems];
+  const activeNavItem = allNavItems.find((n) => n.id === activeTab) || clinicGroupItems[0];
+
+  const handleSelectTab = (tabId: SettingsTabId) => {
+    setActiveTab(tabId);
+    setMobileView('detail');
+    setSettingsSearchQuery('');
+  };
+
+  const MobileChevron = isRtl ? ChevronLeft : ChevronRight;
+  const MobileBackArrow = isRtl ? ArrowRight : ArrowLeft;
+
+  const renderNavButton = (item: NavItemDef) => {
+    const selected = activeTab === item.id;
+    return (
+      <button
+        key={item.id}
+        type="button"
+        role="tab"
+        aria-selected={selected}
+        data-testid={`settings-tab-${item.id}`}
+        onClick={() => handleSelectTab(item.id)}
+        className={`w-full min-h-[44px] md:min-h-[38px] px-3 py-2 rounded-xl text-start flex items-center justify-between gap-2.5 cursor-pointer transition-colors ${
+          selected
+            ? 'bg-primary/10 text-primary font-bold md:bg-primary md:text-primary-foreground md:shadow-2xs'
+            : 'text-foreground hover:bg-layer-hover font-semibold'
+        }`}
+      >
+        <span className="flex items-center gap-2.5 min-w-0 flex-1">
+          <span
+            className={`shrink-0 ${
+              selected ? 'text-primary md:text-primary-foreground' : 'text-muted-foreground-1'
+            }`}
+          >
+            {item.icon}
+          </span>
+          <span className="text-xs sm:text-[13px] truncate">{item.label}</span>
+          {item.hasDemoBadge && <DemoBadge />}
+        </span>
+        <MobileChevron className="size-4 text-muted-foreground-2 shrink-0 md:hidden" />
+      </button>
+    );
+  };
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="settings-modal-title"
-      className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-stretch justify-center sm:justify-end"
+      className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end md:items-center justify-center md:p-4"
       dir={isRtl ? 'rtl' : 'ltr'}
       onKeyDown={(e) => {
         if (e.key === 'Escape') onClose();
@@ -191,54 +351,53 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       }}
     >
       <div
-        className="bg-card border-t sm:border-t-0 sm:border-s border-card-line rounded-t-2xl sm:rounded-none max-w-2xl w-full max-h-[92dvh] sm:max-h-none sm:h-full shadow-2xl overflow-hidden flex flex-col"
+        className="bg-card border border-card-line rounded-t-2xl md:rounded-2xl w-full md:max-w-5xl h-[94dvh] md:h-[86vh] md:max-h-[820px] shadow-2xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Themed Geometric Header */}
-        <div className="relative overflow-hidden px-4 sm:px-5 pt-2.5 sm:pt-4 pb-3.5 bg-primary text-primary-foreground space-y-2.5 shrink-0 shadow-xs">
-          <GeometricHeaderBackdrop />
-          <div className="relative z-10 w-10 h-1 rounded-full bg-primary-foreground/40 mx-auto sm:hidden shrink-0" aria-hidden="true" />
-          <div className="relative z-10 flex items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <div className="size-9 rounded-xl bg-primary-foreground/15 text-primary-foreground border border-primary-foreground/20 flex items-center justify-center shrink-0">
-                <Settings className="size-4.5 shrink-0" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h2 id="settings-modal-title" className="text-sm sm:text-base font-black text-primary-foreground truncate">
-                  {bi('إعدادات العيادة والمطور', 'Clinic & Developer Settings', 'ڕێکخستنەکانی کلینیک و گەشەپێدەر')}
-                </h2>
-                <p className="hidden sm:block text-xs text-primary-foreground/85 truncate">
-                  {bi(
-                    'العملة، أعضاء الكادر، الأمان، الأقسام، والبيانات التجريبية',
-                    'Currency, staff roster, security, modules, and demo data',
-                    'دراو، ئەندامانی ستاف، ئاسایش، بەشەکان، و داتای نموونەیی'
-                  )}
-                </p>
-              </div>
-            </div>
+        {/* Slim Unified Header */}
+        <header className="px-4 sm:px-5 py-3 bg-surface/80 border-b border-card-divider flex items-center justify-between gap-2 shrink-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {/* Mobile Back Button when inside a section detail */}
+            {mobileView === 'detail' && !isSearching ? (
+              <button
+                type="button"
+                onClick={() => setMobileView('menu')}
+                className="md:hidden min-h-[36px] px-2.5 py-1 rounded-xl bg-card border border-line-2 text-xs font-bold text-foreground inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <MobileBackArrow className="size-3.5" />
+                <span>{bi('الإعدادات', 'Settings', 'ڕێکخستنەکان')}</span>
+              </button>
+            ) : (
+              <span className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Settings className="size-4" />
+              </span>
+            )}
 
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label={bi('إغلاق الإعدادات', 'Close settings', 'داخستنی ڕێکخستنەکان')}
-              className="size-9 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground inline-flex items-center justify-center cursor-pointer shrink-0 transition-colors"
+            <h2
+              id="settings-modal-title"
+              className="text-sm sm:text-base font-black text-foreground truncate"
             >
-              <X className="size-4 shrink-0" />
-            </button>
+              <span className={mobileView === 'detail' && !isSearching ? 'hidden md:inline' : 'inline'}>
+                {bi('الإعدادات', 'Settings', 'ڕێکخستنەکان')}
+              </span>
+              {mobileView === 'detail' && !isSearching && (
+                <span className="md:hidden">{activeNavItem.label}</span>
+              )}
+            </h2>
           </div>
 
-          <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 pt-0.5">
-            {/* Simple / Advanced Segmented Switch */}
-            <div className="inline-flex items-center rounded-xl bg-primary-foreground/15 border border-primary-foreground/20 p-0.5 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Simple / Advanced Segmented Control */}
+            <div className="inline-flex items-center rounded-xl bg-card border border-line-2 p-0.5 shrink-0">
               <button
                 type="button"
                 data-testid="settings-mode-simple-btn"
                 aria-pressed={settingsViewMode === 'simple'}
                 onClick={() => handleSwitchSettingsMode('simple')}
-                className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                className={`min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors whitespace-nowrap ${
                   settingsViewMode === 'simple'
-                    ? 'bg-card text-primary shadow-2xs'
-                    : 'text-primary-foreground/85 hover:text-primary-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-2xs'
+                    : 'text-muted-foreground-1 hover:text-foreground'
                 }`}
               >
                 {bi('مبسط', 'Simple', 'سادە')}
@@ -248,356 +407,298 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 data-testid="settings-mode-advanced-btn"
                 aria-pressed={settingsViewMode === 'advanced'}
                 onClick={() => handleSwitchSettingsMode('advanced')}
-                className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                className={`min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors whitespace-nowrap ${
                   settingsViewMode === 'advanced'
-                    ? 'bg-card text-primary shadow-2xs'
-                    : 'text-primary-foreground/85 hover:text-primary-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-2xs'
+                    : 'text-muted-foreground-1 hover:text-foreground'
                 }`}
               >
                 {bi('متقدم', 'Advanced', 'پێشکەوتوو')}
               </button>
             </div>
 
-            {/* What's New & Migration Guide Button (F3) */}
+            {/* What's New Button */}
             <button
               type="button"
               data-testid="open-whats-new-btn"
               onClick={() => setIsWhatsNewOpen(true)}
-              className="min-h-[32px] px-3 py-1 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground border border-primary-foreground/25 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
+              className="hidden sm:inline-flex min-h-[34px] px-2.5 py-1 rounded-xl bg-card hover:bg-layer-hover text-foreground border border-line-2 text-xs font-bold items-center gap-1.5 cursor-pointer shrink-0 transition-colors whitespace-nowrap"
               title={bi(
                 `ما الجديد v${APP_SEMVER_VERSION}`,
                 `What's New v${APP_SEMVER_VERSION}`,
                 `نوێترین گۆڕانکارییەکان v${APP_SEMVER_VERSION}`
               )}
             >
-              <Sparkles className="size-3.5 shrink-0" />
+              <Sparkles className="size-3.5 text-primary shrink-0" />
               <span>{bi('ما الجديد', "What's New", 'نوێترین')}</span>
-              <span className="font-mono"><bdi dir="ltr">v{APP_SEMVER_VERSION}</bdi></span>
+              <span className="font-mono text-muted-foreground-1">
+                <bdi dir="ltr">v{APP_SEMVER_VERSION}</bdi>
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={bi('إغلاق الإعدادات', 'Close settings', 'داخستنی ڕێکخستنەکان')}
+              className="size-9 !p-0 rounded-xl bg-card hover:bg-layer-hover border border-line-2 text-foreground inline-flex items-center justify-center cursor-pointer shrink-0 transition-colors"
+            >
+              <X className="size-4 shrink-0" />
             </button>
           </div>
-        </div>
+        </header>
 
-        {/* Search & Navigation Sub-bar */}
-        <div className="px-4 sm:px-5 py-2.5 border-b border-card-divider bg-surface/60 space-y-2.5 shrink-0">
-          {/* Search Input */}
-          <div className="relative flex items-center">
-            <Search className="size-3.5 text-muted-foreground-1 absolute start-3 inset-y-0 my-auto pointer-events-none z-10 shrink-0" />
-            <input
-              type="text"
-              data-testid="settings-search-input"
-              aria-label={bi('بحث في الإعدادات', 'Search settings', 'گەڕان لە ڕێکخستنەکان')}
-              value={settingsSearchQuery}
-              onChange={(e) => setSettingsSearchQuery(e.target.value)}
-              placeholder={bi(
-                'ابحث في الإعدادات (نسخ احتياطي، أمان، لغة، خط، أقسام...)',
-                'Search settings (backup, security, language, font, modules...)',
-                'گەڕان لە ڕێکخستنەکان (کۆپی یەدەگ، ئاسایش، زمان، فۆنت، بەشەکان...)'
-              )}
-              className="w-full min-h-[38px] ps-9 pe-10 py-1.5 rounded-xl bg-card border border-line-2 text-xs leading-normal text-foreground placeholder:text-muted-foreground-1 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
-            />
-            {settingsSearchQuery.trim().length > 0 && (
-              <button
-                type="button"
-                data-testid="settings-search-clear-btn"
-                onClick={() => setSettingsSearchQuery('')}
-                aria-label={bi('مسح البحث', 'Clear search', 'سڕینەوەی گەڕان')}
-                className="absolute end-1 inset-y-0 my-auto size-8 flex items-center justify-center rounded-lg text-muted-foreground-1 hover:text-foreground cursor-pointer z-10"
-              >
-                <X className="size-4 shrink-0" />
-              </button>
-            )}
-          </div>
-
-          {/* Horizontally Scrollable Rounded Tabs Strip */}
-          <div
+        {/* Split Layout Body: Desktop Sidebar + Content | Mobile Menu <-> Detail */}
+        <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
+          {/* Sidebar (Desktop always visible | Mobile visible in menu or search) */}
+          <aside
             className={`${
-              settingsSearchQuery.trim().length > 0 ? 'hidden sm:block' : 'block'
-            } rounded-2xl border border-line-2 bg-card p-1 overflow-hidden`}
+              mobileView === 'detail' && !isSearching
+                ? 'hidden md:flex'
+                : isSearching
+                ? 'shrink-0 flex'
+                : 'flex-1 md:flex-none flex'
+            } flex-col w-full md:w-64 md:shrink-0 md:border-e border-card-divider bg-surface/40 overflow-y-auto`}
           >
-            <div
-              role="tablist"
-              aria-label={bi('أقسام الإعدادات', 'Settings categories', 'بەشەکانی ڕێکخستن')}
-              className="pr-hscroll overflow-x-auto flex items-center gap-1 whitespace-nowrap pb-1 pt-0.5 px-0.5"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === 'currency'}
-                data-testid="settings-tab-currency"
-                onClick={(e) => {
-                  setActiveTab('currency');
-                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                }}
-                className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all ${
-                  activeTab === 'currency'
-                    ? 'bg-primary text-primary-foreground shadow-2xs'
-                    : 'text-muted-foreground-1 hover:text-foreground hover:bg-surface'
-                }`}
-              >
-                <Coins className="size-3.5 shrink-0" />
-                <span>{bi('العملة', 'Currency', 'دراو')}</span>
-              </button>
-
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === 'clinic'}
-                data-testid="settings-tab-clinic"
-                onClick={(e) => {
-                  setActiveTab('clinic');
-                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                }}
-                className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all ${
-                  activeTab === 'clinic'
-                    ? 'bg-primary text-primary-foreground shadow-2xs'
-                    : 'text-muted-foreground-1 hover:text-foreground hover:bg-surface'
-                }`}
-              >
-                <Building2 className="size-3.5 shrink-0" />
-                <span>{bi('العيادة', 'Clinic', 'کلینیک')}</span>
-              </button>
-
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === 'display'}
-                data-testid="settings-tab-display"
-                onClick={(e) => {
-                  setActiveTab('display');
-                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                }}
-                className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all ${
-                  activeTab === 'display'
-                    ? 'bg-primary text-primary-foreground shadow-2xs'
-                    : 'text-muted-foreground-1 hover:text-foreground hover:bg-surface'
-                }`}
-              >
-                <Type className="size-3.5 shrink-0" />
-                <span>{bi('اللغة والمظهر', 'Display', 'زمان و شێواز')}</span>
-              </button>
-
-              {!isSoloMode && settingsViewMode === 'advanced' && (
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === 'staff'}
-                  data-testid="settings-tab-staff"
-                  onClick={(e) => {
-                    setActiveTab('staff');
-                    e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                  }}
-                  className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all ${
-                    activeTab === 'staff'
-                      ? 'bg-primary text-primary-foreground shadow-2xs'
-                      : 'text-muted-foreground-1 hover:text-foreground hover:bg-surface'
-                  }`}
-                >
-                  <Users className="size-3.5 shrink-0" />
-                  <span>{bi('الكادر', 'Staff', 'ستاف')}</span>
-                </button>
-              )}
-
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === 'security'}
-                data-testid="settings-tab-security"
-                onClick={(e) => {
-                  setActiveTab('security');
-                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                }}
-                className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all ${
-                  activeTab === 'security'
-                    ? 'bg-primary text-primary-foreground shadow-2xs'
-                    : 'text-muted-foreground-1 hover:text-foreground hover:bg-surface'
-                }`}
-              >
-                <Shield className="size-3.5 shrink-0" />
-                <span>{bi('الأمان', 'Security', 'ئاسایش')}</span>
-              </button>
-
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === 'modules'}
-                data-testid="settings-tab-modules"
-                onClick={(e) => {
-                  setActiveTab('modules');
-                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                }}
-                className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all ${
-                  activeTab === 'modules'
-                    ? 'bg-primary text-primary-foreground shadow-2xs'
-                    : 'text-muted-foreground-1 hover:text-foreground hover:bg-surface'
-                }`}
-              >
-                <Dumbbell className="size-3.5 shrink-0" />
-                <span>{bi('الأقسام', 'Modules', 'بەشەکان')}</span>
-              </button>
-
-              {settingsViewMode === 'advanced' && (
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === 'developer'}
-                  data-testid="settings-tab-developer"
-                  onClick={(e) => {
-                    setActiveTab('developer');
-                    e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                  }}
-                  className={`min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all ${
-                    activeTab === 'developer'
-                      ? 'bg-primary text-primary-foreground shadow-2xs'
-                      : 'text-muted-foreground-1 hover:text-foreground hover:bg-surface'
-                  }`}
-                >
-                  <Database className="size-3.5 shrink-0" />
-                  <span>{bi('المطور', 'Developer', 'گەشەپێدەر')}</span>
-                  {hasDemoRecords && <DemoBadge />}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Scrollable Body */}
-        <div
-          tabIndex={0}
-          aria-label={bi('محتوى الإعدادات', 'Settings content', 'ناوەڕۆکی ڕێکخستنەکان')}
-          className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 focus:outline-none"
-        >
-          {/* Live Search Results Panel (Phase F1) */}
-          {settingsSearchQuery.trim().length > 0 && (() => {
-            const matchedItems = filterSettingsCatalog(settingsSearchQuery, settingsViewMode);
-            return (
-              <div
-                data-testid="settings-search-results"
-                className="p-3.5 rounded-xl bg-primary/5 border border-primary/25 space-y-2"
-              >
-                <div className="flex items-center justify-between text-xs font-bold text-foreground">
-                  <span>
-                    {bi(
-                      `نتائج البحث في الإعدادات (${matchedItems.length})`,
-                      `Matching Settings (${matchedItems.length})`,
-                      `ئەنجامەکانی گەڕان لە ڕێکخستنەکان (${matchedItems.length})`
-                    )}
-                  </span>
-                </div>
-                {matchedItems.length === 0 ? (
-                  <p
-                    data-testid="settings-search-empty"
-                    className="text-xs text-muted-foreground-1 py-2"
+            {/* Search Input */}
+            <div className="p-3 border-b border-card-divider/70 shrink-0">
+              <div className="relative flex items-center">
+                <Search className="size-3.5 text-muted-foreground-1 absolute start-3 inset-y-0 my-auto pointer-events-none z-10 shrink-0" />
+                <input
+                  type="text"
+                  data-testid="settings-search-input"
+                  aria-label={bi('بحث في الإعدادات', 'Search settings', 'گەڕان لە ڕێکخستنەکان')}
+                  value={settingsSearchQuery}
+                  onChange={(e) => setSettingsSearchQuery(e.target.value)}
+                  placeholder={bi(
+                    'ابحث (نسخ احتياطي، أمان، لغة، خط...)',
+                    'Search (backup, security, font...)',
+                    'گەڕان (کۆپی یەدەگ، ئاسایش، زمان...)'
+                  )}
+                  className="w-full min-h-[38px] ps-9 pe-9 py-1.5 rounded-xl bg-card border border-line-2 text-xs leading-normal text-foreground placeholder:text-muted-foreground-1 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
+                />
+                {isSearching && (
+                  <button
+                    type="button"
+                    data-testid="settings-search-clear-btn"
+                    onClick={() => setSettingsSearchQuery('')}
+                    aria-label={bi('مسح البحث', 'Clear search', 'سڕینەوەی گەڕان')}
+                    className="absolute end-1 inset-y-0 my-auto size-8 flex items-center justify-center rounded-lg text-muted-foreground-1 hover:text-foreground cursor-pointer z-10"
                   >
-                    {bi(
-                      'لا توجد إعدادات مطابقة لبحثك',
-                      'No matching settings found',
-                      'هیچ ڕێکخستنێکی گونجاو بۆ گەڕانەکەت نەدۆزرایەوە'
-                    )}
-                  </p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {matchedItems.map((item) => {
-                      const ckbMeta = SETTINGS_CATALOG_CKB[item.id];
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          data-testid={`settings-search-result-${item.id}`}
-                          onClick={() => {
-                            if (item.isAdvanced && settingsViewMode === 'simple') {
-                              handleSwitchSettingsMode('advanced');
-                            }
-                            setActiveTab(item.tab);
-                            setSettingsSearchQuery('');
-                          }}
-                          className="w-full text-start p-2.5 rounded-xl bg-card hover:bg-layer-hover border border-card-line flex items-start justify-between gap-2 cursor-pointer transition-colors"
-                        >
-                          <div className="min-w-0 space-y-0.5">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="text-xs font-bold text-foreground">
-                                {bi(item.titleAr, item.titleEn, ckbMeta?.title)}
-                              </span>
-                              {item.isAdvanced && (
-                                <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 text-xs font-bold">
-                                  {bi('متقدم', 'Advanced', 'پێشکەوتوو')}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground-1">
-                              {bi(item.descAr, item.descEn, ckbMeta?.desc)}
-                            </p>
-                          </div>
-                          <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-bold shrink-0">
-                            {bi(item.categoryAr, item.categoryEn, ckbMeta?.category)}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                    <X className="size-4 shrink-0" />
+                  </button>
                 )}
               </div>
-            );
-          })()}
+            </div>
 
-          {activeTab === 'display' && <DisplaySettingsTab />}
+            {/* Grouped Navigation List (hidden on mobile while typing search query so results fill below) */}
+            <div
+              role="tablist"
+              aria-orientation="vertical"
+              aria-label={bi('أقسام الإعدادات', 'Settings categories', 'بەشەکانی ڕێکخستن')}
+              className={`${
+                isSearching ? 'hidden md:flex' : 'flex'
+              } flex-1 flex-col gap-4 p-3 overflow-y-auto`}
+            >
+              <div className="space-y-1">
+                <div className="px-3 pb-1 text-xs font-bold text-muted-foreground-1">
+                  {bi('العيادة والمظهر', 'Clinic & Appearance', 'کلینیک و شێواز')}
+                </div>
+                <div className="space-y-1 bg-card md:bg-transparent rounded-2xl md:rounded-none border border-card-line md:border-0 p-1.5 md:p-0">
+                  {clinicGroupItems.filter((i) => i.visible).map(renderNavButton)}
+                </div>
+              </div>
 
-          {activeTab === 'currency' && <CurrencySettingsTab />}
+              <div className="space-y-1">
+                <div className="px-3 pb-1 text-xs font-bold text-muted-foreground-1">
+                  {bi('الأقسام والأمان', 'Modules & Security', 'بەشەکان و ئاسایش')}
+                </div>
+                <div className="space-y-1 bg-card md:bg-transparent rounded-2xl md:rounded-none border border-card-line md:border-0 p-1.5 md:p-0">
+                  {systemGroupItems.filter((i) => i.visible).map(renderNavButton)}
+                </div>
+              </div>
 
-          {activeTab === 'clinic' && (
-            <ClinicProfileSettingsTab
-              isModalOpen={isOpen}
-              isSoloMode={isSoloMode}
-              onSoloModeChanged={setIsSoloMode}
-            />
-          )}
+              {/* Mobile-only What's New quick row */}
+              <div className="sm:hidden pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsWhatsNewOpen(true)}
+                  className="w-full min-h-[44px] px-3 py-2 rounded-2xl bg-card border border-card-line text-foreground text-xs font-bold flex items-center justify-between gap-2 cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Sparkles className="size-4 text-primary shrink-0" />
+                    <span>{bi('ما الجديد والتحديثات', "What's New", 'نوێترین گۆڕانکارییەکان')}</span>
+                  </span>
+                  <span className="font-mono text-muted-foreground-1">
+                    <bdi dir="ltr">v{APP_SEMVER_VERSION}</bdi>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </aside>
 
-          {activeTab === 'staff' && <StaffRosterSettingsTab isModalOpen={isOpen} />}
+          {/* Main Content Pane */}
+          <main
+            tabIndex={0}
+            aria-label={bi('محتوى الإعدادات', 'Settings content', 'ناوەڕۆکی ڕێکخستنەکان')}
+            className={`${
+              mobileView === 'menu' && !isSearching ? 'hidden md:flex' : 'flex'
+            } flex-1 flex-col min-h-0 overflow-y-auto bg-layer/30 p-4 sm:p-6 focus:outline-none`}
+          >
+            <div className="w-full max-w-3xl mx-auto space-y-4">
+              {/* Live Search Results Panel */}
+              {isSearching && (() => {
+                const matchedItems = filterSettingsCatalog(settingsSearchQuery, settingsViewMode);
+                return (
+                  <div
+                    data-testid="settings-search-results"
+                    className="p-3.5 rounded-2xl bg-card border border-primary/30 space-y-2"
+                  >
+                    <div className="flex items-center justify-between text-xs font-bold text-foreground">
+                      <span>
+                        {bi(
+                          `نتائج البحث (${matchedItems.length})`,
+                          `Matching Settings (${matchedItems.length})`,
+                          `ئەنجامەکانی گەڕان (${matchedItems.length})`
+                        )}
+                      </span>
+                    </div>
+                    {matchedItems.length === 0 ? (
+                      <p
+                        data-testid="settings-search-empty"
+                        className="text-xs text-muted-foreground-1 py-2"
+                      >
+                        {bi(
+                          'لا توجد إعدادات مطابقة لبحثك.',
+                          'No matching settings found.',
+                          'هیچ ڕێکخستنێکی گونجاو نەدۆزرایەوە.'
+                        )}
+                      </p>
+                    ) : (
+                      <div className="divide-y divide-card-divider">
+                        {matchedItems.map((item) => {
+                          const ckbMeta = SETTINGS_CATALOG_CKB[item.id];
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              data-testid={`settings-search-result-${item.id}`}
+                              onClick={() => {
+                                if (item.isAdvanced && settingsViewMode === 'simple') {
+                                  handleSwitchSettingsMode('advanced');
+                                }
+                                handleSelectTab(item.tab);
+                              }}
+                              className="w-full text-start py-2.5 px-2 rounded-xl hover:bg-surface flex items-start justify-between gap-2 cursor-pointer transition-colors"
+                            >
+                              <div className="min-w-0 space-y-0.5">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className="text-xs font-bold text-foreground">
+                                    {bi(item.titleAr, item.titleEn, ckbMeta?.title)}
+                                  </span>
+                                  {item.isAdvanced && (
+                                    <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                                      · {bi('متقدم', 'Advanced', 'پێشکەوتوو')}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground-1">
+                                  {bi(item.descAr, item.descEn, ckbMeta?.desc)}
+                                </p>
+                              </div>
+                              <span className="text-xs font-bold text-primary shrink-0">
+                                {bi(item.categoryAr, item.categoryEn, ckbMeta?.category)}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
-          {activeTab === 'security' && (
-            <SecuritySettingsTab
-              isModalOpen={isOpen}
-              isSoloMode={isSoloMode}
-              settingsViewMode={settingsViewMode}
-              onSwitchSettingsMode={handleSwitchSettingsMode}
-              onOpenBackupModal={onOpenBackupModal}
-              onOpenRecoveryDrill={() => setIsRecoveryDrillOpen(true)}
-              onOpenFullExport={() => setIsFullExportOpen(true)}
-              onOpenCsvOnboarding={() => setIsCsvOnboardingOpen(true)}
-            />
-          )}
+              {/* Active Tab Section (Hidden on mobile while showing search results from menu) */}
+              <div className={isSearching && mobileView === 'menu' ? 'hidden md:block space-y-4' : 'space-y-4'}>
+                {/* Clean Section Title Header */}
+                <div className="pb-2 border-b border-card-divider">
+                  <h3 className="text-base font-black text-foreground">{activeNavItem.label}</h3>
+                  <p className="text-xs text-muted-foreground-1 mt-0.5 leading-relaxed">
+                    {activeNavItem.subtitle}
+                  </p>
+                </div>
 
-          {activeTab === 'modules' && (
-            <ModulesSettingsTab
-              isModalOpen={isOpen}
-              isActiveTab={activeTab === 'modules'}
-              settingsViewMode={settingsViewMode}
-              onSwitchSettingsMode={handleSwitchSettingsMode}
-              customWidgets={customWidgets}
-              onOpenWidgetStudio={() => setIsWidgetStudioOpen(true)}
-              onStartTour={onStartTour}
-            />
-          )}
+                {activeTab === 'display' && (
+                  <DisplaySettingsTab settingsViewMode={settingsViewMode} />
+                )}
 
-          {activeTab === 'developer' && (
-            <DeveloperSettingsTab
-              hasDemoRecords={hasDemoRecords}
-              onCloseModal={onClose}
-              onOpenDemoModal={onOpenDemoModal}
-            />
-          )}
+                {activeTab === 'currency' && <CurrencySettingsTab />}
+
+                {activeTab === 'clinic' && (
+                  <ClinicProfileSettingsTab
+                    isModalOpen={isOpen}
+                    isSoloMode={isSoloMode}
+                    settingsViewMode={settingsViewMode}
+                    onSoloModeChanged={setIsSoloMode}
+                  />
+                )}
+
+                {activeTab === 'staff' && <StaffRosterSettingsTab isModalOpen={isOpen} />}
+
+                {activeTab === 'security' && (
+                  <SecuritySettingsTab
+                    isModalOpen={isOpen}
+                    isSoloMode={isSoloMode}
+                    settingsViewMode={settingsViewMode}
+                    onSwitchSettingsMode={handleSwitchSettingsMode}
+                    onOpenBackupModal={onOpenBackupModal}
+                    onOpenRecoveryDrill={() => setIsRecoveryDrillOpen(true)}
+                    onOpenFullExport={() => setIsFullExportOpen(true)}
+                    onOpenCsvOnboarding={() => setIsCsvOnboardingOpen(true)}
+                  />
+                )}
+
+                {activeTab === 'modules' && (
+                  <ModulesSettingsTab
+                    isModalOpen={isOpen}
+                    isActiveTab={activeTab === 'modules'}
+                    settingsViewMode={settingsViewMode}
+                    onSwitchSettingsMode={handleSwitchSettingsMode}
+                    customWidgets={customWidgets}
+                    onOpenWidgetStudio={() => setIsWidgetStudioOpen(true)}
+                    onStartTour={onStartTour}
+                  />
+                )}
+
+                {activeTab === 'developer' && (
+                  <DeveloperSettingsTab
+                    hasDemoRecords={hasDemoRecords}
+                    onCloseModal={onClose}
+                    onOpenDemoModal={onOpenDemoModal}
+                  />
+                )}
+              </div>
+            </div>
+          </main>
         </div>
 
-        {/* Footer */}
-        <div className="px-4 sm:px-5 py-3 bg-surface/60 border-t border-card-divider flex justify-end shrink-0">
+        {/* Minimal Footer */}
+        <footer className="px-4 sm:px-5 py-2.5 bg-surface/80 border-t border-card-divider flex items-center justify-between gap-2 shrink-0">
+          <span className="text-xs text-muted-foreground-1 truncate">
+            {bi(
+              'التغييرات تُحفظ محلياً داخل الخزينة المشفّرة.',
+              'Settings are saved locally inside your encrypted vault.',
+              'گۆڕانکارییەکان بە شێوەی ناوخۆیی و کۆدکراو پاشەکەوت دەکرێن.'
+            )}
+          </span>
           <button
             type="button"
             onClick={onClose}
             data-testid="settings-modal-close-footer-btn"
-            className="min-h-[38px] px-5 py-2 rounded-xl bg-card border border-line-2 text-xs font-bold text-foreground hover:bg-layer-hover cursor-pointer transition-colors"
+            className="min-h-[36px] px-4 py-1.5 rounded-xl bg-card border border-line-2 text-xs font-bold text-foreground hover:bg-layer-hover cursor-pointer transition-colors shrink-0"
           >
             {bi('إغلاق', 'Close', 'داخستن')}
           </button>
-        </div>
+        </footer>
       </div>
 
       <div onClick={(e) => e.stopPropagation()}>

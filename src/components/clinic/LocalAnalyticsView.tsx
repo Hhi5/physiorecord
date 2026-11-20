@@ -128,7 +128,7 @@ export const LocalAnalyticsView: React.FC = () => {
 
   return (
     <div className="pr-container space-y-5">
-      <div className="pr-page-header">
+      <div data-tour="analytics-header" className="pr-page-header">
         <div className="flex items-start gap-3">
           <div className="pr-icon-chip">
             <BarChart3 className="w-5 h-5" />
@@ -166,7 +166,7 @@ export const LocalAnalyticsView: React.FC = () => {
       )}
 
       {/* Primary KPI Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div data-tour="analytics-kpi-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* Caseload */}
         <div className="pr-surface p-4 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground-1">

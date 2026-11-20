@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  Compass,
   Keyboard,
   Layers,
   Lock,
@@ -40,6 +41,7 @@ export interface SessionTopBarProps {
   pendingNavAction: 'back' | 'chart' | null;
   onSafeNavigation: (target: 'back' | 'chart') => void;
   onOpenShortcuts: () => void;
+  onStartSessionTour?: () => void;
   onSaveDraft: () => void;
   onRequestSignAndLock: () => void;
   onConfirmSaveAndLeave: () => void;
@@ -68,6 +70,7 @@ export const SessionTopBar: React.FC<SessionTopBarProps> = ({
   pendingNavAction,
   onSafeNavigation,
   onOpenShortcuts,
+  onStartSessionTour,
   onSaveDraft,
   onRequestSignAndLock,
   onConfirmSaveAndLeave,
@@ -248,6 +251,20 @@ export const SessionTopBar: React.FC<SessionTopBarProps> = ({
             </div>
           )}
 
+          {onStartSessionTour && (
+            <button
+              type="button"
+              data-testid="session-replay-tour-btn"
+              onClick={onStartSessionTour}
+              className="compact-btn h-8 px-2 sm:px-2.5 rounded-xl bg-surface/80 hover:bg-surface text-muted-foreground-1 hover:text-primary text-xs font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors"
+              aria-label={bi('شرح ورقة الجلسة', 'Tour Session Sheet', 'ڕوونکردنەوەی پەڕەی دانیشتن')}
+              title={bi('شرح ورقة الجلسة (جولة سريعة)', 'Tour Session Sheet', 'ڕوونکردنەوەی پەڕەی دانیشتن')}
+            >
+              <Compass className="size-3.5 text-primary" />
+              <span className="hidden lg:inline">{bi('شرح', 'Guide', 'ڕێبەر')}</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onOpenShortcuts}
@@ -271,6 +288,7 @@ export const SessionTopBar: React.FC<SessionTopBarProps> = ({
             <div className="hidden md:flex items-center gap-1.5">
               <button
                 type="button"
+                data-tour="session-save-btn"
                 onClick={onSaveDraft}
                 disabled={isSaving}
                 className={`compact-btn h-8 px-3 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-all ${
@@ -286,6 +304,7 @@ export const SessionTopBar: React.FC<SessionTopBarProps> = ({
               {canFinalizeAndLockNotes && (
                 <button
                   type="button"
+                  data-tour="session-sign-btn"
                   onClick={onRequestSignAndLock}
                   disabled={isSaving}
                   className="compact-btn h-8 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-xs shadow-primary/20 cursor-pointer whitespace-nowrap transition-all"

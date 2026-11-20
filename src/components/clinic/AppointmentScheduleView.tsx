@@ -993,6 +993,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             type="button"
+            data-tour="schedule-book-btn"
             onClick={() => {
               setScheduleMode('single');
               setAppointmentMode('clinic');
@@ -1009,6 +1010,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
             <button
               ref={headerMenuBtnRef}
               type="button"
+              data-tour="schedule-options-btn"
               onClick={() => setShowHeaderMenu((prev) => !prev)}
               aria-expanded={showHeaderMenu}
               aria-haspopup="menu"
@@ -1107,7 +1109,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
       </div>
 
       {/* Interactive 7-Day Week Strip */}
-      <div className="pr-surface rounded-[20px] p-2.5 sm:p-3 space-y-2">
+      <div data-tour="schedule-week-strip" className="pr-surface rounded-[20px] p-2.5 sm:p-3 space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2 px-1">
           <div className="flex items-center gap-1.5 min-w-0">
             <button

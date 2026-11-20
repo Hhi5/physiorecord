@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronUp,
   Clock,
+  Compass,
   Copy,
   Edit3,
   MoreHorizontal,
@@ -129,6 +130,7 @@ export interface ChartHeroAndUtilityStripProps {
   cautionAlerts?: string[];
   isContextCollapsed?: boolean;
   onToggleContextCollapsed?: () => void;
+  onStartChartTour?: () => void;
 }
 
 export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> = ({
@@ -176,6 +178,7 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
   cautionAlerts = [],
   isContextCollapsed = false,
   onToggleContextCollapsed,
+  onStartChartTour,
 }) => {
   const { language, bi } = useLanguage();
   const [mrnCopied, setMrnCopied] = useState(false);
@@ -296,6 +299,7 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
 
           <button
             type="button"
+            data-tour="chart-new-session-btn"
             onClick={onOpenNewSession}
             className="compact-btn h-9 px-3 sm:px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-xs inline-flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
           >
@@ -304,9 +308,23 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
             <span className="hidden sm:inline">{bi('جلسة جديدة', 'New Session', 'دانیشتنی نوێ')}</span>
           </button>
 
+          {onStartChartTour && (
+            <button
+              type="button"
+              data-testid="chart-header-tour-btn"
+              onClick={onStartChartTour}
+              title={bi('شرح سجل المريض (جولة تفاعلية)', 'Patient Chart Guide', 'ڕێبەری دۆسیەی نەخۆش')}
+              aria-label={bi('شرح سجل المريض (جولة تفاعلية)', 'Patient Chart Guide', 'ڕێبەری دۆسیەی نەخۆش')}
+              className="compact-btn size-9 rounded-xl bg-surface/80 hover:bg-surface text-muted-foreground-1 hover:text-primary flex items-center justify-center transition-colors cursor-pointer focus:outline-none shrink-0"
+            >
+              <Compass className="size-4" />
+            </button>
+          )}
+
           <div ref={moreMenuRef} className="relative shrink-0">
             <button
               type="button"
+              data-tour="chart-more-btn"
               onClick={() => setIsMoreMenuOpen((v) => !v)}
               aria-label={bi('خيارات إضافية لملف المريض', 'More patient chart actions', 'بژاردەی زیاتر')}
               aria-expanded={isMoreMenuOpen}
@@ -388,6 +406,26 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
                       </span>
                     </button>
                   )}
+                  {onStartChartTour && (
+                    <button
+                      type="button"
+                      data-testid="chart-replay-tour-btn"
+                      onClick={() => {
+                        setIsMoreMenuOpen(false);
+                        onStartChartTour();
+                      }}
+                      className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-surface flex items-center gap-2.5 cursor-pointer text-start"
+                    >
+                      <Compass className="size-4 text-primary shrink-0" />
+                      <span>
+                        {bi(
+                          'شرح سجل المريض (جولة تفاعلية)',
+                          'Patient Chart Guide (Tour)',
+                          'ڕێبەری دۆسیەی نەخۆش (گەشت)'
+                        )}
+                      </span>
+                    </button>
+                  )}
                 </div>
                 <div
                   role="status"
@@ -418,6 +456,7 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
         {/* Line 2: Episode + ONE compact alerts/debt line (text only, zero boxes) */}
         <div
           data-testid="clinical-summary-collapsible"
+          data-tour="chart-episode-strip"
           className="pt-2 border-t border-black/[0.045] dark:border-white/[0.06] flex flex-wrap items-center gap-x-3 gap-y-1.5"
         >
           {episodes.length > 0 ? (
@@ -874,6 +913,7 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
       {/* 4 Underline Tabs — always one line, even at 360px */}
       <div
         role="tablist"
+        data-tour="chart-tabs"
         aria-label={bi('أقسام ملف المريض', 'Patient chart sections', 'بەشەکانی تۆماری نەخۆش')}
         className="grid grid-cols-4 sm:flex sm:items-center sm:justify-start sm:gap-6 border-b border-black/[0.06] dark:border-white/[0.08]"
       >
@@ -885,6 +925,7 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
               key={tab.id}
               type="button"
               role="tab"
+              data-tour={`chart-tab-${tab.id}`}
               aria-selected={isSelected}
               onClick={() => onSelectTab(tab.id)}
               className={`compact-btn h-10 px-1 sm:px-2.5 text-xs border-b-2 inline-flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${

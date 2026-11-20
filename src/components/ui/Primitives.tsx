@@ -304,7 +304,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   return (
     <div
       dir="ltr"
-      className={`flex items-stretch w-full rounded-xl border border-layer-line bg-layer overflow-hidden focus-within:border-primary ${
+      className={`flex items-stretch w-full rounded-xl border border-layer-line bg-layer overflow-hidden focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors ${
         disabled ? 'opacity-60' : ''
       }`}
     >
@@ -330,7 +330,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
         }}
         placeholder={placeholder}
         aria-label={ariaLabel || bi('رقم الهاتف', 'Phone number', 'ژمارەی تەلەفۆن')}
-        className={`flex-1 min-w-0 px-3 py-2 text-xs bg-transparent text-foreground tabular-nums ${isRtl ? 'text-right' : 'text-left'} focus:outline-none ${className}`.trim()}
+        className={`pr-input-bare border-0 flex-1 min-w-0 px-3 py-2 text-xs bg-transparent text-foreground tabular-nums ${isRtl ? 'text-right' : 'text-left'} focus:outline-none ${className}`.trim()}
       />
     </div>
   );

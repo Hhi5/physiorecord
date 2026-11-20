@@ -299,6 +299,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
         <div className="flex items-center gap-2">
           <button
             type="button"
+            data-tour="reception-privacy-btn"
             onClick={togglePrivacyBlur}
             className={`pr-btn ${
               privacyBlur
@@ -312,6 +313,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
 
           <button
             type="button"
+            data-tour="reception-book-btn"
             onClick={() => onNavigateTab('schedule')}
             className="pr-btn pr-btn-ghost"
           >

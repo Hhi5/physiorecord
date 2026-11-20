@@ -6,8 +6,8 @@ import {
   MapPin,
   Phone,
   Printer,
-  Save,
   Send,
+  ShieldAlert,
   User,
   UserCheck,
   Wallet,
@@ -35,13 +35,12 @@ import {
 import { buildPatientFhirR4Bundle } from '../../../utils/fhirExport';
 import {
   REFERRAL_SOURCE_LABELS,
-  REFERRAL_SOURCE_TYPES,
   resolveDoctorDisplayName,
   resolveDoctorFacility,
 } from '../../../utils/iraqReferralsRetentionC6C7';
 import { getPatientDisplayName } from '../../../utils/mrn';
 import type { PrintableDocumentType } from '../../print/PrintDocumentModal';
-import { Money, Num, PhoneInput } from '../../ui/Primitives';
+import { Money, Num } from '../../ui/Primitives';
 
 const ConsentSignaturePanel = lazy(() =>
   import('../../clinic/ConsentSignaturePanel').then((m) => ({
@@ -66,28 +65,18 @@ export interface ChartProfileTabProps {
   enableScheduleVisitCardPrint: boolean;
   onAllPatientSoapsLoaded: (soaps: SoapNoteRecord[]) => void;
   onOpenPrintDoc: (docType: PrintableDocumentType) => void;
-  // Non-clinical Personal, Emergency & Referral fields
+  // Non-clinical Personal, Emergency & Referral fields (Read-First + Unified Edit Modal)
   onOpenEditPersonalInfo?: () => void;
   enableReferralsModule?: boolean;
   referringDoctors?: ReferringDoctorEntry[];
   referralSourceType?: ReferralSourceType | '';
-  setReferralSourceType?: (v: ReferralSourceType | '') => void;
   referringDoctorId?: string;
-  setReferringDoctorId?: (v: string) => void;
   referralNotes?: string;
-  setReferralNotes?: (v: string) => void;
   referringPhysician?: string;
-  setReferringPhysician?: (v: string) => void;
   referringClinic?: string;
-  setReferringClinic?: (v: string) => void;
   emergencyContactName?: string;
-  setEmergencyContactName?: (v: string) => void;
   emergencyContactPhone?: string;
-  setEmergencyContactPhone?: (v: string) => void;
   onOpenReportBackModal?: () => void;
-  onSaveMasterAndEpisode?: () => void;
-  isSaving?: boolean;
-  saveSuccess?: boolean;
 }
 
 export const ChartProfileTab: React.FC<ChartProfileTabProps> = ({
@@ -106,27 +95,32 @@ export const ChartProfileTab: React.FC<ChartProfileTabProps> = ({
   enableReferralsModule = false,
   referringDoctors = [],
   referralSourceType = '',
-  setReferralSourceType,
   referringDoctorId = '',
-  setReferringDoctorId,
   referralNotes = '',
-  setReferralNotes,
   referringPhysician = '',
-  setReferringPhysician,
   referringClinic = '',
-  setReferringClinic,
   emergencyContactName = '',
-  setEmergencyContactName,
   emergencyContactPhone = '',
-  setEmergencyContactPhone,
   onOpenReportBackModal,
-  onSaveMasterAndEpisode,
-  isSaving = false,
-  saveSuccess = false,
 }) => {
   const { language, bi } = useLanguage();
   const isRtlLang = language !== 'en';
   const { dek } = useVault();
+
+  const resolvedDirectoryDoctor = referringDoctorId
+    ? referringDoctors.find((doc) => doc.id === referringDoctorId) || null
+    : null;
+  const displayDoctorName =
+    referringPhysician.trim() ||
+    (resolvedDirectoryDoctor ? resolveDoctorDisplayName(resolvedDirectoryDoctor, isRtlLang) : '');
+  const displayClinicName =
+    referringClinic.trim() ||
+    (resolvedDirectoryDoctor ? resolveDoctorFacility(resolvedDirectoryDoctor, isRtlLang) : '');
+  const displayEmergencyName = (emergencyContactName || patient.data.emergencyContactName || '').trim();
+  const displayEmergencyPhone = (emergencyContactPhone || patient.data.emergencyContactPhone || '').trim();
+  const hasReferralMeta = Boolean(
+    enableReferralsModule && (referralSourceType || referralNotes.trim())
+  );
 
   return (
     <div className="max-w-5xl mx-auto space-y-4">
@@ -182,8 +176,8 @@ export const ChartProfileTab: React.FC<ChartProfileTabProps> = ({
         </div>
       </div>
 
-      {/* 2. Personal Information, Emergency Contacts & Referral Attribution (Non-Clinical Hub) */}
-      <div className="p-4 sm:p-5 rounded-2xl pr-surface space-y-4">
+      {/* 2. Personal Information, Emergency Contacts & Referral Attribution (Read-First Face Sheet) */}
+      <div className="p-4 sm:p-5 rounded-2xl pr-surface space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/[0.045] dark:border-white/[0.06] pb-3">
           <div className="flex items-center gap-2">
             <User className="size-4 text-primary" />
@@ -197,18 +191,6 @@ export const ChartProfileTab: React.FC<ChartProfileTabProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-            {onOpenEditPersonalInfo && (
-              <button
-                type="button"
-                onClick={onOpenEditPersonalInfo}
-                className="compact-btn h-8 px-2.5 sm:px-3 rounded-xl bg-surface/80 hover:bg-surface text-xs font-bold text-primary inline-flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
-              >
-                <Edit3 className="size-3.5 shrink-0" />
-                <span className="sm:hidden">{bi('تعديل', 'Edit', 'دەستکاری')}</span>
-                <span className="hidden sm:inline">{bi('تعديل البيانات الأساسية', 'Edit Basic Info', 'دەستکاری زانیاری کەسی')}</span>
-              </button>
-            )}
-
             {enableReferralsModule && onOpenReportBackModal && (
               <button
                 type="button"
@@ -221,32 +203,14 @@ export const ChartProfileTab: React.FC<ChartProfileTabProps> = ({
               </button>
             )}
 
-            {onSaveMasterAndEpisode && (
+            {onOpenEditPersonalInfo && (
               <button
                 type="button"
-                onClick={onSaveMasterAndEpisode}
-                disabled={isSaving}
-                className={`compact-btn h-8 px-2.5 sm:px-3.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition-all cursor-pointer whitespace-nowrap ${
-                  saveSuccess
-                    ? 'bg-emerald-700 text-white'
-                    : 'bg-primary hover:bg-primary-hover text-primary-foreground'
-                }`}
+                onClick={onOpenEditPersonalInfo}
+                className="compact-btn h-8 px-3 rounded-xl bg-surface/80 hover:bg-surface text-xs font-bold text-primary inline-flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
               >
-                <Save className="size-3.5 shrink-0" />
-                <span className="sm:hidden">
-                  {isSaving
-                    ? bi('حفظ...', 'Saving...', 'پاشەکەوت...')
-                    : saveSuccess
-                    ? bi('تم الحفظ', 'Saved', 'پاشەکەوتکرا')
-                    : bi('حفظ', 'Save', 'پاشەکەوت')}
-                </span>
-                <span className="hidden sm:inline">
-                  {isSaving
-                    ? bi('جاري الحفظ...', 'Saving...', 'پاشەکەوت دەکرێت...')
-                    : saveSuccess
-                    ? bi('تم حفظ الملف', 'Saved', 'پاشەکەوتکرا')
-                    : bi('حفظ بيانات الملف', 'Save Profile', 'پاشەکەوتکردن')}
-                </span>
+                <Edit3 className="size-3.5 shrink-0" />
+                <span>{bi('تعديل', 'Edit', 'دەستکاری')}</span>
               </button>
             )}
           </div>
@@ -300,144 +264,73 @@ export const ChartProfileTab: React.FC<ChartProfileTabProps> = ({
           </div>
         </div>
 
-        {/* Referral Source & Emergency Contacts Form */}
-        {enableReferralsModule && setReferralSourceType && setReferringDoctorId && setReferralNotes && (
-          <div className="p-3.5 rounded-2xl bg-surface/55 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div>
-              <label htmlFor="profile-referral-source" className="text-xs font-semibold text-foreground block mb-1.5">
-                {bi('مصدر الإحالة:', 'Referral Source:', 'سەرچاوەی ڕەوانەکردن:')}
-              </label>
-              <select
-                id="profile-referral-source"
-                value={referralSourceType}
-                onChange={(e) => setReferralSourceType((e.target.value as ReferralSourceType) || '')}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
-              >
-                <option value="">{bi('— غير محدد —', '— Unspecified —', '— دیارینەکراو —')}</option>
-                {REFERRAL_SOURCE_TYPES.map((sourceType) => (
-                  <option key={sourceType} value={sourceType}>
-                    {bi(REFERRAL_SOURCE_LABELS[sourceType].ar, REFERRAL_SOURCE_LABELS[sourceType].en)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="profile-referring-doctor-id" className="text-xs font-semibold text-foreground block mb-1.5">
-                {bi('الطبيب المحيل (من الدليل):', 'Directory Doctor:', 'پزیشکی ڕەوانەکار (لە ڕێبەرەوە):')}
-              </label>
-              <select
-                id="profile-referring-doctor-id"
-                value={referringDoctorId}
-                onChange={(e) => {
-                  const nextId = e.target.value;
-                  const doc = referringDoctors.find((entry) => entry.id === nextId);
-                  setReferringDoctorId(nextId);
-                  if (doc && setReferringPhysician && setReferringClinic) {
-                    setReferringPhysician(resolveDoctorDisplayName(doc, isRtlLang));
-                    const docFacility = resolveDoctorFacility(doc, isRtlLang);
-                    if (docFacility) setReferringClinic(docFacility);
-                    if (!referralSourceType) setReferralSourceType('doctor');
-                  }
-                }}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
-              >
-                <option value="">
-                  {bi(
-                    '— اختياري: اختر من الدليل —',
-                    '— Optional: Pick from Directory —',
-                    '— دڵخوازانە: لە ڕێبەر هەڵبژێرە —'
-                  )}
-                </option>
-                {referringDoctors.map((doc) => {
-                  const docFacility = resolveDoctorFacility(doc, isRtlLang);
-                  return (
-                    <option key={doc.id} value={doc.id}>
-                      {resolveDoctorDisplayName(doc, isRtlLang)}
-                      {docFacility ? ` (${docFacility})` : ''}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="profile-referral-notes" className="text-xs font-semibold text-foreground block mb-1.5">
-                {bi('ملاحظات الإحالة:', 'Referral Notes:', 'تێبینییەکانی ڕەوانەکردن:')}
-              </label>
-              <input
-                id="profile-referral-notes"
-                type="text"
-                value={referralNotes}
-                onChange={(e) => setReferralNotes(e.target.value)}
-                placeholder={bi(
-                  'مثال: كتاب إحالة / اسم المُعرِّف...',
-                  'e.g., Referral ref / recommender...',
-                  'نموونە: نووسراوی ڕەوانەکردن / ناوی پێشنیارکەر...'
+        {/* Emergency Contact & Referral Attribution Read-Only Strip */}
+        <div
+          className={`grid grid-cols-1 ${
+            hasReferralMeta ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
+          } gap-3 text-xs bg-surface/55 p-3.5 rounded-2xl`}
+        >
+          <div className="space-y-1 min-w-0">
+            <span className="text-muted-foreground-1 flex items-center gap-1 font-medium">
+              <ShieldAlert className="size-3 text-muted-foreground-1" />
+              {bi('جهة الطوارئ', 'Emergency Contact', 'پەیوەندیی فریاگوزاری')}
+            </span>
+            {displayEmergencyName || displayEmergencyPhone ? (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 font-bold text-foreground">
+                {displayEmergencyName && <span className="truncate">{displayEmergencyName}</span>}
+                {displayEmergencyPhone && (
+                  <bdi dir="ltr" className="font-mono text-primary font-semibold">
+                    {formatIraqiPhoneDisplay(displayEmergencyPhone)}
+                  </bdi>
                 )}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
-              />
-            </div>
+              </div>
+            ) : (
+              <span className="font-medium text-muted-foreground-1 block">
+                {bi('غير مسجل', 'Not set', 'تۆمار نەکراوە')}
+              </span>
+            )}
           </div>
-        )}
 
-        {setReferringPhysician && setReferringClinic && setEmergencyContactName && setEmergencyContactPhone && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <div>
-              <label htmlFor="profile-referring-physician" className="text-xs font-semibold text-foreground block mb-1.5">
-                <UserCheck className="size-3.5 inline me-1 text-primary" />
-                {bi('الطبيب الاستشاري المحيل:', 'Referring Physician:', 'پزیشکی ڕاوێژکاری ڕەوانەکار:')}
-              </label>
-              <input
-                id="profile-referring-physician"
-                type="text"
-                value={referringPhysician}
-                onChange={(e) => setReferringPhysician(e.target.value)}
-                placeholder={bi('مثال: د. حيدر العبيدي (جراحة عظام)', 'e.g., Dr. Haider Al-Obaidi', 'نموونە: د. حەیدەر عوبەیدی')}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-surface/80 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="profile-referring-clinic" className="text-xs font-semibold text-foreground block mb-1.5">
-                {bi('المستشفى / المركز المحيل:', 'Referring Hospital / Clinic:', 'نەخۆشخانە / سەنتەری ڕەوانەکار:')}
-              </label>
-              <input
-                id="profile-referring-clinic"
-                type="text"
-                value={referringClinic}
-                onChange={(e) => setReferringClinic(e.target.value)}
-                placeholder={bi('مستشفى الكفيل / عيادة الحارثية...', 'Hospital / Medical Center...', 'نەخۆشخانە / سەنتەری پزیشکی...')}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-surface/80 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="profile-emergency-name" className="text-xs font-semibold text-foreground block mb-1.5">
-                {bi('اسم قريب الطوارئ وصلة القرابة:', 'Emergency Contact & Relation:', 'ناوی خزمی فریاگوزاری:')}
-              </label>
-              <input
-                id="profile-emergency-name"
-                type="text"
-                value={emergencyContactName}
-                onChange={(e) => setEmergencyContactName(e.target.value)}
-                placeholder={bi('مثال: محمد عبد الله (الأخ)', 'Name & Relationship', 'ناو و پەیوەندیی خزمایەتی')}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-surface/80 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="profile-emergency-phone" className="text-xs font-semibold text-foreground block mb-1.5">
-                {bi('هاتف الطوارئ:', 'Emergency Phone:', 'ژمارەی تەلەفۆنی فریاگوزاری:')}
-              </label>
-              <PhoneInput
-                id="profile-emergency-phone"
-                value={emergencyContactPhone}
-                onChange={setEmergencyContactPhone}
-              />
-            </div>
+          <div className="space-y-1 min-w-0">
+            <span className="text-muted-foreground-1 flex items-center gap-1 font-medium">
+              <UserCheck className="size-3 text-muted-foreground-1" />
+              {bi('الطبيب / الجهة المحيلة', 'Referring Physician / Clinic', 'پزیشک / نەخۆشخانەی ڕەوانەکار')}
+            </span>
+            {displayDoctorName || displayClinicName ? (
+              <div className="font-bold text-foreground truncate">
+                {displayDoctorName || displayClinicName}
+                {displayDoctorName && displayClinicName && (
+                  <span className="font-medium text-muted-foreground-1"> · {displayClinicName}</span>
+                )}
+              </div>
+            ) : (
+              <span className="font-medium text-muted-foreground-1 block">
+                {bi('غير محدد', 'Unspecified', 'دیارینەکراو')}
+              </span>
+            )}
           </div>
-        )}
+
+          {hasReferralMeta && (
+            <div className="space-y-1 min-w-0">
+              <span className="text-muted-foreground-1 font-medium block">
+                {bi('مصدر الإحالة والملاحظات', 'Referral Source & Notes', 'سەرچاوە و تێبینی ڕەوانەکردن')}
+              </span>
+              <div className="font-bold text-foreground truncate">
+                {referralSourceType &&
+                  bi(
+                    REFERRAL_SOURCE_LABELS[referralSourceType].ar,
+                    REFERRAL_SOURCE_LABELS[referralSourceType].en
+                  )}
+                {referralSourceType && referralNotes.trim() && (
+                  <span className="font-medium text-muted-foreground-1"> · </span>
+                )}
+                {referralNotes.trim() && (
+                  <span className="font-medium text-muted-foreground-1">{referralNotes.trim()}</span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 3. Printable Clinical Reports Portal & HL7 FHIR Export */}

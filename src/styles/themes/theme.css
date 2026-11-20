@@ -115,6 +115,7 @@
   /* Card */
   --color-card: var(--card);
   --color-card-line: var(--card-line);
+  --color-card-stroke: var(--card-line);
   --color-card-divider: var(--card-divider);
   --color-card-header: var(--card-header);
   --color-card-footer: var(--card-footer);

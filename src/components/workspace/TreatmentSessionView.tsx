@@ -96,6 +96,7 @@ interface TreatmentSessionViewProps {
   onBack: () => void;
   onSessionUpdated: () => void;
   onOpenMasterChart: () => void;
+  onStartSessionTour?: () => void;
 }
 
 export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
@@ -108,6 +109,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
   onBack,
   onSessionUpdated,
   onOpenMasterChart,
+  onStartSessionTour,
 }) => {
   const { language, bi } = useLanguage();
   const { dek, refreshRecoveredDrafts } = useVault();
@@ -1563,6 +1565,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         pendingNavAction={pendingNavAction}
         onSafeNavigation={handleSafeNavigation}
         onOpenShortcuts={() => setShowShortcutsModal(true)}
+        onStartSessionTour={onStartSessionTour}
         onSaveDraft={() => void persistDraftSoap(false)}
         onRequestSignAndLock={handleRequestSignAndLock}
         onConfirmSaveAndLeave={async () => {
@@ -1678,6 +1681,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         <div className="md:hidden shrink-0 px-3 py-2.5 bg-card/95 backdrop-blur-md border-t border-black/[0.05] dark:border-white/[0.06] flex items-center justify-between gap-2 z-20">
           <button
             type="button"
+            data-tour="session-save-btn"
             onClick={() => void persistDraftSoap(false)}
             disabled={isSaving}
             className="flex-1 compact-btn h-10 px-3 rounded-xl bg-surface/85 hover:bg-surface text-foreground text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
@@ -1688,6 +1692,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
           {perms.canFinalizeAndLockNotes && (
             <button
               type="button"
+              data-tour="session-sign-btn"
               onClick={handleRequestSignAndLock}
               disabled={isSaving}
               className="flex-1 compact-btn h-10 px-3 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold shadow-xs shadow-primary/20 inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all"

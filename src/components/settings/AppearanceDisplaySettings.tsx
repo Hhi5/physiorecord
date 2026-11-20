@@ -4,13 +4,12 @@
 // user uploads loaded via FontFace ArrayBuffer — zero external requests).
 // =======================================================================
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Type,
   Upload,
   Trash2,
   RotateCcw,
-  Sparkles,
   Check,
   Monitor,
   Eye,
@@ -19,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import type { SettingsViewMode } from '../../types/clinicManagement';
 import {
   BUILTIN_FONT_OPTIONS,
   CURATED_DEVICE_FONTS,
@@ -34,6 +34,7 @@ import {
   type LtrLetterSpacingMode,
   type ReducedEffectsMode,
 } from '../../utils/appearancePrefs';
+import { SettingsAccordion, SettingsSwitchRow } from './SettingsPrimitives';
 
 const FONT_DESC_CKB: Record<DisplayFontPresetId, string> = {
   default: 'فۆنتی یەکخراوی ڕوون بۆ دەقی پزیشکی کوردی و عەرەبی و ژمارەکان',
@@ -55,7 +56,13 @@ const DEVICE_FONT_LABEL_CKB: Record<string, string> = {
   Tajawal: 'Tajawal (ئەگەر هەبێت)',
 };
 
-export const AppearanceDisplaySettings: React.FC = () => {
+interface AppearanceDisplaySettingsProps {
+  settingsViewMode?: SettingsViewMode;
+}
+
+export const AppearanceDisplaySettings: React.FC<AppearanceDisplaySettingsProps> = ({
+  settingsViewMode = 'advanced',
+}) => {
   const { bi } = useLanguage();
   const {
     displayPrefs,
@@ -76,6 +83,13 @@ export const AppearanceDisplaySettings: React.FC = () => {
   const [uploadingFont, setUploadingFont] = useState(false);
   const [scanningSystemFonts, setScanningSystemFonts] = useState(false);
   const [manualSystemFontInput, setManualSystemFontInput] = useState('');
+  const [accessibilityOpen, setAccessibilityOpen] = useState<boolean>(
+    settingsViewMode === 'advanced'
+  );
+
+  useEffect(() => {
+    setAccessibilityOpen(settingsViewMode === 'advanced');
+  }, [settingsViewMode]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -90,11 +104,7 @@ export const AppearanceDisplaySettings: React.FC = () => {
       setFontUploadError(
         err instanceof Error
           ? err.message
-          : bi(
-              'تعذر تحميل ملف الخط.',
-              'Failed to load custom font file.',
-              'بارکردنی فایلی فۆنت سەرکەوتوو نەبوو.'
-            )
+          : bi('تعذر تحميل ملف الخط.', 'Failed to load custom font file.', 'بارکردنی فایلی فۆنت سەرکەوتوو نەبوو.')
       );
     } finally {
       setUploadingFont(false);
@@ -106,7 +116,6 @@ export const AppearanceDisplaySettings: React.FC = () => {
     try {
       await scanSystemFonts();
     } catch (err) {
-      // Local Font Access API not supported on Android WebView / some browsers — fail silently
       console.warn('[AppearanceDisplaySettings] scanSystemFonts failed (API likely unsupported):', err);
     } finally {
       setScanningSystemFonts(false);
@@ -121,36 +130,34 @@ export const AppearanceDisplaySettings: React.FC = () => {
   };
 
   const localFontApiAvailable = isLocalFontAccessSupported();
+  const activeBuiltin = BUILTIN_FONT_OPTIONS.find((f) => f.id === displayPrefs.fontPreset);
+  const currentFontLabel = activeBuiltin
+    ? bi(activeBuiltin.labelAr, activeBuiltin.labelEn, activeBuiltin.labelCkb)
+    : displayPrefs.fontPreset.replace(/^(system:|custom:)/, '');
 
   return (
-    <div className="space-y-4">
-      {/* 1. Font Family Section */}
-      <div className="p-4 rounded-xl bg-surface border border-line-2 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-            <Type className="size-4 text-primary" />
-            <span>
-              {bi('نوع الخط والطباعة', 'Typography & Font Family', 'جۆری فۆنت و چاپکردن')}
-            </span>
-          </div>
+    <div className="space-y-3.5">
+      {/* 1. Font Family & Device/Custom Fonts (Collapsible) */}
+      <SettingsAccordion
+        icon={<Type className="size-4" />}
+        title={bi('نوع الخط وخطوط الجهاز', 'Font Family & Custom Fonts', 'جۆری فۆنت و فۆنتەکانی ئامێر')}
+        meta={currentFontLabel}
+      >
+        <div className="flex justify-end">
           <button
             type="button"
             onClick={resetDisplayPrefs}
             className="px-2.5 py-1 rounded-lg border border-layer-line bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
           >
             <RotateCcw className="size-3.5 text-primary" />
-            <span>{bi('إعادة ضبط العرض', 'Reset Display', 'گەڕاندنەوەی بنەڕەتی نیشاندان')}</span>
+            <span>{bi('إعادة ضبط العرض', 'Reset Display', 'گەڕاندنەوەی بنەڕەتی')}</span>
           </button>
         </div>
 
         {/* Built-in Offline Fonts */}
         <div className="space-y-1.5">
           <span className="text-xs font-bold text-muted-foreground-1 block">
-            {bi(
-              'الخطوط المدمجة (تعمل بدون إنترنت):',
-              'Built-in Offline Fonts:',
-              'فۆنتە یەکخراوەکان (بێ ئینتەرنێت کار دەکەن):'
-            )}
+            {bi('الخطوط المدمجة (تعمل بدون إنترنت)', 'Built-in Offline Fonts', 'فۆنتە یەکخراوەکان')}
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {BUILTIN_FONT_OPTIONS.map((opt) => {
@@ -163,7 +170,7 @@ export const AppearanceDisplaySettings: React.FC = () => {
                   className={`p-2.5 rounded-xl border text-start transition-colors cursor-pointer ${
                     active
                       ? 'bg-primary/10 border-primary text-primary'
-                      : 'bg-card border-card-line hover:bg-layer-hover text-foreground'
+                      : 'bg-surface border-line-2 hover:bg-layer-hover text-foreground'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -181,22 +188,18 @@ export const AppearanceDisplaySettings: React.FC = () => {
           </div>
         </div>
 
-        {/* Upload Custom Local Font (.woff2 / .woff / .ttf / .otf) */}
-        <div className="p-3 rounded-xl bg-layer border border-layer-line space-y-2.5">
+        {/* Upload Custom Font */}
+        <div className="p-3 rounded-xl bg-surface border border-line-2 space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <div className="text-xs font-bold text-foreground">
-                {bi(
-                  'رفع خط مخصص من جهازك',
-                  'Upload Custom Font from Device',
-                  'بارکردنی فۆنتی تایبەت لە ئامێرەکەتەوە'
-                )}
+                {bi('رفع خط مخصص من جهازك', 'Upload Custom Font from Device', 'بارکردنی فۆنتی تایبەت')}
               </div>
               <p className="text-xs text-muted-foreground-1 mt-0.5">
                 {bi(
-                  'يقبل صيغ .woff2 / .woff / .ttf / .otf (بحد أقصى 5 ميجابايت) ويُحفظ محلياً على هذا الجهاز فقط.',
-                  'Supports .woff2 / .woff / .ttf / .otf (max 5 MB), stored locally on this device only.',
-                  'فۆرماتەکانی .woff2 / .woff / .ttf / .otf وەردەگرێت (زۆرترین 5 MB) و تەنها لەسەر ئەم ئامێرە هەڵدەگیرێت.'
+                  'صيغ .woff2 / .woff / .ttf / .otf (حتى 5 MB) — يُحفظ محلياً فقط.',
+                  'Supports .woff2 / .woff / .ttf / .otf (max 5 MB), stored locally.',
+                  'فۆرماتەکانی .woff2 / .woff / .ttf / .otf (زۆرترین 5 MB).'
                 )}
               </p>
             </div>
@@ -207,23 +210,19 @@ export const AppearanceDisplaySettings: React.FC = () => {
                 accept=".woff2,.woff,.ttf,.otf,font/woff2,font/woff,font/ttf,font/otf"
                 onChange={handleFileChange}
                 className="hidden"
-                aria-label={bi(
-                  'رفع ملف خط من الجهاز',
-                  'Upload custom font file',
-                  'بارکردنی فایلی فۆنت لە ئامێرەوە'
-                )}
+                aria-label={bi('رفع ملف خط من الجهاز', 'Upload custom font file', 'بارکردنی فایلی فۆنت')}
               />
               <button
                 type="button"
                 disabled={uploadingFont}
                 onClick={() => fileInputRef.current?.click()}
-                className="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                className="min-h-[34px] px-3 py-1.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
               >
                 <Upload className="size-3.5" />
                 <span>
                   {uploadingFont
-                    ? bi('جاري التحميل...', 'Loading...', 'خەریکی بارکردنە...')
-                    : bi('رفع خط من الجهاز', 'Upload Font File', 'بارکردنی فۆنت لە ئامێرەوە')}
+                    ? bi('جاري التحميل...', 'Loading...', 'بارکردن...')
+                    : bi('رفع ملف خط', 'Upload Font', 'بارکردنی فۆنت')}
                 </span>
               </button>
             </div>
@@ -243,10 +242,8 @@ export const AppearanceDisplaySettings: React.FC = () => {
                 return (
                   <div
                     key={f.id}
-                    className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg border ${
-                      active
-                        ? 'bg-primary/10 border-primary'
-                        : 'bg-card border-card-line'
+                    className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl border ${
+                      active ? 'bg-primary/10 border-primary' : 'bg-card border-card-line'
                     }`}
                   >
                     <button
@@ -263,8 +260,8 @@ export const AppearanceDisplaySettings: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => void removeCustomFont(f.id)}
-                      aria-label={bi('حذف الخط المخصص', 'Delete custom font', 'سڕینەوەی فۆنتی تایبەت')}
-                      className="size-9 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 inline-flex items-center justify-center cursor-pointer shrink-0"
+                      aria-label={bi('حذف الخط المخصص', 'Delete custom font', 'سڕینەوەی فۆنت')}
+                      className="size-8 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 inline-flex items-center justify-center cursor-pointer shrink-0"
                     >
                       <Trash2 className="size-4" />
                     </button>
@@ -276,7 +273,7 @@ export const AppearanceDisplaySettings: React.FC = () => {
         </div>
 
         {/* Device / System Fonts */}
-        <div className="p-3 rounded-xl bg-layer border border-layer-line space-y-2.5">
+        <div className="p-3 rounded-xl bg-surface border border-line-2 space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
               <Monitor className="size-3.5 text-primary" />
@@ -287,11 +284,11 @@ export const AppearanceDisplaySettings: React.FC = () => {
                 type="button"
                 disabled={scanningSystemFonts}
                 onClick={handleScanSystemFonts}
-                className="px-2.5 py-1 rounded-lg border border-layer-line bg-card hover:bg-surface text-xs font-semibold text-foreground cursor-pointer"
+                className="px-2.5 py-1 rounded-lg border border-layer-line bg-card hover:bg-layer-hover text-xs font-semibold text-foreground cursor-pointer"
               >
                 {scanningSystemFonts
-                  ? bi('جاري الفحص...', 'Scanning...', 'خەریکی پشکنینە...')
-                  : bi('قراءة خطوط هذا الجهاز', 'Load Device Fonts', 'خوێندنەوەی فۆنتەکانی ئەم ئامێرە')}
+                  ? bi('جاري الفحص...', 'Scanning...', 'پشکنین...')
+                  : bi('قراءة خطوط الجهاز', 'Load Device Fonts', 'خوێندنەوەی فۆنتەکان')}
               </button>
             )}
           </div>
@@ -305,10 +302,10 @@ export const AppearanceDisplaySettings: React.FC = () => {
                   key={df.family}
                   type="button"
                   onClick={() => updateDisplayPrefs({ fontPreset: id })}
-                  className={`min-h-[36px] px-2.5 py-1 rounded-lg border text-xs font-semibold cursor-pointer ${
+                  className={`min-h-[34px] px-2.5 py-1 rounded-xl border text-xs font-semibold cursor-pointer ${
                     active
                       ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-card border-card-line text-foreground hover:bg-surface'
+                      : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
                   }`}
                 >
                   {bi(df.labelAr, df.labelEn, DEVICE_FONT_LABEL_CKB[df.family])}
@@ -323,14 +320,14 @@ export const AppearanceDisplaySettings: React.FC = () => {
               onChange={(e) => {
                 if (e.target.value) updateDisplayPrefs({ fontPreset: e.target.value });
               }}
-              aria-label={bi('اختيار خط من النظام', 'Select system font', 'هەڵبژاردنی فۆنت لە سیستەمەوە')}
-              className="w-full py-2 px-3 rounded-lg bg-card border border-card-line text-xs text-foreground"
+              aria-label={bi('اختيار خط من النظام', 'Select system font', 'هەڵبژاردنی فۆنت')}
+              className="w-full py-2 px-3 rounded-xl bg-card border border-card-line text-xs text-foreground"
             >
               <option value="">
                 {bi(
-                  `-- اختر من ${systemFontFamilies.length} خط مثبت على جهازك --`,
+                  `-- اختر من ${systemFontFamilies.length} خط مثبت --`,
                   `-- Choose from ${systemFontFamilies.length} installed fonts --`,
-                  `-- لە نێوان ${systemFontFamilies.length} فۆنتی دامەزراوی ئامێرەکەت هەڵبژێرە --`
+                  `-- لە ${systemFontFamilies.length} فۆنت هەڵبژێرە --`
                 )}
               </option>
               {systemFontFamilies.map((fam) => (
@@ -348,79 +345,38 @@ export const AppearanceDisplaySettings: React.FC = () => {
               value={manualSystemFontInput}
               onChange={(e) => setManualSystemFontInput(e.target.value)}
               placeholder={bi(
-                'أو اكتب اسم خط مثبت (مثل: Sakkal Majalla أو Noto Naskh Arabic)...',
-                'Or type installed font name (e.g., Inter, Arial, Georgia)...',
-                'یان ناوی فۆنتێکی دامەزراو بنووسە (وەک: Noto Naskh Arabic یان Inter)...'
+                'أو اكتب اسم خط مثبت على جهازك...',
+                'Or type an installed font name...',
+                'یان ناوی فۆنتێکی دامەزراو بنووسە...'
               )}
-              className="flex-1 min-h-[36px] py-1.5 px-2.5 rounded-lg bg-card border border-control-border text-xs text-foreground"
+              className="flex-1 min-h-[36px] py-1.5 px-2.5 rounded-xl bg-card border border-control-border text-xs text-foreground"
             />
             <button
               type="button"
               onClick={handleApplyManualSystemFont}
               disabled={!manualSystemFontInput.trim()}
-              className="min-h-[36px] px-3 py-1.5 rounded-lg bg-surface hover:bg-layer-hover border border-layer-line text-xs font-bold text-foreground cursor-pointer disabled:opacity-50"
+              className="min-h-[36px] px-3 py-1.5 rounded-xl bg-card hover:bg-layer-hover border border-line-2 text-xs font-bold text-foreground cursor-pointer disabled:opacity-50"
             >
               {bi('تطبيق', 'Apply', 'جێبەجێکردن')}
             </button>
           </div>
         </div>
-      </div>
+      </SettingsAccordion>
 
-      {/* 2. Font Size, Arabic Boost, Weight, Line Height & LTR Spacing */}
-      <div className="p-4 rounded-xl bg-surface border border-line-2 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs font-bold text-foreground flex items-center gap-2">
-            <Sparkles className="size-4 text-primary" />
-            <span>
-              {bi(
-                'حجم الخط الأساسي والتفاصيل الطباعية',
-                'Font Size & Typography Controls',
-                'قەبارەی سەرەکی فۆنت و وردەکاری چاپکردن'
-              )}
-            </span>
-          </span>
-          <span dir="ltr" className="text-xs font-mono font-bold text-primary">
-            {displayPrefs.fontScalePercent}%
-          </span>
-        </div>
-
-        {/* Fine slider + quick preset buttons */}
-        <div className="space-y-2">
-          <input
-            type="range"
-            min={87.5}
-            max={150}
-            step={2.5}
-            value={displayPrefs.fontScalePercent}
-            onChange={(e) =>
-              updateDisplayPrefs({ fontScalePercent: Number(e.target.value) })
-            }
-            aria-label={bi('حجم الخط الأساسي', 'Base font size', 'قەبارەی سەرەکی فۆنت')}
-            className="w-full accent-primary cursor-pointer"
-          />
-          <div className="flex flex-wrap gap-1.5">
-            {([87.5, 100, 115, 130, 150] as const).map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                onClick={() => updateDisplayPrefs({ fontScalePercent: preset })}
-                className={`min-h-[36px] px-2.5 py-1 rounded-lg border text-xs font-bold cursor-pointer ${
-                  displayPrefs.fontScalePercent === preset
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
-                }`}
-              >
-                <span dir="ltr">{preset}%</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-          {/* Arabic/Kurdish Relative Scale Boost */}
+      {/* 2. Fine Typography & Layout Controls (Collapsed by default) */}
+      <SettingsAccordion
+        icon={<Maximize2 className="size-4" />}
+        title={bi('تفاصيل الخط وكثافة التخطيط', 'Typography Fine-Tuning & Layout', 'وردەکاری فۆنت و شێوازی شاشە')}
+        subtitle={bi(
+          'سُمك الخط، تباعد الأسطر، كثافة العرض، عرض المحتوى واستدارة الحواف.',
+          'Weight, line height, Arabic readability boost, density, width & corner radius.',
+          'ئەستووری فۆنت، دووری دێڕ، چڕی نیشاندان، پانی و خڕی لێوارەکان.'
+        )}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1">
             <span id="appearance-arabic-scale-label" className="text-xs font-bold text-muted-foreground-1 block">
-              {bi('تكبير إضافي للنص العربي والكردي', 'Arabic / Kurdish Readability Boost', 'گەورەکردنی زیادەی دەقی کوردی و عەرەبی')}
+              {bi('تكبير إضافي للنص العربي والكردي', 'Arabic / Kurdish Readability Boost', 'گەورەکردنی دەقی کوردی و عەرەبی')}
             </span>
             <div className="flex gap-1.5" role="group" aria-labelledby="appearance-arabic-scale-label">
               {([
@@ -431,13 +387,11 @@ export const AppearanceDisplaySettings: React.FC = () => {
                 <button
                   key={opt.val}
                   type="button"
-                  onClick={() =>
-                    updateDisplayPrefs({ arabicScale: opt.val as ArabicScaleMode })
-                  }
-                  className={`flex-1 min-h-[36px] py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                  onClick={() => updateDisplayPrefs({ arabicScale: opt.val as ArabicScaleMode })}
+                  className={`flex-1 min-h-[34px] py-1.5 rounded-xl border text-xs font-bold cursor-pointer ${
                     displayPrefs.arabicScale === opt.val
                       ? 'bg-primary/10 border-primary text-primary'
-                      : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
+                      : 'bg-surface border-line-2 text-foreground hover:bg-layer-hover'
                   }`}
                 >
                   <span dir="ltr">{opt.label}</span>
@@ -446,7 +400,6 @@ export const AppearanceDisplaySettings: React.FC = () => {
             </div>
           </div>
 
-          {/* Font Weight */}
           <div className="space-y-1">
             <span id="appearance-font-weight-label" className="text-xs font-bold text-muted-foreground-1 block">
               {bi('سُمك الخط', 'Font Weight', 'ئەستووری فۆنت')}
@@ -460,13 +413,11 @@ export const AppearanceDisplaySettings: React.FC = () => {
                 <button
                   key={opt.val}
                   type="button"
-                  onClick={() =>
-                    updateDisplayPrefs({ fontWeight: opt.val as FontWeightMode })
-                  }
-                  className={`flex-1 min-h-[36px] py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                  onClick={() => updateDisplayPrefs({ fontWeight: opt.val as FontWeightMode })}
+                  className={`flex-1 min-h-[34px] py-1.5 rounded-xl border text-xs font-bold cursor-pointer ${
                     displayPrefs.fontWeight === opt.val
                       ? 'bg-primary/10 border-primary text-primary'
-                      : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
+                      : 'bg-surface border-line-2 text-foreground hover:bg-layer-hover'
                   }`}
                 >
                   {bi(opt.ar, opt.en, opt.ckb)}
@@ -475,7 +426,6 @@ export const AppearanceDisplaySettings: React.FC = () => {
             </div>
           </div>
 
-          {/* Line Height */}
           <div className="space-y-1">
             <span id="appearance-line-height-label" className="text-xs font-bold text-muted-foreground-1 block">
               {bi('تباعد الأسطر', 'Line Height', 'دووری نێوان دێڕەکان')}
@@ -489,13 +439,11 @@ export const AppearanceDisplaySettings: React.FC = () => {
                 <button
                   key={opt.val}
                   type="button"
-                  onClick={() =>
-                    updateDisplayPrefs({ lineHeight: opt.val as LineHeightMode })
-                  }
-                  className={`flex-1 min-h-[36px] py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                  onClick={() => updateDisplayPrefs({ lineHeight: opt.val as LineHeightMode })}
+                  className={`flex-1 min-h-[34px] py-1.5 rounded-xl border text-xs font-bold cursor-pointer ${
                     displayPrefs.lineHeight === opt.val
                       ? 'bg-primary/10 border-primary text-primary'
-                      : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
+                      : 'bg-surface border-line-2 text-foreground hover:bg-layer-hover'
                   }`}
                 >
                   {bi(opt.ar, opt.en, opt.ckb)}
@@ -504,14 +452,9 @@ export const AppearanceDisplaySettings: React.FC = () => {
             </div>
           </div>
 
-          {/* LTR-only Letter Spacing */}
           <div className="space-y-1">
             <span id="appearance-letter-spacing-label" className="text-xs font-bold text-muted-foreground-1 block">
-              {bi(
-                'تباعد الأحرف اللاتينية (EN فقط)',
-                'Latin Letter Spacing (LTR only)',
-                'مەودای پیتە لاتینییەکان (تەنها EN)'
-              )}
+              {bi('تباعد الأحرف الإنجليزية', 'Latin Letter Spacing', 'مەودای پیتە لاتینییەکان')}
             </span>
             <div className="flex gap-1.5" role="group" aria-labelledby="appearance-letter-spacing-label">
               {([
@@ -523,14 +466,12 @@ export const AppearanceDisplaySettings: React.FC = () => {
                   key={opt.val}
                   type="button"
                   onClick={() =>
-                    updateDisplayPrefs({
-                      ltrLetterSpacing: opt.val as LtrLetterSpacingMode,
-                    })
+                    updateDisplayPrefs({ ltrLetterSpacing: opt.val as LtrLetterSpacingMode })
                   }
-                  className={`flex-1 min-h-[36px] py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                  className={`flex-1 min-h-[34px] py-1.5 rounded-xl border text-xs font-bold cursor-pointer ${
                     displayPrefs.ltrLetterSpacing === opt.val
                       ? 'bg-primary/10 border-primary text-primary'
-                      : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
+                      : 'bg-surface border-line-2 text-foreground hover:bg-layer-hover'
                   }`}
                 >
                   {bi(opt.ar, opt.en, opt.ckb)}
@@ -539,22 +480,8 @@ export const AppearanceDisplaySettings: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* 3. Layout Density, Max Width & Corner Radius */}
-      <div className="p-4 rounded-xl bg-surface border border-line-2 space-y-3">
-        <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-          <Maximize2 className="size-4 text-primary" />
-          <span>
-            {bi(
-              'تخطيط الشاشة والكثافة والحواف',
-              'Layout Density, Width & Borders',
-              'شێوازی شاشە، چڕی و لێوارەکان'
-            )}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-card-divider">
           <div className="space-y-1">
             <span id="appearance-density-label" className="text-xs font-bold text-muted-foreground-1 block">
               {bi('كثافة العرض', 'Display Density', 'چڕی نیشاندان')}
@@ -568,13 +495,11 @@ export const AppearanceDisplaySettings: React.FC = () => {
                 <button
                   key={opt.val}
                   type="button"
-                  onClick={() =>
-                    updateDisplayPrefs({ density: opt.val as DisplayDensityMode })
-                  }
-                  className={`flex-1 min-h-[36px] py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                  onClick={() => updateDisplayPrefs({ density: opt.val as DisplayDensityMode })}
+                  className={`flex-1 min-h-[34px] py-1.5 rounded-xl border text-xs font-bold cursor-pointer ${
                     displayPrefs.density === opt.val
                       ? 'bg-primary/10 border-primary text-primary'
-                      : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
+                      : 'bg-surface border-line-2 text-foreground hover:bg-layer-hover'
                   }`}
                 >
                   {bi(opt.ar, opt.en, opt.ckb)}
@@ -598,14 +523,12 @@ export const AppearanceDisplaySettings: React.FC = () => {
                   key={opt.val}
                   type="button"
                   onClick={() =>
-                    updateDisplayPrefs({
-                      contentMaxWidth: opt.val as ContentWidthMode,
-                    })
+                    updateDisplayPrefs({ contentMaxWidth: opt.val as ContentWidthMode })
                   }
-                  className={`flex-1 min-h-[36px] py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                  className={`flex-1 min-h-[34px] py-1.5 rounded-xl border text-xs font-bold cursor-pointer ${
                     displayPrefs.contentMaxWidth === opt.val
                       ? 'bg-primary/10 border-primary text-primary'
-                      : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
+                      : 'bg-surface border-line-2 text-foreground hover:bg-layer-hover'
                   }`}
                 >
                   {bi(opt.ar, opt.en, opt.ckb)}
@@ -627,13 +550,11 @@ export const AppearanceDisplaySettings: React.FC = () => {
                 <button
                   key={opt.val}
                   type="button"
-                  onClick={() =>
-                    updateDisplayPrefs({ cornerRadius: opt.val as CornerRadiusMode })
-                  }
-                  className={`flex-1 min-h-[36px] py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                  onClick={() => updateDisplayPrefs({ cornerRadius: opt.val as CornerRadiusMode })}
+                  className={`flex-1 min-h-[34px] py-1.5 rounded-xl border text-xs font-bold cursor-pointer ${
                     displayPrefs.cornerRadius === opt.val
                       ? 'bg-primary/10 border-primary text-primary'
-                      : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
+                      : 'bg-surface border-line-2 text-foreground hover:bg-layer-hover'
                   }`}
                 >
                   {bi(opt.ar, opt.en, opt.ckb)}
@@ -642,138 +563,83 @@ export const AppearanceDisplaySettings: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </SettingsAccordion>
 
-      {/* 4. Accessibility Toggles */}
-      <div className="p-4 rounded-xl bg-surface border border-line-2 space-y-2.5">
-        <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-          <Eye className="size-4 text-primary" />
-          <span>
-            {bi(
-              'خيارات الوضوح وسهولة الاستخدام',
-              'Accessibility & Visual Comfort',
-              'بژاردەکانی ڕوونی و ئاسانی بەکارهێنان'
+      {/* 3. Accessibility & Low-End Performance */}
+      <SettingsAccordion
+        icon={<Eye className="size-4" />}
+        title={bi('الوضوح وسهولة الاستخدام والأداء', 'Accessibility & Device Performance', 'ڕوونی، ئاسانی بەکارهێنان و کارایی')}
+        meta={
+          isLowEndHardware
+            ? bi('جهاز بموارد محدودة', 'Low-resource device', 'ئامێری سنووردار')
+            : bi('عتاد قياسي', 'Standard hardware', 'ئامێری ئاسایی')
+        }
+        open={accessibilityOpen}
+        onOpenChange={setAccessibilityOpen}
+      >
+        <div>
+          <SettingsSwitchRow
+            title={bi('تباين عالٍ للحدود والحقول', 'High Contrast Borders & Controls', 'کۆنتراستی بەرز بۆ چوارچێوەکان')}
+            description={bi(
+              'يزيد وضوح إطارات الإدخال والفواصل للشاشات الساطعة.',
+              'Strengthens borders and dividers for bright clinics or low-vision comfort.',
+              'ڕوونی چوارچێوە و جیاکەرەوەکان زیاد دەکات.'
             )}
-          </span>
+            checked={displayPrefs.highContrast}
+            onChange={(next) => updateDisplayPrefs({ highContrast: next })}
+          />
+          <SettingsSwitchRow
+            title={bi('أزرار وحقول لمس أكبر (44px+)', 'Larger Click & Touch Targets (44px+)', 'دوگمە و خانەی گەورەتر (44px+)')}
+            description={bi(
+              'يكبّر مساحة الضغط للأزرار والقوائم المنسدلة للأجهزة اللوحية.',
+              'Expands minimum button and control height for tablet ergonomics.',
+              'بۆشایی کرتەکردن بۆ دوگمە و لیستەکان گەورە دەکات.'
+            )}
+            checked={displayPrefs.largeHitTargets}
+            onChange={(next) => updateDisplayPrefs({ largeHitTargets: next })}
+          />
+          <SettingsSwitchRow
+            title={bi('تقليل الشفافية والظلال', 'Reduce Transparency & Shadows', 'کەمکردنەوەی شەفافیەت و سێبەر')}
+            description={bi(
+              'يزيل الضبابية والظلال الثقيلة لتسريع الأداء على الأجهزة الضعيفة.',
+              'Disables blur filters and heavy shadows for lower GPU load.',
+              'تەڵخی و سێبەرە قورسەکان لادەبات بۆ کارایی خێراتر.'
+            )}
+            checked={displayPrefs.reduceTransparency}
+            onChange={(next) => updateDisplayPrefs({ reduceTransparency: next })}
+          />
+          <SettingsSwitchRow
+            title={bi('تقليل الحركات والانتقالات', 'Reduce Motion & UI Animations', 'کەمکردنەوەی جوڵە و گواستنەوە')}
+            description={bi(
+              'يوقف الحركات غير الضرورية لراحة العين والأداء السريع.',
+              'Disables non-essential animations for visual comfort.',
+              'جوڵە ناپێویستەکان ڕادەگرێت.'
+            )}
+            checked={reduceMotion}
+            onChange={(next) => setReduceMotion(next)}
+          />
         </div>
 
-        {(
-          [
-            {
-              key: 'highContrast',
-              checked: displayPrefs.highContrast,
-              onToggle: () =>
-                updateDisplayPrefs({ highContrast: !displayPrefs.highContrast }),
-              arTitle: 'تباين عالٍ للحدود والحقول',
-              enTitle: 'High Contrast Borders & Controls',
-              ckbTitle: 'کۆنتراستی بەرز بۆ چوارچێوە و خانەکان',
-              arDesc: 'يزيد وضوح إطارات الإدخال والفواصل للشاشات الساطعة أو ضعيفي البصر',
-              enDesc: 'Strengthens borders and dividers for bright clinics or low-vision comfort',
-              ckbDesc:
-                'ڕوونی چوارچێوە و جیاکەرەوەکان زیاد دەکات بۆ شاشەی ڕووناک یان لاوازی بینین',
-            },
-            {
-              key: 'largeHitTargets',
-              checked: displayPrefs.largeHitTargets,
-              onToggle: () =>
-                updateDisplayPrefs({
-                  largeHitTargets: !displayPrefs.largeHitTargets,
-                }),
-              arTitle: 'أزرار وحقول لمس أكبر (44px+)',
-              enTitle: 'Larger Click & Touch Targets (44px+)',
-              ckbTitle: 'دوگمە و خانەی گەورەتر بۆ دەستلێدان (44px+)',
-              arDesc: 'يكبّر مساحة الضغط للأزرار والقوائم المنسدلة للأجهزة اللوحية',
-              enDesc: 'Expands minimum button and control height to 44px for tablet ergonomics',
-              ckbDesc:
-                'بۆشایی کرتەکردن بۆ دوگمە و لیستەکان گەورە دەکات بۆ بەکارهێنانی تابلێت',
-            },
-            {
-              key: 'reduceTransparency',
-              checked: displayPrefs.reduceTransparency,
-              onToggle: () =>
-                updateDisplayPrefs({
-                  reduceTransparency: !displayPrefs.reduceTransparency,
-                }),
-              arTitle: 'تقليل الشفافية والظلال (أداء أسرع)',
-              enTitle: 'Reduce Transparency & Shadows',
-              ckbTitle: 'کەمکردنەوەی شەفافیەت و سێبەر (کارایی خێراتر)',
-              arDesc: 'يزيل الضبابية والظلال الثقيلة لتخفيف الحمل على الأجهزة الضعيفة',
-              enDesc: 'Disables blur filters and heavy shadows for crisper visuals and lower GPU load',
-              ckbDesc:
-                'تەڵخی و سێبەرە قورسەکان لادەبات بۆ کەمکردنەوەی بار لەسەر ئامێرە لاوازەکان',
-            },
-            {
-              key: 'reduceMotion',
-              checked: reduceMotion,
-              onToggle: () => setReduceMotion(!reduceMotion),
-              arTitle: 'تقليل الحركات والانتقالات البصرية',
-              enTitle: 'Reduce Motion & UI Animations',
-              ckbTitle: 'کەمکردنەوەی جوڵە و گواستنەوەی بینراو',
-              arDesc: 'يوقف الحركات المتكررة لراحة العين والأداء السريع',
-              enDesc: 'Disables non-essential animations for visual comfort',
-              ckbDesc: 'جوڵە ناپێویستەکان ڕادەگرێت بۆ ئاسوودەیی چاو و خێرایی کارکردن',
-            },
-          ] as const
-        ).map((item) => (
+        {/* Low-End Hardware Performance Mode */}
+        <div className="pt-2 border-t border-card-divider space-y-2">
+          <div>
+            <div className="text-xs font-bold text-foreground">
+              {bi('وضع الأداء للأجهزة الضعيفة', 'Low-End Device Performance Mode', 'دۆخی ئامێرە لاوازەکان')}
+            </div>
+            <p className="text-xs text-muted-foreground-1 mt-0.5">
+              {bi(
+                'يعطّل المؤثرات الثقيلة تلقائياً عند اكتشاف موارد جهاز محدودة.',
+                'Automatically disables heavy blur, shadows, and animations on low-resource devices.',
+                'بە شێوەی خۆکار کاریگەرییە قورسەکان کەم دەکاتەوە لەسەر ئامێرە لاوازەکان.'
+              )}
+            </p>
+          </div>
+
           <div
-            key={item.key}
-            className="flex items-center justify-between gap-3 py-1.5 border-t border-line-2/50 first:border-t-0"
+            className="flex gap-1.5"
+            role="radiogroup"
+            aria-label={bi('وضع الأداء للأجهزة الضعيفة', 'Low-End Device Mode', 'دۆخی ئامێرە لاوازەکان')}
           >
-            <div>
-              <div className="text-xs font-bold text-foreground">
-                {bi(item.arTitle, item.enTitle, item.ckbTitle)}
-              </div>
-              <p className="text-xs text-muted-foreground-1 mt-0.5">
-                {bi(item.arDesc, item.enDesc, item.ckbDesc)}
-              </p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={item.checked}
-              onClick={item.onToggle}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 ${
-                item.checked
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-card border-card-line text-foreground'
-              }`}
-            >
-              <span>
-                {item.checked
-                  ? bi('✓ مفعّل', '✓ On', '✓ چالاکە')
-                  : bi('مغلق', 'Off', 'کوژاوەتەوە')}
-              </span>
-            </button>
-          </div>
-        ))}
-
-        {/* Low-End Hardware / Auto Reduced Effects Override */}
-        <div className="pt-2.5 mt-1 border-t border-line-2/50 space-y-2">
-          <div className="flex items-start justify-between gap-2 flex-wrap">
-            <div>
-              <div className="text-xs font-bold text-foreground">
-                {bi(
-                  'وضع الأداء للأجهزة الضعيفة (تقليل المؤثرات والظلال)',
-                  'Low-End Device Performance Mode',
-                  'دۆخی ئامێرە لاوازەکان (کەمکردنەوەی کاریگەرییەکان)'
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground-1 mt-0.5">
-                {bi(
-                  'يُعطّل الشفافية والحركات تلقائياً عند اكتشاف ذاكرة 4 غيغابايت فأقل أو معالج ثنائي النواة.',
-                  'Automatically disables heavy blur, shadows, and animations when <=4GB RAM or <=2 CPU cores are detected.',
-                  'بە شێوەیەکی خۆکار شەفافیەت و جوڵە کەم دەکاتەوە کاتێک ئامێرەکە <=4GB یان <=2 ناوک بێت.'
-                )}
-              </p>
-            </div>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-layer border border-line-2 text-muted-foreground-1">
-              {isLowEndHardware
-                ? bi('تم اكتشاف جهاز بموارد محدودة', 'Low-resource hardware detected', 'ئامێری سنووردار دۆزرایەوە')
-                : bi('عتاد قياسي', 'Standard hardware', 'ئامێری ئاسایی')}
-            </span>
-          </div>
-
-          <div className="flex gap-1.5" role="radiogroup" aria-label={bi('وضع الأداء للأجهزة الضعيفة', 'Low-End Device Mode', 'دۆخی ئامێرە لاوازەکان')}>
             {(
               [
                 { val: 'auto', ar: 'تلقائي', en: 'Auto', ckb: 'خۆکار' },
@@ -790,10 +656,10 @@ export const AppearanceDisplaySettings: React.FC = () => {
                 onClick={() =>
                   updateDisplayPrefs({ reducedEffectsMode: opt.val as ReducedEffectsMode })
                 }
-                className={`flex-1 py-1.5 px-2 rounded-lg border text-xs font-bold cursor-pointer ${
+                className={`flex-1 min-h-[34px] py-1.5 px-2 rounded-xl border text-xs font-bold cursor-pointer ${
                   (displayPrefs.reducedEffectsMode || 'auto') === opt.val
                     ? 'bg-primary/10 border-primary text-primary'
-                    : 'bg-card border-card-line text-foreground hover:bg-layer-hover'
+                    : 'bg-surface border-line-2 text-foreground hover:bg-layer-hover'
                 }`}
               >
                 {bi(opt.ar, opt.en, opt.ckb)}
@@ -801,7 +667,7 @@ export const AppearanceDisplaySettings: React.FC = () => {
             ))}
           </div>
         </div>
-      </div>
+      </SettingsAccordion>
     </div>
   );
 };

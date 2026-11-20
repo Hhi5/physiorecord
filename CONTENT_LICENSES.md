@@ -81,6 +81,10 @@ Run `npm run check:content` to verify that zero undocumented SVGs, images, fonts
 | `docs/CONTENT_PACK_CONVENTION.md` | Bilingual community clinical content pack convention requiring `source`, `license` (`CC0-1.0`/`CC-BY-4.0`/`MIT`/`Apache-2.0`/`BSD-3-Clause`), `author` & `version` metadata (`local`) | PhysioRecord Contributors | `GPL-3.0-or-later` | 2026-11-14 | Engineering Audit |
 | `docs/INDEX.md` | Bilingual Arabic RTL & English LTR documentation portal index (`local`) | PhysioRecord Contributors | `GPL-3.0-or-later` | 2026-11-14 | Engineering Audit |
 | `src/components/LockScreen.tsx` | Original inline geometric SVG backdrop art for encrypted vault unlock & setup screens (`local`) | PhysioRecord Contributors | Original Project Code (`GPL-3.0-or-later`) | 2026-11-16 | Engineering Audit |
+| `src/components/workspace/LongitudinalComparisonView.tsx` | Longitudinal clinical progress comparison view & programmatic inline SVG trajectory sparklines (`local`) | PhysioRecord Contributors | Original Project Code (`GPL-3.0-or-later`) | 2026-11-19 | Engineering Audit |
+| `src/components/clinic/SpotlightTourOverlay.tsx` | Original interactive first-visit & full-app spotlight tour overlay with programmatic SVG cutout mask (`local`) | PhysioRecord Contributors | Original Project Code (`GPL-3.0-or-later`) | 2026-11-19 | Engineering Audit |
+| `src/components/clinic/WelcomeOnboardingModal.tsx` | Original first-entry welcome & platform philosophy onboarding dialog (`local`) | PhysioRecord Contributors | Original Project Code (`GPL-3.0-or-later`) | 2026-11-19 | Engineering Audit |
+| `src/utils/pageSpotlightTours.ts` | Original offline trilingual (`ar`/`en`/`ckb`) full-app walkthrough, per-page spotlight tours & separated Desktop/Mobile guide catalogs (`local`) | PhysioRecord Contributors | Original Project Code (`GPL-3.0-or-later`) | 2026-11-19 | Engineering Audit |
 
 ## External Open-Source Visual & Font Packages
 

@@ -219,7 +219,7 @@ export const AccountMenuPopover: React.FC<AccountMenuPopoverProps> = ({
           <Database className="size-4 shrink-0 text-primary" />
           <span className="truncate">{bi('النسخ الاحتياطي', 'Backup & Restore', 'پاشەکەوت')}</span>
         </span>
-        <span dir="ltr" className="text-xs font-mono opacity-85 shrink-0">
+        <span dir="auto" className="text-xs font-sans font-medium tabular-nums opacity-85 shrink-0">
           {formattedLastBackup}
         </span>
       </button>
@@ -373,11 +373,14 @@ export const AccountMenuPopover: React.FC<AccountMenuPopoverProps> = ({
         {onOpenTour && (
           <button
             type="button"
+            data-testid="account-tour-btn"
             onClick={() => runAction(onOpenTour)}
             className="w-full min-h-[44px] md:min-h-[36px] px-2.5 py-1.5 rounded-xl hover:bg-surface text-muted-foreground-1 hover:text-foreground text-xs font-medium flex items-center gap-2.5 cursor-pointer transition-colors"
           >
             <Compass className="size-4 shrink-0" />
-            <span className="truncate">{bi('جولة استخدام سريعة', 'Quick Tour', 'گەشتی خێرا')}</span>
+            <span className="truncate">
+              {bi('الدليل الشامل والجولات', 'Full Guide & Tours', 'ڕێبەری تەواو و گەشتەکان')}
+            </span>
           </button>
         )}
 

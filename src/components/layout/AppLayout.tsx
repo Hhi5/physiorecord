@@ -56,6 +56,9 @@ const SettingsModal = lazy(() =>
 const RecoveryDrillModal = lazy(() =>
   import('../clinic/RecoveryDrillModal').then((m) => ({ default: m.RecoveryDrillModal }))
 );
+const PasswordReminderModal = lazy(() =>
+  import('../PasswordReminderModal').then((m) => ({ default: m.PasswordReminderModal }))
+);
 const MigrationResolutionModal = lazy(() =>
   import('../MigrationResolutionModal').then((m) => ({ default: m.MigrationResolutionModal }))
 );
@@ -94,16 +97,38 @@ const PatientKioskModal = lazy(() =>
 const GuidedTourModal = lazy(() =>
   import('../clinic/ContextualTipsAndTour').then((m) => ({ default: m.GuidedTourModal }))
 );
+const SpotlightTourOverlay = lazy(() =>
+  import('../clinic/SpotlightTourOverlay').then((m) => ({ default: m.SpotlightTourOverlay }))
+);
+const WelcomeOnboardingModal = lazy(() =>
+  import('../clinic/WelcomeOnboardingModal').then((m) => ({ default: m.WelcomeOnboardingModal }))
+);
 const FirstRunModeWizardModal = lazy(() =>
   import('../FirstRunModeWizardModal').then((m) => ({ default: m.FirstRunModeWizardModal }))
 );
 const PatientMergeModal = lazy(() => import('../clinic/PatientMergeModal'));
+import {
+  PAGE_SPOTLIGHT_TOURS,
+  getFullAppWalkthroughStages,
+  loadPageToursState,
+  markFullTourCompleted,
+  markPageTourSeen,
+  markWelcomeSeen,
+  setAutoPageToursEnabled,
+  shouldAutoTriggerPageTour,
+  shouldShowWelcomeOnboarding,
+  type PageTourId,
+  type PageToursState,
+} from '../../utils/pageSpotlightTours';
 import { db } from '../../db/db';
 import { SYNTHETIC_PATIENTS } from '../../data/syntheticPatients';
 import { usePatients } from '../../context/PatientContext';
 import { useVault } from '../../context/VaultContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
+import { EpisodeService } from '../../services/episodeService';
+import { SessionService } from '../../services/sessionService';
+import { localDate } from '../../utils/date';
 import type { PatientRecord } from '../../types/clinical';
 import type {
   ClinicRoleId,
@@ -125,6 +150,7 @@ import {
 export const AppLayout: React.FC = () => {
   const { patients, savePatient, deleteAllDemoPatients, refreshPatients } = usePatients();
   const {
+    dek,
     lock,
     secondsUntilAutoLock,
     stayUnlocked,
@@ -133,6 +159,8 @@ export const AppLayout: React.FC = () => {
     clearAllRecoveredDrafts,
     isRecoveryDrillDue,
     snoozeRecoveryDrillBanner,
+    isPasswordReminderDueNow,
+    snoozePasswordReminder,
     lastRepairSummary,
     repairError,
     lastMigrationResult,
@@ -230,7 +258,13 @@ export const AppLayout: React.FC = () => {
   const pwa = usePwaStatus();
 
   const [isTourOpen, setIsTourOpen] = useState(false);
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
+  const [isPatientSessionActive, setIsPatientSessionActive] = useState(false);
+  const [pageToursState, setPageToursState] = useState<PageToursState>(() => loadPageToursState());
+  const [activeSpotlightTourId, setActiveSpotlightTourId] = useState<PageTourId | null>(null);
+  const [fullWalkthroughStageIdx, setFullWalkthroughStageIdx] = useState<number | null>(null);
   const [isRecoveryDrillOpen, setIsRecoveryDrillOpen] = useState(false);
+  const [isPasswordReminderOpen, setIsPasswordReminderOpen] = useState(false);
   const [isPrivacyCoverOpen, setIsPrivacyCoverOpen] = useState(false);
   const lastEscAtRef = useRef<number>(0);
   const [finishUndoToast, setFinishUndoToast] = useState<{
@@ -258,16 +292,19 @@ export const AppLayout: React.FC = () => {
     };
     syncOperationsState();
     const unsubOps = ClinicOperationsService.subscribe(syncOperationsState);
+    const syncPageTours = () => setPageToursState(loadPageToursState());
     window.addEventListener('physiorecord-staff-updated', syncOperationsState);
     window.addEventListener('physiorecord-modules-updated', syncOperationsState);
     window.addEventListener('physiorecord-backup-updated', syncOperationsState);
     window.addEventListener('physiorecord-demo-data-changed', syncOperationsState);
+    window.addEventListener('physiorecord-page-tours-updated', syncPageTours);
     return () => {
       unsubOps();
       window.removeEventListener('physiorecord-staff-updated', syncOperationsState);
       window.removeEventListener('physiorecord-modules-updated', syncOperationsState);
       window.removeEventListener('physiorecord-backup-updated', syncOperationsState);
       window.removeEventListener('physiorecord-demo-data-changed', syncOperationsState);
+      window.removeEventListener('physiorecord-page-tours-updated', syncPageTours);
     };
   }, []);
 
@@ -366,6 +403,21 @@ export const AppLayout: React.FC = () => {
         setIsPatientModalOpen(false);
         return;
       }
+      if (activeSpotlightTourId) {
+        e.preventDefault();
+        if (fullWalkthroughStageIdx !== null) {
+          setFullWalkthroughStageIdx(null);
+        }
+        markPageTourSeen(activeSpotlightTourId);
+        setActiveSpotlightTourId(null);
+        return;
+      }
+      if (isWelcomeOpen) {
+        e.preventDefault();
+        setPageToursState(markWelcomeSeen());
+        setIsWelcomeOpen(false);
+        return;
+      }
       if (isTourOpen) {
         e.preventDefault();
         setIsTourOpen(false);
@@ -374,6 +426,11 @@ export const AppLayout: React.FC = () => {
       if (isRecoveryDrillOpen) {
         e.preventDefault();
         setIsRecoveryDrillOpen(false);
+        return;
+      }
+      if (isPasswordReminderOpen) {
+        e.preventDefault();
+        setIsPasswordReminderOpen(false);
         return;
       }
       if (isMigrationModalOpen) {
@@ -414,8 +471,12 @@ export const AppLayout: React.FC = () => {
     isBackupModalOpen,
     isSeedModalOpen,
     isPatientModalOpen,
+    activeSpotlightTourId,
+    fullWalkthroughStageIdx,
+    isWelcomeOpen,
     isTourOpen,
     isRecoveryDrillOpen,
+    isPasswordReminderOpen,
     isMigrationModalOpen,
     isKioskModalOpen,
     selectedPatientId,
@@ -705,11 +766,400 @@ export const AppLayout: React.FC = () => {
     isMigrationModalOpen ||
     isKioskModalOpen ||
     isTourOpen ||
+    isWelcomeOpen ||
     isRecoveryDrillOpen ||
+    isPasswordReminderOpen ||
     showFirstRunModeWizard ||
     (!isSoloMode && showFirstRunPinModal) ||
     (!isSoloMode && Boolean(pendingAdminRole)) ||
     isMobileAccountMenuOpen;
+
+  const currentPageTourId: PageTourId | null = (() => {
+    if (isBackupModalOpen) return 'backup_restore';
+    if (isSettingsModalOpen) return 'settings';
+    if (selectedPatient) {
+      return isPatientSessionActive ? 'session_soap' : 'patient_chart';
+    }
+    if (
+      activeNav === 'today' ||
+      activeNav === 'reception' ||
+      activeNav === 'schedule' ||
+      activeNav === 'directory' ||
+      activeNav === 'finance' ||
+      activeNav === 'exercises' ||
+      activeNav === 'analytics' ||
+      activeNav === 'activity_log'
+    ) {
+      return activeNav;
+    }
+    return null;
+  })();
+
+  const isBlockingOverlayForTour =
+    isPrivacyCoverOpen ||
+    isGlobalSearchOpen ||
+    isPatientModalOpen ||
+    Boolean(mergeModalExistingPatientId) ||
+    isSeedModalOpen ||
+    isMigrationModalOpen ||
+    isKioskModalOpen ||
+    isTourOpen ||
+    isWelcomeOpen ||
+    isRecoveryDrillOpen ||
+    isPasswordReminderOpen ||
+    showFirstRunModeWizard ||
+    (!isSoloMode && showFirstRunPinModal) ||
+    (!isSoloMode && Boolean(pendingAdminRole)) ||
+    isMobileAccountMenuOpen;
+
+  const hasAnyPatients = patients.length > 0;
+  const walkthroughStages = React.useMemo(
+    () => getFullAppWalkthroughStages(isSoloMode, hasAnyPatients),
+    [isSoloMode, hasAnyPatients]
+  );
+
+  // Show the calm First-Entry Welcome & Platform Overview ONCE on initial entry (skipped under WebDriver)
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.webdriver) return;
+    if (isWelcomeOpen || activeSpotlightTourId || fullWalkthroughStageIdx !== null) return;
+    if (isBlockingOverlayForTour || isSettingsModalOpen || Boolean(selectedPatient)) return;
+    if (!ClinicOperationsService.getOnboardingState().tipsEnabled) return;
+    if (!shouldShowWelcomeOnboarding(pageToursState)) return;
+
+    const timer = window.setTimeout(() => {
+      setIsWelcomeOpen(true);
+    }, 420);
+    return () => window.clearTimeout(timer);
+  }, [
+    isWelcomeOpen,
+    activeSpotlightTourId,
+    fullWalkthroughStageIdx,
+    isBlockingOverlayForTour,
+    isSettingsModalOpen,
+    selectedPatient,
+    pageToursState,
+  ]);
+
+  // Auto-trigger a calm first-visit spotlight tour ONCE per page/tab (after Welcome is seen, skipped under WebDriver)
+  useEffect(() => {
+    if (fullWalkthroughStageIdx !== null) {
+      return;
+    }
+    if (!currentPageTourId) {
+      setActiveSpotlightTourId(null);
+      return;
+    }
+    if (isBlockingOverlayForTour) {
+      return;
+    }
+    if (activeSpotlightTourId && activeSpotlightTourId !== currentPageTourId) {
+      setActiveSpotlightTourId(null);
+    }
+    if (typeof navigator !== 'undefined' && navigator.webdriver) {
+      return;
+    }
+    if (!pageToursState.welcomeSeen) {
+      return;
+    }
+    if (!ClinicOperationsService.getOnboardingState().tipsEnabled) {
+      return;
+    }
+    if (!shouldAutoTriggerPageTour(currentPageTourId, pageToursState)) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setActiveSpotlightTourId(currentPageTourId);
+    }, 620);
+    return () => window.clearTimeout(timer);
+  }, [
+    fullWalkthroughStageIdx,
+    currentPageTourId,
+    isBlockingOverlayForTour,
+    pageToursState,
+    activeSpotlightTourId,
+  ]);
+
+  const applyWalkthroughStage = (stageIndex: number) => {
+    const stage = walkthroughStages[stageIndex];
+    if (!stage) return;
+    setIsWelcomeOpen(false);
+    setIsTourOpen(false);
+    setActiveSpotlightTourId(null);
+
+    if (stage.targetAction === 'settings_modal') {
+      setSelectedSessionLaunch(null);
+      setSelectedPatientId(null);
+      setSettingsInitialTab('clinic');
+      setIsSettingsModalOpen(true);
+    } else if (stage.targetAction === 'patient_chart') {
+      const targetPatient = selectedPatient ?? patients[0] ?? null;
+      if (targetPatient) {
+        setIsSettingsModalOpen(false);
+        setSelectedSessionLaunch(null);
+        setIsPatientSessionActive(false);
+        window.dispatchEvent(new CustomEvent('physiorecord-chart-close-session'));
+        setSelectedPatientId(targetPatient.id);
+      } else {
+        // Fallback safely if patients were cleared mid-walkthrough
+        setIsSettingsModalOpen(false);
+        setSelectedSessionLaunch(null);
+        setSelectedPatientId(null);
+        setActiveNav('directory');
+      }
+    } else if (stage.navTab) {
+      setIsSettingsModalOpen(false);
+      setSelectedSessionLaunch(null);
+      setSelectedPatientId(null);
+      setActiveNav(stage.navTab);
+    }
+
+    setFullWalkthroughStageIdx(stageIndex);
+    window.setTimeout(() => {
+      setActiveSpotlightTourId(stage.pageId);
+    }, stage.targetAction === 'patient_chart' ? 320 : 260);
+  };
+
+  const handleStartFullWalkthrough = () => {
+    setPageToursState(markWelcomeSeen());
+    applyWalkthroughStage(0);
+  };
+
+  const handleLaunchPageSpotlight = async (requestedPageId?: PageTourId): Promise<boolean> => {
+    setFullWalkthroughStageIdx(null);
+    const targetId = requestedPageId ?? currentPageTourId;
+    if (!targetId || !PAGE_SPOTLIGHT_TOURS[targetId]) {
+      setIsTourOpen(true);
+      return false;
+    }
+
+    setIsWelcomeOpen(false);
+    setActiveSpotlightTourId(null);
+
+    if (targetId === 'settings') {
+      setIsBackupModalOpen(false);
+      setIsTourOpen(false);
+      setSettingsInitialTab('clinic');
+      setIsSettingsModalOpen(true);
+    } else if (targetId === 'backup_restore') {
+      setIsSettingsModalOpen(false);
+      setIsTourOpen(false);
+      setIsBackupModalOpen(true);
+    } else if (targetId === 'patient_chart') {
+      const targetPatient = selectedPatient ?? patients[0] ?? null;
+      if (!targetPatient) {
+        return false;
+      }
+      setIsTourOpen(false);
+      setIsSettingsModalOpen(false);
+      setIsBackupModalOpen(false);
+      setSelectedSessionLaunch(null);
+      setIsPatientSessionActive(false);
+      window.dispatchEvent(new CustomEvent('physiorecord-chart-close-session'));
+      setSelectedPatientId(targetPatient.id);
+    } else if (targetId === 'session_soap') {
+      if (selectedPatient && isPatientSessionActive) {
+        setIsTourOpen(false);
+        setIsSettingsModalOpen(false);
+        setIsBackupModalOpen(false);
+      } else {
+        if (!dek || patients.length === 0) {
+          return false;
+        }
+        const candidates = selectedPatient
+          ? [selectedPatient, ...patients.filter((p) => p.id !== selectedPatient.id)]
+          : patients;
+        let foundTarget: { patientId: string; sessionId: string } | null = null;
+        for (const cand of candidates) {
+          try {
+            const eps = await EpisodeService.getEpisodesByPatient(cand.id, dek);
+            let latestFallback: { patientId: string; sessionId: string } | null = null;
+            for (const ep of eps) {
+              const sessList = await SessionService.getSessionsByEpisode(ep.id, dek);
+              const draft = sessList.find((s) => s.data.status === 'draft');
+              if (draft) {
+                foundTarget = { patientId: cand.id, sessionId: draft.id };
+                break;
+              }
+              if (!latestFallback && sessList.length > 0) {
+                latestFallback = { patientId: cand.id, sessionId: sessList[0].id };
+              }
+            }
+            if (!foundTarget && latestFallback) {
+              foundTarget = latestFallback;
+            }
+            if (foundTarget) break;
+          } catch {
+            // Skip any candidate that cannot be inspected
+          }
+        }
+        if (!foundTarget) {
+          return false;
+        }
+        setIsTourOpen(false);
+        setIsSettingsModalOpen(false);
+        setIsBackupModalOpen(false);
+        setSelectedPatientId(foundTarget.patientId);
+        setSelectedSessionLaunch({ sessionId: foundTarget.sessionId });
+      }
+    } else if (
+      targetId === 'today' ||
+      targetId === 'reception' ||
+      targetId === 'schedule' ||
+      targetId === 'directory' ||
+      targetId === 'finance'
+    ) {
+      setIsTourOpen(false);
+      setIsSettingsModalOpen(false);
+      setIsBackupModalOpen(false);
+      setSelectedSessionLaunch(null);
+      setSelectedPatientId(null);
+      setActiveNav(targetId);
+    } else {
+      setIsTourOpen(false);
+    }
+
+    window.setTimeout(() => {
+      setActiveSpotlightTourId(targetId);
+    }, targetId === 'session_soap' ? 420 : 280);
+    return true;
+  };
+
+  const handleStartPatientChartTourWithDemo = async () => {
+    setFullWalkthroughStageIdx(null);
+    setIsTourOpen(false);
+    setIsWelcomeOpen(false);
+    await handleLoadTourDemoData();
+    const firstDemoId = SYNTHETIC_PATIENTS[0]?.id ?? null;
+    if (firstDemoId) {
+      setIsSettingsModalOpen(false);
+      setIsBackupModalOpen(false);
+      setSelectedSessionLaunch(null);
+      setSelectedPatientId(firstDemoId);
+      window.setTimeout(() => {
+        setActiveSpotlightTourId('patient_chart');
+      }, 360);
+    }
+  };
+
+  const handleStartSessionSoapTourWithDemo = async () => {
+    setFullWalkthroughStageIdx(null);
+    setIsTourOpen(false);
+    setIsWelcomeOpen(false);
+    await handleLoadTourDemoData();
+    const firstDemoId = SYNTHETIC_PATIENTS[0]?.id ?? null;
+    if (!firstDemoId || !dek) return;
+    try {
+      let eps = await EpisodeService.getEpisodesByPatient(firstDemoId, dek);
+      let activeEp = eps.find((e) => e.data.status === 'active') ?? eps[0];
+      if (!activeEp) {
+        activeEp = await EpisodeService.createEpisode(
+          firstDemoId,
+          {
+            title: bi(
+              'تأهيل أسفل الظهر (تجريبي DEMO)',
+              'Lumbar Rehab Episode (DEMO)',
+              'چارەسەری خوارەوەی پشت (تاقیکاری DEMO)'
+            ),
+            status: 'active',
+            primarySpecialty: 'musculoskeletal',
+            startDate: localDate(),
+            medicalDiagnosis: bi(
+              'ألم أسفل الظهر الميكانيكي (DEMO)',
+              'Mechanical Low Back Pain (DEMO)',
+              'ئازاری میکانیکیی خوارەوەی پشت (DEMO)'
+            ),
+            clinicalImpression: bi(
+              'تيبّس قطني مع ضعف عضلات الجذع العميقة — ملف تجريبي للشرح',
+              'Lumbar stiffness with core weakness — temporary DEMO tour record',
+              'گرژیی خوارەوەی پشت — دۆسیەی تاقیکاری بۆ ڕوونکردنەوە'
+            ),
+            affectedBodyRegion: bi('أسفل الظهر (قطني)', 'Lumbar Spine', 'خوارەوەی پشت'),
+            rehabilitationGoals: {
+              shortTerm: [
+                bi('تخفيف الألم الصباحي (تجريبي DEMO)', 'Reduce morning pain (DEMO)', 'کەمکردنەوەی ئازار (DEMO)'),
+              ],
+              longTerm: [
+                bi('العودة للنشاط اليومي بدون ألم (DEMO)', 'Return to pain-free daily activity (DEMO)', 'گەڕانەوە بۆ چالاکی ڕۆژانە (DEMO)'),
+              ],
+            },
+          },
+          dek
+        );
+      }
+      const existingSessions = await SessionService.getSessionsByEpisode(activeEp.id, dek);
+      let targetSession = existingSessions.find((s) => s.data.status === 'draft') ?? existingSessions[0];
+      if (!targetSession) {
+        targetSession = await SessionService.createSession(
+          firstDemoId,
+          activeEp.id,
+          {
+            sessionDate: localDate(),
+            sessionType: 'initial_evaluation',
+            status: 'draft',
+            attendanceStatus: 'attended',
+          },
+          dek
+        );
+      }
+      setIsSettingsModalOpen(false);
+      setIsBackupModalOpen(false);
+      setSelectedPatientId(firstDemoId);
+      setSelectedSessionLaunch({ sessionId: targetSession.id });
+      window.setTimeout(() => {
+        setActiveSpotlightTourId('session_soap');
+      }, 480);
+    } catch (err) {
+      console.error('Failed to prepare DEMO SOAP session tour:', err);
+    }
+  };
+
+  const handleCloseSpotlightTour = (wasDisplayed: boolean = true) => {
+    if (fullWalkthroughStageIdx !== null) {
+      if (!wasDisplayed) {
+        setFullWalkthroughStageIdx(null);
+        setActiveSpotlightTourId(null);
+        return;
+      }
+      const visitedIds = walkthroughStages
+        .slice(0, fullWalkthroughStageIdx + 1)
+        .map((s) => s.pageId);
+      if (fullWalkthroughStageIdx === walkthroughStages.length - 1) {
+        setPageToursState(markFullTourCompleted(visitedIds));
+      } else {
+        let updated = markWelcomeSeen();
+        for (const id of visitedIds) {
+          updated = markPageTourSeen(id);
+        }
+        setPageToursState(updated);
+      }
+      if (isSettingsModalOpen) {
+        setIsSettingsModalOpen(false);
+      }
+      setSelectedSessionLaunch(null);
+      setSelectedPatientId(null);
+      setActiveNav(isSoloMode ? 'today' : 'reception');
+      setFullWalkthroughStageIdx(null);
+      setActiveSpotlightTourId(null);
+      return;
+    }
+
+    if (wasDisplayed && activeSpotlightTourId) {
+      setPageToursState(markPageTourSeen(activeSpotlightTourId));
+    }
+    setActiveSpotlightTourId(null);
+  };
+
+  const handleDisableAutoSpotlightTours = () => {
+    if (activeSpotlightTourId) {
+      markPageTourSeen(activeSpotlightTourId);
+    }
+    markWelcomeSeen();
+    setPageToursState(setAutoPageToursEnabled(false));
+    void ClinicOperationsService.setTipsEnabledAsync(false);
+    setFullWalkthroughStageIdx(null);
+    setActiveSpotlightTourId(null);
+  };
 
   return (
     <div
@@ -937,6 +1387,43 @@ export const AppLayout: React.FC = () => {
           </div>
         )}
 
+        {/* Signal-Style Spaced-Repetition Password Memory Check Banner (Shown only when due & no other security banner is active) */}
+        {isPasswordReminderDueNow && !isRecoveryDrillDue && !selectedPatient && (
+          <div
+            data-testid="password-memory-reminder-banner"
+            className="relative z-10 px-3 sm:px-5 py-1.5 bg-primary/10 border-b border-primary/25 flex flex-wrap items-center justify-between gap-2 text-xs text-foreground shrink-0"
+          >
+            <div className="flex items-center gap-2 min-w-0 flex-1 font-semibold">
+              <KeyRound className="size-4 text-primary shrink-0" />
+              <span className="truncate">
+                {bi(
+                  'تذكير لطيف لتثبيت كلمة المرور: تأكد من تذكّرك لها الآن وخزينتك مفتوحة بأمان',
+                  'Gentle password check: Confirm your master password while unlocked so you never lose access',
+                  'بیرخستنەوەی وشەی نهێنی: ئێستا وشەی نهێنیت دڵنیا بکەرەوە لە کاتێکدا خەزێنە کراوەیە'
+                )}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                data-testid="password-reminder-banner-open-btn"
+                onClick={() => setIsPasswordReminderOpen(true)}
+                className="min-h-[36px] px-2.5 py-1 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer whitespace-nowrap"
+              >
+                {bi('تأكيد الآن', 'Verify Now', 'ئێستا دڵنیای بکەرەوە')}
+              </button>
+              <button
+                type="button"
+                onClick={() => snoozePasswordReminder(2)}
+                className="min-h-[36px] px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-xs font-semibold cursor-pointer"
+                aria-label={bi('تذكيري لاحقاً', 'Remind later', 'دواتر بیرم بخەرەوە')}
+              >
+                {bi('لاحقاً', 'Later', 'دواتر')}
+              </button>
+            </div>
+          </div>
+        )}
+
         {pwa.updateReady && (
           <div className="relative z-10 px-3 sm:px-5 py-1.5 bg-primary/15 border-b border-primary/20 flex flex-wrap items-center justify-between gap-2 text-xs text-foreground shrink-0">
             <div className="flex items-center gap-2 font-semibold">
@@ -1087,9 +1574,12 @@ export const AppLayout: React.FC = () => {
                 initialSessionId={selectedSessionLaunch?.sessionId}
                 initialAutoOpenFinish={selectedSessionLaunch?.autoOpenFinish}
                 onFocusModeChange={setIsSessionFocusMode}
+                onActiveSessionChange={setIsPatientSessionActive}
                 onFinishCompleted={(snap, summaryAr, summaryEn) =>
                   triggerFinishUndoToast(snap, bi(summaryAr, summaryEn))
                 }
+                onStartChartTour={() => void handleLaunchPageSpotlight('patient_chart')}
+                onStartSessionTour={() => void handleLaunchPageSpotlight('session_soap')}
               />
             </Suspense>
           </div>
@@ -1229,6 +1719,9 @@ export const AppLayout: React.FC = () => {
         onOpenPrivacyCover={() => setIsPrivacyCoverOpen(true)}
         onOpenKiosk={() => setIsKioskModalOpen(true)}
         onOpenDemoModal={() => setIsSeedModalOpen(true)}
+        onOpenFullWalkthrough={() => handleStartFullWalkthrough()}
+        onOpenSpotlightTour={() => void handleLaunchPageSpotlight()}
+        onOpenQuickGuide={() => setIsTourOpen(true)}
         onLockVault={lock}
         onSelectPatient={(patientId) => setSelectedPatientId(patientId)}
       />
@@ -1306,7 +1799,9 @@ export const AppLayout: React.FC = () => {
             }}
             onStartTour={() => {
               setIsSettingsModalOpen(false);
-              setIsTourOpen(true);
+              window.setTimeout(() => {
+                handleStartFullWalkthrough();
+              }, 160);
             }}
           />
         </Suspense>
@@ -1355,15 +1850,105 @@ export const AppLayout: React.FC = () => {
         </Suspense>
       )}
 
-      {/* Optional Solo Guided Tour Modal (Phase 2.8) */}
+      {/* First-Entry Welcome & Platform Philosophy Modal */}
+      {isWelcomeOpen && (
+        <Suspense fallback={null}>
+          <WelcomeOnboardingModal
+            isOpen={isWelcomeOpen}
+            isSoloMode={isSoloMode}
+            walkthroughCount={walkthroughStages.length}
+            onStartFullWalkthrough={handleStartFullWalkthrough}
+            onEnterWorkspaceWithAutoGuides={() => {
+              setPageToursState(markWelcomeSeen());
+              setIsWelcomeOpen(false);
+            }}
+            onOpenFullGuide={() => {
+              setPageToursState(markWelcomeSeen());
+              setIsWelcomeOpen(false);
+              setIsTourOpen(true);
+            }}
+            onDisableAllAutoGuides={() => {
+              markWelcomeSeen();
+              setPageToursState(setAutoPageToursEnabled(false));
+              void ClinicOperationsService.setTipsEnabledAsync(false);
+              setIsWelcomeOpen(false);
+            }}
+          />
+        </Suspense>
+      )}
+
+      {/* Unified Full Offline Guide & Tour Hub Modal (Desktop/Laptop vs Mobile/Phone) */}
       {isTourOpen && (
         <Suspense fallback={null}>
           <GuidedTourModal
             isOpen={isTourOpen}
             onOpenChange={setIsTourOpen}
             hasDemoData={hasDemoRecords}
+            hasPatients={hasAnyPatients}
             onLoadDemoData={handleLoadTourDemoData}
             onDeleteAllDemoData={handleDeleteTourDemoData}
+            isSoloMode={isSoloMode}
+            currentPageTourId={currentPageTourId ?? undefined}
+            onStartSpotlightTour={(pageId) => handleLaunchPageSpotlight(pageId)}
+            onStartPatientChartTourWithDemo={handleStartPatientChartTourWithDemo}
+            onStartSessionSoapTourWithDemo={handleStartSessionSoapTourWithDemo}
+            onAddFirstPatient={handleOpenNewPatient}
+            onStartFullWalkthrough={handleStartFullWalkthrough}
+            onOpenWelcomeScreen={() => setIsWelcomeOpen(true)}
+          />
+        </Suspense>
+      )}
+
+      {/* Calm Spotlight Tour Overlay (Supports Both Full-App Walkthrough & Per-Page Auto Tours) */}
+      {activeSpotlightTourId && !isBlockingOverlayForTour && (
+        <Suspense fallback={null}>
+          <SpotlightTourOverlay
+            tour={PAGE_SPOTLIGHT_TOURS[activeSpotlightTourId]}
+            walkthroughMeta={
+              fullWalkthroughStageIdx !== null && walkthroughStages[fullWalkthroughStageIdx]
+                ? {
+                    stageIndex: fullWalkthroughStageIdx,
+                    totalStages: walkthroughStages.length,
+                    stageTitleAr: walkthroughStages[fullWalkthroughStageIdx].stageTitleAr,
+                    stageTitleEn: walkthroughStages[fullWalkthroughStageIdx].stageTitleEn,
+                    stageTitleCkb: walkthroughStages[fullWalkthroughStageIdx].stageTitleCkb,
+                    hasPrevStage: fullWalkthroughStageIdx > 0,
+                    hasNextStage: fullWalkthroughStageIdx < walkthroughStages.length - 1,
+                    onPrevStage: () => applyWalkthroughStage(fullWalkthroughStageIdx - 1),
+                    onNextStage: () => {
+                      const curStage = walkthroughStages[fullWalkthroughStageIdx];
+                      if (curStage) {
+                        setPageToursState(markPageTourSeen(curStage.pageId));
+                      }
+                      applyWalkthroughStage(fullWalkthroughStageIdx + 1);
+                    },
+                  }
+                : null
+            }
+            onStepChange={(step) => {
+              if (step.chartTab) {
+                window.dispatchEvent(
+                  new CustomEvent('physiorecord-chart-select-tab', {
+                    detail: { tab: step.chartTab },
+                  })
+                );
+              }
+              if (step.settingsTab) {
+                window.dispatchEvent(
+                  new CustomEvent('physiorecord-settings-select-tab', {
+                    detail: { tab: step.settingsTab },
+                  })
+                );
+              }
+            }}
+            onClose={handleCloseSpotlightTour}
+            onDisableAutoTours={handleDisableAutoSpotlightTours}
+            onOpenFullGuide={() => {
+              if (fullWalkthroughStageIdx !== null) {
+                setFullWalkthroughStageIdx(null);
+              }
+              setIsTourOpen(true);
+            }}
           />
         </Suspense>
       )}
@@ -1635,6 +2220,16 @@ export const AppLayout: React.FC = () => {
           <RecoveryDrillModal
             isOpen={isRecoveryDrillOpen}
             onClose={() => setIsRecoveryDrillOpen(false)}
+          />
+        </Suspense>
+      )}
+
+      {isPasswordReminderOpen && (
+        <Suspense fallback={null}>
+          <PasswordReminderModal
+            isOpen={isPasswordReminderOpen}
+            onClose={() => setIsPasswordReminderOpen(false)}
+            onOpenBackupModal={() => setIsBackupModalOpen(true)}
           />
         </Suspense>
       )}

@@ -81,6 +81,7 @@ interface MasterPatientChartProps {
   onOpenNewEpisode: () => void;
   onBackToDirectory: () => void;
   onPatientUpdated: () => void;
+  onStartChartTour?: () => void;
 }
 
 type EvalPlanSubView = 'plan' | 'progress';
@@ -96,6 +97,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
   onOpenNewEpisode,
   onBackToDirectory,
   onPatientUpdated,
+  onStartChartTour,
 }) => {
   const { language, bi } = useLanguage();
   const isRtlLang = language !== 'en';
@@ -157,6 +159,29 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
     }
     setActiveTab(tab);
   };
+
+  // Allow interactive Patient Chart spotlight tour to switch tabs cleanly as user steps through
+  useEffect(() => {
+    const handleChartTourTabSwitch = (event: Event) => {
+      const detail = (event as CustomEvent<{ tab?: ChartTabId }>).detail;
+      const requestedTab = detail?.tab;
+      if (
+        requestedTab === 'overview' ||
+        requestedTab === 'evaluation' ||
+        requestedTab === 'history' ||
+        requestedTab === 'profile'
+      ) {
+        setActiveTab(requestedTab);
+        if (requestedTab === 'evaluation') {
+          setEvalSubView('plan');
+        }
+      }
+    };
+    window.addEventListener('physiorecord-chart-select-tab', handleChartTourTabSwitch);
+    return () => {
+      window.removeEventListener('physiorecord-chart-select-tab', handleChartTourTabSwitch);
+    };
+  }, []);
 
   const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -220,6 +245,13 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
   const [editAddress, setEditAddress] = useState(patient.data.address || '');
   const [editEmergencyName, setEditEmergencyName] = useState(patient.data.emergencyContactName || '');
   const [editEmergencyPhone, setEditEmergencyPhone] = useState(patient.data.emergencyContactPhone || '');
+  const [editReferralSourceType, setEditReferralSourceType] = useState<ReferralSourceType | ''>(
+    patient.data.referralSourceType || ''
+  );
+  const [editReferringDoctorId, setEditReferringDoctorId] = useState(patient.data.referringDoctorId || '');
+  const [editReferralNotes, setEditReferralNotes] = useState(patient.data.referralNotes || '');
+  const [editReferringPhysician, setEditReferringPhysician] = useState(patient.data.referringPhysician || '');
+  const [editReferringClinic, setEditReferringClinic] = useState(patient.data.referringClinic || '');
 
   useEffect(() => {
     setEditFullName(patient.data.fullName || '');
@@ -229,6 +261,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
     setEditAddress(patient.data.address || '');
     setEditEmergencyName(patient.data.emergencyContactName || '');
     setEditEmergencyPhone(patient.data.emergencyContactPhone || '');
+    setEditReferralSourceType(patient.data.referralSourceType || '');
+    setEditReferringDoctorId(patient.data.referringDoctorId || '');
+    setEditReferralNotes(patient.data.referralNotes || '');
+    setEditReferringPhysician(patient.data.referringPhysician || '');
+    setEditReferringClinic(patient.data.referringClinic || '');
   }, [patient]);
 
   // Clinical Summary Form State
@@ -511,7 +548,8 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
   }, [episodeStore, isDirty]);
 
   const buildMasterClinicalData = (
-    overrideAttachments?: PatientDocumentAttachment[]
+    overrideAttachments?: PatientDocumentAttachment[],
+    overrides?: Partial<PatientClinicalData>
   ): PatientClinicalData => ({
     ...patient.data,
     referringPhysician,
@@ -536,6 +574,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
     redFlagChecklist,
     generalNotes,
     attachments: overrideAttachments ?? attachments,
+    ...overrides,
     profileSummaryUpdatedAt: new Date().toISOString(),
   });
 
@@ -583,10 +622,34 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
     episodeStore.clinicalImpression,
   ]);
 
+  const openEditPersonalInfoModal = () => {
+    setEditFullName(patient.data.fullName || '');
+    setEditPhone(patient.data.phone || '');
+    setEditDob(patient.data.dateOfBirth || '');
+    setEditGender(patient.data.gender || 'male');
+    setEditAddress(patient.data.address || '');
+    setEditEmergencyName(emergencyContactName || patient.data.emergencyContactName || '');
+    setEditEmergencyPhone(emergencyContactPhone || patient.data.emergencyContactPhone || '');
+    setEditReferralSourceType(referralSourceType || patient.data.referralSourceType || '');
+    setEditReferringDoctorId(referringDoctorId || patient.data.referringDoctorId || '');
+    setEditReferralNotes(referralNotes || patient.data.referralNotes || '');
+    setEditReferringPhysician(referringPhysician || patient.data.referringPhysician || '');
+    setEditReferringClinic(referringClinic || patient.data.referringClinic || '');
+    setIsEditPersonalInfoOpen(true);
+  };
+
   const handleSavePersonalInfo = async () => {
     if (!dek) return;
     setIsSaving(true);
     try {
+      const nextEmergencyName = editEmergencyName.trim();
+      const nextEmergencyPhone = editEmergencyPhone.trim();
+      const nextRefPhysician = editReferringPhysician.trim();
+      const nextRefClinic = editReferringClinic.trim();
+      const nextRefSource = editReferralSourceType;
+      const nextRefDocId = editReferringDoctorId;
+      const nextRefNotes = editReferralNotes.trim();
+
       const updatedClinicalData: PatientClinicalData = {
         ...buildMasterClinicalData(),
         fullName: editFullName.trim() || patient.data.fullName || 'مريض',
@@ -594,10 +657,22 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
         dateOfBirth: editDob || undefined,
         gender: editGender,
         address: editAddress.trim() || undefined,
-        emergencyContactName: editEmergencyName.trim() || undefined,
-        emergencyContactPhone: editEmergencyPhone.trim() || undefined,
+        emergencyContactName: nextEmergencyName || undefined,
+        emergencyContactPhone: nextEmergencyPhone || undefined,
+        referringPhysician: nextRefPhysician || undefined,
+        referringClinic: nextRefClinic || undefined,
+        referralSourceType: nextRefSource || undefined,
+        referringDoctorId: nextRefDocId || undefined,
+        referralNotes: nextRefNotes || undefined,
       };
       await savePatient(updatedClinicalData, patient.id);
+      setEmergencyContactName(nextEmergencyName);
+      setEmergencyContactPhone(nextEmergencyPhone);
+      setReferringPhysician(nextRefPhysician);
+      setReferringClinic(nextRefClinic);
+      setReferralSourceType(nextRefSource);
+      setReferringDoctorId(nextRefDocId);
+      setReferralNotes(nextRefNotes);
       setIsEditPersonalInfoOpen(false);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2500);
@@ -729,11 +804,13 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
     return list;
   }, [precautions, structuredPrecautions, customPrecautions, bi]);
 
-  const handleSaveMasterAndEpisode = async () => {
+  const handleSaveMasterAndEpisode = async (
+    overrides?: Partial<PatientClinicalData>
+  ) => {
     if (!dek) return;
     setIsSaving(true);
     try {
-      const updatedClinicalData = buildMasterClinicalData();
+      const updatedClinicalData = buildMasterClinicalData(undefined, overrides);
       await savePatient(updatedClinicalData, patient.id);
       ClinicOperationsService.saveEpisodeClinicalStore(episodeStore);
       const now = new Date();
@@ -1008,6 +1085,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
           cautionAlerts={cautionAlerts}
           isContextCollapsed={isContextCollapsed}
           onToggleContextCollapsed={() => setIsContextCollapsed((v) => !v)}
+          onStartChartTour={onStartChartTour}
         />
 
         {/* Tab 1: المتابعة (Live Clinical Pulse + Recorded Objective Snapshot + Sessions Timeline) */}
@@ -1109,7 +1187,9 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
                 activeEpisode={activeEpisode}
                 episodeSessions={episodeSessions}
                 sessionPainPoints={sessionPainPoints}
+                patientName={patient.data.fullNameAr || patient.data.fullName}
                 onSnapshotAdded={(updatedStore) => setEpisodeStore(updatedStore)}
+                onPrintProgressReport={() => setActivePrintDoc('progress_report')}
               />
             )}
           </div>
@@ -1162,27 +1242,17 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
             enableScheduleVisitCardPrint={enableScheduleVisitCardPrint}
             onAllPatientSoapsLoaded={setAllPatientSoaps}
             onOpenPrintDoc={setActivePrintDoc}
-            onOpenEditPersonalInfo={() => setIsEditPersonalInfoOpen(true)}
+            onOpenEditPersonalInfo={openEditPersonalInfoModal}
             enableReferralsModule={enableReferralsModule}
             referringDoctors={referringDoctors}
             referralSourceType={referralSourceType}
-            setReferralSourceType={setReferralSourceType}
             referringDoctorId={referringDoctorId}
-            setReferringDoctorId={setReferringDoctorId}
             referralNotes={referralNotes}
-            setReferralNotes={setReferralNotes}
             referringPhysician={referringPhysician}
-            setReferringPhysician={setReferringPhysician}
             referringClinic={referringClinic}
-            setReferringClinic={setReferringClinic}
             emergencyContactName={emergencyContactName}
-            setEmergencyContactName={setEmergencyContactName}
             emergencyContactPhone={emergencyContactPhone}
-            setEmergencyContactPhone={setEmergencyContactPhone}
             onOpenReportBackModal={() => setIsReportBackModalOpen(true)}
-            onSaveMasterAndEpisode={handleSaveMasterAndEpisode}
-            isSaving={isSaving}
-            saveSuccess={saveSuccess}
           />
         )}
       </div>
@@ -1221,6 +1291,18 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
         setEditEmergencyName={setEditEmergencyName}
         editEmergencyPhone={editEmergencyPhone}
         setEditEmergencyPhone={setEditEmergencyPhone}
+        enableReferralsModule={enableReferralsModule}
+        referringDoctors={referringDoctors}
+        editReferralSourceType={editReferralSourceType}
+        setEditReferralSourceType={setEditReferralSourceType}
+        editReferringDoctorId={editReferringDoctorId}
+        setEditReferringDoctorId={setEditReferringDoctorId}
+        editReferralNotes={editReferralNotes}
+        setEditReferralNotes={setEditReferralNotes}
+        editReferringPhysician={editReferringPhysician}
+        setEditReferringPhysician={setEditReferringPhysician}
+        editReferringClinic={editReferringClinic}
+        setEditReferringClinic={setEditReferringClinic}
         onSavePersonalInfo={handleSavePersonalInfo}
         isEditClinicalSummaryOpen={isEditClinicalSummaryOpen}
         setIsEditClinicalSummaryOpen={setIsEditClinicalSummaryOpen}

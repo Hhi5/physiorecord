@@ -13,11 +13,19 @@ import type {
 } from '../../../types/clinical';
 import type {
   EpisodeScopedClinicalStore,
+  ReferralSourceType,
   ReferringDoctorEntry,
 } from '../../../types/clinicManagement';
 import type { FunctionalScaleEntry, OrthopedicSpecialTestItem } from '../../../types/clinicalWidgets';
+import {
+  REFERRAL_SOURCE_LABELS,
+  REFERRAL_SOURCE_TYPES,
+  resolveDoctorDisplayName,
+  resolveDoctorFacility,
+} from '../../../utils/iraqReferralsRetentionC6C7';
 import type { PrintableDocumentType } from '../../print/PrintDocumentModal';
 import { ModalDialog } from '../../ui/Dialog';
+import { DatePickerInput, PhoneInput } from '../../ui/Primitives';
 
 const ExamWidgetShelf = lazy(() =>
   import('../ExamWidgetShelf').then((m) => ({ default: m.ExamWidgetShelf }))
@@ -95,6 +103,18 @@ export interface ChartModalsProps {
   setEditEmergencyName: (v: string) => void;
   editEmergencyPhone: string;
   setEditEmergencyPhone: (v: string) => void;
+  enableReferralsModule?: boolean;
+  referringDoctors?: ReferringDoctorEntry[];
+  editReferralSourceType: ReferralSourceType | '';
+  setEditReferralSourceType: (v: ReferralSourceType | '') => void;
+  editReferringDoctorId: string;
+  setEditReferringDoctorId: (v: string) => void;
+  editReferralNotes: string;
+  setEditReferralNotes: (v: string) => void;
+  editReferringPhysician: string;
+  setEditReferringPhysician: (v: string) => void;
+  editReferringClinic: string;
+  setEditReferringClinic: (v: string) => void;
   onSavePersonalInfo: () => void;
 
   isEditClinicalSummaryOpen: boolean;
@@ -172,6 +192,18 @@ export const ChartModals: React.FC<ChartModalsProps> = ({
   setEditEmergencyName,
   editEmergencyPhone,
   setEditEmergencyPhone,
+  enableReferralsModule = false,
+  referringDoctors = [],
+  editReferralSourceType,
+  setEditReferralSourceType,
+  editReferringDoctorId,
+  setEditReferringDoctorId,
+  editReferralNotes,
+  setEditReferralNotes,
+  editReferringPhysician,
+  setEditReferringPhysician,
+  editReferringClinic,
+  setEditReferringClinic,
   onSavePersonalInfo,
   isEditClinicalSummaryOpen,
   setIsEditClinicalSummaryOpen,
@@ -207,7 +239,8 @@ export const ChartModals: React.FC<ChartModalsProps> = ({
   referringPhysician,
   referringClinic,
 }) => {
-  const { bi } = useLanguage();
+  const { language, bi } = useLanguage();
+  const isRtlLang = language !== 'en';
 
   return (
     <>
@@ -279,48 +312,46 @@ export const ChartModals: React.FC<ChartModalsProps> = ({
         </Suspense>
       )}
 
-      {/* 1. Modal: Edit Personal Information */}
+      {/* 1. Modal: Edit Personal, Emergency & Referral Information */}
       <ModalDialog
         isOpen={isEditPersonalInfoOpen}
         onOpenChange={setIsEditPersonalInfoOpen}
-        size="md"
-        title={bi('تعديل المعلومات الشخصية للمريض', 'Edit Patient Personal Information', 'دەستکاری زانیاری کەسیی نەخۆش')}
+        size="lg"
+        title={bi(
+          'تعديل بيانات الملف الشخصي والإحالة',
+          'Edit Profile, Contacts & Referral',
+          'دەستکاری زانیاری کەسی و ڕەوانەکردن'
+        )}
       >
         <div className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
           <div>
-            <label className="text-xs font-semibold text-foreground block mb-1">
+            <label className="text-xs font-semibold text-foreground block mb-1.5">
               {bi('الاسم الكامل', 'Full Name', 'ناوی تەواو')}
             </label>
             <input
               type="text"
               value={editFullName}
               onChange={(e) => setEditFullName(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-surface/80 text-sm text-foreground focus:ring-2 focus:ring-primary/25 outline-none"
+              className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-sm text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-foreground block mb-1">
+              <label className="text-xs font-semibold text-foreground block mb-1.5">
                 {bi('رقم الهاتف', 'Phone Number', 'ژمارەی تەلەفۆن')}
               </label>
-              <input
-                type="tel"
-                value={editPhone}
-                onChange={(e) => setEditPhone(e.target.value)}
-                dir="ltr"
-                className="w-full px-3 py-2 rounded-xl bg-surface/80 text-sm text-foreground focus:ring-2 focus:ring-primary/25 outline-none"
-              />
+              <PhoneInput value={editPhone} onChange={setEditPhone} />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-foreground block mb-1">
+              <label className="text-xs font-semibold text-foreground block mb-1.5">
                 {bi('الجنس', 'Gender', 'ڕەگەز')}
               </label>
               <select
                 value={editGender}
                 onChange={(e) => setEditGender(e.target.value as 'male' | 'female' | 'other')}
-                className="w-full px-3 py-2 rounded-xl bg-surface/80 text-sm text-foreground focus:ring-2 focus:ring-primary/25 outline-none"
+                className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
               >
                 <option value="male">{bi('ذكر', 'Male', 'نێر')}</option>
                 <option value="female">{bi('أنثى', 'Female', 'مێ')}</option>
@@ -329,58 +360,151 @@ export const ChartModals: React.FC<ChartModalsProps> = ({
             </div>
           </div>
 
-          <div>
-            <label className="text-xs font-semibold text-foreground block mb-1">
-              {bi('تاريخ الميلاد', 'Date of Birth', 'بەرواری لەدایکبوون')}
-            </label>
-            <input
-              type="date"
-              value={editDob}
-              onChange={(e) => setEditDob(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-surface/80 text-sm text-foreground focus:ring-2 focus:ring-primary/25 outline-none"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-foreground block mb-1.5">
+                {bi('تاريخ الميلاد', 'Date of Birth', 'بەرواری لەدایکبوون')}
+              </label>
+              <DatePickerInput value={editDob} onChange={setEditDob} />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-foreground block mb-1.5">
+                {bi('العنوان التفصيلي', 'Detailed Address', 'ناونیشانی ورد')}
+              </label>
+              <input
+                type="text"
+                value={editAddress}
+                onChange={(e) => setEditAddress(e.target.value)}
+                placeholder={bi('المدينة، المنطقة، أقرب نقطة دالة', 'City, Area, Landmark', 'شار، ناوچە، نزیکترین خاڵ')}
+                className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="text-xs font-semibold text-foreground block mb-1">
-              {bi('العنوان التفصيلي', 'Detailed Address', 'ناونیشانی ورد')}
-            </label>
-            <input
-              type="text"
-              value={editAddress}
-              onChange={(e) => setEditAddress(e.target.value)}
-              placeholder={bi('المدينة، المنطقة، أقرب نقطة دالة', 'City, Area, Landmark', 'شار، ناوچە، نزیکترین خاڵ')}
-              className="w-full px-3 py-2 rounded-xl bg-surface/80 text-sm text-foreground focus:ring-2 focus:ring-primary/25 outline-none"
-            />
-          </div>
-
-          <div className="pt-2 border-t border-black/[0.045] dark:border-white/[0.06] space-y-3">
+          <div className="pt-3 border-t border-black/[0.045] dark:border-white/[0.06] space-y-3">
             <h4 className="text-xs font-bold text-primary">
               {bi('جهة الاتصال للطوارئ', 'Emergency Contact', 'پەیوەندیی فریاگوزاری')}
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">
-                  {bi('اسم جهة الطوارئ', 'Emergency Contact Name', 'ناوی کەسی پەیوەندی')}
+                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  {bi('اسم قريب الطوارئ وصلة القرابة', 'Emergency Contact & Relation', 'ناوی کەسی پەیوەندی')}
                 </label>
                 <input
                   type="text"
                   value={editEmergencyName}
                   onChange={(e) => setEditEmergencyName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-surface/80 text-sm text-foreground focus:ring-2 focus:ring-primary/25 outline-none"
+                  placeholder={bi('مثال: محمد عبد الله (الأخ)', 'Name & Relationship', 'ناو و پەیوەندیی خزمایەتی')}
+                  className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">
+                <label className="text-xs font-semibold text-foreground block mb-1.5">
                   {bi('هاتف الطوارئ', 'Emergency Phone', 'تەلەفۆنی فریاگوزاری')}
                 </label>
+                <PhoneInput value={editEmergencyPhone} onChange={setEditEmergencyPhone} />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-black/[0.045] dark:border-white/[0.06] space-y-3">
+            <h4 className="text-xs font-bold text-primary">
+              {bi('الإحالة الطبية', 'Medical Referral', 'ڕەوانەکردنی پزیشکی')}
+            </h4>
+
+            {enableReferralsModule && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                    {bi('مصدر الإحالة', 'Referral Source', 'سەرچاوەی ڕەوانەکردن')}
+                  </label>
+                  <select
+                    value={editReferralSourceType}
+                    onChange={(e) => setEditReferralSourceType((e.target.value as ReferralSourceType) || '')}
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="">{bi('— غير محدد —', '— Unspecified —', '— دیارینەکراو —')}</option>
+                    {REFERRAL_SOURCE_TYPES.map((sourceType) => (
+                      <option key={sourceType} value={sourceType}>
+                        {bi(REFERRAL_SOURCE_LABELS[sourceType].ar, REFERRAL_SOURCE_LABELS[sourceType].en)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                    {bi('الطبيب المحيل (من الدليل)', 'Directory Doctor', 'پزیشک لە ڕێبەر')}
+                  </label>
+                  <select
+                    value={editReferringDoctorId}
+                    onChange={(e) => {
+                      const nextId = e.target.value;
+                      const doc = referringDoctors.find((entry) => entry.id === nextId);
+                      setEditReferringDoctorId(nextId);
+                      if (doc) {
+                        setEditReferringPhysician(resolveDoctorDisplayName(doc, isRtlLang));
+                        const docFacility = resolveDoctorFacility(doc, isRtlLang);
+                        if (docFacility) setEditReferringClinic(docFacility);
+                        if (!editReferralSourceType) setEditReferralSourceType('doctor');
+                      }
+                    }}
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="">{bi('— اختياري: اختر من الدليل —', '— Optional: Pick from Directory —', '— دڵخوازانە —')}</option>
+                    {referringDoctors.map((doc) => {
+                      const docFacility = resolveDoctorFacility(doc, isRtlLang);
+                      return (
+                        <option key={doc.id} value={doc.id}>
+                          {resolveDoctorDisplayName(doc, isRtlLang)}
+                          {docFacility ? ` (${docFacility})` : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                    {bi('ملاحظات الإحالة', 'Referral Notes', 'تێبینیی ڕەوانەکردن')}
+                  </label>
+                  <input
+                    type="text"
+                    value={editReferralNotes}
+                    onChange={(e) => setEditReferralNotes(e.target.value)}
+                    placeholder={bi('رقم كتاب الإحالة / المُعرِّف...', 'Ref / recommender...', 'نووسراوی ڕەوانەکردن...')}
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  {bi('الطبيب الاستشاري المحيل', 'Referring Physician', 'پزیشکی ڕاوێژکاری ڕەوانەکار')}
+                </label>
                 <input
-                  type="tel"
-                  value={editEmergencyPhone}
-                  onChange={(e) => setEditEmergencyPhone(e.target.value)}
-                  dir="ltr"
-                  className="w-full px-3 py-2 rounded-xl bg-surface/80 text-sm text-foreground focus:ring-2 focus:ring-primary/25 outline-none"
+                  type="text"
+                  value={editReferringPhysician}
+                  onChange={(e) => setEditReferringPhysician(e.target.value)}
+                  placeholder={bi('مثال: د. حيدر العبيدي (جراحة عظام)', 'e.g., Dr. Haider Al-Obaidi', 'نموونە: د. حەیدەر عوبەیدی')}
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  {bi('المستشفى / المركز المحيل', 'Referring Hospital / Clinic', 'نەخۆشخانە / سەنتەری ڕەوانەکار')}
+                </label>
+                <input
+                  type="text"
+                  value={editReferringClinic}
+                  onChange={(e) => setEditReferringClinic(e.target.value)}
+                  placeholder={bi('مستشفى الكفيل / عيادة الحارثية...', 'Hospital / Medical Center...', 'نەخۆشخانە / سەنتەری پزیشکی...')}
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
             </div>

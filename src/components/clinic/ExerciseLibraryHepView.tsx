@@ -228,6 +228,7 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            data-tour="hep-print-btn"
             onClick={() => setShowPrintPreview(!showPrintPreview)}
             className="py-2 px-3.5 min-h-[36px] rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold inline-flex items-center gap-2 shadow-xs transition-all cursor-pointer"
           >
@@ -429,7 +430,7 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
           {/* Left 2 Columns: Searchable Exercise Catalog */}
           <div className="lg:col-span-2 space-y-4">
             {/* Search & Filters */}
-            <div className="bg-card p-4 rounded-2xl border border-card-line shadow-2xs grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div data-tour="hep-filters" className="bg-card p-4 rounded-2xl border border-card-line shadow-2xs grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="relative">
                 <input
                   type="text"
@@ -569,7 +570,7 @@ export const ExerciseLibraryHepView: React.FC<ExerciseLibraryHepViewProps> = ({
           </div>
 
           {/* Right Column: Active HEP Prescription Builder */}
-          <div className="bg-card rounded-2xl border border-card-line shadow-2xs overflow-hidden h-fit">
+          <div data-tour="hep-builder" className="bg-card rounded-2xl border border-card-line shadow-2xs overflow-hidden h-fit">
             <div className="px-5 py-4 border-b border-card-divider bg-muted/30 flex items-center justify-between">
               {embeddedHepProgram !== undefined ? (
                 <h3 className="text-sm font-bold text-foreground">

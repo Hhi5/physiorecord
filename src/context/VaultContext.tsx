@@ -29,8 +29,20 @@ import {
   isWebAuthnPrfSupported,
   enrollPasskeyPrfUnlock,
   unlockOperationalDekWithPrf,
+  resetVaultPasswordWithPrf,
   disablePasskeyPrfUnlock,
 } from '../crypto/webauthnPrf';
+import {
+  loadPasswordReminderState,
+  isPasswordReminderDue,
+  recordPasswordMemoryVerified,
+  recordPasswordChangedSchedule,
+  snoozePasswordReminderState,
+  setPasswordReminderEnabledState,
+  getReminderIntervalDays,
+  type PasswordReminderState,
+} from '../utils/passwordReminderSchedule';
+import { saveVaultPasswordToBrowserManager } from '../utils/passwordManagerHelper';
 import { subscribeToVaultEvents, broadcastVaultEvent } from '../utils/vaultEvents';
 import { SessionService } from '../services/sessionService';
 import { ClinicOperationsService } from '../services/clinicOperationsService';
@@ -94,6 +106,11 @@ interface VaultContextType {
   lastRecoveryDrillAt: string | null;
   refreshRecoveryDrillStatus: () => Promise<void>;
   snoozeRecoveryDrillBanner: (days?: number) => void;
+  passwordReminderState: PasswordReminderState;
+  isPasswordReminderDueNow: boolean;
+  setPasswordReminderEnabled: (enabled: boolean) => void;
+  confirmPasswordMemoryCheck: (password: string) => Promise<{ ok: boolean; nextIntervalDays?: number }>;
+  snoozePasswordReminder: (days?: number) => void;
   dismissRepairNotice: () => void;
   setupPassword: (password: string) => Promise<{ recoveryKeyFormatted: string }>;
   completeSetup: () => void;
@@ -105,6 +122,7 @@ interface VaultContextType {
   refreshKeyUsageStatus: () => Promise<EncryptionKeyUsageStatus | null>;
   rotateDekNow: () => Promise<KeyRotationSummary>;
   resetPasswordWithRecovery: (recoveryKey: string, newPassword: string) => Promise<{ newRecoveryKeyFormatted: string }>;
+  resetPasswordWithPrf: (newPassword: string) => Promise<void>;
   changeVaultPassword: (oldPass: string, newPass: string) => Promise<void>;
   lock: () => void;
   wipeDatabase: () => Promise<void>;
@@ -136,6 +154,12 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [recoveredDrafts, setRecoveredDrafts] = useState<DecryptedDraftRecord[]>([]);
   const [lastRecoveryDrillAt, setLastRecoveryDrillAt] = useState<string | null>(null);
   const [isRecoveryDrillDue, setIsRecoveryDrillDue] = useState<boolean>(false);
+  const [passwordReminderState, setPasswordReminderState] = useState<PasswordReminderState>(() =>
+    loadPasswordReminderState()
+  );
+  const [isPasswordReminderDueNow, setIsPasswordReminderDueNow] = useState<boolean>(() =>
+    isPasswordReminderDue(loadPasswordReminderState())
+  );
   const dekRef = useRef<CryptoKey | null>(null);
   dekRef.current = dek;
 
@@ -242,6 +266,24 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       localStorage.setItem('physiorecord_recovery_drill_snooze_until', String(until));
     }
     setIsRecoveryDrillDue(false);
+  }, []);
+
+  const refreshPasswordReminderStatus = useCallback(() => {
+    const next = loadPasswordReminderState();
+    setPasswordReminderState(next);
+    setIsPasswordReminderDueNow(isPasswordReminderDue(next));
+  }, []);
+
+  const setPasswordReminderEnabled = useCallback((enabled: boolean) => {
+    const next = setPasswordReminderEnabledState(enabled);
+    setPasswordReminderState(next);
+    setIsPasswordReminderDueNow(isPasswordReminderDue(next));
+  }, []);
+
+  const snoozePasswordReminder = useCallback((days: number = 2) => {
+    const next = snoozePasswordReminderState(days);
+    setPasswordReminderState(next);
+    setIsPasswordReminderDueNow(isPasswordReminderDue(next));
   }, []);
 
   // Global pagehide / visibilitychange / beforeunload encrypted draft flush (Phase A1)
@@ -463,6 +505,11 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setVaultGeneration(gen);
       setIsInitialized(true);
       setIsPrfEnrolled(false);
+      // Initialize Signal-style spaced reminder for the brand-new password (first check in 1 day)
+      const reminderState = recordPasswordChangedSchedule();
+      setPasswordReminderState(reminderState);
+      setIsPasswordReminderDueNow(false);
+      void saveVaultPasswordToBrowserManager(password);
       // Keep isLocked true so LockScreen can display the Emergency Recovery Key
       updateActivity();
 
@@ -532,6 +579,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       await refreshKeyUsageStatus(effectiveDek);
       await refreshRecoveredDrafts(effectiveDek);
       await refreshRecoveryDrillStatus();
+      refreshPasswordReminderStatus();
 
       const latestMeta = await db.vaultMeta.get('auth');
       setIsPrfEnrolled(Boolean(latestMeta?.prfCredentialId && latestMeta?.prfWrappedDek));
@@ -550,7 +598,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setIsLocked(false);
       updateActivity();
     },
-    [refreshKeyUsageStatus, updateActivity]
+    [refreshKeyUsageStatus, refreshRecoveredDrafts, refreshRecoveryDrillStatus, refreshPasswordReminderStatus, updateActivity]
   );
 
   // Unlock Vault: Verify KEK -> Auto-Upgrade KDF if needed -> Unwrap DEK as NON-EXTRACTABLE
@@ -590,6 +638,14 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       bindDekToGeneration(recoveredDek, gen);
 
       await finalizeUnlockWithDek(recoveredDek, activeVaultKek, gen);
+      // If a spaced password reminder was due, manually typing the password satisfies it
+      const currentReminder = loadPasswordReminderState();
+      if (isPasswordReminderDue(currentReminder)) {
+        const advanced = recordPasswordMemoryVerified();
+        setPasswordReminderState(advanced);
+        setIsPasswordReminderDueNow(false);
+      }
+      void saveVaultPasswordToBrowserManager(password);
       return true;
     } finally {
       setKdfProgress(0);
@@ -614,6 +670,24 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
   }, []);
+
+  const confirmPasswordMemoryCheck = useCallback(
+    async (password: string): Promise<{ ok: boolean; nextIntervalDays?: number }> => {
+      const valid = await verifyVaultPassword(password);
+      if (!valid) {
+        return { ok: false };
+      }
+      const nextState = recordPasswordMemoryVerified();
+      setPasswordReminderState(nextState);
+      setIsPasswordReminderDueNow(false);
+      void saveVaultPasswordToBrowserManager(password);
+      return {
+        ok: true,
+        nextIntervalDays: getReminderIntervalDays(nextState.stageIndex),
+      };
+    },
+    [verifyVaultPassword]
+  );
 
   const unlockWithPrf = useCallback(async (): Promise<boolean> => {
     const meta = await db.vaultMeta.get('auth');
@@ -675,11 +749,51 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const gen = meta?.vaultGeneration ?? 1;
       setVaultGeneration(gen);
       setIsPrfEnrolled(Boolean(meta?.prfCredentialId && meta?.prfWrappedDek));
+      const reminderState = recordPasswordChangedSchedule();
+      setPasswordReminderState(reminderState);
+      setIsPasswordReminderDueNow(false);
+      void saveVaultPasswordToBrowserManager(newPassword);
       // Keep isLocked true so LockScreen can display the rotated Recovery Key
       updateActivity();
       return { newRecoveryKeyFormatted: result.newRecoveryKeyFormatted };
     },
     [refreshKeyUsageStatus, updateActivity]
+  );
+
+  // Instant Password Reset using Enrolled Biometrics / Passkey (WebAuthn PRF)
+  const resetPasswordWithPrf = useCallback(
+    async (newPassword: string): Promise<void> => {
+      setKdfProgress(0);
+      try {
+        const result = await resetVaultPasswordWithPrf(
+          db,
+          newPassword,
+          deriveKEKWithWorker,
+          (pct) => setKdfProgress(pct)
+        );
+        const reminderState = recordPasswordChangedSchedule();
+        setPasswordReminderState(reminderState);
+        setIsPasswordReminderDueNow(false);
+        void saveVaultPasswordToBrowserManager(newPassword);
+
+        if (dekRef.current && !isLocked) {
+          // Already unlocked: refresh in-memory DEK & KEK cleanly without re-running full startup repair
+          setDek(result.operationalDek);
+          setVaultKek(result.newVaultKek);
+          setVaultGeneration(result.vaultGeneration);
+          updateActivity();
+        } else {
+          await finalizeUnlockWithDek(
+            result.operationalDek,
+            result.newVaultKek,
+            result.vaultGeneration
+          );
+        }
+      } finally {
+        setKdfProgress(0);
+      }
+    },
+    [finalizeUnlockWithDek, isLocked, updateActivity]
   );
 
   // Change Vault Password in O(1) without re-encrypting records
@@ -739,6 +853,10 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       bindDekToGeneration(dek, currentGen);
       setVaultKek(newKek);
       setVaultGeneration(currentGen);
+      const reminderState = recordPasswordChangedSchedule();
+      setPasswordReminderState(reminderState);
+      setIsPasswordReminderDueNow(false);
+      void saveVaultPasswordToBrowserManager(newPass);
       updateActivity();
 
       // Broadcast password change to other open tabs
@@ -792,6 +910,9 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsPrfEnrolled(false);
     setKeyUsageStatus(null);
     setLastMigrationResult(null);
+    const freshReminder = loadPasswordReminderState();
+    setPasswordReminderState(freshReminder);
+    setIsPasswordReminderDueNow(false);
     setIsLocked(true);
   }, [lock]);
 
@@ -826,6 +947,11 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         lastRecoveryDrillAt,
         refreshRecoveryDrillStatus,
         snoozeRecoveryDrillBanner,
+        passwordReminderState,
+        isPasswordReminderDueNow,
+        setPasswordReminderEnabled,
+        confirmPasswordMemoryCheck,
+        snoozePasswordReminder,
         dismissRepairNotice,
         setupPassword,
         completeSetup,
@@ -837,6 +963,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         refreshKeyUsageStatus,
         rotateDekNow,
         resetPasswordWithRecovery,
+        resetPasswordWithPrf,
         changeVaultPassword,
         lock: () => lock(false),
         wipeDatabase,

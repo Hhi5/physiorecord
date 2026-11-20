@@ -23,6 +23,8 @@ import {
   Moon,
   Lock,
   Dumbbell,
+  Compass,
+  BookOpen,
 } from 'lucide-react';
 import { ModalDialog } from '../ui/Dialog';
 import { useLanguage } from '../../context/LanguageContext';
@@ -55,6 +57,9 @@ export interface CommandPaletteProps {
   onOpenPrivacyCover: () => void;
   onOpenKiosk: () => void;
   onOpenDemoModal: () => void;
+  onOpenFullWalkthrough?: () => void;
+  onOpenSpotlightTour?: () => void;
+  onOpenQuickGuide?: () => void;
   onLockVault: () => void;
   onSelectPatient: (patientId: string) => void;
 }
@@ -82,6 +87,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenPrivacyCover,
   onOpenKiosk,
   onOpenDemoModal,
+  onOpenFullWalkthrough,
+  onOpenSpotlightTour,
+  onOpenQuickGuide,
   onLockVault,
   onSelectPatient,
 }) => {
@@ -217,6 +225,39 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             },
           ]
         : []),
+      ...(onOpenFullWalkthrough
+        ? [
+            {
+              id: 'full_app_walkthrough',
+              label: bi('الجولة الشاملة لكل التطبيق', 'Full-App Walkthrough Tour', 'گەشتی گشتی بۆ هەموو ئەپەکە'),
+              keywords: 'full tour walkthrough onboarding welcome جولة شاملة ترحيب شرح كل التطبيق گەشتی گشتی',
+              icon: PlayCircle,
+              run: onOpenFullWalkthrough,
+            },
+          ]
+        : []),
+      ...(onOpenSpotlightTour
+        ? [
+            {
+              id: 'page_spotlight_tour',
+              label: bi('جولة تسليط الضوء في هذه الصفحة', 'Spotlight Tour on This Page', 'گەشتی ڕوونکردنەوەی ئەم پەڕەیە'),
+              keywords: 'tour spotlight guide help شرح جولة مساعدة دليل تفاعلي ڕێبەر',
+              icon: Compass,
+              run: onOpenSpotlightTour,
+            },
+          ]
+        : []),
+      ...(onOpenQuickGuide
+        ? [
+            {
+              id: 'open_quick_guide',
+              label: bi('الدليل الكامل (حاسوب / هاتف) والاختصارات', 'Full Guide (Desktop / Mobile) & Shortcuts', 'ڕێبەری تەواو (کۆمپیوتەر / مۆبایل)'),
+              keywords: 'guide manual help shortcuts desktop mobile دليل مساعدة اختصارات شرح حاسبة هاتف موبايل ڕێبەر',
+              icon: BookOpen,
+              run: onOpenQuickGuide,
+            },
+          ]
+        : []),
       {
         id: 'lock_vault',
         label: bi('قفل الخزينة المشفرة (Ctrl+L)', 'Lock Vault (Ctrl+L)', 'قوفڵکردنی قاسە'),
@@ -252,6 +293,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     onOpenPrivacyCover,
     onOpenKiosk,
     onOpenDemoModal,
+    onOpenFullWalkthrough,
+    onOpenSpotlightTour,
+    onOpenQuickGuide,
     onLockVault,
   ]);
 

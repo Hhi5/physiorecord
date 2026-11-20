@@ -10,6 +10,7 @@ import { useTheme } from '../context/ThemeContext';
 import { LanguageSwitcher } from './ui/LanguageSwitcher';
 import { ModalDialog } from './ui/Dialog';
 import { copySecretWithAutoClear } from '../utils/clipboardPrivacy';
+import { VAULT_CREDENTIAL_USERNAME } from '../utils/passwordManagerHelper';
 import {
   saveTextFilePortable,
   triggerPlatformPrint,
@@ -79,6 +80,7 @@ export const LockScreen: React.FC = () => {
     isPrfEnrolled,
     schemaDowngradeError,
     resetPasswordWithRecovery,
+    resetPasswordWithPrf,
     wipeDatabase,
   } = useVault();
   const { language, isRtl, bi } = useLanguage();
@@ -113,8 +115,9 @@ export const LockScreen: React.FC = () => {
   const [challengeGroupIndex, setChallengeGroupIndex] = useState<number>(0);
   const [challengeGroupInput, setChallengeGroupInput] = useState('');
 
-  // Recovery Mode (Unlock using 32-char Recovery Key + Set New Password)
+  // Recovery Mode (Unlock using Biometrics/Passkey OR 32-char Recovery Key + Set New Password)
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+  const [recoveryMethod, setRecoveryMethod] = useState<'prf' | 'key'>('key');
   const [recoveryKeyInput, setRecoveryKeyInput] = useState('');
   const [newVaultPassword, setNewVaultPassword] = useState('');
   const [confirmNewVaultPassword, setConfirmNewVaultPassword] = useState('');
@@ -267,7 +270,9 @@ export const LockScreen: React.FC = () => {
     e.preventDefault();
     setLocalError(null);
 
-    if (!recoveryKeyInput.trim()) {
+    const usePrfMethod = recoveryMethod === 'prf' && isPrfSupported && isPrfEnrolled;
+
+    if (!usePrfMethod && !recoveryKeyInput.trim()) {
       setLocalError(
         bi(
           'يرجى إدخال مفتاح الاسترداد الطارئ.',
@@ -300,6 +305,14 @@ export const LockScreen: React.FC = () => {
 
     setSubmitting(true);
     try {
+      if (usePrfMethod) {
+        await resetPasswordWithPrf(newVaultPassword);
+        setShowRecoveryModal(false);
+        setNewVaultPassword('');
+        setConfirmNewVaultPassword('');
+        return;
+      }
+
       const { newRecoveryKeyFormatted } = await resetPasswordWithRecovery(
         recoveryKeyInput,
         newVaultPassword
@@ -732,6 +745,17 @@ export const LockScreen: React.FC = () => {
               </div>
             ) : (
             <form className="space-y-3" onSubmit={handleSubmit}>
+              {/* Standard hidden username field so Google Password Manager / iCloud Keychain recognizes and saves the vault password */}
+              <input
+                type="text"
+                name="username"
+                autoComplete="username"
+                value={VAULT_CREDENTIAL_USERNAME}
+                readOnly
+                tabIndex={-1}
+                aria-hidden="true"
+                className="sr-only"
+              />
               <div>
                 <label htmlFor="password" className="sr-only">
                   {isSetup
@@ -962,11 +986,14 @@ export const LockScreen: React.FC = () => {
                     type="button"
                     onClick={() => {
                       setLocalError(null);
+                      setRecoveryMethod(isPrfSupported && isPrfEnrolled ? 'prf' : 'key');
                       setShowRecoveryModal(true);
                     }}
                     className="font-bold text-foreground underline underline-offset-4 hover:text-primary cursor-pointer"
                   >
-                    {bi('استعادة بمفتاح الطوارئ', 'Recover here', 'گەڕاندنەوە لێرە')}
+                    {isPrfSupported && isPrfEnrolled
+                      ? bi('استعادة بالبصمة أو مفتاح الطوارئ', 'Recover with Passkey or Key', 'گەڕاندنەوە بە پەنجەمۆر یان کلیل')
+                      : bi('استعادة بمفتاح الطوارئ', 'Recover here', 'گەڕاندنەوە لێرە')}
                   </button>
                 </div>
               )}
@@ -1008,12 +1035,63 @@ export const LockScreen: React.FC = () => {
         bodyClassName="p-6 space-y-4 overflow-y-auto"
       >
 
+            {isPrfSupported && isPrfEnrolled && (
+              <div
+                role="tablist"
+                aria-label={bi('طريقة الاسترداد', 'Recovery method', 'شێوازی گەڕاندنەوە')}
+                className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-surface border border-line-2"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={recoveryMethod === 'prf'}
+                  data-testid="recovery-method-prf-tab"
+                  onClick={() => {
+                    setLocalError(null);
+                    setRecoveryMethod('prf');
+                  }}
+                  className={`min-h-[34px] px-2.5 py-1.5 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
+                    recoveryMethod === 'prf'
+                      ? 'bg-primary text-primary-foreground shadow-2xs'
+                      : 'text-muted-foreground-1 hover:text-foreground'
+                  }`}
+                >
+                  <Fingerprint className="size-3.5 shrink-0" />
+                  <span>{bi('بالبصمة (سريع)', 'Passkey (Fast)', 'بە پەنجەمۆر')}</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={recoveryMethod === 'key'}
+                  data-testid="recovery-method-key-tab"
+                  onClick={() => {
+                    setLocalError(null);
+                    setRecoveryMethod('key');
+                  }}
+                  className={`min-h-[34px] px-2.5 py-1.5 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
+                    recoveryMethod === 'key'
+                      ? 'bg-primary text-primary-foreground shadow-2xs'
+                      : 'text-muted-foreground-1 hover:text-foreground'
+                  }`}
+                >
+                  <Key className="size-3.5 shrink-0" />
+                  <span>{bi('مفتاح الطوارئ', 'Recovery Key', 'کلیلی فریاگوزاری')}</span>
+                </button>
+              </div>
+            )}
+
             <p className="text-xs text-muted-foreground-2 leading-relaxed">
-              {bi(
-                'أدخل مفتاح الاسترداد الطارئ المكون من 32 خانة لفك تغليف مفتاح البيانات الأصلي (DEK) وتعيين كلمة مرور جديدة دون فقدان أي سجل.',
-                'Enter your 32-character Emergency Recovery Key to unwrap the original DEK and set a new master password without losing any data.',
-                'کلیلی فریاگوزاری ٣٢ پیتی بنووسە بۆ کردنەوەی کلیلی داتای بنەڕەتی (DEK) و دانانی وشەی نهێنی نوێ بێ لەدەستدانی هیچ تۆمارێک.'
-              )}
+              {recoveryMethod === 'prf' && isPrfSupported && isPrfEnrolled
+                ? bi(
+                    'استخدم بصمة جهازك أو مفتاح المرور (Windows Hello / Touch ID / بصمة الهاتف) لتعيين كلمة مرور رئيسية جديدة فوراً دون فقدان أي سجل.',
+                    'Use your device biometrics or Passkey to set a new master password immediately without losing any clinical record.',
+                    'پەنجەمۆری ئامێرەکەت بەکاربهێنە بۆ دانانی وشەی نهێنی نوێ بەبێ لەدەستدانی هیچ تۆمارێک.'
+                  )
+                : bi(
+                    'أدخل مفتاح الاسترداد الطارئ المكون من 32 خانة لفك تغليف مفتاح البيانات الأصلي (DEK) وتعيين كلمة مرور جديدة دون فقدان أي سجل.',
+                    'Enter your 32-character Emergency Recovery Key to unwrap the original DEK and set a new master password without losing any data.',
+                    'کلیلی فریاگوزاری ٣٢ پیتی بنووسە بۆ کردنەوەی کلیلی داتای بنەڕەتی (DEK) و دانانی وشەی نهێنی نوێ بێ لەدەستدانی هیچ تۆمارێک.'
+                  )}
             </p>
 
             {displayError && (
@@ -1023,25 +1101,38 @@ export const LockScreen: React.FC = () => {
             )}
 
             <form onSubmit={handleRecoverySubmit} className="space-y-3">
-              <div>
-                <label htmlFor="recovery-key-input" className="block text-xs font-bold text-foreground mb-1">
-                  {bi(
-                    'مفتاح الاسترداد الطارئ (Recovery Key):',
-                    'Recovery Key:',
-                    'کلیلی فریاگوزاری (Recovery Key):'
-                  )}
-                </label>
-                <input
-                  id="recovery-key-input"
-                  type="text"
-                  dir="ltr"
-                  required
-                  value={recoveryKeyInput}
-                  onChange={(e) => setRecoveryKeyInput(e.target.value)}
-                  placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"
-                  className="w-full px-3 py-2 text-xs font-mono border border-layer-line rounded-xl bg-layer text-foreground focus:outline-none focus:border-primary"
-                />
-              </div>
+              <input
+                type="text"
+                name="username"
+                autoComplete="username"
+                value={VAULT_CREDENTIAL_USERNAME}
+                readOnly
+                tabIndex={-1}
+                aria-hidden="true"
+                className="sr-only"
+              />
+
+              {!(recoveryMethod === 'prf' && isPrfSupported && isPrfEnrolled) && (
+                <div>
+                  <label htmlFor="recovery-key-input" className="block text-xs font-bold text-foreground mb-1">
+                    {bi(
+                      'مفتاح الاسترداد الطارئ (Recovery Key):',
+                      'Recovery Key:',
+                      'کلیلی فریاگوزاری (Recovery Key):'
+                    )}
+                  </label>
+                  <input
+                    id="recovery-key-input"
+                    type="text"
+                    dir="ltr"
+                    required
+                    value={recoveryKeyInput}
+                    onChange={(e) => setRecoveryKeyInput(e.target.value)}
+                    placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"
+                    className="w-full px-3 py-2 text-xs font-mono border border-layer-line rounded-xl bg-layer text-foreground focus:outline-none focus:border-primary"
+                  />
+                </div>
+              )}
 
               <div>
                 <label htmlFor="recovery-new-password-input" className="block text-xs font-bold text-foreground mb-1">
@@ -1093,16 +1184,28 @@ export const LockScreen: React.FC = () => {
                 </button>
                 <button
                   type="submit"
+                  data-testid="recovery-submit-btn"
                   disabled={submitting}
-                  className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
                 >
-                  {submitting
-                    ? bi('جاري الاسترداد...', 'Recovering...', 'خەریکی گەڕاندنەوەیە...')
-                    : bi(
-                        'استرداد الخزينة وحفظ كلمة المرور',
-                        'Recover Vault',
-                        'گەڕاندنەوەی خەزێنە و پاشەکەوتکردنی وشەی نهێنی'
-                      )}
+                  {recoveryMethod === 'prf' && isPrfSupported && isPrfEnrolled && (
+                    <Fingerprint className="size-3.5 shrink-0" />
+                  )}
+                  <span>
+                    {submitting
+                      ? bi('جاري الاسترداد...', 'Recovering...', 'خەریکی گەڕاندنەوەیە...')
+                      : recoveryMethod === 'prf' && isPrfSupported && isPrfEnrolled
+                        ? bi(
+                            'تحقق بالبصمة وتعيين كلمة المرور',
+                            'Verify Passkey & Reset Password',
+                            'پشکنینی پەنجەمۆر و دانانی وشەی نهێنی'
+                          )
+                        : bi(
+                            'استرداد الخزينة وحفظ كلمة المرور',
+                            'Recover Vault',
+                            'گەڕاندنەوەی خەزێنە و پاشەکەوتکردنی وشەی نهێنی'
+                          )}
+                  </span>
                 </button>
               </div>
             </form>

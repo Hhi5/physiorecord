@@ -91,13 +91,19 @@ test.describe('Phase E — Sharing & Interop (E1–E4)', () => {
     await page.locator('input[type="number"]').first().fill('31');
     await page.locator('form button[type="submit"]').first().click();
 
-    // Inside newly opened patient workspace: open History (السجل المرضي) tab for E4 Photo Studio
+    // Inside newly opened patient workspace: open History (السجل المرضي) -> Imaging & Files tab for E4 Photo Studio
     const historyTabBtn = page
       .locator('button')
       .filter({ hasText: /السجل المرضي|History/i })
       .first();
     await expect(historyTabBtn).toBeVisible({ timeout: 10_000 });
     await historyTabBtn.click();
+
+    const imagingSubTabBtn = page
+      .getByRole('tab', { name: /الأشعة والمرفقات|Imaging & Files/i })
+      .first();
+    await expect(imagingSubTabBtn).toBeVisible({ timeout: 5_000 });
+    await imagingSubTabBtn.click();
 
     // Enable 5.2 Attachments Gallery inline if currently off
     const enableGalleryBtn = page

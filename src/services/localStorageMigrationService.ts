@@ -78,6 +78,7 @@ export const ALLOWED_NON_PHI_LOCALSTORAGE_KEYS = new Set<string>([
   'physiorecord_language',
   'physiorecord_theme_mode',
   'physiorecord_theme_palette',
+  'physiorecord_custom_primary_color',
   'physiorecord_clinical_theme',
   'physiorecord_primary_currency_code',
   'physiorecord_autolock_timeout_ms',
@@ -87,6 +88,9 @@ export const ALLOWED_NON_PHI_LOCALSTORAGE_KEYS = new Set<string>([
   'physiorecord_recovery_drill_snooze_until',
   'physiorecord_pre_restore_safety_backup',
   'physiorecord_rail_expanded_v1',
+  'physiorecord_exam_preset_collapsed',
+  'physiorecord_page_tours_v1',
+  'physiorecord_password_reminder_v1',
 ]);
 
 const NON_CLINICAL_SKIPPED_KEYS = ALLOWED_NON_PHI_LOCALSTORAGE_KEYS;

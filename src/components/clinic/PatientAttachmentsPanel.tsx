@@ -162,20 +162,22 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
 
   if (!isEnabled) {
     return (
-      <div className="p-4 rounded-2xl bg-card border border-dashed border-card-line flex flex-wrap items-center justify-between gap-3">
+      <div className="p-4 sm:p-5 rounded-2xl pr-surface flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <Camera className="size-4 text-primary shrink-0" />
+          <div className="size-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <Camera className="size-4" />
+          </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-foreground">
+            <p className="text-xs sm:text-sm font-bold text-foreground">
               {bi(
-                'معرض صور القوام والملفات المشفرة (معطل حالياً)',
-                'Encrypted Posture Gallery & Binary Attachments (Disabled)',
-                'پیشانگای وێنەی شێوەی وەستان و فایلە نهێنیکراوەکان (لە ئێستادا ناچالاکە)'
+                'معرض صور القوام والملفات المشفرة',
+                'Encrypted Posture Gallery & Attachments',
+                'پیشانگای وێنەی شێوەی وەستان و فایلە نهێنیکراوەکان'
               )}
             </p>
             <p className="text-xs text-muted-foreground-1">
               {bi(
-                'فعّل الوحدة لعرض صور الأشعة قبل/بعد وملفات PDF المرفوعة محلياً بشكل مشفر.',
+                'فعّل المعرض لعرض صور القوام قبل/بعد وملفات PDF محلياً بشكل مشفر.',
                 'Enable locally to preview posture Before/After photos and encrypted PDF files.',
                 'ئەم بەشە چالاک بکە بۆ بینینی وێنەکانی پێش/دوای چارەسەر و فایلە نهێنیکراوەکانی PDF.'
               )}
@@ -185,7 +187,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
         <button
           type="button"
           onClick={() => ClinicOperationsService.setAttachmentsModuleEnabled(true)}
-          className="px-3.5 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary text-xs font-bold cursor-pointer transition-colors"
+          className="compact-btn min-h-[40px] px-3.5 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold cursor-pointer transition-colors"
         >
           {bi('تفعيل المعرض السريري', 'Enable Attachment Gallery', 'چالاککردنی پیشانگای کلینیکی')}
         </button>
@@ -280,23 +282,21 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
   const overTotalWarning = totalVaultBytes >= ATTACHMENT_TOTAL_WARNING_BYTES;
 
   return (
-    <div className="bg-layer border border-card-stroke rounded-2xl p-5 space-y-4">
+    <div className="pr-surface rounded-2xl p-4 sm:p-5 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-300">
-            <Camera className="w-4 h-4" />
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="size-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <Camera className="size-4" />
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-foreground">
-              {t('attachments.title')}
-            </h3>
-            <p className="text-xs text-muted-foreground-1">
-              {bi(
-                `مشفرة في Dexie v9 • إجمالي مرفقات العيادة: ${formatReadableBytes(totalVaultBytes)}`,
-                `Encrypted in Dexie v9 • Total vault attachments: ${formatReadableBytes(totalVaultBytes)}`,
-                `نهێنیکراوە لە Dexie v9 • کۆی هاوپێچەکانی کلینیک: ${formatReadableBytes(totalVaultBytes)}`
-              )}
-            </p>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-xs sm:text-sm font-bold text-foreground">
+                {t('attachments.title')}
+              </h3>
+              <span className="text-xs font-mono tabular-nums text-muted-foreground-1">
+                · {formatReadableBytes(totalVaultBytes)}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -306,7 +306,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
               type="button"
               data-testid="open-posture-compare-modal-btn"
               onClick={() => setShowCompareModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-card-stroke bg-card hover:bg-layer-hover text-foreground text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+              className="compact-btn min-h-[40px] inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface hover:bg-surface/80 text-foreground text-xs font-bold transition-colors cursor-pointer"
             >
               <Columns2 className="w-4 h-4 text-primary" />
               {bi('مقارنة الصور', 'Compare Photos', 'بەراوردکردنی وێنەکان')}
@@ -315,7 +315,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
           <button
             type="button"
             onClick={() => setShowUploadForm((prev) => !prev)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+            className="compact-btn min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold transition-colors cursor-pointer shadow-2xs"
           >
             <Plus className="w-4 h-4" />
             {bi('إضافة مرفق', 'Add Attachment', 'زیادکردنی هاوپێچ')}
@@ -345,7 +345,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
       {showUploadForm && (
         <form
           onSubmit={handleUploadSubmit}
-          className="p-4 rounded-xl bg-surface border border-card-divider space-y-3"
+          className="p-4 rounded-2xl bg-surface/70 space-y-3"
         >
           {errorMsg && (
             <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-xs text-rose-700 dark:text-rose-300">
@@ -475,13 +475,13 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
 
       {/* Attachments List */}
       {attachments.length === 0 ? (
-        <div className="p-6 text-center rounded-xl bg-surface border border-dashed border-card-stroke text-xs text-muted-foreground-1">
+        <p className="text-xs text-muted-foreground-1 leading-relaxed py-1">
           {bi(
-            'لا توجد صور أو تقارير PDF مرفقة لهذا المريض بعد.',
-            'No encrypted attachments saved for this patient yet.',
-            'هێشتا هیچ وێنە یان ڕاپۆرتێکی PDF ی نهێنیکراو بۆ ئەم نەخۆشە پاشەکەوت نەکراوە.'
+            'لا توجد صور قوام أو ملفات PDF مرفقة بعد — اضغط «إضافة مرفق» للرفع والتشفير محلياً.',
+            'No encrypted posture photos or PDFs saved yet — click "Add Attachment" to upload.',
+            'هێشتا هیچ وێنەی شێوەی وەستان یان فایلی PDF هاوپێچ نەکراوە.'
           )}
-        </div>
+        </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {attachments.map((att) => {
@@ -489,7 +489,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
             return (
               <div
                 key={att.id}
-                className="rounded-xl border border-card-stroke bg-surface p-3 flex flex-col gap-2.5"
+                className="rounded-2xl bg-surface/65 p-3 flex flex-col gap-2.5"
               >
                 <div className="relative h-32 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
                   {isPdf ? (
@@ -532,7 +532,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
                       type="button"
                       onClick={() => setPreviewAttachment(att)}
                       aria-label={bi(`معاينة ${att.title}`, `Preview ${att.title}`, `پێشبینینی ${att.title}`)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-layer border border-card-stroke hover:bg-layer-hover text-xs font-semibold text-foreground cursor-pointer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-card hover:bg-layer-hover text-xs font-semibold text-foreground cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       {bi('عرض', 'View', 'پیشاندان')}
@@ -542,7 +542,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
                         type="button"
                         data-testid={`open-photo-tools-btn-${att.id}`}
                         onClick={() => setStudioTarget(att)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 text-xs font-semibold text-primary cursor-pointer transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-xs font-semibold text-primary cursor-pointer transition-colors"
                       >
                         <Ruler className="w-3.5 h-3.5" />
                         {bi('قياس الزوايا والقوام', 'Angle & Posture Tools', 'پێوانەی گۆشە و شێوەی وەستان')}
@@ -552,7 +552,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
                       type="button"
                       onClick={() => handleDownloadAttachment(att)}
                       aria-label={bi(`تنزيل ${att.title}`, `Download ${att.title}`, `داگرتنی ${att.title}`)}
-                      className="size-8 inline-flex items-center justify-center rounded-lg border border-card-stroke hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer shrink-0"
+                      className="size-8 inline-flex items-center justify-center rounded-lg bg-card hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer shrink-0"
                     >
                       <Download className="w-3.5 h-3.5" />
                     </button>
@@ -574,7 +574,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
                       type="button"
                       onClick={() => setConfirmDeleteId(att.id)}
                       aria-label={bi(`حذف ${att.title}`, `Delete ${att.title}`, `سڕینەوەی ${att.title}`)}
-                      className="size-8 inline-flex items-center justify-center rounded-lg border border-card-stroke text-rose-600 hover:bg-rose-500/10 cursor-pointer shrink-0"
+                      className="size-8 inline-flex items-center justify-center rounded-lg bg-card text-rose-600 hover:bg-rose-500/10 cursor-pointer shrink-0"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -631,19 +631,19 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
                     ))}
                   </select>
                   {slot.item ? (
-                    <div className="relative rounded-2xl overflow-hidden border border-card-stroke bg-slate-950 min-h-[300px] max-h-[55vh] flex items-center justify-center p-2 shadow-inner">
+                    <div className="relative rounded-2xl overflow-hidden bg-surface min-h-[300px] max-h-[55vh] flex items-center justify-center p-2">
                       <img
                         src={slot.item.payloadDataUrl}
                         alt={slot.item.title}
                         className="max-h-[50vh] max-w-full object-contain rounded-xl"
                       />
-                      <div className="absolute bottom-3 start-3 end-3 flex items-center justify-between pointer-events-none px-2.5 py-1.5 rounded-lg bg-slate-950/80 backdrop-blur-xs text-white text-xs">
+                      <div className="absolute bottom-3 start-3 end-3 flex items-center justify-between pointer-events-none px-2.5 py-1.5 rounded-lg bg-slate-900/75 backdrop-blur-xs text-white text-xs">
                         <span className="truncate font-semibold">{slot.item.title}</span>
-                        <span className="shrink-0 tabular-nums text-slate-300 font-mono ms-2">{slot.item.capturedAt}</span>
+                        <span className="shrink-0 tabular-nums text-slate-200 font-mono ms-2">{slot.item.capturedAt}</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="h-64 rounded-2xl border border-dashed border-card-stroke flex items-center justify-center text-xs text-muted-foreground-1">
+                    <div className="h-64 rounded-2xl bg-surface/65 flex items-center justify-center text-xs text-muted-foreground-1">
                       {bi('لم يتم اختيار صورة', 'No photo selected', 'هیچ وێنەیەک دیاری نەکراوە')}
                     </div>
                   )}
@@ -678,7 +678,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
                 className="w-full h-[70vh] rounded-xl border border-card-stroke bg-white"
               />
             ) : (
-              <div className="flex justify-center bg-slate-950 rounded-xl p-2">
+              <div className="flex justify-center bg-surface rounded-xl p-2">
                 <img
                   src={previewAttachment.payloadDataUrl}
                   alt={previewAttachment.title}

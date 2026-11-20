@@ -29,7 +29,9 @@ export interface ChartComparisonTabProps {
   activeEpisode: EpisodeRecord | null;
   episodeSessions: SessionRecord[];
   sessionPainPoints: SessionPainPointInput[];
+  patientName?: string;
   onSnapshotAdded: (updatedStore: EpisodeScopedClinicalStore) => void;
+  onPrintProgressReport?: () => void;
 }
 
 export const ChartComparisonTab: React.FC<ChartComparisonTabProps> = ({
@@ -37,12 +39,19 @@ export const ChartComparisonTab: React.FC<ChartComparisonTabProps> = ({
   activeEpisode,
   episodeSessions,
   sessionPainPoints,
+  patientName,
   onSnapshotAdded,
+  onPrintProgressReport,
 }) => {
   const { bi } = useLanguage();
 
+  const resolvedSmartGoals =
+    episodeStore.smartGoals && episodeStore.smartGoals.length > 0
+      ? episodeStore.smartGoals
+      : activeEpisode?.data.structuredGoals || [];
+
   return (
-    <div className="max-w-7xl mx-auto space-y-5">
+    <div className="max-w-7xl mx-auto space-y-4">
       <Suspense
         fallback={
           <div className="p-8 rounded-2xl pr-surface text-center text-xs text-muted-foreground-1">
@@ -57,15 +66,21 @@ export const ChartComparisonTab: React.FC<ChartComparisonTabProps> = ({
             activeEpisode?.data.medicalDiagnosis ||
             bi('حلقة الرعاية النشطة', 'Active Episode', 'قۆناغی چاودێری چالاک')
           }
+          patientName={patientName}
+          sessionsCount={episodeSessions.length}
           onSnapshotAdded={onSnapshotAdded}
-        />
-
-        <OrganClinicalCharts
-          sessions={episodeSessions}
-          masterObjective={episodeStore.objective}
-          sessionPainPoints={sessionPainPoints}
-          functionalScales={episodeStore.functionalScales}
-          snapshots={episodeStore.snapshots}
+          onPrintProgressReport={onPrintProgressReport}
+          chartsContent={
+            <OrganClinicalCharts
+              sessions={episodeSessions}
+              masterObjective={episodeStore.objective}
+              sessionPainPoints={sessionPainPoints}
+              functionalScales={episodeStore.functionalScales}
+              snapshots={episodeStore.snapshots}
+              smartGoals={resolvedSmartGoals}
+              outcomeGoals={episodeStore.outcomeGoals || []}
+            />
+          }
         />
       </Suspense>
     </div>

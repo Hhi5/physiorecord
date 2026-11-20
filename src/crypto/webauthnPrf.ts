@@ -7,10 +7,17 @@
 import type { PhysioRecordDatabase } from '../db/db';
 import type { VaultMetaEntity } from '../types/clinical';
 import {
+  CONSTANTS,
+  CURRENT_DEK_VERSION,
+  bindDekToGeneration,
   decryptRawDEKForBackup,
+  deriveKEK,
+  generateVerifier,
   importOperationalDekFromRawBytes,
   randomBytes,
+  wrapDEK,
 } from './vault';
+import { broadcastVaultEvent } from '../utils/vaultEvents';
 
 const PRF_WRAP_INFO = 'physiorecord-webauthn-prf-dek-wrap-v1';
 const PRF_WRAP_AAD = new TextEncoder().encode('webauthn-prf-dek-wrap:v1');
@@ -25,9 +32,9 @@ interface PrfExtensionOutput {
 function toUint8Array(buf: ArrayBuffer | ArrayBufferView): Uint8Array {
   if (buf instanceof Uint8Array) return new Uint8Array(buf);
   if (ArrayBuffer.isView(buf)) {
-    return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+    return new Uint8Array(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
   }
-  return new Uint8Array(buf);
+  return new Uint8Array(buf.slice(0));
 }
 
 function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
@@ -240,6 +247,104 @@ export async function unlockOperationalDekWithPrf(
     rawDek = new Uint8Array(rawBuf);
     const generation = meta.vaultGeneration ?? 1;
     return await importOperationalDekFromRawBytes(rawDek, generation);
+  } finally {
+    prfOutput.fill(0);
+    if (rawDek) rawDek.fill(0);
+  }
+}
+
+export type KekDerivationFn = (
+  password: string,
+  salt: Uint8Array,
+  iterations: number,
+  onProgress?: (pct: number) => void
+) => Promise<CryptoKey>;
+
+/**
+ * Reset the vault master password in O(1) using an enrolled WebAuthn PRF passkey/biometric.
+ * Unwraps raw DEK transiently via PRF, re-wraps it under the new password's KEK,
+ * preserves the existing Passkey & Emergency Recovery Key envelopes (same DEK),
+ * and immediately zeroes transient raw buffers.
+ */
+export async function resetVaultPasswordWithPrf(
+  database: PhysioRecordDatabase,
+  newPassword: string,
+  deriveKekFn?: KekDerivationFn,
+  onProgress?: (pct: number) => void
+): Promise<{
+  operationalDek: CryptoKey;
+  newVaultKek: CryptoKey;
+  vaultGeneration: number;
+}> {
+  if (newPassword.length < 10) {
+    throw new Error('يجب ألا تقل كلمة المرور الجديدة عن 10 خانات.');
+  }
+
+  const meta = await database.vaultMeta.get('auth');
+  if (!meta) {
+    throw new Error('الخزينة غير مهيأة.');
+  }
+  if (!meta.prfCredentialId || !meta.prfSalt || !meta.prfWrappedDek || !meta.prfWrappedDekIv) {
+    throw new Error('لم يتم تفعيل البصمة أو مفتاح المرور الحيوي لهذه الخزينة.');
+  }
+
+  // 1. Authenticate user biometrically & derive PRF wrapping key
+  const prfOutput = await requestPrfAssertionOutput(meta.prfCredentialId, meta.prfSalt);
+  let rawDek: Uint8Array | null = null;
+
+  try {
+    const wrappingKey = await deriveWrappingKeyFromPrfOutput(prfOutput, meta.prfSalt);
+    const rawBuf = await crypto.subtle.decrypt(
+      {
+        name: 'AES-GCM',
+        iv: toArrayBuffer(meta.prfWrappedDekIv),
+        additionalData: PRF_WRAP_AAD,
+      },
+      wrappingKey,
+      toArrayBuffer(meta.prfWrappedDek)
+    );
+    rawDek = new Uint8Array(rawBuf);
+
+    // 2. Derive fresh Vault KEK for the new password
+    const newSalt = randomBytes(CONSTANTS.SALT_BYTES);
+    const newVaultKek = deriveKekFn
+      ? await deriveKekFn(newPassword, newSalt, CONSTANTS.DEFAULT_PBKDF2_ITERATIONS, onProgress)
+      : await deriveKEK(newPassword, newSalt, CONSTANTS.DEFAULT_PBKDF2_ITERATIONS);
+
+    // 3. Re-wrap DEK under new KEK & generate fresh verifier
+    const { wrappedDek, wrappedDekIv } = await wrapDEK(rawDek, newVaultKek);
+    const { verifierIv, verifierCiphertext } = await generateVerifier(newVaultKek);
+
+    const currentGen = meta.vaultGeneration ?? 1;
+    const operationalDek = await importOperationalDekFromRawBytes(rawDek, currentGen);
+    bindDekToGeneration(operationalDek, currentGen);
+
+    // 4. Persist updated password envelope (keeping PRF & Emergency Recovery envelopes valid)
+    await database.vaultMeta.put({
+      ...meta,
+      id: 'auth',
+      salt: newSalt,
+      wrappedDek,
+      wrappedDekIv,
+      verifierIv,
+      verifierCiphertext,
+      kdfAlgorithm: 'PBKDF2-HMAC-SHA256',
+      kdfIterations: CONSTANTS.DEFAULT_PBKDF2_ITERATIONS,
+      dekVersion: meta.dekVersion || CURRENT_DEK_VERSION,
+      encryptionInvocationCount: meta.encryptionInvocationCount || 0,
+      vaultGeneration: currentGen,
+    });
+
+    broadcastVaultEvent({
+      type: 'VAULT_PASSWORD_CHANGED',
+      generation: currentGen,
+    });
+
+    return {
+      operationalDek,
+      newVaultKek,
+      vaultGeneration: currentGen,
+    };
   } finally {
     prfOutput.fill(0);
     if (rawDek) rawDek.fill(0);

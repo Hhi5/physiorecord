@@ -577,6 +577,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
           <button
             type="button"
             role="tab"
+            data-tour="backup-export-tab"
             aria-selected={activeTab === 'export'}
             onClick={() => { setActiveTab('export'); setExportSuccess(false); setExportError(null); }}
             className={`pb-3 px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
@@ -592,6 +593,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
           <button
             type="button"
             role="tab"
+            data-tour="backup-restore-tab"
             aria-selected={activeTab === 'restore'}
             onClick={() => { setActiveTab('restore'); setRestoreSuccess(false); setRestoreError(null); }}
             className={`pb-3 px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
