@@ -48,8 +48,11 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
  */
 export async function isWebAuthnPrfSupported(): Promise<boolean> {
   try {
+    const win = window as Window & { electronAPI?: { isElectron?: boolean } };
     if (
       typeof window === 'undefined' ||
+      window.location?.protocol === 'app:' ||
+      win.electronAPI?.isElectron ||
       typeof window.PublicKeyCredential === 'undefined' ||
       typeof navigator === 'undefined' ||
       !navigator.credentials ||

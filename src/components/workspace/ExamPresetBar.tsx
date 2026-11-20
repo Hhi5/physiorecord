@@ -10,12 +10,15 @@ import {
   applyExamPresetToEpisodeStore,
   BUILT_IN_EXAM_PRESETS_CC0,
   parseExamPresetPack,
+  removeExamPresetFromEpisodeStore,
   serializeExamPresetPack,
+  toggleExamPresetInEpisodeStore,
 } from '../../data/clinicalToolkit/examPresetsCc0';
 import type {
   EpisodeScopedClinicalStore,
   RegionalExamPresetDefinition,
 } from '../../types/clinicManagement';
+import { saveTextFilePortable } from '../../platform/nativeBridge';
 import { OUTCOME_INSTRUMENTS } from '../../utils/outcomeMeasures';
 import { ModalDialog } from '../ui/Dialog';
 import {
@@ -29,12 +32,16 @@ import {
   Plus,
   ChevronDown,
   ChevronUp,
-  Activity,
+  X,
 } from 'lucide-react';
 
 interface ExamPresetBarProps {
   episodeStore: EpisodeScopedClinicalStore;
-  onApplyStore: (updated: EpisodeScopedClinicalStore, preset: RegionalExamPresetDefinition) => void;
+  onApplyStore: (
+    updated: EpisodeScopedClinicalStore,
+    preset: RegionalExamPresetDefinition,
+    action?: 'applied' | 'removed'
+  ) => void;
   embeddedInSheet?: boolean;
 }
 
@@ -165,22 +172,33 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
     setShowEditorModal(false);
   };
 
-  const handleExportPack = () => {
+  const handleExportPack = async () => {
     const jsonStr = serializeExamPresetPack(mergedPresets);
-    const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `physiorecord-exam-presets-cc0.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setPackMessage(
-      bi(
-        'تم تصدير حزمة القوالب بصيغة JSON (CC0-1.0).',
-        'Exported CC0-1.0 exam preset JSON pack.',
-        'پاکێجی تێمپلەیتەکان بە JSON (CC0-1.0) هەناردە کرا.'
-      )
-    );
+    try {
+      await saveTextFilePortable({
+        filename: 'physiorecord-exam-presets-cc0.json',
+        content: jsonStr,
+        mimeType: 'application/json;charset=utf-8',
+        description: 'PhysioRecord Exam Presets JSON (CC0-1.0)',
+        extensions: ['json'],
+      });
+      setPackMessage(
+        bi(
+          'تم تصدير حزمة القوالب بصيغة JSON (CC0-1.0).',
+          'Exported CC0-1.0 exam preset JSON pack.',
+          'پاکێجی تێمپلەیتەکان بە JSON (CC0-1.0) هەناردە کرا.'
+        )
+      );
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      setPackError(
+        bi(
+          'تعذر تصدير حزمة القوالب.',
+          'Could not export preset pack.',
+          'نەتوانرا پاکێجی تێمپلەیت هەناردە بکرێت.'
+        )
+      );
+    }
   };
 
   const handleImportPackFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -215,7 +233,9 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
   const [showAllRegions, setShowAllRegions] = useState<boolean>(
     () => embeddedInSheet || appliedPresets.length === 0
   );
-  const primaryAppliedPreset = appliedPresets[0] || lastAppliedPreset;
+  const primaryAppliedPreset =
+    appliedPresets[0] ||
+    (lastAppliedPreset && appliedSet.has(lastAppliedPreset.id) ? lastAppliedPreset : null);
 
   const visiblePresets =
     embeddedInSheet || (appliedPresets.length > 0 && !showAllRegions)
@@ -223,6 +243,31 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
         ? mergedPresets
         : appliedPresets
       : mergedPresets;
+
+  const widgetLabels: Record<RegionalExamPresetDefinition['widgetsToEnable'][number], string> = {
+    body_chart: bi('مخطط الجسم', 'Body Chart', 'هێڵکاری جەستە'),
+    rom: bi('المدى الحركي ROM', 'ROM', 'ROM'),
+    mmt: bi('القوة العضلية MMT', 'MMT', 'MMT'),
+    neuro: bi('الفحص العصبي', 'Neuro', 'دەماری'),
+    special_tests: bi('اختبارات خاصة', 'Special Tests', 'تاقیکردنەوەکان'),
+    gait_posture: bi('المشي والقوام', 'Gait & Posture', 'ڕۆیشتن'),
+    functional_scales: bi('المقاييس الوظيفية', 'Scales', 'پێوەرەکان'),
+  };
+
+  const activeRedFlagPreset =
+    (lastAppliedPreset && appliedSet.has(lastAppliedPreset.id) ? lastAppliedPreset : null) ||
+    appliedPresets[appliedPresets.length - 1] ||
+    null;
+
+  const handleClearAllAppliedPresets = () => {
+    if (appliedPresets.length === 0) return;
+    let working = episodeStore;
+    for (const preset of appliedPresets) {
+      working = removeExamPresetFromEpisodeStore(working, preset, mergedPresets);
+    }
+    setLastAppliedPreset(null);
+    onApplyStore(working, appliedPresets[0], 'removed');
+  };
 
   if (isCollapsed && !embeddedInSheet) {
     return (
@@ -240,17 +285,24 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
             aria-label={bi('اختر قالب الفحص الإقليمي', 'Choose regional exam preset', 'هەڵبژاردنی تێمپلەیتی پشکنین')}
             value={primaryAppliedPreset?.id || ''}
             onChange={(e) => {
-              const target = mergedPresets.find((p) => p.id === e.target.value);
+              const val = e.target.value;
+              if (!val) {
+                handleClearAllAppliedPresets();
+                return;
+              }
+              const target = mergedPresets.find((p) => p.id === val);
               if (!target) return;
               const updated = applyExamPresetToEpisodeStore(episodeStore, target);
               setLastAppliedPreset(target);
               setShowAllRegions(false);
-              onApplyStore(updated, target);
+              onApplyStore(updated, target, 'applied');
             }}
             className="h-8 !min-h-[32px] py-1 px-2.5 rounded-xl text-xs font-semibold bg-surface/80 hover:bg-surface text-foreground border-0 outline-none focus:ring-2 focus:ring-primary/25 max-w-full sm:max-w-[260px] cursor-pointer"
           >
             <option value="">
-              {bi(`اختر منطقة (${mergedPresets.length})...`, `Select region (${mergedPresets.length})...`, `ناوچە هەڵبژێرە (${mergedPresets.length})...`)}
+              {appliedPresets.length > 0
+                ? bi('— إلغاء القوالب المحددة —', '— Clear selected presets —', '— هەڵوەشاندنەوەی تێمپلەیت —')
+                : bi(`اختر منطقة (${mergedPresets.length})...`, `Select region (${mergedPresets.length})...`, `ناوچە هەڵبژێرە (${mergedPresets.length})...`)}
             </option>
             {mergedPresets.map((preset) => (
               <option key={preset.id} value={preset.id}>
@@ -260,10 +312,24 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
           </select>
 
           {primaryAppliedPreset && (
-            <span className="hidden md:inline-flex items-center gap-1 text-xs font-semibold text-primary">
+            <button
+              type="button"
+              onClick={() => {
+                const res = toggleExamPresetInEpisodeStore(
+                  episodeStore,
+                  primaryAppliedPreset,
+                  mergedPresets
+                );
+                if (!res.applied) setLastAppliedPreset(null);
+                onApplyStore(res.store, primaryAppliedPreset, res.applied ? 'applied' : 'removed');
+              }}
+              title={bi('إلغاء القالب', 'Remove preset', 'سڕینەوەی تێمپلەیت')}
+              className="hidden md:inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-rose-600 cursor-pointer"
+            >
               <Check className="size-3.5 shrink-0" />
               <span>{getTitle(primaryAppliedPreset)}</span>
-            </span>
+              <X className="size-3 shrink-0" />
+            </button>
           )}
         </div>
 
@@ -332,7 +398,7 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
         </div>
       </div>
 
-      {/* Regional One-Tap Preset Chips (auto-compacts unselected regions when an exam preset is active) */}
+      {/* Regional One-Tap Preset Chips (click selected chip again to unselect cleanly) */}
       <div className="flex flex-wrap gap-1.5">
         {visiblePresets.map((preset) => {
           const isApplied = appliedSet.has(preset.id);
@@ -340,25 +406,50 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
             <button
               key={preset.id}
               type="button"
+              aria-pressed={isApplied}
               data-testid={`exam-preset-btn-${preset.regionId}`}
-              title={bi(preset.summaryAr, preset.summaryEn)}
+              title={
+                isApplied
+                  ? bi('اضغط مرة أخرى لإلغاء تحديد القالب', 'Tap again to unselect preset', 'دووبارە پەنجەی پێدا بنێ بۆ لابردن')
+                  : bi(preset.summaryAr, preset.summaryEn)
+              }
               onClick={() => {
-                const updated = applyExamPresetToEpisodeStore(episodeStore, preset);
-                setLastAppliedPreset(preset);
-                if (!embeddedInSheet) setShowAllRegions(false);
-                onApplyStore(updated, preset);
+                const { store: updated, applied } = toggleExamPresetInEpisodeStore(
+                  episodeStore,
+                  preset,
+                  mergedPresets
+                );
+                if (applied) {
+                  setLastAppliedPreset(preset);
+                } else if (lastAppliedPreset?.id === preset.id) {
+                  setLastAppliedPreset(null);
+                }
+                if (!embeddedInSheet && applied) setShowAllRegions(false);
+                onApplyStore(updated, preset, applied ? 'applied' : 'removed');
               }}
               className={`compact-btn h-8 px-2.5 rounded-xl text-xs font-semibold transition-colors inline-flex items-center gap-1 cursor-pointer ${
                 isApplied
-                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90'
                   : 'bg-surface/80 hover:bg-surface text-foreground'
               }`}
             >
               {isApplied && <Check className="size-3 shrink-0" />}
               <span>{getTitle(preset)}</span>
+              {isApplied && <X className="size-3 opacity-80 shrink-0" aria-hidden="true" />}
             </button>
           );
         })}
+        {appliedPresets.length > 0 && (
+          <button
+            type="button"
+            data-testid="exam-preset-clear-all-btn"
+            onClick={handleClearAllAppliedPresets}
+            className="compact-btn h-8 px-2.5 rounded-xl text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/15 text-rose-700 dark:text-rose-400 inline-flex items-center gap-1 cursor-pointer"
+          >
+            <X className="size-3 shrink-0" />
+            <span>{bi('إلغاء التحديد', 'Clear All', 'هەڵوەشاندنەوە')}</span>
+          </button>
+        )}
         {!embeddedInSheet && appliedPresets.length > 0 && (
           <button
             type="button"
@@ -378,8 +469,20 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
         )}
       </div>
 
-      {/* Red-Flag Safety Reminder for Applied Preset (Zero Colored Box — Red Text Only) */}
-      {lastAppliedPreset && (
+      {embeddedInSheet && appliedPresets.length > 0 && (
+        <div className="px-3 py-2 rounded-xl bg-primary/10 text-primary text-xs font-semibold flex items-center justify-between gap-2">
+          <span>
+            {bi(
+              `تم تجهيز ${appliedPresets.length} قالب — اضغط «تم» للعودة وستجد أدوات الفحص والتنبيهات جاهزة على شاشة الجلسة.`,
+              `${appliedPresets.length} preset(s) active — tap Done to see ready exam sections on the visit sheet.`,
+              `${appliedPresets.length} تێمپلەیت چالاک کرا — پەنجە بنێ بە «تەواو» بۆ بینینی لە پەڕەی دانیشتندا.`
+            )}
+          </span>
+        </div>
+      )}
+
+      {/* Red-Flag Safety Reminder for Applied Preset */}
+      {activeRedFlagPreset && (
         <div
           data-testid="exam-preset-redflag-reminder"
           className="px-3 py-2 rounded-xl bg-surface/65 flex items-start justify-between gap-2 text-xs text-rose-700 dark:text-rose-400"
@@ -389,19 +492,19 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
             <div>
               <span className="font-extrabold">
                 {bi(
-                  `تذكير السلامة والعلامات الحمراء (${getTitle(lastAppliedPreset)}): `,
-                  `Red-Flag Screen Reminder (${getTitle(lastAppliedPreset)}): `,
-                  `ئاگاداری سەلامەتی و نیشانە سوورەکان (${getTitle(lastAppliedPreset)}): `
+                  `تذكير السلامة والعلامات الحمراء (${getTitle(activeRedFlagPreset)}): `,
+                  `Red-Flag Screen Reminder (${getTitle(activeRedFlagPreset)}): `,
+                  `ئاگاداری سەلامەتی و نیشانە سوورەکان (${getTitle(activeRedFlagPreset)}): `
                 )}
               </span>
               <span>
-                {bi(lastAppliedPreset.redFlagReminderAr, lastAppliedPreset.redFlagReminderEn)}
+                {bi(activeRedFlagPreset.redFlagReminderAr, activeRedFlagPreset.redFlagReminderEn)}
               </span>
             </div>
           </div>
           <button
             type="button"
-            onClick={() => handleOpenCustomize(lastAppliedPreset)}
+            onClick={() => handleOpenCustomize(activeRedFlagPreset)}
             className="compact-btn h-7 px-2 rounded-lg bg-card hover:bg-surface text-foreground text-xs font-bold shrink-0 cursor-pointer"
           >
             {bi('تعديل', 'Edit', 'دەستکاری')}
@@ -431,7 +534,7 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={handleExportPack}
+                onClick={() => void handleExportPack()}
                 className="compact-btn h-8 px-3 rounded-xl bg-card hover:bg-surface font-bold inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <Download className="size-3.5 text-primary" />
@@ -572,7 +675,7 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
                           : 'bg-card text-foreground hover:bg-surface'
                       }`}
                     >
-                      {wid}
+                      {widgetLabels[wid] || wid}
                     </button>
                   );
                 })}

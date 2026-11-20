@@ -624,7 +624,7 @@ html.content-width-narrow .app-content-shell .max-w-7xl {
 /* Phase 4.6: Printable Clinical & Financial Documents (@media print) */
 @page {
   size: A4 portrait;
-  margin: 10mm 12mm;
+  margin: 7mm 10mm;
 }
 
 @media print {
@@ -678,18 +678,24 @@ html.content-width-narrow .app-content-shell .max-w-7xl {
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
-    min-height: 268mm !important;
+    min-height: 262mm !important;
     box-shadow: none !important;
     border: 1px solid #cbd5e1 !important;
     border-top: 4px solid #0f172a !important;
     border-radius: 0 !important;
-    padding: 8mm 10mm !important;
+    padding: 6mm 9mm !important;
     margin: 0 !important;
     max-width: none !important;
     width: 100% !important;
+    line-height: 1.45 !important;
+    zoom: var(--pr-print-zoom, 1);
     background: #ffffff !important;
     background-color: #ffffff !important;
     color: #0f172a !important;
+  }
+
+  body.printing-clinical-doc .print-sheet-container[data-print-fit-scaled="true"] {
+    min-height: 0 !important;
   }
 
   .print-break-inside-avoid {

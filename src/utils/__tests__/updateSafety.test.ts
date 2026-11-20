@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   compareSemverVersions,
   evaluateBackupRecencyForUpdate,
+  extractReleaseNotesLines,
   isAllowedGithubReleaseUrl,
+  isAllowedOfficialGithubUrl,
+  normalizeGithubReleasesPayload,
   selectPlatformReleaseAsset,
 } from '../updateSafety';
 
@@ -42,7 +45,7 @@ describe('updateSafety', () => {
     );
   });
 
-  it('allowlists only official PhysioRecord release URLs', () => {
+  it('allowlists only official PhysioRecord repository and release URLs', () => {
     expect(isAllowedGithubReleaseUrl('https://github.com/Hhi5/physiorecord/releases/latest')).toBe(true);
     expect(
       isAllowedGithubReleaseUrl(
@@ -50,6 +53,66 @@ describe('updateSafety', () => {
       )
     ).toBe(true);
     expect(isAllowedGithubReleaseUrl('https://example.com/PhysioRecord.apk')).toBe(false);
+
+    expect(isAllowedOfficialGithubUrl('https://github.com/Hhi5/physiorecord')).toBe(true);
+    expect(isAllowedOfficialGithubUrl('https://github.com/Hhi5/physiorecord/releases')).toBe(true);
+    expect(isAllowedOfficialGithubUrl('https://github.com/other/physiorecord')).toBe(false);
+  });
+
+  it('normalizes multiple GitHub releases, skips drafts, filters untrusted assets, and sorts newest first', () => {
+    const normalized = normalizeGithubReleasesPayload([
+      {
+        id: 1,
+        tag_name: 'v1.0.0',
+        name: 'Initial Release',
+        body: '- First version',
+        published_at: '2026-11-13T10:00:00Z',
+        html_url: 'https://github.com/Hhi5/physiorecord/releases/tag/v1.0.0',
+        draft: false,
+        prerelease: false,
+        assets: [],
+      },
+      {
+        id: 2,
+        tag_name: 'v1.3.0-draft',
+        name: 'Draft',
+        draft: true,
+        assets: [],
+      },
+      {
+        id: 3,
+        tag_name: 'v1.2.0',
+        name: 'Clinical Update 1.2',
+        body: '## Highlights\n- Fixed **A4 printing**\n- See [Notes](https://github.com/Hhi5/physiorecord)',
+        published_at: '2026-11-20T10:00:00Z',
+        html_url: 'https://github.com/Hhi5/physiorecord/releases/tag/v1.2.0',
+        draft: false,
+        prerelease: false,
+        assets: [
+          {
+            name: 'PhysioRecord-Setup-1.2.0-x64.exe',
+            browser_download_url:
+              'https://github.com/Hhi5/physiorecord/releases/download/v1.2.0/PhysioRecord-Setup-1.2.0-x64.exe',
+            size: 85000000,
+          },
+          {
+            name: 'malicious.exe',
+            browser_download_url: 'https://evil.example.com/malicious.exe',
+          },
+        ],
+      },
+    ]);
+
+    expect(normalized).toHaveLength(2);
+    expect(normalized[0].tagName).toBe('v1.2.0');
+    expect(normalized[0].name).toBe('Clinical Update 1.2');
+    expect(normalized[0].assets).toHaveLength(1);
+    expect(normalized[0].assets[0].name).toBe('PhysioRecord-Setup-1.2.0-x64.exe');
+    expect(extractReleaseNotesLines(normalized[0].body)).toEqual([
+      'Highlights',
+      'Fixed A4 printing',
+      'See Notes',
+    ]);
   });
 
   it('assesses encrypted backup recency cleanly before upgrades', () => {

@@ -18,6 +18,7 @@ import type { TodaySubTab } from '../../utils/draftNavigation';
 import { AppointmentScheduleView } from './AppointmentScheduleView';
 import { WalkInQuickAddModal } from './WalkInQuickAddModal';
 import { TodayPreSessionBrief, usePreSessionBrief } from './TodayPreSessionBrief';
+import { useViewportClampedMenu } from '../../utils/menuViewportClamp';
 
 const ReferralsAndRetentionPanel = lazy(() => import('./ReferralsAndRetentionPanel'));
 const DataHealthAndTrashPanel = lazy(() => import('./DataHealthAndTrashPanel'));
@@ -144,6 +145,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
   const [showOnboardingSteps, setShowOnboardingSteps] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
   const moreBtnRef = useRef<HTMLButtonElement | null>(null);
+  useViewportClampedMenu(showMoreMenu, moreMenuRef);
 
   const [startingId, setStartingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -764,7 +766,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
               <div
                 ref={moreMenuRef}
                 role="menu"
-                className="absolute top-full mt-2 end-0 w-60 z-40 rounded-2xl bg-card border border-line-2 shadow-2xl p-1.5 space-y-0.5 text-xs"
+                className="absolute top-full mt-2 end-0 w-60 max-w-[calc(100vw-1rem)] z-40 rounded-2xl bg-card border border-line-2 shadow-2xl p-1.5 space-y-0.5 text-xs"
               >
                 <button
                   type="button"
@@ -1102,7 +1104,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                         data-selected={isFocused ? 'true' : 'false'}
                         className={`transition-colors group ${
                           isFocused
-                            ? 'bg-primary/[0.09] dark:bg-primary/[0.15] border-s-[3px] border-primary'
+                            ? 'bg-primary/[0.09] dark:bg-primary/[0.15] border-s-[3px] border-s-primary'
                             : 'hover:bg-primary/[0.02]'
                         }`}
                       >

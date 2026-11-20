@@ -22,10 +22,16 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * PhysioRecordNativePlugin — Zero-permission native Android bridge for:
@@ -197,16 +203,60 @@ public class PhysioRecordNativePlugin extends Plugin {
         }
     }
 
+    private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
+
+    @PluginMethod
+    public void fetchGitHubReleases(PluginCall call) {
+        networkExecutor.execute(() -> {
+            HttpURLConnection conn = null;
+            try {
+                URL apiUrl = new URL("https://api.github.com/repos/Hhi5/physiorecord/releases?per_page=10");
+                conn = (HttpURLConnection) apiUrl.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setConnectTimeout(8000);
+                conn.setReadTimeout(8000);
+                conn.setRequestProperty("Accept", "application/vnd.github+json");
+                conn.setRequestProperty("User-Agent", "PhysioRecord-Android");
+
+                int status = conn.getResponseCode();
+                if (status < 200 || status >= 300) {
+                    call.reject("GitHub API returned HTTP " + status);
+                    return;
+                }
+
+                StringBuilder sb = new StringBuilder();
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line);
+                    }
+                }
+
+                JSObject ret = new JSObject();
+                ret.put("ok", true);
+                ret.put("releasesJson", sb.toString());
+                call.resolve(ret);
+            } catch (Exception ex) {
+                call.reject("Failed fetching GitHub Releases: " + ex.getMessage(), ex);
+            } finally {
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+        });
+    }
+
     @PluginMethod
     public void openExternalUrl(PluginCall call) {
         String url = call.getString("url", "");
-        boolean isAllowedGithubRelease = url != null
-                && url.matches("^https://github\\.com/Hhi5/physiorecord/releases(/.*)?$");
+        boolean isAllowedGithub = url != null
+                && url.matches("^https://github\\.com/Hhi5/physiorecord(/releases(/.*)?)?/?(\\?[^\\s#]*)?(#[^\\s]*)?$");
         if (url == null || (!url.startsWith("https://wa.me/")
                 && !url.startsWith("https://api.whatsapp.com/")
                 && !url.startsWith("https://www.google.com/maps/")
                 && !url.startsWith("https://google.com/maps/")
-                && !isAllowedGithubRelease)) {
+                && !isAllowedGithub)) {
             call.reject("Blocked non-allowlisted external URL.");
             return;
         }

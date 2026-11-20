@@ -18,7 +18,7 @@ import type {
   DailyAuditDigest,
 } from '../../types/clinicManagement';
 import { localDate } from '../../utils/date';
-import { triggerPlatformPrint } from '../../platform/nativeBridge';
+import { saveTextFilePortable, triggerPlatformPrint } from '../../platform/nativeBridge';
 import { ModalDialog } from '../ui/Dialog';
 import {
   UserCheck,
@@ -167,19 +167,19 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
     }
   };
 
-  const handleDownloadDigestJson = () => {
+  const handleDownloadDigestJson = async () => {
     if (!dailyDigest) return;
-    const blob = new Blob([JSON.stringify(dailyDigest, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `physiorecord_audit_digest_${dailyDigest.dateKey}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      await saveTextFilePortable({
+        filename: `physiorecord_audit_digest_${dailyDigest.dateKey}.json`,
+        content: JSON.stringify(dailyDigest, null, 2),
+        mimeType: 'application/json;charset=utf-8',
+        description: 'PhysioRecord Audit Digest (.json)',
+        extensions: ['json'],
+      });
+    } catch {
+      // User cancelled native save dialog
+    }
   };
 
   const perms = ROLE_PERMISSIONS[activeStaff.role];

@@ -1,5 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { X, Sparkles, Database, CheckCircle2, Shield, Tag, Calendar } from 'lucide-react';
+import {
+  X,
+  Sparkles,
+  Database,
+  CheckCircle2,
+  Shield,
+  Tag,
+  Calendar,
+  RefreshCw,
+  GitBranch,
+  ExternalLink,
+} from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
 import { GeometricHeaderBackdrop } from '../ui/Dialog';
@@ -8,6 +19,19 @@ import {
   BUNDLED_CHANGELOG_RELEASES,
   DEXIE_MIGRATION_GUIDE_V1_TO_V10,
 } from '../../utils/settingsOnboardingPhaseF';
+import {
+  OFFICIAL_GITHUB_REPO,
+  OFFICIAL_GITHUB_REPO_URL,
+  compareSemverVersions,
+  extractReleaseNotesLines,
+  loadCachedGithubReleases,
+  saveCachedGithubReleases,
+  type SyncedGithubReleaseItem,
+} from '../../utils/updateSafety';
+import {
+  fetchOfficialGitHubReleases,
+  openSafeExternalUrl,
+} from '../../platform/nativeBridge';
 
 const CHANGELOG_CKB: Record<
   string,
@@ -103,15 +127,48 @@ export const WhatsNewChangelogModal: React.FC<WhatsNewChangelogModalProps> = ({
 }) => {
   const { isRtl, bi } = useLanguage();
   const [view, setView] = useState<'changelog' | 'migrations'>(initialView);
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncedReleases, setSyncedReleases] = useState<SyncedGithubReleaseItem[]>(
+    () => loadCachedGithubReleases()?.releases ?? []
+  );
 
   useEffect(() => {
     if (isOpen) {
       setView(initialView);
+      const cached = loadCachedGithubReleases();
+      if (cached?.releases) {
+        setSyncedReleases(cached.releases);
+      }
       void ClinicOperationsService.setLastSeenChangelogVersionAsync(APP_SEMVER_VERSION).catch(
         () => undefined
       );
     }
   }, [isOpen, initialView]);
+
+  const handleSyncReleases = async () => {
+    setSyncing(true);
+    setSyncError(null);
+    try {
+      const res = await fetchOfficialGitHubReleases();
+      if (!res.ok) {
+        setSyncError(
+          res.error ||
+            bi(
+              'تعذر الاتصال بمستودع GitHub حالياً.',
+              'Could not sync releases from GitHub right now.'
+            )
+        );
+        return;
+      }
+      if (res.releases.length > 0) {
+        const cached = saveCachedGithubReleases(res.releases);
+        setSyncedReleases(cached.releases);
+      }
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -156,9 +213,9 @@ export const WhatsNewChangelogModal: React.FC<WhatsNewChangelogModalProps> = ({
                 </div>
                 <p className="text-xs text-primary-foreground/85 mt-0.5">
                   {bi(
-                    'سجل التحديثات المدمج (CHANGELOG.md) وسلسلة ترقيات الخزنة المشفرة (Dexie v1–v10)',
-                    'Bundled semantic release notes (CHANGELOG.md) & append-only Dexie v1–v10 schema lineage',
-                    'تۆماری نوێکارییە یەکخراوەکان (CHANGELOG.md) و ڕێڕەوی نوێکردنەوەی خەزێنەی نهێنیکراو (Dexie v1–v10)'
+                    'سجل التحديثات المدمج مع مزامنة إصدارات مستودع GitHub وسلسلة ترقيات الخزنة (Dexie v1–v10)',
+                    'Bundled & GitHub-synced release notes plus append-only Dexie v1–v10 schema lineage',
+                    'تۆماری نوێکارییەکان و هاوکاتکردن لەگەڵ گیتهەب و ڕێڕەوی نوێکردنەوەی Dexie'
                   )}
                 </p>
               </div>
@@ -177,52 +234,205 @@ export const WhatsNewChangelogModal: React.FC<WhatsNewChangelogModalProps> = ({
         </div>
 
         {/* Segmented Tab Bar */}
-        <div className="px-5 py-2.5 border-b border-card-divider bg-surface flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            data-testid="whats-new-tab-changelog"
-            onClick={() => setView('changelog')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors ${
-              view === 'changelog'
-                ? 'bg-primary text-primary-foreground shadow-xs'
-                : 'bg-layer border border-layer-line text-foreground hover:bg-layer-hover'
-            }`}
-          >
-            <Sparkles className="size-3.5" />
-            <span>
-              {bi(
-                'سجل التحديثات (CHANGELOG)',
-                'Release Notes (CHANGELOG)',
-                'تۆماری گۆڕانکارییەکان (CHANGELOG)'
-              )}
-            </span>
-          </button>
+        <div className="px-5 py-2.5 border-b border-card-divider bg-surface flex flex-wrap items-center justify-between gap-2 shrink-0">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              data-testid="whats-new-tab-changelog"
+              onClick={() => setView('changelog')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors ${
+                view === 'changelog'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'bg-layer border border-layer-line text-foreground hover:bg-layer-hover'
+              }`}
+            >
+              <Sparkles className="size-3.5" />
+              <span>
+                {bi(
+                  'سجل التحديثات (CHANGELOG)',
+                  'Release Notes (CHANGELOG)',
+                  'تۆماری گۆڕانکارییەکان'
+                )}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            data-testid="whats-new-tab-migrations"
-            onClick={() => setView('migrations')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors ${
-              view === 'migrations'
-                ? 'bg-primary text-primary-foreground shadow-xs'
-                : 'bg-layer border border-layer-line text-foreground hover:bg-layer-hover'
-            }`}
-          >
-            <Database className="size-3.5" />
-            <span>
-              {bi(
-                'دليل ترقية Dexie (v1–v10)',
-                'Dexie Migration Guide (v1–v10)',
-                'ڕێبەری نوێکردنەوەی Dexie (v1–v10)'
-              )}
-            </span>
-          </button>
+            <button
+              type="button"
+              data-testid="whats-new-tab-migrations"
+              onClick={() => setView('migrations')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors ${
+                view === 'migrations'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'bg-layer border border-layer-line text-foreground hover:bg-layer-hover'
+              }`}
+            >
+              <Database className="size-3.5" />
+              <span>
+                {bi(
+                  'دليل ترقية Dexie (v1–v10)',
+                  'Dexie Migration Guide (v1–v10)',
+                  'ڕێبەری نوێکردنەوەی Dexie'
+                )}
+              </span>
+            </button>
+          </div>
+
+          {view === 'changelog' && (
+            <button
+              type="button"
+              data-testid="whats-new-sync-github-btn"
+              disabled={syncing}
+              onClick={handleSyncReleases}
+              className="px-3 py-2 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`size-3.5 text-primary ${syncing ? 'animate-spin' : ''}`} />
+              <span>
+                {syncing
+                  ? bi('جاري المزامنة...', 'Syncing...', 'هاوکاتکردن...')
+                  : bi('مزامنة مع GitHub', 'Sync GitHub', 'هاوکاتکردن')}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Body */}
         <div tabIndex={0} className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-4">
           {view === 'changelog' && (
             <div className="space-y-4">
+              {/* Official Repository Bar */}
+              <div className="px-3.5 py-2.5 rounded-xl bg-surface border border-line-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <GitBranch className="size-3.5 text-primary shrink-0" />
+                  <span className="font-semibold text-foreground">
+                    {bi('مستودع المشروع:', 'GitHub Repository:', 'کۆگای گیتهەب:')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void openSafeExternalUrl(OFFICIAL_GITHUB_REPO_URL)}
+                    className="font-mono font-bold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer truncate"
+                    dir="ltr"
+                  >
+                    <span>github.com/{OFFICIAL_GITHUB_REPO}</span>
+                    <ExternalLink className="size-3 shrink-0" />
+                  </button>
+                </div>
+                <span className="text-muted-foreground-1">
+                  {bi(
+                    'اضغط «مزامنة مع GitHub» لجلب ملاحظات الإصدارات مباشرة',
+                    'Click "Sync GitHub" to pull live release notes',
+                    'بۆ هێنانی تێبینی وەشانەکان هاوکاتکردن دابگرە'
+                  )}
+                </span>
+              </div>
+
+              {syncError && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs font-semibold">
+                  {syncError}
+                </div>
+              )}
+
+              {/* Synced Live GitHub Releases */}
+              {syncedReleases.length > 0 && (
+                <div data-testid="whats-new-synced-releases" className="space-y-3">
+                  <div className="text-xs font-bold text-primary flex items-center gap-1.5">
+                    <Sparkles className="size-3.5" />
+                    <span>
+                      {bi(
+                        `إصدارات مستودع GitHub المتزامنة (${syncedReleases.length})`,
+                        `Synced GitHub Repository Releases (${syncedReleases.length})`,
+                        `وەشانە هاوکاتکراوەکانی گیتهەب (${syncedReleases.length})`
+                      )}
+                    </span>
+                  </div>
+
+                  {syncedReleases.map((rel, idx) => {
+                    const isCurrent =
+                      compareSemverVersions(rel.version, APP_SEMVER_VERSION) === 0;
+                    const isNewer =
+                      compareSemverVersions(rel.version, APP_SEMVER_VERSION) > 0;
+                    const lines = extractReleaseNotesLines(rel.body);
+                    return (
+                      <div
+                        key={rel.id}
+                        className="p-4 rounded-xl bg-primary/5 border border-primary/25 space-y-2.5"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              dir="ltr"
+                              className="px-2.5 py-0.5 rounded-lg bg-primary text-primary-foreground text-xs font-mono font-bold"
+                            >
+                              {rel.tagName}
+                            </span>
+                            {idx === 0 && !rel.isPrerelease && (
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-lg">
+                                <Tag className="size-3" />
+                                <span>{bi('أحدث إصدار', 'Latest', 'نوێترین')}</span>
+                              </span>
+                            )}
+                            {isCurrent && (
+                              <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded-lg">
+                                {bi('مثبّت حالياً', 'Installed', 'دامەزراوە')}
+                              </span>
+                            )}
+                            {isNewer && (
+                              <span className="text-xs font-semibold text-amber-800 dark:text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-lg">
+                                {bi('إصدار أحدث متاح', 'Newer Available', 'نوێتر بەردەستە')}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {rel.publishedAt && (
+                              <span
+                                dir="ltr"
+                                className="inline-flex items-center gap-1 text-xs font-mono text-muted-foreground-1"
+                              >
+                                <Calendar className="size-3.5" />
+                                <span>{rel.publishedAt.slice(0, 10)}</span>
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => void openSafeExternalUrl(rel.htmlUrl)}
+                              className="px-2 py-0.5 rounded-md bg-card hover:bg-layer-hover border border-line-2 text-xs font-semibold text-foreground inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              <ExternalLink className="size-3 text-primary" />
+                              <span>GitHub</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <h3 className="text-xs font-bold text-foreground">{rel.name}</h3>
+
+                        {lines.length > 0 ? (
+                          <ul className="space-y-1.5">
+                            {lines.map((line, lineIdx) => (
+                              <li
+                                key={lineIdx}
+                                className="flex items-start gap-2 text-xs text-muted-foreground-1 leading-relaxed"
+                              >
+                                <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                                <span className="break-words">{line}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-xs text-muted-foreground-1">
+                            {bi(
+                              'لا توجد ملاحظات إضافية في وصف هذا الإصدار.',
+                              'No release notes provided for this tag.',
+                              'هیچ تێبینییەک نەنووسراوە.'
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Bundled Offline Changelog Releases */}
               {BUNDLED_CHANGELOG_RELEASES.map((rel) => {
                 const ckbRel = CHANGELOG_CKB[rel.version];
                 return (

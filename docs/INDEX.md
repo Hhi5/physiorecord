@@ -10,7 +10,7 @@ Welcome to the official documentation portal for **PhysioRecord (`v1.1.0`)** —
 
 | الوثيقة (Document) | الملخص بالعربية (Arabic Summary) | English Summary |
 | --- | --- | --- |
-| [`README.md`](../README.md) | دليل التشغيل السريع، الميزات السريرية والمالية العراقية (`25,000 د.ع`)، أوامر الفحص، ووضع العرض التجريبي (`?demo=1`). | Quick start guide, Iraqi clinical & financial customizations (`25,000 IQD`), verification scripts, and Public Demo Mode (`?demo=1`). |
+| [`README.md`](../README.md) · [`README.ar.md`](../README.ar.md) | دليل التشغيل السريع باللغتين العربية والإنجليزية، معاينة الواجهات، الأمان والتشفير، وبناء المنصات (`?demo=1`). | Quick start guide (English & Arabic), interface preview, security architecture, multi-platform builds, and Demo Mode (`?demo=1`). |
 | [`CHANGELOG.md`](../CHANGELOG.md) | سجل الإصدارات الكامل بما في ذلك الإصدار `1.1.0` (المراحل الإضافية `A` إلى `F`: المسودات المقاومة لانقطاع الكهرباء، القوالب الإقليمية، العمليات العراقية، وجودة البيانات). | Full release history including `v1.1.0` (Addendum Phases `A`–`F`: power-cut resilient drafts, regional presets, Iraqi operations, and data quality). |
 | [`AGENTS.md`](../AGENTS.md) | الثوابت الهندسية والسريرية، التخصيصات المحمية لمالك العيادة، وسياسة التراخيص. | Architectural invariants, preserved clinic owner customizations, and open-source license enforcement rules. |
 

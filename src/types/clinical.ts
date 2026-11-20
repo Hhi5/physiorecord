@@ -739,12 +739,30 @@ export interface FlowsheetExerciseEntry {
   notes?: string;
 }
 
+export type ManualTherapyGradeOrIntensity =
+  | 'Grade I'
+  | 'Grade II'
+  | 'Grade III'
+  | 'Grade IV'
+  | 'Grade V (HVLA)'
+  | 'MWM'
+  | 'SNAGs / NAGs'
+  | 'Manual Traction'
+  | 'Soft Tissue'
+  | 'Myofascial Release'
+  | 'Trigger Point'
+  | 'Deep Friction'
+  | 'MET'
+  | 'PNF'
+  | 'Neural Glide'
+  | 'Lymphatic';
+
 export interface ManualTherapyFlowsheetEntry {
   id: string;
   techniqueAr: string;
   techniqueEn: string;
   targetJointOrTissue: string;
-  gradeOrIntensity: 'Grade I' | 'Grade II' | 'Grade III' | 'Grade IV' | 'MWM' | 'Soft Tissue';
+  gradeOrIntensity: ManualTherapyGradeOrIntensity;
   durationMinutes: number;
   patientResponse?: string;
 }

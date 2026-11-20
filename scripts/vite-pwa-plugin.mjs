@@ -10,10 +10,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 export const PROD_META_CSP =
-  "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'";
+  "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.github.com; object-src 'none'; base-uri 'self'; form-action 'self'";
 
 export const HTTP_HEADER_CSP =
-  "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+  "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.github.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+
+export const ANDROID_META_CSP =
+  "default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'";
+
+export const DESKTOP_META_CSP =
+  "default-src 'self' app:; script-src 'self' app:; worker-src 'self' app: blob:; style-src 'self' app: 'unsafe-inline'; img-src 'self' app: data: blob:; font-src 'self' app: data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'";
 
 function listPublicFiles(dir, baseDir) {
   if (!fs.existsSync(dir)) return [];
@@ -49,9 +55,16 @@ export function physioRecordPwaPlugin() {
         // Apply strict CSP <meta> in built bundles (ctx.server is set only during Vite dev/HMR)
         if (ctx.server) return html;
         if (html.includes('http-equiv="Content-Security-Policy"')) return html;
+        const appTarget = (process.env.VITE_APP_TARGET || 'web').toLowerCase();
+        const metaCsp =
+          appTarget === 'desktop'
+            ? DESKTOP_META_CSP
+            : appTarget === 'android'
+              ? ANDROID_META_CSP
+              : PROD_META_CSP;
         return html.replace(
           '<head>',
-          `<head>\n    <meta http-equiv="Content-Security-Policy" content="${PROD_META_CSP}" />`
+          `<head>\n    <meta http-equiv="Content-Security-Policy" content="${metaCsp}" />`
         );
       },
     },

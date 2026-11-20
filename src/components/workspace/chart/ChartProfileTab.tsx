@@ -40,6 +40,7 @@ import {
 } from '../../../utils/iraqReferralsRetentionC6C7';
 import { getPatientDisplayName } from '../../../utils/mrn';
 import type { PrintableDocumentType } from '../../print/PrintDocumentModal';
+import { saveTextFilePortable } from '../../../platform/nativeBridge';
 import { Money, Num } from '../../ui/Primitives';
 
 const ConsentSignaturePanel = lazy(() =>
@@ -464,17 +465,17 @@ export const ChartProfileTab: React.FC<ChartProfileTabProps> = ({
                 episodeStores: stores,
                 clinicName: bi(profile.clinicNameAr, profile.clinicNameEn),
               });
-              const blob = new Blob([JSON.stringify(bundle, null, 2)], {
-                type: 'application/fhir+json;charset=utf-8',
-              });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `patient-${patient.data.mrn || patient.id}-fhir-r4-${getTodayIso()}.json`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              setTimeout(() => URL.revokeObjectURL(url), 1000);
+              try {
+                await saveTextFilePortable({
+                  filename: `patient-${patient.data.mrn || patient.id}-fhir-r4-${getTodayIso()}.json`,
+                  content: JSON.stringify(bundle, null, 2),
+                  mimeType: 'application/fhir+json;charset=utf-8',
+                  description: 'HL7 FHIR R4 Bundle (.json)',
+                  extensions: ['json'],
+                });
+              } catch {
+                // User cancelled native save dialog
+              }
             }}
             className="py-2 px-3.5 rounded-xl bg-primary/10 hover:bg-primary/15 text-xs font-bold text-primary inline-flex items-center gap-1.5 transition-all cursor-pointer"
           >

@@ -27,7 +27,9 @@ interface WindowWithPasswordCredential extends Window {
  */
 export function isCredentialManagerStoreSupported(): boolean {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
-  const win = window as WindowWithPasswordCredential;
+  if (window.location?.protocol === 'app:') return false;
+  const win = window as WindowWithPasswordCredential & { electronAPI?: { isElectron?: boolean } };
+  if (win.electronAPI?.isElectron) return false;
   return Boolean(
     window.isSecureContext &&
       navigator.credentials &&

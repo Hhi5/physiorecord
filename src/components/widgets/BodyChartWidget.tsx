@@ -22,6 +22,7 @@ import {
 import { resolveAnatomicalRegionFromPoint } from '../../data/clinicalToolkit/bodyChartRegions';
 import { AnatomicalFrontSvg, AnatomicalBackSvg } from './AnatomicalBodySvgs';
 import { Fraction, AutoResizeTextarea } from '../ui/Primitives';
+import { ClampedMenuPanel } from '../ui/ClampedMenuPanel';
 import { SpectrumColorPicker } from '../ui/SpectrumColorPicker';
 import { Trash2, Palette } from 'lucide-react';
 
@@ -304,7 +305,7 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
                 </button>
 
                 {isColorPickerOpen && (
-                  <div
+                  <ClampedMenuPanel
                     role="dialog"
                     aria-label={bi('لون العلامة', 'Pin Color', 'ڕەنگی نیشانە')}
                     className="absolute top-full mt-2 end-0 z-50 w-[min(18rem,calc(100vw-2.5rem))] p-3 bg-card border border-black/[0.08] dark:border-white/[0.1] rounded-2xl shadow-xl space-y-2.5 animate-in fade-in-50 zoom-in-95 duration-150"
@@ -337,7 +338,7 @@ export const BodyChartWidget: React.FC<BodyChartWidgetProps> = ({
                       onChange={(hex) => setCustomPainColor(hex)}
                       onReset={() => setCustomPainColor('')}
                     />
-                  </div>
+                  </ClampedMenuPanel>
                 )}
               </div>
             </div>

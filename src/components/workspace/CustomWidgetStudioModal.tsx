@@ -182,7 +182,7 @@ export const CustomWidgetStudioModal: React.FC<CustomWidgetStudioModalProps> = (
   if (!isOpen) return null;
 
   const handleCopyPrompt = () => {
-    navigator.clipboard.writeText(AI_PROMPT_TEMPLATE);
+    void navigator.clipboard?.writeText?.(AI_PROMPT_TEMPLATE).catch(() => {});
     setCopiedPrompt(true);
     setTimeout(() => setCopiedPrompt(false), 3000);
   };

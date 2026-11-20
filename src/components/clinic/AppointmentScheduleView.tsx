@@ -33,6 +33,8 @@ import {
 import { getPatientMrn, isDemoPatient, getPatientDisplayName } from '../../utils/mrn';
 import { openSafeExternalUrl } from '../../platform/nativeBridge';
 import { Num, DemoBadge, DatePickerInput, TimePickerInput, TimeDisplay } from '../ui/Primitives';
+import { ClampedMenuPanel } from '../ui/ClampedMenuPanel';
+import { useViewportClampedMenu } from '../../utils/menuViewportClamp';
 import { ModalDialog, DrawerDialog } from '../ui/Dialog';
 import {
   IRAQ_GOVERNORATES,
@@ -239,6 +241,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   const headerMenuRef = useRef<HTMLDivElement | null>(null);
   const headerMenuBtnRef = useRef<HTMLButtonElement | null>(null);
+  useViewportClampedMenu(showHeaderMenu, headerMenuRef);
 
   useEffect(() => {
     if (!showHeaderMenu && !openRowMenuId && !openStatusMenuId) return;
@@ -1981,7 +1984,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                               className="fixed inset-0 z-20"
                               onClick={() => setOpenStatusMenuId(null)}
                             />
-                            <div
+                            <ClampedMenuPanel
                               dir={isRtl ? 'rtl' : 'ltr'}
                               className="absolute end-0 mt-1.5 w-44 rounded-2xl bg-card border border-black/[0.06] dark:border-white/[0.08] shadow-2xl py-1 z-30 text-xs"
                             >
@@ -2019,7 +2022,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                                   )}
                                 </button>
                               ))}
-                            </div>
+                            </ClampedMenuPanel>
                           </>
                         )}
                       </div>
@@ -2044,7 +2047,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                         </button>
 
                         {isRowMenuOpen && (
-                          <div
+                          <ClampedMenuPanel
                             role="menu"
                             dir={isRtl ? 'rtl' : 'ltr'}
                             className="absolute end-0 mt-1.5 w-48 rounded-2xl bg-card border border-black/[0.06] dark:border-white/[0.08] shadow-2xl p-1.5 z-30 text-xs space-y-0.5"
@@ -2152,7 +2155,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                                 <span>{bi('حذف الموعد', 'Delete', 'سڕینەوە')}</span>
                               </button>
                             </div>
-                          </div>
+                          </ClampedMenuPanel>
                         )}
                       </div>
                     </div>

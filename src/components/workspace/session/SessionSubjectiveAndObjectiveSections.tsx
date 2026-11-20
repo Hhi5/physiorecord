@@ -15,10 +15,12 @@ import {
 import type {
   FlowsheetExerciseEntry,
   ManualTherapyFlowsheetEntry,
+  ManualTherapyGradeOrIntensity,
   PhysicalAgentFlowsheetEntry,
   SessionType,
   SessionVitalsEntry,
 } from '../../../types/clinical';
+import { MANUAL_THERAPY_GRADE_OPTIONS } from '../../../data/clinicalToolkit/manualTherapyCatalog';
 import { AutoResizeTextarea, ClinicalAbbr, Fraction, NprsControl } from '../../ui/Primitives';
 import type { CopiedSoapTextField, UntouchedDraftFormState } from './sessionSoapHelpers';
 
@@ -987,7 +989,7 @@ export const SessionSubjectiveAndObjectiveSections: React.FC<
 
                       <div>
                         <label htmlFor={`mt-grade-${mt.id}`} className="text-xs text-muted-foreground-1 block mb-0.5">
-                          {bi('الدرجة / الشدة', 'Grade', 'پلە / توندی')}
+                          {bi('الدرجة / التقنية', 'Grade / Mode', 'پلە / تەکنیک')}
                         </label>
                         <select
                           id={`mt-grade-${mt.id}`}
@@ -998,18 +1000,26 @@ export const SessionSubjectiveAndObjectiveSections: React.FC<
                             next[idx] = {
                               ...mt,
                               gradeOrIntensity:
-                                e.target.value as ManualTherapyFlowsheetEntry['gradeOrIntensity'],
+                                e.target.value as ManualTherapyGradeOrIntensity,
                             };
                             updateField('manualTherapy', next);
                           }}
-                          className="w-full px-2 py-1 rounded-lg bg-card font-mono text-foreground"
+                          className="w-full px-2 py-1 rounded-lg bg-card text-foreground"
                         >
-                          <option value="Grade I">Grade I</option>
-                          <option value="Grade II">Grade II</option>
-                          <option value="Grade III">Grade III</option>
-                          <option value="Grade IV">Grade IV</option>
-                          <option value="MWM">Mulligan MWM</option>
-                          <option value="Soft Tissue">Myofascial</option>
+                          <optgroup label={bi('تحريك ومعالجة المفاصل والعمود الفقري', 'Joint Mobilization & Traction', 'جووڵاندنی جومگە')}>
+                            {MANUAL_THERAPY_GRADE_OPTIONS.filter((o) => o.group === 'joint').map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {bi(opt.labelAr, opt.labelEn, opt.labelCkb)}
+                              </option>
+                            ))}
+                          </optgroup>
+                          <optgroup label={bi('الأنسجة الرخوة والأعصاب والعضلات', 'Soft Tissue, MET, PNF & Neural', 'شانەی نەرم و دەمار')}>
+                            {MANUAL_THERAPY_GRADE_OPTIONS.filter((o) => o.group === 'soft_neuro').map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {bi(opt.labelAr, opt.labelEn, opt.labelCkb)}
+                              </option>
+                            ))}
+                          </optgroup>
                         </select>
                       </div>
 

@@ -29,6 +29,7 @@ import {
   buildShareableDocumentHtmlFile,
   shareDocumentViaWebShareOrFallback,
 } from '../../utils/sharingInteropPhaseE';
+import { useSinglePagePrintFit } from '../../utils/printLayoutFit';
 import {
   exportPlatformPdfDirect,
   getElectronDesktopBridge,
@@ -95,6 +96,7 @@ import {
   FileText,
   Languages,
   MessageCircle,
+  Minimize2,
   Package,
   Phone,
   Plus,
@@ -140,7 +142,10 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
   const [letterLang, setLetterLang] = useState<'ar' | 'en'>(language === 'en' ? 'en' : 'ar');
   const [copied, setCopied] = useState(false);
   const [shareStatusText, setShareStatusText] = useState<string | null>(null);
+  const [fitSinglePage, setFitSinglePage] = useState(true);
   const sheetRef = useRef<HTMLDivElement | null>(null);
+  const sheetBodyRef = useRef<HTMLDivElement | null>(null);
+  const sheetFooterRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     setLetterLang(language === 'en' ? 'en' : 'ar');
@@ -205,6 +210,19 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
     setSubjectText(generated.subject);
     setBodyText(generated.body);
   }, [generated]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFitSinglePage(true);
+    }
+  }, [isOpen]);
+
+  const { printScale, isScaled } = useSinglePagePrintFit({
+    enabled: isOpen && fitSinglePage,
+    bodyRef: sheetBodyRef,
+    footerRef: sheetFooterRef,
+    deps: [isOpen, letterLang, subjectText, bodyText],
+  });
 
   if (!isOpen) return null;
 
@@ -324,7 +342,7 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
     >
       <Modal
         dir={isRtl ? 'rtl' : 'ltr'}
-        className="w-full h-full max-h-[100dvh] flex flex-col outline-none print:h-auto print:max-h-none print:!bg-white print:block"
+        className="w-full h-full max-h-[100dvh] flex flex-col outline-none print:h-auto print:max-h-none print:!bg-white print:block overflow-hidden print:overflow-visible"
       >
         <AriaDialog
           aria-label={bi(
@@ -332,7 +350,7 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
             'Referring Doctor Report-Back Letter',
             'پێشبینینی ڕاپۆرتی بەدواداچوون بۆ پزیشکی نێردەر'
           )}
-          className="w-full h-full flex flex-col min-h-0 outline-none print:h-auto print:!bg-white print:block overflow-hidden"
+          className="w-full h-full flex flex-col min-h-0 outline-none print:h-auto print:!bg-white print:block overflow-hidden print:overflow-visible"
         >
           {/* Pinned Screen-only Top Header & Action Strip (Non-shrinking, Always Visible, Zero Clipping) */}
           <header
@@ -408,6 +426,22 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
                     {isLetterAr
                       ? bi('التحويل للإنجليزية (EN)', 'Switch to English (EN)', 'گۆڕین بۆ ئینگلیزی (EN)')
                       : bi('التحويل للعربية (AR)', 'Switch to Arabic (AR)', 'گۆڕین بۆ عەرەبی (AR)')}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  aria-pressed={fitSinglePage}
+                  onClick={() => setFitSinglePage((v) => !v)}
+                  className={`min-h-[36px] px-3 py-1.5 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 ${
+                    fitSinglePage
+                      ? 'border-primary/40 bg-primary/10 text-primary'
+                      : 'border-line-2 bg-card hover:bg-layer-hover text-foreground'
+                  }`}
+                >
+                  <Minimize2 className="size-3.5" />
+                  <span>
+                    {bi('ملاءمة بصفحة واحدة (A4)', 'Fit to 1 A4 Page', 'گونجاندن لە یەک لاپەڕە (A4)')}
                   </span>
                 </button>
 
@@ -506,20 +540,22 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
               <div
                 ref={sheetRef}
                 dir={isLetterAr ? 'rtl' : 'ltr'}
+                data-print-fit-scaled={isScaled ? 'true' : undefined}
+                style={{ ['--pr-print-zoom' as string]: String(printScale) }}
                 className="print-sheet-container w-[210mm] min-w-[210mm] min-h-[272mm] print:w-full print:min-w-0 bg-white text-slate-900 border border-slate-300 border-t-4 border-t-slate-900 p-8 sm:p-11 flex flex-col justify-between text-xs leading-relaxed"
               >
-                <div className="space-y-5">
+                <div ref={sheetBodyRef} className="space-y-5 print:space-y-2.5">
                   {/* Formal Institutional Header */}
-                  <header className="flex items-start justify-between gap-4 border-b-2 border-slate-800 pb-4 print-break-inside-avoid">
+                  <header className="flex items-start justify-between gap-4 border-b-2 border-slate-800 pb-4 print:pb-2.5 print-break-inside-avoid">
                     <div className="flex items-start gap-3.5">
                       {logoSafe && (
                         <img
                           src={logoSafe}
                           alt="Clinic Logo"
-                          className="h-16 w-16 object-contain rounded-lg border border-slate-300 p-1 bg-white shrink-0"
+                          className="h-16 w-16 print:h-12 print:w-12 object-contain rounded-lg border border-slate-300 p-1 bg-white shrink-0"
                         />
                       )}
-                      <div className="space-y-1">
+                      <div className="space-y-1 print:space-y-0.5">
                         <h1 className="text-base font-extrabold text-slate-900 tracking-tight">
                           {resolvedClinicName}
                         </h1>
@@ -551,7 +587,7 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
                       </div>
                     </div>
 
-                    <div className="border border-slate-300 bg-slate-50 rounded-lg px-3.5 py-2 text-xs space-y-1 shrink-0">
+                    <div className="border border-slate-300 bg-slate-50 rounded-lg px-3.5 py-2 print:py-1.5 text-xs space-y-1 print:space-y-0.5 shrink-0">
                       <div className="font-bold text-slate-900">
                         {isLetterAr ? 'كتاب رسمي / تقرير سريري' : 'Official Clinical Report'}
                       </div>
@@ -571,7 +607,7 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
                   </header>
 
                   {/* Formal Centered Title Banner */}
-                  <div className="border-y border-slate-400 bg-slate-100 py-2 px-4 text-center print-break-inside-avoid">
+                  <div className="border-y border-slate-400 bg-slate-100 py-2 print:py-1.5 px-4 text-center print-break-inside-avoid">
                     <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">
                       {isLetterAr
                         ? 'تقرير متابعة سريري للطبيب المحيل — Referring Physician Progress Report'
@@ -583,27 +619,27 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
                   <table className="w-full border-collapse border border-slate-400 text-xs print-break-inside-avoid">
                     <tbody>
                       <tr>
-                        <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-start font-bold text-slate-800 w-[18%]">
+                        <th className="border border-slate-300 bg-slate-100 px-3 py-2 print:py-1.5 text-start font-bold text-slate-800 w-[18%]">
                           {isLetterAr ? 'إلى حضرة الطبيب' : 'Referred By / To'}
                         </th>
-                        <td className="border border-slate-300 px-3 py-2 font-bold text-slate-900 w-[32%]">
+                        <td className="border border-slate-300 px-3 py-2 print:py-1.5 font-bold text-slate-900 w-[32%]">
                           {resolvedDoctorLabel}
                           {(isLetterAr ? doctor?.specialtyAr || doctor?.specialtyEn : doctor?.specialtyEn || doctor?.specialtyAr)
                             ? ` (${isLetterAr ? doctor?.specialtyAr || doctor?.specialtyEn : doctor?.specialtyEn || doctor?.specialtyAr})`
                             : ''}
                         </td>
-                        <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-start font-bold text-slate-800 w-[18%]">
+                        <th className="border border-slate-300 bg-slate-100 px-3 py-2 print:py-1.5 text-start font-bold text-slate-800 w-[18%]">
                           {isLetterAr ? 'اسم المريض' : 'Patient Name'}
                         </th>
-                        <td className="border border-slate-300 px-3 py-2 font-bold text-slate-900 w-[32%]">
+                        <td className="border border-slate-300 px-3 py-2 print:py-1.5 font-bold text-slate-900 w-[32%]">
                           {resolvedPatientLabel}
                         </td>
                       </tr>
                       <tr>
-                        <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-start font-bold text-slate-800">
+                        <th className="border border-slate-300 bg-slate-100 px-3 py-2 print:py-1.5 text-start font-bold text-slate-800">
                           {isLetterAr ? 'العمر / الجنس' : 'Age / Gender'}
                         </th>
-                        <td className="border border-slate-300 px-3 py-2 font-semibold text-slate-800">
+                        <td className="border border-slate-300 px-3 py-2 print:py-1.5 font-semibold text-slate-800">
                           {patient.data.age ? `${patient.data.age} ${isLetterAr ? 'سنة' : 'yrs'}` : '—'}
                           {patient.data.gender
                             ? ` · ${
@@ -619,18 +655,18 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
                               }`
                             : ''}
                         </td>
-                        <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-start font-bold text-slate-800">
+                        <th className="border border-slate-300 bg-slate-100 px-3 py-2 print:py-1.5 text-start font-bold text-slate-800">
                           {isLetterAr ? 'رقم الهاتف' : 'Phone'}
                         </th>
-                        <td className="border border-slate-300 px-3 py-2 font-semibold text-slate-800 tabular-nums">
+                        <td className="border border-slate-300 px-3 py-2 print:py-1.5 font-semibold text-slate-800 tabular-nums">
                           <bdi dir="ltr">{patient.data.phone || patient.data.phoneNumber || '—'}</bdi>
                         </td>
                       </tr>
                       <tr>
-                        <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-start font-bold text-slate-800">
+                        <th className="border border-slate-300 bg-slate-100 px-3 py-2 print:py-1.5 text-start font-bold text-slate-800">
                           {isLetterAr ? 'الموضوع' : 'Subject'}
                         </th>
-                        <td colSpan={3} className="border border-slate-300 px-3 py-2 font-bold text-slate-900">
+                        <td colSpan={3} className="border border-slate-300 px-3 py-2 print:py-1.5 font-bold text-slate-900">
                           {subjectText}
                         </td>
                       </tr>
@@ -639,19 +675,19 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
 
                   {/* Formal Clinical Narrative Box */}
                   <div className="border border-slate-300 rounded-md overflow-hidden">
-                    <div className="bg-slate-100 border-b border-slate-300 px-3.5 py-2 font-bold text-slate-900">
+                    <div className="bg-slate-100 border-b border-slate-300 px-3.5 py-2 print:py-1.5 font-bold text-slate-900">
                       {isLetterAr
                         ? 'تفاصيل التقييم السريري وخطة التأهيل المتبعة'
                         : 'Clinical Evaluation & Rehabilitation Summary'}
                     </div>
-                    <div className="p-5 whitespace-pre-wrap text-xs leading-7 text-slate-900 font-sans min-h-[120mm]">
+                    <div className="p-4 print:p-3 whitespace-pre-wrap text-xs leading-6 print:leading-snug text-slate-900 font-sans min-h-[82mm] print:min-h-0">
                       {bodyText}
                     </div>
                   </div>
                 </div>
 
                 {/* Official Bottom-Anchored Signature & Stamp Footer */}
-                <footer className="mt-auto pt-6 border-t-2 border-slate-800 print-break-inside-avoid">
+                <footer ref={sheetFooterRef} className="mt-auto pt-4 print:pt-2.5 border-t-2 border-slate-800 print-break-inside-avoid">
                   <div className="flex flex-row items-end justify-between gap-6">
                     <div className="max-w-md space-y-1 text-xs text-slate-600">
                       <p className="font-bold text-slate-800">
@@ -666,7 +702,7 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
                       </p>
                     </div>
 
-                    <div className="border border-slate-300 bg-slate-50/70 rounded-lg px-5 py-3 text-center min-w-[210px] space-y-1.5 ms-auto">
+                    <div className="border border-slate-300 bg-slate-50/70 rounded-lg px-5 py-2.5 print:py-2 text-center min-w-[210px] space-y-1 ms-auto">
                       <div className="text-xs font-bold text-slate-600">
                         {isLetterAr ? 'المعالج الفيزيائي المشرف' : 'Supervising Physiotherapist'}
                       </div>
@@ -674,12 +710,12 @@ export const DoctorReportBackLetterModal: React.FC<DoctorReportBackLetterModalPr
                         <img
                           src={stampSafe}
                           alt="Clinic Stamp"
-                          className="h-14 mx-auto object-contain"
+                          className="h-14 print:h-11 mx-auto object-contain"
                         />
                       ) : (
-                        <div className="h-8" />
+                        <div className="h-8 print:h-6" />
                       )}
-                      <div className="border-t border-slate-400 pt-1.5 text-xs font-extrabold text-slate-900">
+                      <div className="border-t border-slate-400 pt-1 text-xs font-extrabold text-slate-900">
                         {resolvedTherapistName}
                       </div>
                       <div className="text-xs text-slate-500">

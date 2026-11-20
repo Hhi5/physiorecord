@@ -2,9 +2,15 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   BUILT_IN_EXAM_PRESETS_CC0,
   applyExamPresetToEpisodeStore,
+  removeExamPresetFromEpisodeStore,
+  toggleExamPresetInEpisodeStore,
   serializeExamPresetPack,
   parseExamPresetPack,
 } from '../../data/clinicalToolkit/examPresetsCc0';
+import {
+  MANUAL_THERAPY_GRADE_OPTIONS,
+  MANUAL_THERAPY_TECHNIQUE_PRESETS,
+} from '../../data/clinicalToolkit/manualTherapyCatalog';
 import {
   buildLatestScoreByInstrumentMap,
   evaluateOutcomeGoalStatus,
@@ -119,6 +125,60 @@ describe('Phase B — Clinical Workflow & Safety Features (B1–B8)', () => {
       presets: [kneePreset],
     });
     expect(() => parseExamPresetPack(badLicenseJson)).toThrow(/CC0-1\.0/);
+  });
+
+  it('B1b: toggles exam presets off cleanly and preserves any clinician-measured data', () => {
+    const kneePreset = BUILT_IN_EXAM_PRESETS_CC0.find((p) => p.regionId === 'knee')!;
+    const store = createBlankStore();
+
+    // First toggle applies preset
+    const firstToggle = toggleExamPresetInEpisodeStore(store, kneePreset);
+    expect(firstToggle.applied).toBe(true);
+    expect(firstToggle.store.appliedPresetIds).toContain(kneePreset.id);
+    const starterRomCount = firstToggle.store.objective.romBattery!.entries.length;
+    expect(starterRomCount).toBeGreaterThan(0);
+
+    // Record measurement on first ROM item & first special test, leave remaining starters untouched
+    const recordedStore: EpisodeScopedClinicalStore = {
+      ...firstToggle.store,
+      objective: {
+        ...firstToggle.store.objective,
+        romBattery: {
+          ...firstToggle.store.objective.romBattery!,
+          entries: firstToggle.store.objective.romBattery!.entries.map((e, i) =>
+            i === 0 ? { ...e, isTested: true, measuredAngleDegrees: 115 } : e
+          ),
+        },
+      },
+      specialTests: firstToggle.store.specialTests.map((t, i) =>
+        i === 0 ? { ...t, outcome: 'positive' } : t
+      ),
+    };
+
+    // Second toggle unselects preset, pruning untouched starters while keeping measured entries intact
+    const secondToggle = toggleExamPresetInEpisodeStore(recordedStore, kneePreset);
+    expect(secondToggle.applied).toBe(false);
+    expect(secondToggle.store.appliedPresetIds).not.toContain(kneePreset.id);
+    expect(secondToggle.store.objective.romBattery?.entries).toHaveLength(1);
+    expect(secondToggle.store.objective.romBattery?.entries[0].measuredAngleDegrees).toBe(115);
+    expect(secondToggle.store.specialTests).toHaveLength(1);
+    expect(secondToggle.store.specialTests[0].outcome).toBe('positive');
+
+    // Pure removal helper on completely untouched store cleans out untouched starter scale & entries
+    const cleanRemoved = removeExamPresetFromEpisodeStore(firstToggle.store, kneePreset);
+    expect(cleanRemoved.appliedPresetIds).toHaveLength(0);
+    expect(cleanRemoved.objective.romBattery?.entries).toHaveLength(0);
+    expect(cleanRemoved.specialTests).toHaveLength(0);
+    expect(cleanRemoved.functionalScales).toBeUndefined();
+  });
+
+  it('B1c: provides rich manual therapy technique presets and valid grade options', () => {
+    expect(MANUAL_THERAPY_TECHNIQUE_PRESETS.length).toBeGreaterThanOrEqual(10);
+    const gradeSet = new Set(MANUAL_THERAPY_GRADE_OPTIONS.map((o) => o.value));
+    for (const preset of MANUAL_THERAPY_TECHNIQUE_PRESETS) {
+      expect(gradeSet.has(preset.defaultGrade)).toBe(true);
+      expect(preset.defaultDurationMinutes).toBeGreaterThanOrEqual(1);
+    }
   });
 
   it('B2: evaluates MCID outcome goal progression for higher-is-better and lower-is-better scales', () => {

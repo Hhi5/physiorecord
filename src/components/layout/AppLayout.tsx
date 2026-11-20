@@ -446,7 +446,20 @@ export const AppLayout: React.FC = () => {
       const openDialog = document.querySelector(ACTIVE_MODAL_DIALOG_SELECTOR);
       if (openDialog) {
         e.preventDefault();
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        const escapeTarget =
+          (document.activeElement && openDialog.contains(document.activeElement)
+            ? document.activeElement
+            : openDialog) as HTMLElement;
+        escapeTarget.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: 'Escape',
+            code: 'Escape',
+            keyCode: 27,
+            which: 27,
+            bubbles: true,
+            cancelable: true,
+          })
+        );
         return;
       }
       if (selectedPatientId !== null) {

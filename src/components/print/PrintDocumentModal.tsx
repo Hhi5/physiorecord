@@ -24,6 +24,7 @@ import {
   Calendar,
   Clock,
   Home,
+  Minimize2,
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -56,11 +57,13 @@ import {
   shareDocumentViaWebShareOrFallback,
 } from '../../utils/sharingInteropPhaseE';
 import { formatPaymentCurrencySnapshot } from '../../utils/csvExport';
+import { useSinglePagePrintFit } from '../../utils/printLayoutFit';
 import { isValidEncryptedImageDataUrl } from '../../utils/imageUtils';
 import { getCurrencyConfig } from '../../utils/currencies';
 import {
   exportPlatformPdfDirect,
   getElectronDesktopBridge,
+  isNativeAppShell,
   openSafeExternalUrl,
   saveTextFilePortable,
   triggerPlatformPrint,
@@ -184,6 +187,18 @@ const DOC_TITLES: Record<PrintableDocumentType, { ar: string; en: string; ckb: s
   },
 };
 
+const SINGLE_PAGE_FIT_DOC_TYPES: ReadonlySet<PrintableDocumentType> = new Set([
+  'receipt',
+  'invoice',
+  'z_report',
+  'progress_report',
+  'discharge_summary',
+  'referral_letter',
+  'medical_report',
+  'consent',
+  'patient_visit_card',
+]);
+
 function formatPrimaryAmount(amount: number, currencyCode: string, isDocAr: boolean): string {
   const cfg = getCurrencyConfig(currencyCode);
   const symbol = isDocAr ? cfg.symbolAr : cfg.symbolEn;
@@ -231,11 +246,34 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
   } | null>(null);
   const shareFeedbackTimerRef = useRef<number | null>(null);
   const sheetRef = useRef<HTMLDivElement | null>(null);
+  const sheetBodyRef = useRef<HTMLDivElement | null>(null);
+  const sheetFooterRef = useRef<HTMLElement | null>(null);
+  const [fitSinglePage, setFitSinglePage] = useState<boolean>(() =>
+    SINGLE_PAGE_FIT_DOC_TYPES.has(documentType)
+  );
 
   useEffect(() => {
     setDocLang(language === 'en' ? 'en' : 'ar');
     setShareFeedback(null);
+    setFitSinglePage(SINGLE_PAGE_FIT_DOC_TYPES.has(documentType));
   }, [language, isOpen, documentType]);
+
+  const { printScale, isScaled } = useSinglePagePrintFit({
+    enabled: isOpen && fitSinglePage,
+    bodyRef: sheetBodyRef,
+    footerRef: sheetFooterRef,
+    deps: [
+      isOpen,
+      documentType,
+      docLang,
+      recipientDoctor,
+      customRecommendation,
+      patient?.id,
+      episode?.id,
+      sessions.length,
+      soaps.length,
+    ],
+  });
 
   useEffect(() => {
     return () => {
@@ -639,6 +677,22 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                   </span>
                 </button>
 
+                <button
+                  type="button"
+                  aria-pressed={fitSinglePage}
+                  onClick={() => setFitSinglePage((v) => !v)}
+                  className={`min-h-[36px] px-3 py-1.5 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 ${
+                    fitSinglePage
+                      ? 'border-primary/40 bg-primary/10 text-primary'
+                      : 'border-line-2 bg-card hover:bg-layer-hover text-foreground'
+                  }`}
+                >
+                  <Minimize2 className="size-3.5" />
+                  <span>
+                    {bi('ملاءمة بصفحة واحدة (A4)', 'Fit to 1 A4 Page', 'گونجاندن لە یەک لاپەڕە (A4)')}
+                  </span>
+                </button>
+
                 {canDirectExportPdf && (
                   <button
                     type="button"
@@ -690,7 +744,7 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => {
-                        if (whatsappFallbackUrl && getElectronDesktopBridge()?.openExternalUrl) {
+                        if (whatsappFallbackUrl && isNativeAppShell()) {
                           e.preventDefault();
                           void openSafeExternalUrl(whatsappFallbackUrl);
                         }
@@ -790,17 +844,19 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
         <div
           ref={sheetRef}
           dir={docDir}
+          data-print-fit-scaled={isScaled ? 'true' : undefined}
+          style={{ ['--pr-print-zoom' as string]: String(printScale) }}
           className="print-sheet-container w-[210mm] min-w-[210mm] min-h-[272mm] print:w-full print:min-w-0 bg-white text-slate-900 border border-slate-300 border-t-4 border-t-slate-900 p-8 sm:p-11 flex flex-col justify-between text-xs leading-relaxed"
         >
-        <div className="space-y-5 flex-1">
+        <div ref={sheetBodyRef} className="space-y-5 print:space-y-2.5 flex-1">
         {/* Official Institutional Letterhead */}
-        <header className="flex items-start justify-between gap-4 border-b-2 border-slate-800 pb-4 print-break-inside-avoid">
+        <header className="flex items-start justify-between gap-4 border-b-2 border-slate-800 pb-4 print:pb-2.5 print-break-inside-avoid">
           <div className="flex items-start gap-3.5">
             {logoSafe && (
               <img
                 src={logoSafe}
                 alt="Clinic Logo"
-                className="h-16 w-16 object-contain rounded-lg border border-slate-300 p-1 bg-white shrink-0"
+                className="h-16 w-16 print:h-12 print:w-12 object-contain rounded-lg border border-slate-300 p-1 bg-white shrink-0"
               />
             )}
             <div className="space-y-1">
@@ -875,7 +931,7 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
         </header>
 
         {/* Centered Formal Document Title Banner */}
-        <div className="border-y border-slate-400 bg-slate-100 py-2 px-4 text-center print-break-inside-avoid">
+        <div className="border-y border-slate-400 bg-slate-100 py-2 print:py-1.5 px-4 text-center print-break-inside-avoid">
           <h2 className="text-sm sm:text-base font-black text-slate-900 tracking-wide">
             {docTitle}
           </h2>
@@ -889,24 +945,24 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
             <table className="w-full border-collapse border border-slate-400 text-xs">
               <tbody>
                 <tr>
-                  <td className="border border-slate-400 bg-slate-100 px-3 py-2 font-bold text-slate-700 w-[18%]">
+                  <td className="border border-slate-400 bg-slate-100 px-3 py-2 print:py-1 font-bold text-slate-700 w-[18%]">
                     {isDocAr ? 'اسم المريض' : 'Patient Name'}
                   </td>
-                  <td className="border border-slate-400 px-3 py-2 font-bold text-slate-900 w-[32%]">
+                  <td className="border border-slate-400 px-3 py-2 print:py-1 font-bold text-slate-900 w-[32%]">
                     {resolvedPatientName}
                   </td>
-                  <td className="border border-slate-400 bg-slate-100 px-3 py-2 font-bold text-slate-700 w-[18%]">
+                  <td className="border border-slate-400 bg-slate-100 px-3 py-2 print:py-1 font-bold text-slate-700 w-[18%]">
                     {isDocAr ? 'رقم الملف (MRN)' : 'Medical Record #'}
                   </td>
-                  <td className="border border-slate-400 px-3 py-2 font-mono font-bold text-slate-900 w-[32%]">
+                  <td className="border border-slate-400 px-3 py-2 print:py-1 font-mono font-bold text-slate-900 w-[32%]">
                     <bdi dir="ltr">{resolvedMrn || '—'}</bdi>
                   </td>
                 </tr>
                 <tr>
-                  <td className="border border-slate-400 bg-slate-100 px-3 py-2 font-bold text-slate-700">
+                  <td className="border border-slate-400 bg-slate-100 px-3 py-2 print:py-1 font-bold text-slate-700">
                     {isDocAr ? 'العمر / الجنس' : 'Age / Gender'}
                   </td>
-                  <td className="border border-slate-400 px-3 py-2 font-semibold text-slate-900">
+                  <td className="border border-slate-400 px-3 py-2 print:py-1 font-semibold text-slate-900">
                     {patient?.data.age ? `${patient.data.age} ${isDocAr ? 'سنة' : 'yrs'}` : '—'}
                     {patient?.data.gender
                       ? ` / ${
@@ -924,25 +980,25 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                         }`
                       : ''}
                   </td>
-                  <td className="border border-slate-400 bg-slate-100 px-3 py-2 font-bold text-slate-700">
+                  <td className="border border-slate-400 bg-slate-100 px-3 py-2 print:py-1 font-bold text-slate-700">
                     {isDocAr ? 'رقم الهاتف' : 'Phone Number'}
                   </td>
-                  <td className="border border-slate-400 px-3 py-2 font-mono font-semibold text-slate-900 tabular-nums">
+                  <td className="border border-slate-400 px-3 py-2 print:py-1 font-mono font-semibold text-slate-900 tabular-nums">
                     <bdi dir="ltr">{resolvedPhone || '—'}</bdi>
                   </td>
                 </tr>
                 {(patient?.data.referringPhysician || patient?.data.occupation) && (
                   <tr>
-                    <td className="border border-slate-400 bg-slate-100 px-3 py-2 font-bold text-slate-700">
+                    <td className="border border-slate-400 bg-slate-100 px-3 py-2 print:py-1 font-bold text-slate-700">
                       {isDocAr ? 'الجهة / الطبيب المحيل' : 'Referring Physician'}
                     </td>
-                    <td className="border border-slate-400 px-3 py-2 font-semibold text-slate-900">
+                    <td className="border border-slate-400 px-3 py-2 print:py-1 font-semibold text-slate-900">
                       {patient?.data.referringPhysician || '—'}
                     </td>
-                    <td className="border border-slate-400 bg-slate-100 px-3 py-2 font-bold text-slate-700">
+                    <td className="border border-slate-400 bg-slate-100 px-3 py-2 print:py-1 font-bold text-slate-700">
                       {isDocAr ? 'المهنة / النشاط' : 'Occupation'}
                     </td>
-                    <td className="border border-slate-400 px-3 py-2 font-semibold text-slate-900">
+                    <td className="border border-slate-400 px-3 py-2 print:py-1 font-semibold text-slate-900">
                       {patient?.data.occupation || '—'}
                     </td>
                   </tr>
@@ -1334,9 +1390,9 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
 
         {/* 4. CLINICAL REPORTS: PROGRESS / DISCHARGE / REFERRAL / MEDICAL REPORT */}
         {isClinicalLetter && (
-          <section className="space-y-4">
+          <section className="space-y-3.5 print:space-y-2">
             {documentType === 'referral_letter' && (
-              <div className="border border-slate-400 bg-slate-50 px-4 py-3 print-break-inside-avoid">
+              <div className="border border-slate-400 bg-slate-50 px-4 py-2.5 print:py-1.5 print-break-inside-avoid">
                 <span className="font-bold text-slate-700">{isDocAr ? 'حضرة الدكتور / الجهة الطبية المحترمة: ' : 'To Consulting Physician / Department: '}</span>
                 <strong className="text-slate-900">
                   {recipientDoctor.trim() ||
@@ -1348,23 +1404,23 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
 
             {/* Formal Section 1: Clinical Summary & Medical Diagnosis */}
             <div className="border border-slate-400 print-break-inside-avoid">
-              <div className="bg-slate-100 border-b border-slate-400 px-3.5 py-2 font-bold text-slate-900">
+              <div className="bg-slate-100 border-b border-slate-400 px-3.5 py-2 print:py-1 font-bold text-slate-900">
                 {isDocAr ? 'أولاً: الملخص السريري والتشخيص الطبي' : '1. Clinical Summary & Medical Diagnosis'}
               </div>
               <table className="w-full border-collapse text-xs">
                 <tbody>
                   <tr className="border-b border-slate-300">
-                    <td className="bg-slate-50 px-3 py-2 font-bold text-slate-700 w-[22%] border-e border-slate-300">
+                    <td className="bg-slate-50 px-3 py-2 print:py-1 font-bold text-slate-700 w-[22%] border-e border-slate-300">
                       {isDocAr ? 'الحالة / الخطة العلاجية' : 'Episode / Care Plan'}
                     </td>
-                    <td className="px-3 py-2 font-semibold text-slate-900 w-[28%] border-e border-slate-300">
+                    <td className="px-3 py-2 print:py-1 font-semibold text-slate-900 w-[28%] border-e border-slate-300">
                       {episode?.data.title ||
                         (isDocAr ? 'برنامج علاج طبيعي وتأهيل طبي متكامل' : 'Comprehensive Physical Therapy & Rehabilitation')}
                     </td>
-                    <td className="bg-slate-50 px-3 py-2 font-bold text-slate-700 w-[22%] border-e border-slate-300">
+                    <td className="bg-slate-50 px-3 py-2 print:py-1 font-bold text-slate-700 w-[22%] border-e border-slate-300">
                       {isDocAr ? 'التشخيص الطبي' : 'Medical Diagnosis'}
                     </td>
-                    <td className="px-3 py-2 font-semibold text-slate-900 w-[28%]">
+                    <td className="px-3 py-2 print:py-1 font-semibold text-slate-900 w-[28%]">
                       {episode?.data.medicalDiagnosis ||
                         patient?.data.medicalHistory ||
                         (isDocAr ? 'تحت التقييم والمتابعة السريرية' : 'Under Clinical Evaluation & Follow-up')}
@@ -1372,28 +1428,28 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                     </td>
                   </tr>
                   <tr>
-                    <td className="bg-slate-50 px-3 py-2 font-bold text-slate-700 border-e border-slate-300">
+                    <td className="bg-slate-50 px-3 py-2 print:py-1 font-bold text-slate-700 border-e border-slate-300">
                       {isDocAr ? 'تاريخ بدء البرنامج' : 'Program Start Date'}
                     </td>
-                    <td className="px-3 py-2 font-mono font-semibold text-slate-900 tabular-nums border-e border-slate-300">
+                    <td className="px-3 py-2 print:py-1 font-mono font-semibold text-slate-900 tabular-nums border-e border-slate-300">
                       <bdi dir="ltr">
                         {episode?.startDate
                           ? formatDateDDMMYYYY(episode.startDate)
                           : formatDateDDMMYYYY(localDate())}
                       </bdi>
                     </td>
-                    <td className="bg-slate-50 px-3 py-2 font-bold text-slate-700 border-e border-slate-300">
+                    <td className="bg-slate-50 px-3 py-2 print:py-1 font-bold text-slate-700 border-e border-slate-300">
                       {isDocAr ? 'عدد الجلسات المنجزة' : 'Completed Sessions'}
                     </td>
-                    <td className="px-3 py-2 font-mono font-bold text-slate-900 tabular-nums">
+                    <td className="px-3 py-2 print:py-1 font-mono font-bold text-slate-900 tabular-nums">
                       {finalizedSessions.length}
                     </td>
                   </tr>
                 </tbody>
               </table>
 
-              <div className="p-3.5 space-y-2 border-t border-slate-300 bg-white">
-                <p className="text-slate-900 leading-relaxed">
+              <div className="p-3 print:p-2 space-y-1.5 print:space-y-1 border-t border-slate-300 bg-white">
+                <p className="text-slate-900 leading-relaxed print:leading-snug">
                   <strong className="text-slate-900">
                     {isDocAr ? 'الشكوى الرئيسية والتاريخ المرضي: ' : 'Chief Complaint & Clinical History: '}
                   </strong>
@@ -1406,7 +1462,7 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                       : 'Patient presented for comprehensive musculoskeletal and functional physical therapy evaluation and rehabilitation.')}
                 </p>
                 {(clinicalStore?.clinicalImpression || episode?.data.clinicalImpression) && (
-                  <p className="text-slate-900 leading-relaxed">
+                  <p className="text-slate-900 leading-relaxed print:leading-snug">
                     <strong className="text-slate-900">
                       {isDocAr ? 'الانطباع السريري: ' : 'Clinical Impression: '}
                     </strong>
@@ -1423,10 +1479,10 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
               patient?.data.redFlags ||
               patient?.data.generalNotes) && (
               <div className="border border-slate-400 print-break-inside-avoid">
-                <div className="bg-slate-100 border-b border-slate-400 px-3.5 py-2 font-bold text-slate-900">
+                <div className="bg-slate-100 border-b border-slate-400 px-3.5 py-2 print:py-1 font-bold text-slate-900">
                   {isDocAr ? 'ثانياً: الخلفية الطبية والاحتياطات السريرية' : '2. Medical History & Clinical Precautions'}
                 </div>
-                <div className="p-3.5 space-y-1.5 text-slate-900 leading-relaxed">
+                <div className="p-3 print:p-2 space-y-1.5 print:space-y-1 text-slate-900 leading-relaxed print:leading-snug">
                   {patient?.data.medicalHistory && (
                     <p>
                       <strong>{isDocAr ? 'التاريخ المرضي: ' : 'Medical History: '}</strong>
@@ -1464,21 +1520,21 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
             {/* Formal Section 3: Objective Measurements & Progress */}
             {baselineSnap && (
               <div className="border border-slate-400 print-break-inside-avoid">
-                <div className="bg-slate-100 border-b border-slate-400 px-3.5 py-2 font-bold text-slate-900">
+                <div className="bg-slate-100 border-b border-slate-400 px-3.5 py-2 print:py-1 font-bold text-slate-900">
                   {isDocAr ? 'ثالثاً: مقارنة القياسات الموضوعية والتقدم السريري' : '3. Objective Measurements & Clinical Progress'}
                 </div>
-                <div className="p-3.5 space-y-3">
+                <div className="p-3 print:p-2 space-y-2.5 print:space-y-1.5">
                   <table className="w-full border-collapse border border-slate-400 text-xs">
                     <thead>
                       <tr className="bg-slate-100">
-                        <th className="border border-slate-400 px-2.5 py-1.5 text-start">
+                        <th className="border border-slate-400 px-2.5 py-1.5 print:py-1 text-start">
                           {isDocAr ? 'المقياس السريري' : 'Clinical Metric'}
                         </th>
-                        <th className="border border-slate-400 px-2.5 py-1.5 text-center">
+                        <th className="border border-slate-400 px-2.5 py-1.5 print:py-1 text-center">
                           {isDocAr ? 'التقييم الأولي' : 'Baseline'} ({formatDateDDMMYYYY(baselineSnap.recordedDate)})
                         </th>
                         {latestSnap && latestSnap.id !== baselineSnap.id && (
-                          <th className="border border-slate-400 px-2.5 py-1.5 text-center">
+                          <th className="border border-slate-400 px-2.5 py-1.5 print:py-1 text-center">
                             {isDocAr ? 'أحدث تقييم' : 'Latest'} ({formatDateDDMMYYYY(latestSnap.recordedDate)})
                           </th>
                         )}
@@ -1486,46 +1542,46 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                     </thead>
                     <tbody>
                       <tr>
-                        <td className="border border-slate-400 px-2.5 py-1.5 font-semibold">
+                        <td className="border border-slate-400 px-2.5 py-1.5 print:py-1 font-semibold">
                           {isDocAr ? 'شدة الألم أثناء الراحة (NPRS 0–10)' : 'Pain at Rest (NPRS 0–10)'}
                         </td>
-                        <td className="border border-slate-400 px-2.5 py-1.5 text-center tabular-nums">
+                        <td className="border border-slate-400 px-2.5 py-1.5 print:py-1 text-center tabular-nums">
                           <bdi dir="ltr">{baselineSnap.painNrsRest}/10</bdi>
                         </td>
                         {latestSnap && latestSnap.id !== baselineSnap.id && (
-                          <td className="border border-slate-400 px-2.5 py-1.5 text-center tabular-nums font-bold">
+                          <td className="border border-slate-400 px-2.5 py-1.5 print:py-1 text-center tabular-nums font-bold">
                             <bdi dir="ltr">{latestSnap.painNrsRest}/10</bdi>
                           </td>
                         )}
                       </tr>
                       <tr>
-                        <td className="border border-slate-400 px-2.5 py-1.5 font-semibold">
+                        <td className="border border-slate-400 px-2.5 py-1.5 print:py-1 font-semibold">
                           {isDocAr ? 'شدة الألم مع الحركة (NPRS 0–10)' : 'Pain on Activity (NPRS 0–10)'}
                         </td>
-                        <td className="border border-slate-400 px-2.5 py-1.5 text-center tabular-nums">
+                        <td className="border border-slate-400 px-2.5 py-1.5 print:py-1 text-center tabular-nums">
                           <bdi dir="ltr">{baselineSnap.painNrsActivity}/10</bdi>
                         </td>
                         {latestSnap && latestSnap.id !== baselineSnap.id && (
-                          <td className="border border-slate-400 px-2.5 py-1.5 text-center tabular-nums font-bold">
+                          <td className="border border-slate-400 px-2.5 py-1.5 print:py-1 text-center tabular-nums font-bold">
                             <bdi dir="ltr">{latestSnap.painNrsActivity}/10</bdi>
                           </td>
                         )}
                       </tr>
                       {(latestSnap?.outcomeScale || baselineSnap.outcomeScale) && (
                         <tr>
-                          <td className="border border-slate-400 px-2.5 py-1.5 font-semibold">
+                          <td className="border border-slate-400 px-2.5 py-1.5 print:py-1 font-semibold">
                             {(isDocAr
                               ? latestSnap?.outcomeScale?.scaleNameAr || baselineSnap.outcomeScale?.scaleNameAr
                               : latestSnap?.outcomeScale?.scaleNameEn || baselineSnap.outcomeScale?.scaleNameEn) ||
                               (isDocAr ? 'المقياس الوظيفي' : 'Functional Outcome')}
                           </td>
-                          <td className="border border-slate-400 px-2.5 py-1.5 text-center tabular-nums">
+                          <td className="border border-slate-400 px-2.5 py-1.5 print:py-1 text-center tabular-nums">
                             {baselineSnap.outcomeScale
                               ? `${baselineSnap.outcomeScale.scorePercentage}%`
                               : '—'}
                           </td>
                           {latestSnap && latestSnap.id !== baselineSnap.id && (
-                            <td className="border border-slate-400 px-2.5 py-1.5 text-center tabular-nums font-bold">
+                            <td className="border border-slate-400 px-2.5 py-1.5 print:py-1 text-center tabular-nums font-bold">
                               {latestSnap.outcomeScale
                                 ? `${latestSnap.outcomeScale.scorePercentage}%`
                                 : '—'}
@@ -1538,13 +1594,13 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
 
                   {/* Active ROM entries WITHOUT normative normalRanges (preserving clinic customization) */}
                   {(latestSnap?.romSummary.length || baselineSnap.romSummary.length) ? (
-                    <div className="pt-1">
-                      <div className="font-bold text-slate-800 mb-1.5">
+                    <div className="pt-1 print:pt-0.5">
+                      <div className="font-bold text-slate-800 mb-1.5 print:mb-1">
                         {isDocAr ? 'قياسات المدى الحركي المسجلة (ROM):' : 'Measured Range of Motion (ROM):'}
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 print:gap-1">
                         {(latestSnap?.romSummary || baselineSnap.romSummary).slice(0, 8).map((r, idx) => (
-                          <div key={idx} className="px-2.5 py-1 bg-slate-50 border border-slate-300 flex justify-between">
+                          <div key={idx} className="px-2.5 py-1 print:py-0.5 bg-slate-50 border border-slate-300 flex justify-between">
                             <span>{isDocAr ? r.labelAr || r.labelEn : r.labelEn || r.labelAr}</span>
                             <span className="font-mono font-bold">
                               <bdi dir="ltr">{r.aromDegrees !== null ? `${r.aromDegrees}°` : '—'}</bdi>
@@ -1560,12 +1616,12 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
 
             {/* Formal Section 4: Rehabilitation Plan, SOAP Summary & Clinical Recommendations */}
             <div className="border border-slate-400 print-break-inside-avoid">
-              <div className="bg-slate-100 border-b border-slate-400 px-3.5 py-2 font-bold text-slate-900">
+              <div className="bg-slate-100 border-b border-slate-400 px-3.5 py-2 print:py-1 font-bold text-slate-900">
                 {isDocAr
                   ? 'رابعاً: الخطة العلاجية والتوصيات الطبية'
                   : '4. Rehabilitation Plan & Clinical Recommendations'}
               </div>
-              <div className="p-3.5 space-y-2 text-slate-900 leading-relaxed">
+              <div className="p-3 print:p-2 space-y-1.5 print:space-y-1 text-slate-900 leading-relaxed print:leading-snug">
                 {soaps.length > 0 && (() => {
                   const latestSoap = soaps[soaps.length - 1];
                   return (
@@ -2353,7 +2409,7 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
         </div>
 
         {/* Official Bottom-Anchored Clinic Footer + Stamp / Signature */}
-        <footer className="mt-auto pt-6 border-t-2 border-slate-800 print-break-inside-avoid">
+        <footer ref={sheetFooterRef} className="mt-auto pt-4 print:pt-2.5 border-t-2 border-slate-800 print-break-inside-avoid">
           <div className="flex items-end justify-between gap-6">
             <div className="max-w-md space-y-1.5 text-xs text-slate-600">
               {(clinicProfile.receiptFooterAr || clinicProfile.receiptFooterEn) && (
@@ -2370,17 +2426,17 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
               </p>
             </div>
 
-            <div className="border border-slate-300 bg-slate-50/70 rounded-lg px-5 py-3 text-center min-w-[200px] space-y-1.5 ms-auto">
+            <div className="border border-slate-300 bg-slate-50/70 rounded-lg px-5 py-2.5 print:py-2 text-center min-w-[200px] space-y-1 ms-auto">
               {stampSafe ? (
                 <img
                   src={stampSafe}
                   alt="Clinic Stamp"
-                  className="h-14 mx-auto object-contain"
+                  className="h-14 print:h-11 mx-auto object-contain"
                 />
               ) : (
-                <div className="h-8" />
+                <div className="h-8 print:h-6" />
               )}
-              <div className="border-t border-slate-400 pt-1.5 font-bold text-slate-900">
+              <div className="border-t border-slate-400 pt-1 font-bold text-slate-900">
                 {(isDocAr ? clinicProfile.therapistNameAr : clinicProfile.therapistNameEn) ||
                   clinicProfile.therapistNameAr ||
                   clinicProfile.therapistNameEn}

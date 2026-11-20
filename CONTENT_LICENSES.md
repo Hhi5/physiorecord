@@ -85,6 +85,7 @@ Run `npm run check:content` to verify that zero undocumented SVGs, images, fonts
 | `src/components/clinic/SpotlightTourOverlay.tsx` | Original interactive first-visit & full-app spotlight tour overlay with programmatic SVG cutout mask (`local`) | PhysioRecord Contributors | Original Project Code (`GPL-3.0-or-later`) | 2026-11-19 | Engineering Audit |
 | `src/components/clinic/WelcomeOnboardingModal.tsx` | Original first-entry welcome & platform philosophy onboarding dialog (`local`) | PhysioRecord Contributors | Original Project Code (`GPL-3.0-or-later`) | 2026-11-19 | Engineering Audit |
 | `src/utils/pageSpotlightTours.ts` | Original offline trilingual (`ar`/`en`/`ckb`) full-app walkthrough, per-page spotlight tours & separated Desktop/Mobile guide catalogs (`local`) | PhysioRecord Contributors | Original Project Code (`GPL-3.0-or-later`) | 2026-11-19 | Engineering Audit |
+| `src/data/clinicalToolkit/manualTherapyCatalog.ts` | Original trilingual (`ar`/`en`/`ckb`) manual therapy technique presets, target tissue chips, and mobilization/soft-tissue/neural grade catalog (`local`) | PhysioRecord Contributors | Original Project Data (`GPL-3.0-or-later`) | 2026-11-20 | Engineering Audit |
 
 ## External Open-Source Visual & Font Packages
 

@@ -13,6 +13,7 @@ import {
   LocalStorageMigrationService,
   type UnmigratedResolutionItem,
 } from '../services/localStorageMigrationService';
+import { saveTextFilePortable } from '../platform/nativeBridge';
 import {
   AlertTriangle,
   RotateCcw,
@@ -145,7 +146,7 @@ export const MigrationResolutionModal: React.FC<MigrationResolutionModalProps> =
     reloadItems();
   };
 
-  const handleExportAll = () => {
+  const handleExportAll = async () => {
     if (items.length === 0) return;
     const exportPayload: Record<string, { category: string; rawValue: string; errorReason: string }> = {};
     for (const item of items) {
@@ -155,17 +156,17 @@ export const MigrationResolutionModal: React.FC<MigrationResolutionModalProps> =
         errorReason: item.errorReason,
       };
     }
-    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `physiorecord_unmigrated_items_${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      await saveTextFilePortable({
+        filename: `physiorecord_unmigrated_items_${new Date().toISOString().slice(0, 10)}.json`,
+        content: JSON.stringify(exportPayload, null, 2),
+        mimeType: 'application/json;charset=utf-8',
+        description: 'Unmigrated Legacy Items (.json)',
+        extensions: ['json'],
+      });
+    } catch {
+      // User cancelled native save dialog
+    }
   };
 
   const categoryLabel = (category: UnmigratedResolutionItem['category']) => {

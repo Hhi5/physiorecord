@@ -19,4 +19,5 @@ contextBridge.exposeInMainWorld('electronAPI', Object.freeze({
   exportCurrentPageToPdf: (options) => ipcRenderer.invoke('physiorecord:export-pdf', options),
   openExternalUrl: (options) => ipcRenderer.invoke('physiorecord:open-external', options),
   checkForUpdates: () => ipcRenderer.invoke('physiorecord:check-for-updates'),
+  fetchGithubReleases: () => ipcRenderer.invoke('physiorecord:fetch-github-releases'),
 }));

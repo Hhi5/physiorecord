@@ -37,6 +37,7 @@ import { formatDateDDMMYYYY } from '../../../utils/date';
 import { getPatientDisplayName, getPatientMrn, isDemoPatient } from '../../../utils/mrn';
 import type { PrintableDocumentType } from '../../print/PrintDocumentModal';
 import { Money, Num } from '../../ui/Primitives';
+import { ClampedMenuPanel } from '../../ui/ClampedMenuPanel';
 
 export type ChartTabId =
   | 'overview'
@@ -271,7 +272,7 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
               )}
               {isPinned && <Star className="size-3.5 fill-amber-500 text-amber-500 shrink-0" />}
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground-1 min-w-0">
               <button
                 type="button"
                 onClick={() => {
@@ -334,7 +335,7 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
             </button>
 
             {isMoreMenuOpen && (
-              <div className="absolute end-0 top-full mt-1.5 w-60 rounded-2xl bg-card shadow-2xl p-1.5 z-40 divide-y divide-black/[0.045] dark:divide-white/[0.06]">
+              <ClampedMenuPanel className="absolute end-0 top-full mt-1.5 w-60 rounded-2xl bg-card shadow-2xl p-1.5 z-40 divide-y divide-black/[0.045] dark:divide-white/[0.06]">
                 <div className="py-1 space-y-0.5">
                   <button
                     type="button"
@@ -448,7 +449,7 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
                     </bdi>
                   )}
                 </div>
-              </div>
+              </ClampedMenuPanel>
             )}
           </div>
         </div>

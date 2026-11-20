@@ -57,6 +57,7 @@ import type {
   EpisodeScopedClinicalStore,
 } from '../../types/clinicManagement';
 import { ModalDialog } from '../ui/Dialog';
+import { ClampedMenuPanel } from '../ui/ClampedMenuPanel';
 import { ClinicalAbbr, Fraction } from '../ui/Primitives';
 
 type MatrixCategoryFilter = 'all' | 'pain' | 'rom' | 'mmt' | 'scales_tests';
@@ -932,9 +933,9 @@ export const LongitudinalComparisonView: React.FC<LongitudinalComparisonViewProp
                 </button>
 
                 {isExportMenuOpen && (
-                  <div
+                  <ClampedMenuPanel
                     role="menu"
-                    className="absolute end-0 mt-1.5 w-52 rounded-xl bg-layer border border-layer-line shadow-lg py-1 z-30"
+                    className="absolute start-0 sm:end-0 sm:start-auto mt-1.5 w-52 rounded-xl bg-layer border border-layer-line shadow-lg py-1 z-30"
                   >
                     {onPrintProgressReport && (
                       <button
@@ -972,7 +973,7 @@ export const LongitudinalComparisonView: React.FC<LongitudinalComparisonViewProp
                       <Download className="size-4 text-muted-foreground-1 shrink-0" />
                       <span>{bi('تصدير جدول CSV', 'Export CSV Table', 'هەناردەی CSV')}</span>
                     </button>
-                  </div>
+                  </ClampedMenuPanel>
                 )}
               </div>
             )}

@@ -6,7 +6,12 @@
 // - Standard Web / PWA APIs (File System Access API, Web Share, window.print)
 // =======================================================================
 
-import { isAllowedGithubReleaseUrl } from '../utils/updateSafety';
+import {
+  OFFICIAL_GITHUB_RELEASES_API_URL,
+  isAllowedOfficialGithubUrl,
+  normalizeGithubReleasesPayload,
+  type SyncedGithubReleaseItem,
+} from '../utils/updateSafety';
 
 export type AppRuntimeTarget = 'web' | 'android' | 'desktop';
 
@@ -45,6 +50,10 @@ export interface AndroidPhysioRecordPlugin {
     versionName: string;
     versionCode: number;
   }>;
+  fetchGitHubReleases?: () => Promise<{
+    ok: boolean;
+    releasesJson?: string;
+  }>;
 }
 
 export interface ElectronDesktopUpdateStatus {
@@ -57,6 +66,7 @@ export interface ElectronDesktopUpdateStatus {
   assetSizeBytes?: number;
   publishedAt?: string;
   releaseNotes?: string;
+  releases?: unknown[];
   messageAr: string;
   messageEn: string;
 }
@@ -119,6 +129,11 @@ export interface ElectronDesktopBridge {
     opened: boolean;
   }>;
   checkForUpdates?: () => Promise<ElectronDesktopUpdateStatus>;
+  fetchGithubReleases?: () => Promise<{
+    ok: boolean;
+    releases?: unknown[];
+    error?: string;
+  }>;
 }
 
 interface GlobalNativeWindow extends Window {
@@ -401,13 +416,106 @@ export async function exportPlatformPdfDirect(
 }
 
 /**
- * Open an allowed external URL (e.g. `https://wa.me/964...` or `https://www.google.com/maps/...`) safely outside the app WebView/Electron window.
+ * Manually sync published releases from the official GitHub repository (`Hhi5/physiorecord`).
+ * Strictly user-initiated opt-in only — never runs automatically in the background.
+ * Works across Windows Electron (Main Process IPC), Android (native Java HttpURLConnection), and Web.
+ */
+export async function fetchOfficialGitHubReleases(): Promise<{
+  ok: boolean;
+  releases: SyncedGithubReleaseItem[];
+  error?: string;
+}> {
+  // 1. Windows Electron Desktop (runs in Main Process so renderer keeps `connect-src 'none'`)
+  const electronBridge = getElectronDesktopBridge();
+  if (electronBridge?.fetchGithubReleases) {
+    try {
+      const res = await electronBridge.fetchGithubReleases();
+      if (res?.ok && Array.isArray(res.releases)) {
+        return {
+          ok: true,
+          releases: normalizeGithubReleasesPayload(res.releases),
+        };
+      }
+      return {
+        ok: false,
+        releases: [],
+        error: res?.error || 'Could not sync releases from GitHub.',
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        releases: [],
+        error: err instanceof Error ? err.message : 'Could not sync releases from GitHub.',
+      };
+    }
+  }
+
+  // 2. Native Android APK (runs via Java native plugin off UI thread)
+  const androidPlugin = getAndroidNativePlugin();
+  if (androidPlugin?.fetchGitHubReleases) {
+    try {
+      const res = await androidPlugin.fetchGitHubReleases();
+      if (res?.ok && res.releasesJson) {
+        const parsed = JSON.parse(res.releasesJson) as unknown;
+        return {
+          ok: true,
+          releases: normalizeGithubReleasesPayload(parsed),
+        };
+      }
+    } catch (err) {
+      return {
+        ok: false,
+        releases: [],
+        error: err instanceof Error ? err.message : 'Could not sync releases from GitHub.',
+      };
+    }
+  }
+
+  // 3. Web / PWA browser (opt-in fetch permitted to api.github.com)
+  try {
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 8000) : null;
+    try {
+      const response = await fetch(OFFICIAL_GITHUB_RELEASES_API_URL, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/vnd.github+json',
+        },
+        signal: controller?.signal,
+      });
+      if (!response.ok) {
+        return {
+          ok: false,
+          releases: [],
+          error: `GitHub API returned HTTP ${response.status}`,
+        };
+      }
+      const data = (await response.json()) as unknown;
+      return {
+        ok: true,
+        releases: normalizeGithubReleasesPayload(data),
+      };
+    } finally {
+      if (timeoutId !== null) clearTimeout(timeoutId);
+    }
+  } catch (err) {
+    return {
+      ok: false,
+      releases: [],
+      error: err instanceof Error ? err.message : 'Network error syncing GitHub Releases.',
+    };
+  }
+}
+
+/**
+ * Open an allowed external URL (WhatsApp, Google Maps, official GitHub repo/releases)
+ * safely outside the app WebView/Electron window.
  */
 export async function openSafeExternalUrl(url: string): Promise<boolean> {
   const isWhatsAppOrMaps =
     Boolean(url) &&
     /^https:\/\/(wa\.me|api\.whatsapp\.com|(www\.)?google\.com\/maps)\//i.test(url);
-  if (!isWhatsAppOrMaps && !isAllowedGithubReleaseUrl(url)) {
+  if (!isWhatsAppOrMaps && !isAllowedOfficialGithubUrl(url)) {
     return false;
   }
 
@@ -428,4 +536,39 @@ export async function openSafeExternalUrl(url: string): Promise<boolean> {
     return true;
   }
   return false;
+}
+
+let externalInterceptorInstalled = false;
+
+/**
+ * Intercepts anchor clicks on allowlisted external URLs (WhatsApp, Google Maps, GitHub Repo/Releases)
+ * when running inside Android Capacitor APK or Windows Electron EXE so they open in the OS
+ * handler / browser cleanly instead of opening inside the offline WebView.
+ */
+export function installNativeExternalLinkInterceptor(): void {
+  if (externalInterceptorInstalled || typeof document === 'undefined') return;
+  if (!isNativeAppShell()) return;
+  externalInterceptorInstalled = true;
+
+  document.addEventListener(
+    'click',
+    (event) => {
+      if (event.defaultPrevented) return;
+      const target = event.target as HTMLElement | null;
+      const anchor = target?.closest?.('a[href]') as HTMLAnchorElement | null;
+      if (!anchor) return;
+      const href = anchor.getAttribute('href') || '';
+      if (!href || href === '#') return;
+
+      const isAllowedTarget =
+        /^https:\/\/(wa\.me|api\.whatsapp\.com|(www\.)?google\.com\/maps)\//i.test(href) ||
+        isAllowedOfficialGithubUrl(href);
+
+      if (isAllowedTarget) {
+        event.preventDefault();
+        void openSafeExternalUrl(href);
+      }
+    },
+    true
+  );
 }

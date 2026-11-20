@@ -1110,15 +1110,28 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
     updateField('exercises', [...formState.exercises, entry]);
   };
 
-  const handleAddManualTherapy = () => {
+  const handleAddManualTherapy = (preset?: {
+    techniqueAr: string;
+    techniqueEn: string;
+    defaultGrade: ManualTherapyFlowsheetEntry['gradeOrIntensity'];
+    defaultDurationMinutes: number;
+    defaultTargetAr?: string;
+    defaultTargetEn?: string;
+  }) => {
     if (isLocked) return;
+    const defaultTarget =
+      preset && (preset.defaultTargetAr || preset.defaultTargetEn)
+        ? language === 'en'
+          ? preset.defaultTargetEn || episodeTitle
+          : preset.defaultTargetAr || episodeTitle
+        : episodeTitle;
     const entry: ManualTherapyFlowsheetEntry = {
       id: crypto.randomUUID(),
-      techniqueAr: 'تحريك مفصلي تذبذبي (Maitland Mobilization)',
-      techniqueEn: 'Maitland Joint Mobilization',
-      targetJointOrTissue: episodeTitle,
-      gradeOrIntensity: 'Grade III',
-      durationMinutes: 10,
+      techniqueAr: preset ? preset.techniqueAr : 'تحريك مفصلي تذبذبي (Maitland Mobilization)',
+      techniqueEn: preset ? preset.techniqueEn : 'Maitland Joint Mobilization',
+      targetJointOrTissue: defaultTarget,
+      gradeOrIntensity: preset ? preset.defaultGrade : 'Grade III',
+      durationMinutes: preset ? preset.defaultDurationMinutes : 10,
     };
     updateField('manualTherapy', [...formState.manualTherapy, entry]);
   };

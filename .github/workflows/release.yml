@@ -91,13 +91,17 @@ jobs:
           cp LICENSE NOTICE THIRD_PARTY_NOTICES.md CONTENT_LICENSES.md dist/
           cd dist && zip -r "../PhysioRecord-Web-PWA-${VERSION_TAG}.zip" .
 
-      - name: Upload Web PWA & SBOM artifacts
+      - name: Upload Web PWA bundle for GitHub Release
         uses: actions/upload-artifact@v4
         with:
           name: web-pwa-bundle
-          path: |
-            PhysioRecord-Web-PWA-*.zip
-            sbom.cdx.json
+          path: PhysioRecord-Web-PWA-*.zip
+
+      - name: Upload CycloneDX SBOM (CI compliance artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: compliance-sbom
+          path: sbom.cdx.json
 
   build-android-apk:
     name: Build Universal Android APK (Capacitor 8)
@@ -210,13 +214,19 @@ jobs:
             cp android/app/build/outputs/apk/debug/*.apk "PhysioRecord-Android-Universal-${VERSION_TAG}-debug.apk"
           fi
 
-      - name: Upload Android APK artifact
+      - name: Upload Android APK for GitHub Release
         uses: actions/upload-artifact@v4
         with:
           name: android-universal-apk
-          path: |
-            PhysioRecord-Android-Universal-*.apk
-            ANDROID_SIGNING_SHA256.txt
+          path: PhysioRecord-Android-Universal-*.apk
+
+      - name: Upload Android signing report (CI verification artifact)
+        if: ${{ steps.keystore.outputs.signed == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-signing-report
+          path: ANDROID_SIGNING_SHA256.txt
+          if-no-files-found: ignore
 
   build-windows-installer:
     name: Build Windows Setup & Portable EXE (Electron)
@@ -258,17 +268,14 @@ jobs:
           npm run build:desktop:web
           npx electron-builder --win nsis portable --publish never
 
-      - name: Upload Windows EXE artifacts
+      - name: Upload Windows EXE installers for GitHub Release
         uses: actions/upload-artifact@v4
         with:
           name: windows-exe-release
-          path: |
-            release/*.exe
-            release/*.blockmap
-            release/latest.yml
+          path: release/*.exe
 
   publish-github-release:
-    name: Publish APK, EXE, Web PWA & SHA256SUMS to GitHub Release
+    name: Publish Clean Platform Assets to GitHub Release
     if: startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
     needs:
       - verify-and-build-web
@@ -279,26 +286,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download all platform artifacts
+      - name: Download Web PWA artifact
         uses: actions/download-artifact@v4
         with:
+          name: web-pwa-bundle
           path: release-assets
-          merge-multiple: true
 
-      - name: Generate SHA256SUMS.txt
+      - name: Download Android APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-universal-apk
+          path: release-assets
+
+      - name: Download Windows EXE artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-exe-release
+          path: release-assets
+
+      - name: Verify final platform release assets
         working-directory: release-assets
-        run: |
-          sha256sum * > SHA256SUMS.txt
-          cat SHA256SUMS.txt
+        run: ls -lh
 
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.release_tag != '' && inputs.release_tag || github.ref_name }}
           generate_release_notes: true
-          files: |
-            release-assets/*
-            LICENSE
-            NOTICE
-            THIRD_PARTY_NOTICES.md
-            CONTENT_LICENSES.md
+          files: release-assets/*

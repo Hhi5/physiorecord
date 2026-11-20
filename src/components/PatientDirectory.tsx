@@ -18,6 +18,8 @@ import {
 } from '../utils/mrn';
 import { findAllDirectoryDuplicatePairs } from '../utils/dataQualityPhaseD';
 import { Num, DemoBadge, Money } from './ui/Primitives';
+import { ClampedMenuPanel } from './ui/ClampedMenuPanel';
+import { useViewportClampedMenu } from '../utils/menuViewportClamp';
 import { PatientSearchEngine } from '../utils/arabicSearch';
 import { useVirtualWindow } from '../hooks/useVirtualWindow';
 import {
@@ -108,6 +110,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
 
   const headerMoreBtnRef = useRef<HTMLButtonElement | null>(null);
   const headerMoreMenuRef = useRef<HTMLDivElement | null>(null);
+  useViewportClampedMenu(showHeaderMoreMenu, headerMoreMenuRef);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
@@ -857,7 +860,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                       </button>
 
                       {rowMenuOpen && (
-                        <div
+                        <ClampedMenuPanel
                           role="menu"
                           className="absolute top-full mt-1 end-0 w-52 z-30 rounded-2xl bg-card shadow-2xl border border-black/[0.06] dark:border-white/[0.08] p-1.5 space-y-0.5 text-xs"
                         >
@@ -942,7 +945,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                             <FolderOpen className="size-4 shrink-0" />
                             <span>{bi('فتح الملف السريري', 'Open Chart', 'کردنەوەی دۆسیە')}</span>
                           </button>
-                        </div>
+                        </ClampedMenuPanel>
                       )}
                     </div>
                   )}

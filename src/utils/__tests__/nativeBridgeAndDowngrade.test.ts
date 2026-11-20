@@ -7,6 +7,8 @@ import {
   saveTextFilePortable,
   triggerPlatformPrint,
 } from '../../platform/nativeBridge';
+import { isWebAuthnPrfSupported } from '../../crypto/webauthnPrf';
+import { isCredentialManagerStoreSupported } from '../../utils/passwordManagerHelper';
 
 describe('Multi-Platform Native Bridge, Version Sync & Schema Downgrade Guard', () => {
   const hadOriginalWindow = 'window' in globalThis;
@@ -153,5 +155,19 @@ describe('Multi-Platform Native Bridge, Version Sync & Schema Downgrade Guard', 
     expect(await openSafeExternalUrl('https://evil.example.com/phish')).toBe(false);
     expect(await openSafeExternalUrl('javascript:alert(1)')).toBe(false);
     expect(openExternalMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('disables WebAuthn PRF and PasswordCredential safely under Electron app:// origin', async () => {
+    const win = (globalThis as Record<string, unknown>).window as Record<string, unknown>;
+    win.location = { protocol: 'app:' };
+    win.isSecureContext = true;
+    win.PublicKeyCredential = {
+      isUserVerifyingPlatformAuthenticatorAvailable: async () => true,
+    };
+    win.PasswordCredential = function MockCred() {};
+    win.electronAPI = { isElectron: true };
+
+    expect(await isWebAuthnPrfSupported()).toBe(false);
+    expect(isCredentialManagerStoreSupported()).toBe(false);
   });
 });

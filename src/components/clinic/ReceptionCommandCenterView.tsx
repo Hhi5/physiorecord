@@ -24,6 +24,7 @@ import {
   formatIraqiPhoneDisplay,
 } from '../../utils/date';
 import { Num, Fraction, Money, DemoBadge, TimeDisplay } from '../ui/Primitives';
+import { ClampedMenuPanel } from '../ui/ClampedMenuPanel';
 import {
   Calendar,
   Users,
@@ -535,7 +536,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                               className="fixed inset-0 z-20"
                               onClick={() => setOpenStatusMenuId(null)}
                             />
-                            <div
+                            <ClampedMenuPanel
                               dir={isRtl ? 'rtl' : 'ltr'}
                               className="absolute end-0 mt-1.5 w-44 rounded-xl bg-card border border-card-line shadow-xl py-1 z-30 text-xs"
                             >
@@ -556,7 +557,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                                   )}
                                 </button>
                               ))}
-                            </div>
+                            </ClampedMenuPanel>
                           </>
                         )}
                       </div>

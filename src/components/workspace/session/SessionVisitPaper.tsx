@@ -20,6 +20,7 @@ import {
   Sparkles,
   Stethoscope,
   Trash2,
+  X,
   Zap,
 } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -30,6 +31,7 @@ import {
 import type {
   FlowsheetExerciseEntry,
   ManualTherapyFlowsheetEntry,
+  ManualTherapyGradeOrIntensity,
   PatientRecord,
   PhysicalAgentFlowsheetEntry,
   SessionRecord,
@@ -39,8 +41,19 @@ import type { CustomWidgetDefinition } from '../../../types/clinicalWidgets';
 import type {
   EpisodeScopedClinicalStore,
   QuickSoapChip,
+  RegionalExamPresetDefinition,
   VitalsAlertThresholds,
 } from '../../../types/clinicManagement';
+import {
+  BUILT_IN_EXAM_PRESETS_CC0,
+  removeExamPresetFromEpisodeStore,
+} from '../../../data/clinicalToolkit/examPresetsCc0';
+import {
+  MANUAL_THERAPY_GRADE_OPTIONS,
+  MANUAL_THERAPY_TARGET_CHIPS,
+  MANUAL_THERAPY_TECHNIQUE_PRESETS,
+  type ManualTherapyTechniquePreset,
+} from '../../../data/clinicalToolkit/manualTherapyCatalog';
 import { computePatientAge } from '../../../utils/date';
 import { evaluateVitalsAgainstThresholds } from '../../../utils/modalitySafetyChecker';
 import { ModalDialog } from '../../ui/Dialog';
@@ -154,7 +167,7 @@ export interface SessionVisitPaperProps {
   onCarryForwardPreviousFlowsheet: () => void;
   onAddExerciseFromCatalog: () => void;
   onAddManualExercise: () => void;
-  onAddManualTherapy: () => void;
+  onAddManualTherapy: (preset?: ManualTherapyTechniquePreset) => void;
   onAddPhysicalAgent: (
     modality: PhysicalAgentFlowsheetEntry['modality'],
     modalityAr: string,
@@ -220,15 +233,42 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
     ClinicOperationsService.getVitalsThresholds()
   );
 
+  const [customPresets, setCustomPresets] = useState<RegionalExamPresetDefinition[]>(() =>
+    ClinicOperationsService.getCustomExamPresets()
+  );
+
   useEffect(() => {
     void ClinicOperationsService.ensureColdStoreLoadedAsync('customWidgets');
     const syncClinicStores = () => {
       setCustomDefinitions(ClinicOperationsService.getCustomWidgets());
       setVitalsThresholds(ClinicOperationsService.getVitalsThresholds());
+      setCustomPresets(ClinicOperationsService.getCustomExamPresets());
     };
     syncClinicStores();
     return ClinicOperationsService.subscribe(syncClinicStores);
   }, []);
+
+  const mergedExamPresets = useMemo(() => {
+    const customMap = new Map(customPresets.map((c) => [c.id, c]));
+    const builtInMerged = BUILT_IN_EXAM_PRESETS_CC0.map((b) => customMap.get(b.id) || b);
+    const extras = customPresets.filter(
+      (c) => !BUILT_IN_EXAM_PRESETS_CC0.some((b) => b.id === c.id)
+    );
+    return [...builtInMerged, ...extras];
+  }, [customPresets]);
+
+  const appliedExamPresets = useMemo(() => {
+    const appliedSet = new Set(episodeStore.appliedPresetIds || []);
+    return mergedExamPresets.filter((p) => appliedSet.has(p.id));
+  }, [mergedExamPresets, episodeStore.appliedPresetIds]);
+
+  const appliedPresetWidgetIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of appliedExamPresets) {
+      for (const wid of p.widgetsToEnable) s.add(wid);
+    }
+    return s;
+  }, [appliedExamPresets]);
 
   const openSheet = (key: VisitSheetKey) => {
     if (isLocked) return;
@@ -281,6 +321,70 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
     [examSummaries]
   );
 
+  const queuedExamSections = useMemo(() => {
+    const romCount = (episodeStore.objective?.romBattery?.entries || []).length;
+    const mmtCount = (episodeStore.objective?.mmtBattery?.entries || []).length;
+    const testCount = (episodeStore.specialTests || []).length;
+    const activeScale = episodeStore.functionalScales;
+
+    return examSummaries
+      .filter((sec) => !sec.hasData)
+      .map((sec) => {
+        let readyHint = '';
+        if (sec.key === 'rom' && romCount > 0) {
+          readyHint = bi(
+            `${romCount} حركات جاهزة للقياس — اضغط لتسجيل الزوايا`,
+            `${romCount} movements queued — tap to record ROM angles`,
+            `${romCount} جووڵە ئامادەیە بۆ پێوانە`
+          );
+        } else if (sec.key === 'mmt' && mmtCount > 0) {
+          readyHint = bi(
+            `${mmtCount} عضلات جاهزة للتقييم — اضغط لتسجيل القوة`,
+            `${mmtCount} muscles queued — tap to record MMT grade`,
+            `${mmtCount} ماسولکە ئامادەیە بۆ هەڵسەنگاندن`
+          );
+        } else if (sec.key === 'special_tests' && testCount > 0) {
+          readyHint = bi(
+            `${testCount} اختبارات جاهزة — اضغط لتسجيل النتيجة (+/-)`,
+            `${testCount} tests queued — tap to log outcomes (+/-)`,
+            `${testCount} تاقیکردنەوە ئامادەیە (+/-)`
+          );
+        } else if (sec.key === 'functional_scales' && activeScale?.scaleId) {
+          const code = activeScale.scaleId.toUpperCase();
+          const arLabel = activeScale.scaleNameAr.includes(code)
+            ? activeScale.scaleNameAr
+            : `${code} (${activeScale.scaleNameAr})`;
+          const enLabel = activeScale.scaleNameEn.includes(code)
+            ? activeScale.scaleNameEn
+            : `${code} (${activeScale.scaleNameEn})`;
+          readyHint = bi(
+            `${arLabel} — جاهز لإدخال النتيجة`,
+            `${enLabel} — ready to score`,
+            `${code} ئامادەیە بۆ نووسینی نمرە`
+          );
+        } else if (
+          appliedPresetWidgetIds.has(sec.key) &&
+          (sec.key === 'body_chart' || sec.key === 'neuro' || sec.key === 'gait_posture')
+        ) {
+          readyHint = bi(
+            'مُجهّز ضمن قالب الفحص — اضغط للبدء بالتوثيق',
+            'Enabled by exam preset — tap to document',
+            'چالاککراوە لە تێمپلەیت — پەنجە بنێ بۆ تۆمارکردن'
+          );
+        }
+        return readyHint ? { ...sec, readyHint } : null;
+      })
+      .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  }, [
+    examSummaries,
+    episodeStore.objective?.romBattery?.entries,
+    episodeStore.objective?.mmtBattery?.entries,
+    episodeStore.specialTests,
+    episodeStore.functionalScales,
+    appliedPresetWidgetIds,
+    bi,
+  ]);
+
   const hasSessionVitals = Boolean(
     formState.vitals &&
       (formState.vitals.bpSystolic !== undefined ||
@@ -308,7 +412,9 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
   );
 
   const hasAnyOtherRows =
+    appliedExamPresets.length > 0 ||
     recordedExamSections.length > 0 ||
+    queuedExamSections.length > 0 ||
     formState.exercises.length > 0 ||
     formState.physicalAgents.length > 0 ||
     formState.modalitySafetyOverrides.length > 0 ||
@@ -331,38 +437,145 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
       </span>
     ) : null;
 
-  const renderExamRows = () =>
-    recordedExamSections.map((sec) => (
-      <button
-        key={sec.key}
-        type="button"
-        data-testid={`visit-row-exam-${sec.key}`}
-        disabled={isLocked}
-        onClick={() => openSheet(sec.key)}
-        className={`w-full px-4 sm:px-5 py-3.5 text-start transition-colors flex items-start justify-between gap-3 ${
-          isLocked ? 'cursor-default' : 'hover:bg-surface/40 cursor-pointer'
-        }`}
+  const handleUnselectPresetFromPaper = (preset: RegionalExamPresetDefinition) => {
+    if (isLocked) return;
+    const next = removeExamPresetFromEpisodeStore(episodeStore, preset, mergedExamPresets);
+    setEpisodeStore(next);
+    ClinicOperationsService.saveEpisodeClinicalStore(next);
+  };
+
+  const renderActivePresetsBanner = () => {
+    if (appliedExamPresets.length === 0) return null;
+    const primaryPreset = appliedExamPresets[appliedExamPresets.length - 1];
+    return (
+      <div
+        data-testid="visit-active-presets-banner"
+        className="px-4 sm:px-5 py-3 bg-primary/[0.04] space-y-2"
       >
-        <div className="flex items-start gap-2.5 min-w-0 flex-1">
-          <div className="mt-0.5 shrink-0">{sec.icon}</div>
-          <div className="min-w-0 flex-1 space-y-1">
-            <h3 className="text-xs sm:text-sm font-bold text-foreground truncate">{sec.title}</h3>
-            {sec.lines.map((line, idx) => (
-              <p
-                key={idx}
-                className={`text-xs leading-relaxed line-clamp-2 ${TONE_CLASS_MAP[line.tone || 'default']}`}
-              >
-                {line.label && (
-                  <span className="font-semibold text-muted-foreground-1">{line.label}: </span>
-                )}
-                {line.ltr ? <bdi dir="ltr">{line.text}</bdi> : line.text}
-              </p>
-            ))}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-primary shrink-0">
+              <Sparkles className="size-3.5 shrink-0" />
+              <span>{bi('القوالب المفعّلة:', 'Active Presets:', 'تێمپلەیتە چالاکەکان:')}</span>
+            </span>
+            {appliedExamPresets.map((preset) => {
+              const title =
+                language === 'en'
+                  ? preset.titleEn
+                  : language === 'ckb'
+                    ? preset.titleCkb
+                    : preset.titleAr;
+              return (
+                <span
+                  key={preset.id}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-primary text-primary-foreground text-xs font-semibold"
+                >
+                  <span>{title}</span>
+                  {!isLocked && (
+                    <button
+                      type="button"
+                      onClick={() => handleUnselectPresetFromPaper(preset)}
+                      aria-label={bi(`إلغاء قالب ${title}`, `Remove ${title} preset`)}
+                      className="compact-btn size-5 inline-flex items-center justify-center rounded-full hover:bg-primary-foreground/20 cursor-pointer"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  )}
+                </span>
+              );
+            })}
           </div>
+          {!isLocked && (
+            <button
+              type="button"
+              onClick={() => openSheet('presets')}
+              className="compact-btn h-7 px-2.5 rounded-lg bg-surface/80 hover:bg-surface text-xs font-semibold text-foreground cursor-pointer shrink-0"
+            >
+              {bi('تغيير القوالب', 'Manage', 'گۆڕین')}
+            </button>
+          )}
         </div>
-        {renderEditCue()}
-      </button>
-    ));
+        {(primaryPreset.redFlagReminderAr || primaryPreset.redFlagReminderEn) && (
+          <div className="flex items-start gap-1.5 text-xs text-rose-700 dark:text-rose-400">
+            <AlertTriangle className="size-3.5 shrink-0 mt-0.5" />
+            <span>
+              {bi(primaryPreset.redFlagReminderAr, primaryPreset.redFlagReminderEn)}
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderExamRows = () => (
+    <>
+      {renderActivePresetsBanner()}
+      {recordedExamSections.map((sec) => (
+        <button
+          key={sec.key}
+          type="button"
+          data-testid={`visit-row-exam-${sec.key}`}
+          disabled={isLocked}
+          onClick={() => openSheet(sec.key)}
+          className={`w-full px-4 sm:px-5 py-3.5 text-start transition-colors flex items-start justify-between gap-3 ${
+            isLocked ? 'cursor-default' : 'hover:bg-surface/40 cursor-pointer'
+          }`}
+        >
+          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+            <div className="mt-0.5 shrink-0">{sec.icon}</div>
+            <div className="min-w-0 flex-1 space-y-1">
+              <h3 className="text-xs sm:text-sm font-bold text-foreground truncate">{sec.title}</h3>
+              {sec.lines.map((line, idx) => (
+                <p
+                  key={idx}
+                  className={`text-xs leading-relaxed line-clamp-2 ${TONE_CLASS_MAP[line.tone || 'default']}`}
+                >
+                  {line.label && (
+                    <span className="font-semibold text-muted-foreground-1">{line.label}: </span>
+                  )}
+                  {line.ltr ? <bdi dir="ltr">{line.text}</bdi> : line.text}
+                </p>
+              ))}
+            </div>
+          </div>
+          {renderEditCue()}
+        </button>
+      ))}
+      {queuedExamSections.map((sec) => (
+        <button
+          key={`queued-${sec.key}`}
+          type="button"
+          data-testid={`visit-row-exam-${sec.key}`}
+          disabled={isLocked}
+          onClick={() => openSheet(sec.key)}
+          className={`w-full px-4 sm:px-5 py-3 text-start transition-colors flex items-start justify-between gap-3 ${
+            isLocked ? 'cursor-default' : 'hover:bg-surface/40 cursor-pointer'
+          }`}
+        >
+          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+            <div className="mt-0.5 shrink-0">{sec.icon}</div>
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-xs sm:text-sm font-bold text-foreground truncate">
+                  {sec.title}
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                  {bi('جاهز للتقييم', 'Ready', 'ئامادە')}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground-1 leading-relaxed">{sec.readyHint}</p>
+            </div>
+          </div>
+          {!isLocked && (
+            <span className="text-xs font-semibold text-primary inline-flex items-center gap-0.5 shrink-0 mt-0.5">
+              <span>{bi('تسجيل', 'Record', 'تۆمارکردن')}</span>
+              <ChevronLeft className="size-3.5 ltr:rotate-180" />
+            </span>
+          )}
+        </button>
+      ))}
+    </>
+  );
 
   const renderInterventionRows = () => (
     <>
@@ -1698,30 +1911,56 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
 
         {/* 5. MANUAL THERAPY SHEET */}
         {activeSheet === 'manual_therapy' && (
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             {!isLocked && (
-              <button
-                type="button"
-                onClick={onAddManualTherapy}
-                className="compact-btn h-8 px-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
-              >
-                <Plus className="size-3.5 shrink-0" />
-                <span>{bi('إضافة تقنية يدوية', 'Add Manual Technique')}</span>
-              </button>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-muted-foreground-1">
+                    {bi(
+                      'إضافة سريعة لأبرز تقنيات العلاج اليدوي:',
+                      'Quick-Add Manual Therapy Techniques:',
+                      'زیادکردنی خێرای تەکنیکەکانی چارەسەری دەستی:'
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onAddManualTherapy()}
+                    className="compact-btn h-7 px-2.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0"
+                  >
+                    <Plus className="size-3.5 shrink-0" />
+                    <span>{bi('تقنية مخصصة', 'Custom', 'تەکنیکی تایبەت')}</span>
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {MANUAL_THERAPY_TECHNIQUE_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      data-testid={`add-mt-${preset.id}`}
+                      onClick={() => onAddManualTherapy(preset)}
+                      className="compact-btn h-8 px-2.5 rounded-xl bg-surface/80 hover:bg-primary/10 hover:text-primary text-xs font-semibold text-foreground transition-colors cursor-pointer whitespace-nowrap"
+                    >
+                      + {bi(preset.shortAr, preset.shortEn, preset.shortCkb)}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             {formState.manualTherapy.length === 0 ? (
               <p className="text-xs text-muted-foreground-1 text-center py-4">
                 {bi(
-                  'اضغط «إضافة تقنية يدوية» لتوثيق العلاج اليدوي.',
-                  'Tap "Add Manual Technique" to log hands-on treatment.'
+                  'اضغط على أي تقنية أعلاه لإضافتها وتحديد المفصل والدرجة والمدة.',
+                  'Tap any technique above to log target tissue, grade/mode, and duration.',
+                  'پەنجە بنێ بە هەر تەکنیکێک لە سەرەوە بۆ تۆمارکردنی جومگە و پلە و ماوە.'
                 )}
               </p>
             ) : (
               formState.manualTherapy.map((mt, idx) => {
                 const durKey = `${mt.id}_duration`;
                 return (
-                  <div key={mt.id} className="p-3 rounded-2xl bg-surface/65 space-y-2 text-xs">
+                  <div key={mt.id} className="p-3 rounded-2xl bg-surface/65 space-y-2.5 text-xs">
                     <div className="flex items-center justify-between gap-2">
                       <input
                         type="text"
@@ -1759,7 +1998,7 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div>
                         <label htmlFor={`mt-target-${mt.id}`} className="text-xs text-muted-foreground-1 block mb-0.5">
-                          {bi('المفصل / النسيج', 'Target Joint/Tissue')}
+                          {bi('المفصل / النسيج', 'Target Joint/Tissue', 'جومگە / شانە')}
                         </label>
                         <input
                           id={`mt-target-${mt.id}`}
@@ -1777,7 +2016,7 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
 
                       <div>
                         <label htmlFor={`mt-grade-${mt.id}`} className="text-xs text-muted-foreground-1 block mb-0.5">
-                          {bi('الدرجة / الشدة', 'Grade')}
+                          {bi('الدرجة / التقنية', 'Grade / Mode', 'پلە / تەکنیک')}
                         </label>
                         <select
                           id={`mt-grade-${mt.id}`}
@@ -1788,61 +2027,143 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
                             next[idx] = {
                               ...mt,
                               gradeOrIntensity:
-                                e.target.value as ManualTherapyFlowsheetEntry['gradeOrIntensity'],
+                                e.target.value as ManualTherapyGradeOrIntensity,
                             };
                             updateField('manualTherapy', next);
                           }}
-                          className="w-full px-2.5 py-1.5 rounded-xl bg-card font-mono text-foreground"
+                          className="w-full px-2.5 py-1.5 rounded-xl bg-card text-foreground"
                         >
-                          <option value="Grade I">Grade I</option>
-                          <option value="Grade II">Grade II</option>
-                          <option value="Grade III">Grade III</option>
-                          <option value="Grade IV">Grade IV</option>
-                          <option value="MWM">Mulligan MWM</option>
-                          <option value="Soft Tissue">Myofascial</option>
+                          <optgroup label={bi('تحريك ومعالجة المفاصل والعمود الفقري', 'Joint Mobilization & Traction', 'جووڵاندنی جومگە')}>
+                            {MANUAL_THERAPY_GRADE_OPTIONS.filter((o) => o.group === 'joint').map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {bi(opt.labelAr, opt.labelEn, opt.labelCkb)}
+                              </option>
+                            ))}
+                          </optgroup>
+                          <optgroup label={bi('الأنسجة الرخوة والأعصاب والعضلات', 'Soft Tissue, MET, PNF & Neural', 'شانەی نەرم و دەمار')}>
+                            {MANUAL_THERAPY_GRADE_OPTIONS.filter((o) => o.group === 'soft_neuro').map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {bi(opt.labelAr, opt.labelEn, opt.labelCkb)}
+                              </option>
+                            ))}
+                          </optgroup>
                         </select>
                       </div>
 
                       <div>
                         <label htmlFor={`mt-duration-${mt.id}`} className="text-xs text-muted-foreground-1 block mb-0.5">
-                          {bi('المدة (دقيقة)', 'Duration (m)')}
+                          {bi('المدة (دقيقة)', 'Duration (m)', 'ماوە (خ)')}
                         </label>
-                        <input
-                          id={`mt-duration-${mt.id}`}
-                          type="number"
-                          min={1}
-                          max={120}
-                          disabled={isLocked}
-                          value={
-                            numericDrafts[durKey] !== undefined
-                              ? numericDrafts[durKey]
-                              : String(mt.durationMinutes)
-                          }
-                          onChange={(e) => {
-                            const raw = e.target.value;
-                            setNumericDrafts((prev) => ({ ...prev, [durKey]: raw }));
-                            const parsed = Number(raw);
-                            if (
-                              raw.trim() !== '' &&
-                              Number.isInteger(parsed) &&
-                              parsed >= 1 &&
-                              parsed <= 120
-                            ) {
-                              const next = [...formState.manualTherapy];
-                              next[idx] = { ...mt, durationMinutes: parsed };
-                              updateField('manualTherapy', next);
-                            } else {
-                              onMarkDirty();
+                        <div className="flex items-center gap-1">
+                          <input
+                            id={`mt-duration-${mt.id}`}
+                            type="number"
+                            min={1}
+                            max={120}
+                            disabled={isLocked}
+                            value={
+                              numericDrafts[durKey] !== undefined
+                                ? numericDrafts[durKey]
+                                : String(mt.durationMinutes)
                             }
-                          }}
-                          className={`w-full px-2 py-1.5 rounded-xl bg-card font-mono text-center text-foreground ${
-                            numericErrors[durKey] ? 'ring-1 ring-rose-500 text-rose-600' : ''
-                          }`}
-                        />
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              setNumericDrafts((prev) => ({ ...prev, [durKey]: raw }));
+                              const parsed = Number(raw);
+                              if (
+                                raw.trim() !== '' &&
+                                Number.isInteger(parsed) &&
+                                parsed >= 1 &&
+                                parsed <= 120
+                              ) {
+                                const next = [...formState.manualTherapy];
+                                next[idx] = { ...mt, durationMinutes: parsed };
+                                updateField('manualTherapy', next);
+                              } else {
+                                onMarkDirty();
+                              }
+                            }}
+                            className={`w-full px-2 py-1.5 rounded-xl bg-card font-mono text-center text-foreground ${
+                              numericErrors[durKey] ? 'ring-1 ring-rose-500 text-rose-600' : ''
+                            }`}
+                          />
+                          {!isLocked && (
+                            <div className="flex items-center gap-0.5 shrink-0">
+                              {[5, 10, 15].map((mins) => (
+                                <button
+                                  key={mins}
+                                  type="button"
+                                  onClick={() => {
+                                    setNumericDrafts((prev) => ({ ...prev, [durKey]: String(mins) }));
+                                    const next = [...formState.manualTherapy];
+                                    next[idx] = { ...mt, durationMinutes: mins };
+                                    updateField('manualTherapy', next);
+                                  }}
+                                  className={`h-7 px-1.5 rounded-lg font-mono text-xs cursor-pointer ${
+                                    mt.durationMinutes === mins
+                                      ? 'bg-primary text-primary-foreground font-bold'
+                                      : 'bg-card text-muted-foreground-1 hover:text-foreground'
+                                  }`}
+                                >
+                                  {mins}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                         {numericErrors[durKey] && (
                           <p className="text-xs text-rose-600 mt-0.5">{numericErrors[durKey]}</p>
                         )}
                       </div>
+                    </div>
+
+                    {/* Quick anatomical target suggestions */}
+                    {!isLocked && (
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {MANUAL_THERAPY_TARGET_CHIPS.map((tc) => {
+                          const targetText = bi(tc.ar, tc.en, tc.ckb);
+                          const isSelectedTarget = mt.targetJointOrTissue === targetText;
+                          return (
+                            <button
+                              key={tc.en}
+                              type="button"
+                              onClick={() => {
+                                const next = [...formState.manualTherapy];
+                                next[idx] = { ...mt, targetJointOrTissue: targetText };
+                                updateField('manualTherapy', next);
+                              }}
+                              className={`px-2 py-0.5 rounded-lg text-xs cursor-pointer transition-colors ${
+                                isSelectedTarget
+                                  ? 'bg-primary/15 text-primary font-bold'
+                                  : 'bg-card/80 hover:bg-card text-muted-foreground-1 hover:text-foreground'
+                              }`}
+                            >
+                              {targetText}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Patient response / immediate effect note */}
+                    <div>
+                      <input
+                        type="text"
+                        disabled={isLocked}
+                        aria-label={bi('استجابة المريض بعد التقنية', 'Patient response after technique')}
+                        placeholder={bi(
+                          'استجابة المريض الفورية (مثال: تحسن المدى الحركي وتراجع الألم)...',
+                          'Immediate response (e.g., increased ROM, decreased pain)...',
+                          'وەڵامدانەوەی دەستبەجێی نەخۆش...'
+                        )}
+                        value={mt.patientResponse || ''}
+                        onChange={(e) => {
+                          const next = [...formState.manualTherapy];
+                          next[idx] = { ...mt, patientResponse: e.target.value };
+                          updateField('manualTherapy', next);
+                        }}
+                        className="w-full px-2.5 py-1.5 rounded-xl bg-card text-xs text-foreground"
+                      />
                     </div>
                   </div>
                 );

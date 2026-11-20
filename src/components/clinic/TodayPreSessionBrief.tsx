@@ -696,7 +696,7 @@ export const TodayPreSessionBrief: React.FC<TodayPreSessionBriefProps> = ({
 
             {/* Highlighted Next Session Plan (what the therapist planned for TODAY) */}
             {soapNextPlan && (
-              <div className="p-2.5 rounded-xl bg-primary/[0.07] border-s-2 border-primary">
+              <div className="p-2.5 rounded-xl bg-primary/[0.07] border-s-2 border-s-primary">
                 <span className="block text-xs font-extrabold text-primary mb-0.5">
                   {bi('خطة هذه الجلسة (من الجلسة السابقة):', "Today's Planned Focus:", 'پلانی ئەم دانیشتنە:')}
                 </span>

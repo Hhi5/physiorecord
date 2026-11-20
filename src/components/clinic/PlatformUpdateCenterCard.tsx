@@ -6,23 +6,39 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Calendar,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Download,
   ExternalLink,
+  GitBranch,
   HardDrive,
   RefreshCw,
   ShieldAlert,
   ShieldCheck,
+  Tag,
   TabletSmartphone,
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
 import { APP_SEMVER_VERSION } from '../../utils/settingsOnboardingPhaseF';
 import {
+  OFFICIAL_GITHUB_REPO,
+  OFFICIAL_GITHUB_REPO_URL,
   OFFICIAL_LATEST_RELEASE_URL,
+  OFFICIAL_RELEASES_URL,
+  compareSemverVersions,
   evaluateBackupRecencyForUpdate,
+  extractReleaseNotesLines,
+  loadCachedGithubReleases,
+  normalizeGithubReleasesPayload,
+  saveCachedGithubReleases,
+  selectPlatformReleaseAsset,
+  type SyncedGithubReleaseItem,
 } from '../../utils/updateSafety';
 import {
+  fetchOfficialGitHubReleases,
   getAndroidAppVersionInfo,
   getAppRuntimeTarget,
   getElectronDesktopBridge,
@@ -58,7 +74,16 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
   } | null>(null);
   const [desktopVersion, setDesktopVersion] = useState<string | null>(null);
 
-  const [checkingDesktop, setCheckingDesktop] = useState(false);
+  const [syncingReleases, setSyncingReleases] = useState(false);
+  const [syncError, setSyncError] = useState<{ ar: string; en: string } | null>(null);
+  const [syncedReleases, setSyncedReleases] = useState<SyncedGithubReleaseItem[]>(
+    () => loadCachedGithubReleases()?.releases ?? []
+  );
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(
+    () => loadCachedGithubReleases()?.syncedAt ?? null
+  );
+  const [expandedReleaseId, setExpandedReleaseId] = useState<number | null>(null);
+
   const [desktopUpdateStatus, setDesktopUpdateStatus] =
     useState<ElectronDesktopUpdateStatus | null>(null);
 
@@ -118,15 +143,75 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
         ? bi('أندرويد (Signed APK)', 'Android Native (Signed APK)', 'ئەندرۆید (APK)')
         : bi('تطبيق الويب (Web / PWA)', 'Web / PWA Browser', 'وێب (PWA)');
 
-  const handleDesktopCheck = async () => {
-    const bridge = getElectronDesktopBridge();
-    if (!bridge?.checkForUpdates) return;
-    setCheckingDesktop(true);
+  const latestSyncedRelease = useMemo(() => {
+    if (syncedReleases.length === 0) return null;
+    return syncedReleases.find((r) => !r.isPrerelease) || syncedReleases[0];
+  }, [syncedReleases]);
+
+  const latestPlatformAsset = useMemo(
+    () =>
+      latestSyncedRelease
+        ? selectPlatformReleaseAsset(latestSyncedRelease.assets, runtimeTarget)
+        : null,
+    [latestSyncedRelease, runtimeTarget]
+  );
+
+  const hasNewerSyncedRelease = useMemo(() => {
+    if (!latestSyncedRelease) return false;
+    return compareSemverVersions(latestSyncedRelease.version, displayedVersion) > 0;
+  }, [latestSyncedRelease, displayedVersion]);
+
+  const handleSyncGitHubReleases = async () => {
+    setSyncingReleases(true);
+    setSyncError(null);
     try {
-      const res = await bridge.checkForUpdates();
-      setDesktopUpdateStatus(res);
+      const bridge = getElectronDesktopBridge();
+      if (runtimeTarget === 'desktop' && bridge?.checkForUpdates) {
+        const res = await bridge.checkForUpdates();
+        setDesktopUpdateStatus(res);
+        if (Array.isArray(res.releases) && res.releases.length > 0) {
+          const normalized = normalizeGithubReleasesPayload(res.releases);
+          const cached = saveCachedGithubReleases(normalized);
+          setSyncedReleases(cached.releases);
+          setLastSyncedAt(cached.syncedAt);
+          if (cached.releases[0]) {
+            setExpandedReleaseId(cached.releases[0].id);
+          }
+          return;
+        }
+        if (res.status === 'error') {
+          setSyncError({ ar: res.messageAr, en: res.messageEn });
+          return;
+        }
+      }
+
+      const result = await fetchOfficialGitHubReleases();
+      if (!result.ok) {
+        setSyncError({
+          ar: 'تعذرت مزامنة الإصدارات مع GitHub (تأكد من الاتصال بالإنترنت أو افتح صفحة المستودع مباشرة).',
+          en: result.error
+            ? `Could not sync GitHub Releases (${result.error}).`
+            : 'Could not sync GitHub Releases. Check your internet connection or open the repository directly.',
+        });
+        return;
+      }
+
+      if (result.releases.length === 0) {
+        setSyncError({
+          ar: 'لا توجد إصدارات منشورة في المستودع حالياً.',
+          en: 'No published releases found in the repository yet.',
+        });
+        return;
+      }
+
+      const cached = saveCachedGithubReleases(result.releases);
+      setSyncedReleases(cached.releases);
+      setLastSyncedAt(cached.syncedAt);
+      if (cached.releases[0]) {
+        setExpandedReleaseId(cached.releases[0].id);
+      }
     } finally {
-      setCheckingDesktop(false);
+      setSyncingReleases(false);
     }
   };
 
@@ -156,6 +241,12 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const formatReleaseDate = (iso?: string) => {
+    if (!iso) return null;
+    const d = iso.slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
+  };
+
   return (
     <>
       <div
@@ -167,9 +258,9 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
             <TabletSmartphone className="size-4 text-primary shrink-0" />
             <span>
               {bi(
-                'التحديثات الآمنة دون مسح البيانات (Android / Windows / Web)',
-                'Safe In-Place Updates & App Identity (Android / Windows / Web)',
-                'نوێکردنەوەی سەلامەت بەبێ سڕینەوەی داتاکان'
+                'التحديثات الآمنة ومزامنة مستودع GitHub (Android / Windows / Web)',
+                'Safe Updates & GitHub Repository Sync (Android / Windows / Web)',
+                'نوێکردنەوەی سەلامەت و هاوکاتکردن لەگەڵ گیتهەب'
               )}
             </span>
           </div>
@@ -181,11 +272,50 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
 
         <p className="text-xs text-muted-foreground-1 leading-relaxed">
           {bi(
-            `بيئة التشغيل الحالية: ${runtimeLabel}. التحديثات الرسمية تحافظ على نفس معرّف التطبيق ومفتاح التوقيع الرقمي ومسار التخزين المحلي المشفّر، لذلك يترقّى التطبيق مباشرة فوق النسخة القديمة بدون حذفها وبدون مسح سجلات العيادة.`,
-            `Active platform: ${runtimeLabel}. Official releases preserve the same App ID, release signing certificate, and encrypted local storage directory, enabling direct in-place upgrades without uninstalling or losing clinic data.`,
-            `ژینگەی کارپێکردن: ${runtimeLabel}. نوێکردنەوە فەرمییەکان هەمان ناسنامە و کلیلی واژۆ دەپارێزن بۆیە ڕاستەوخۆ بەسەر وەشانە کۆنەکەدا دادەمەزرێن بەبێ سڕینەوەی زانیارییەکان.`
+            `بيئة التشغيل الحالية: ${runtimeLabel}. التحديثات الرسمية تحافظ على نفس معرّف التطبيق ومفتاح التوقيع ومسار التخزين المحلي المشفّر، لذلك يترقّى التطبيق مباشرة فوق النسخة القديمة بدون مسح سجلات العيادة.`,
+            `Active platform: ${runtimeLabel}. Official releases preserve the same App ID, signing certificate, and encrypted local storage directory, enabling direct in-place upgrades without deleting clinic data.`,
+            `ژینگەی کارپێکردن: ${runtimeLabel}. نوێکردنەوە فەرمییەکان هەمان ناسنامە و کلیلی واژۆ دەپارێزن بەبێ سڕینەوەی زانیارییەکان.`
           )}
         </p>
+
+        {/* Official GitHub Repository Banner */}
+        <div
+          data-testid="official-repo-link-bar"
+          className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg bg-card border border-line-2 text-xs"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <GitBranch className="size-3.5 text-primary shrink-0" />
+            <span className="text-muted-foreground-1">
+              {bi('المستودع الرسمي:', 'Official Repository:', 'کۆگای فەرمی:')}
+            </span>
+            <button
+              type="button"
+              data-testid="open-official-repo-btn"
+              onClick={() => void openSafeExternalUrl(OFFICIAL_GITHUB_REPO_URL)}
+              className="font-mono font-bold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer truncate"
+              dir="ltr"
+            >
+              <span>github.com/{OFFICIAL_GITHUB_REPO}</span>
+              <ExternalLink className="size-3 shrink-0" />
+            </button>
+          </div>
+          <button
+            type="button"
+            data-testid="open-official-releases-btn"
+            onClick={() =>
+              setPendingAction({
+                type: 'external-release',
+                url: OFFICIAL_RELEASES_URL,
+                labelAr: 'فتح جميع الإصدارات الرسمية على GitHub',
+                labelEn: 'Open All Official GitHub Releases',
+              })
+            }
+            className="px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+          >
+            <ExternalLink className="size-3 text-primary" />
+            <span>{bi('صفحة الإصدارات', 'Releases Page', 'پەڕەی وەشانەکان')}</span>
+          </button>
+        </div>
 
         {/* Encrypted Backup Recency Indicator */}
         <div
@@ -226,230 +356,371 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
               className="px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0"
             >
               <HardDrive className="size-3.5 text-primary" />
-              <span>
-                {bi('حفظ نسخة احتياطية الآن', 'Back Up Now', 'کۆپی یەدەگ ئێستا')}
-              </span>
+              <span>{bi('حفظ نسخة احتياطية الآن', 'Back Up Now', 'کۆپی یەدەگ ئێستا')}</span>
             </button>
           )}
         </div>
 
-        {/* Platform-Specific Opt-In Update Controls */}
-        {runtimeTarget === 'desktop' && (
-          <div className="space-y-2 pt-0.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                data-testid="desktop-check-updates-btn"
-                disabled={checkingDesktop}
-                onClick={handleDesktopCheck}
-                className="py-2 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-              >
-                <RefreshCw
-                  className={`size-3.5 ${checkingDesktop ? 'animate-spin' : ''}`}
-                />
-                <span>
-                  {checkingDesktop
-                    ? bi(
-                        'جاري التحقق من الإصدارات...',
-                        'Checking GitHub Releases...',
-                        'پشکنینی وەشانەکان...'
-                      )
-                    : bi(
-                        'فحص التحديثات الآن (Windows)',
-                        'Check for Windows Updates',
-                        'پشکنینی نوێکردنەوەکانی ویندۆز'
+        {/* Manual Opt-In Sync & Platform Controls */}
+        <div className="space-y-2 pt-0.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              data-testid={
+                runtimeTarget === 'desktop'
+                  ? 'desktop-check-updates-btn'
+                  : 'sync-github-releases-btn'
+              }
+              disabled={syncingReleases}
+              onClick={handleSyncGitHubReleases}
+              className="py-2 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw
+                className={`size-3.5 ${syncingReleases ? 'animate-spin' : ''}`}
+              />
+              <span>
+                {syncingReleases
+                  ? bi(
+                      'جاري المزامنة مع GitHub...',
+                      'Syncing GitHub Releases...',
+                      'هاوکاتکردن لەگەڵ گیتهەب...'
+                    )
+                  : bi(
+                      'مزامنة الإصدارات والتحديثات من GitHub',
+                      'Sync Releases & Notes from GitHub',
+                      'هاوکاتکردنی وەشانەکان لە گیتهەب'
+                    )}
+              </span>
+            </button>
+
+            {runtimeTarget === 'web' && (
+              <>
+                <button
+                  type="button"
+                  data-testid="app-check-updates-btn"
+                  disabled={checkingPwa}
+                  onClick={handlePwaCheck}
+                  className="py-2 px-3 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw
+                    className={`size-3.5 text-primary ${checkingPwa ? 'animate-spin' : ''}`}
+                  />
+                  <span>
+                    {checkingPwa
+                      ? bi('فحص نسخة الويب...', 'Checking Web PWA...', 'پشکنینی وێب...')
+                      : bi('فحص تحديث الويب (PWA)', 'Check Web (PWA)', 'پشکنینی وەشانی وێب')}
+                  </span>
+                </button>
+
+                {(pwa.updateReady || pwaCheckResult === 'update-ready') && (
+                  <button
+                    type="button"
+                    data-testid="pwa-apply-update-btn"
+                    onClick={() => setPendingAction({ type: 'pwa-apply' })}
+                    className="py-2 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Download className="size-3.5" />
+                    <span>
+                      {bi(
+                        'تفعيل التحديث دون حذف البيانات',
+                        'Activate Update Safely',
+                        'کارپێکردنی نوێکردنەوە بەبێ سڕینەوە'
                       )}
-                </span>
-              </button>
+                    </span>
+                  </button>
+                )}
+              </>
+            )}
+
+            {runtimeTarget === 'android' && (
               <button
                 type="button"
-                data-testid="open-official-releases-btn"
+                data-testid="app-check-updates-btn"
                 onClick={() =>
                   setPendingAction({
                     type: 'external-release',
-                    url: OFFICIAL_LATEST_RELEASE_URL,
-                    labelAr: 'فتح صفحة الإصدارات الرسمية على GitHub',
-                    labelEn: 'Open Official GitHub Releases Page',
+                    url: latestPlatformAsset?.downloadUrl || OFFICIAL_LATEST_RELEASE_URL,
+                    labelAr: 'تنزيل أحدث APK موقّع للأندرويد',
+                    labelEn: 'Download Latest Signed Android APK',
                   })
                 }
                 className="py-2 px-3 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
               >
-                <ExternalLink className="size-3.5 text-primary" />
+                <Download className="size-3.5 text-primary" />
                 <span>
-                  {bi('صفحة الإصدارات الرسمية', 'Official Releases', 'پەڕەی وەشانە فەرمییەکان')}
+                  {bi(
+                    'تنزيل أحدث APK موقّع',
+                    'Download Latest Signed APK',
+                    'داگرتنی نوێترین APK'
+                  )}
                 </span>
               </button>
-            </div>
-
-            {desktopUpdateStatus && (
-              <div
-                data-testid="desktop-update-status-banner"
-                className={`p-3 rounded-xl bg-card border border-line-2 text-xs font-semibold flex flex-wrap items-center justify-between gap-2 ${
-                  desktopUpdateStatus.status === 'update-available'
-                    ? 'text-amber-700 dark:text-amber-400'
-                    : desktopUpdateStatus.status === 'up-to-date'
-                      ? 'text-emerald-700 dark:text-emerald-400'
-                      : 'text-rose-700 dark:text-rose-400'
-                }`}
-              >
-                <div className="space-y-0.5">
-                  <div>{bi(desktopUpdateStatus.messageAr, desktopUpdateStatus.messageEn)}</div>
-                  {desktopUpdateStatus.assetName && (
-                    <div className="font-mono tabular-nums text-xs text-muted-foreground-1">
-                      {desktopUpdateStatus.assetName}
-                      {formatMegabytes(desktopUpdateStatus.assetSizeBytes)
-                        ? ` · ${formatMegabytes(desktopUpdateStatus.assetSizeBytes)}`
-                        : ''}
-                    </div>
-                  )}
-                </div>
-                {desktopUpdateStatus.status === 'update-available' &&
-                  (desktopUpdateStatus.downloadUrl || desktopUpdateStatus.releaseUrl) && (
-                    <button
-                      type="button"
-                      data-testid="desktop-download-update-btn"
-                      onClick={() =>
-                        setPendingAction({
-                          type: 'external-release',
-                          url:
-                            desktopUpdateStatus.downloadUrl ||
-                            desktopUpdateStatus.releaseUrl!,
-                          labelAr: 'تنزيل مثبّت التحديث المباشر (Windows Setup.exe)',
-                          labelEn: 'Download Windows In-Place Update Installer',
-                        })
-                      }
-                      className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Download className="size-3.5" />
-                      <span>
-                        {bi(
-                          'تحديث فوق النسخة الحالية',
-                          'Download In-Place Update',
-                          'داگرتنی نوێکردنەوە'
-                        )}
-                      </span>
-                    </button>
-                  )}
-              </div>
             )}
           </div>
-        )}
 
-        {runtimeTarget === 'android' && (
-          <div className="flex flex-wrap items-center gap-2 pt-0.5">
-            <button
-              type="button"
-              data-testid="app-check-updates-btn"
-              onClick={() =>
-                setPendingAction({
-                  type: 'external-release',
-                  url: OFFICIAL_LATEST_RELEASE_URL,
-                  labelAr: 'فتح صفحة تنزيل أحدث APK موقّع للأندرويد',
-                  labelEn: 'Open Signed Android APK Release Download',
-                })
-              }
-              className="py-2 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+          {pwaCheckResult && runtimeTarget === 'web' && (
+            <div
+              data-testid="web-update-status-note"
+              className="flex items-center gap-2 text-xs text-muted-foreground-1"
             >
-              <Download className="size-3.5" />
+              <CheckCircle2 className="size-4 text-primary shrink-0" />
               <span>
-                {bi(
-                  'تنزيل أحدث APK موقّع (تحديث مباشر فوق الحالي)',
-                  'Download Latest Signed APK (In-Place Update)',
-                  'داگرتنی نوێترین APKی واژۆکراو'
-                )}
+                {pwaCheckResult === 'update-ready'
+                  ? bi(
+                      'تتوفر نسخة ويب جديدة جاهزة للتفعيل دون مسح أي سجل مريض.',
+                      'A new Web PWA build is downloaded and ready to activate without clearing clinic data.'
+                    )
+                  : pwaCheckResult === 'up-to-date'
+                    ? bi(
+                        'تعمل حالياً على أحدث إصدار متاح من تطبيق الويب.',
+                        'You are currently running the latest Web PWA build.'
+                      )
+                    : bi(
+                        'التحديث الفوري للويب يعمل في نسخة الإنتاج المثبّتة، ويمكنك دائماً تنزيل أحدث حزم Android/Windows من الإصدارات المتزامنة أدناه.',
+                        'Live Service Worker updates run in production builds; you can always download official Android/Windows packages from the synced releases below.'
+                      )}
               </span>
-            </button>
-          </div>
-        )}
+            </div>
+          )}
 
-        {runtimeTarget === 'web' && (
-          <div className="space-y-2 pt-0.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                data-testid="app-check-updates-btn"
-                disabled={checkingPwa}
-                onClick={handlePwaCheck}
-                className="py-2 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-              >
-                <RefreshCw
-                  className={`size-3.5 ${checkingPwa ? 'animate-spin' : ''}`}
-                />
-                <span>
-                  {checkingPwa
-                    ? bi('جاري فحص نسخة الويب...', 'Checking Web Update...', 'پشکنینی وەشانی وێب...')
-                    : bi('فحص تحديثات الويب (PWA)', 'Check Web (PWA) Updates', 'پشکنینی نوێکردنەوەی وێب')}
-                </span>
-              </button>
+          {syncError && (
+            <div
+              data-testid="sync-releases-error-banner"
+              className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs font-semibold"
+            >
+              {bi(syncError.ar, syncError.en)}
+            </div>
+          )}
 
-              {(pwa.updateReady || pwaCheckResult === 'update-ready') && (
+          {/* Desktop or Cross-Platform Latest Version Comparison Banner */}
+          {(desktopUpdateStatus || latestSyncedRelease) && !syncError && (
+            <div
+              data-testid="desktop-update-status-banner"
+              className={`p-3 rounded-xl bg-card border border-line-2 text-xs font-semibold flex flex-wrap items-center justify-between gap-2 ${
+                hasNewerSyncedRelease || desktopUpdateStatus?.status === 'update-available'
+                  ? 'text-amber-700 dark:text-amber-400'
+                  : 'text-emerald-700 dark:text-emerald-400'
+              }`}
+            >
+              <div className="space-y-0.5">
+                <div>
+                  {hasNewerSyncedRelease && latestSyncedRelease
+                    ? bi(
+                        `يتوفر إصدار جديد على GitHub (${latestSyncedRelease.tagName}) — النسخة الحالية v${displayedVersion}.`,
+                        `New release available on GitHub (${latestSyncedRelease.tagName}) — current v${displayedVersion}.`,
+                        `وەشانێکی نوێ لە گیتهەب بەردەستە (${latestSyncedRelease.tagName}) — ئێستا v${displayedVersion}.`
+                      )
+                    : desktopUpdateStatus
+                      ? bi(desktopUpdateStatus.messageAr, desktopUpdateStatus.messageEn)
+                      : bi(
+                          `أنت تستخدم أحدث إصدار منشور في المستودع (v${displayedVersion}).`,
+                          `You are running the latest published repository release (v${displayedVersion}).`,
+                          `تۆ دوایین وەشانی بڵاوکراوەی کۆگا بەکاردەهێنیت (v${displayedVersion}).`
+                        )}
+                </div>
+                {(latestPlatformAsset || desktopUpdateStatus?.assetName) && (
+                  <div className="font-mono tabular-nums text-xs text-muted-foreground-1" dir="ltr">
+                    {latestPlatformAsset?.fileName || desktopUpdateStatus?.assetName}
+                    {formatMegabytes(
+                      latestPlatformAsset?.sizeBytes ?? desktopUpdateStatus?.assetSizeBytes
+                    )
+                      ? ` · ${formatMegabytes(
+                          latestPlatformAsset?.sizeBytes ?? desktopUpdateStatus?.assetSizeBytes
+                        )}`
+                      : ''}
+                  </div>
+                )}
+              </div>
+
+              {(hasNewerSyncedRelease || desktopUpdateStatus?.status === 'update-available') && (
                 <button
                   type="button"
-                  data-testid="pwa-apply-update-btn"
-                  onClick={() => setPendingAction({ type: 'pwa-apply' })}
-                  className="py-2 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                  data-testid="desktop-download-update-btn"
+                  onClick={() =>
+                    setPendingAction({
+                      type: 'external-release',
+                      url:
+                        latestPlatformAsset?.downloadUrl ||
+                        desktopUpdateStatus?.downloadUrl ||
+                        latestSyncedRelease?.htmlUrl ||
+                        OFFICIAL_LATEST_RELEASE_URL,
+                      labelAr: `تنزيل تحديث ${latestSyncedRelease?.tagName || ''}`.trim(),
+                      labelEn: `Download ${latestSyncedRelease?.tagName || 'Latest'} Update`,
+                    })
+                  }
+                  className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   <Download className="size-3.5" />
                   <span>
                     {bi(
-                      'تفعيل التحديث دون حذف البيانات',
-                      'Activate Update Safely',
-                      'کارپێکردنی نوێکردنەوە بەبێ سڕینەوە'
+                      'تحديث فوق النسخة الحالية',
+                      'Download In-Place Update',
+                      'داگرتنی نوێکردنەوە'
                     )}
                   </span>
                 </button>
               )}
+            </div>
+          )}
 
-              <button
-                type="button"
-                data-testid="open-official-releases-btn"
-                onClick={() =>
-                  setPendingAction({
-                    type: 'external-release',
-                    url: OFFICIAL_LATEST_RELEASE_URL,
-                    labelAr: 'فتح صفحة الإصدارات الرسمية (APK / Windows Setup)',
-                    labelEn: 'Open Official Releases (APK / Windows Setup)',
-                  })
-                }
-                className="py-2 px-3 rounded-xl bg-layer hover:bg-layer-hover border border-layer-line text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                <ExternalLink className="size-3.5 text-primary" />
-                <span>
+          {/* Synced GitHub Releases List (Multiple Versions + Exact Release Notes) */}
+          {syncedReleases.length > 0 && (
+            <div
+              data-testid="synced-github-releases-list"
+              className="pt-2 space-y-2"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="font-bold text-foreground">
                   {bi(
-                    'إصدارات Android و Windows',
-                    'Android & Windows Releases',
-                    'وەشانەکانی Android و Windows'
+                    `الإصدارات المتزامنة من المستودع (${syncedReleases.length})`,
+                    `Synced Repository Releases (${syncedReleases.length})`,
+                    `وەشانە هاوکاتکراوەکانی گیتهەب (${syncedReleases.length})`
                   )}
                 </span>
-              </button>
-            </div>
-
-            {pwaCheckResult && (
-              <div
-                data-testid="web-update-status-note"
-                className="flex items-center gap-2 text-xs text-muted-foreground-1"
-              >
-                <CheckCircle2 className="size-4 text-primary shrink-0" />
-                <span>
-                  {pwaCheckResult === 'update-ready'
-                    ? bi(
-                        'تتوفر نسخة ويب جديدة جاهزة للتفعيل دون مسح أي سجل مريض.',
-                        'A new Web PWA build is downloaded and ready to activate without clearing clinic data.'
-                      )
-                    : pwaCheckResult === 'up-to-date'
-                      ? bi(
-                          'تعمل حالياً على أحدث إصدار متاح من تطبيق الويب.',
-                          'You are currently running the latest Web PWA build.'
-                        )
-                      : bi(
-                          'التحديث الفوري للويب يعمل في نسخة الإنتاج المثبّتة، ويمكنك دائماً تنزيل أحدث حزم Android/Windows من الإصدارات الرسمية.',
-                          'Live Service Worker updates run in production builds; you can always download official Android/Windows packages from Releases.'
-                        )}
-                </span>
+                {lastSyncedAt && (
+                  <span className="text-muted-foreground-1 font-mono" dir="ltr">
+                    {bi('آخر مزامنة:', 'Last synced:', 'دوایین هاوکاتکردن:')}{' '}
+                    {formatReleaseDate(lastSyncedAt) || lastSyncedAt.slice(0, 16)}
+                  </span>
+                )}
               </div>
-            )}
-          </div>
-        )}
+
+              <div className="space-y-2 max-h-80 overflow-y-auto pe-0.5">
+                {syncedReleases.map((rel, index) => {
+                  const isCurrent =
+                    compareSemverVersions(rel.version, displayedVersion) === 0;
+                  const isNewer =
+                    compareSemverVersions(rel.version, displayedVersion) > 0;
+                  const notesLines = extractReleaseNotesLines(rel.body);
+                  const isExpanded = expandedReleaseId === rel.id || (expandedReleaseId === null && index === 0);
+                  const platformAsset = selectPlatformReleaseAsset(rel.assets, runtimeTarget);
+
+                  return (
+                    <div
+                      key={rel.id}
+                      data-testid={`synced-release-item-${rel.tagName}`}
+                      className="p-3 rounded-xl bg-card border border-line-2 space-y-2 text-xs"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span
+                            dir="ltr"
+                            className="px-2 py-0.5 rounded-md bg-primary text-primary-foreground font-mono font-bold"
+                          >
+                            {rel.tagName}
+                          </span>
+                          {index === 0 && !rel.isPrerelease && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 font-semibold">
+                              <Tag className="size-3" />
+                              <span>{bi('الأحدث', 'Latest', 'نوێترین')}</span>
+                            </span>
+                          )}
+                          {isCurrent && (
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold">
+                              {bi('مثبّت حالياً', 'Installed', 'دامەزراوە')}
+                            </span>
+                          )}
+                          {isNewer && (
+                            <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-800 dark:text-amber-300 font-semibold">
+                              {bi('تحديث جديد', 'Update Available', 'نوێکردنەوە')}
+                            </span>
+                          )}
+                          {rel.isPrerelease && (
+                            <span className="px-2 py-0.5 rounded-md bg-layer text-muted-foreground-1 font-semibold">
+                              {bi('تجريبي', 'Pre-release', 'تاقیکاری')}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {formatReleaseDate(rel.publishedAt) && (
+                            <span
+                              dir="ltr"
+                              className="inline-flex items-center gap-1 text-muted-foreground-1 font-mono"
+                            >
+                              <Calendar className="size-3" />
+                              <span>{formatReleaseDate(rel.publishedAt)}</span>
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedReleaseId(isExpanded ? -1 : rel.id)
+                            }
+                            aria-label={bi('عرض أو إخفاء التفاصيل', 'Toggle release notes')}
+                            className="p-1 rounded-lg hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="size-4" />
+                            ) : (
+                              <ChevronDown className="size-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="font-bold text-foreground">{rel.name}</div>
+
+                      {isExpanded && (
+                        <div className="space-y-2 pt-1 border-t border-line-2/70">
+                          {notesLines.length > 0 ? (
+                            <ul className="space-y-1 text-muted-foreground-1 leading-relaxed">
+                              {notesLines.map((line, lineIdx) => (
+                                <li key={lineIdx} className="flex items-start gap-1.5">
+                                  <CheckCircle2 className="size-3.5 text-primary shrink-0 mt-0.5" />
+                                  <span className="break-words">{line}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-muted-foreground-1">
+                              {bi(
+                                'لا توجد ملاحظات مكتوبة في وصف هذا الإصدار.',
+                                'No release notes were written for this release.',
+                                'هیچ تێبینییەک بۆ ئەم وەشانە نەنووسراوە.'
+                              )}
+                            </p>
+                          )}
+
+                          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                            {platformAsset ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPendingAction({
+                                    type: 'external-release',
+                                    url: platformAsset.downloadUrl,
+                                    labelAr: `تنزيل ${platformAsset.fileName}`,
+                                    labelEn: `Download ${platformAsset.fileName}`,
+                                  })
+                                }
+                                className="px-2.5 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                              >
+                                <Download className="size-3.5" />
+                                <span dir="ltr">{platformAsset.fileName}</span>
+                              </button>
+                            ) : (
+                              <span />
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => void openSafeExternalUrl(rel.htmlUrl)}
+                              className="px-2.5 py-1 rounded-lg bg-layer hover:bg-layer-hover border border-layer-line text-foreground font-semibold inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              <ExternalLink className="size-3 text-primary" />
+                              <span>{bi('فتح على GitHub', 'View on GitHub', 'کردنەوە لە گیتهەب')}</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Pre-Update Encrypted Backup Shield Modal */}

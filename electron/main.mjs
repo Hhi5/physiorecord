@@ -122,7 +122,9 @@ function isAllowedExternalUrl(url) {
     url.startsWith('https://api.whatsapp.com/') ||
     url.startsWith('https://www.google.com/maps/') ||
     url.startsWith('https://google.com/maps/') ||
-    url.startsWith('https://github.com/Hhi5/physiorecord/releases')
+    /^https:\/\/github\.com\/Hhi5\/physiorecord(\/releases(\/.*)?)?\/?(\?[^\s#]*)?(#[^\s]*)?$/i.test(
+      url.trim()
+    )
   );
 }
 
@@ -136,10 +138,10 @@ function compareSemver(a, b) {
   return 0;
 }
 
-function fetchLatestGitHubRelease(repoSlug = 'Hhi5/physiorecord') {
+function fetchGitHubJson(apiUrl) {
   return new Promise((resolve, reject) => {
     const req = https.get(
-      `https://api.github.com/repos/${repoSlug}/releases/latest`,
+      apiUrl,
       {
         headers: {
           'User-Agent': `PhysioRecord-Desktop/${app.getVersion()}`,
@@ -171,6 +173,19 @@ function fetchLatestGitHubRelease(repoSlug = 'Hhi5/physiorecord') {
       req.destroy(new Error('Request timed out'));
     });
   });
+}
+
+async function fetchGitHubReleasesList(repoSlug = 'Hhi5/physiorecord') {
+  const list = await fetchGitHubJson(
+    `https://api.github.com/repos/${repoSlug}/releases?per_page=10`
+  );
+  if (Array.isArray(list) && list.length > 0) {
+    return list;
+  }
+  const latest = await fetchGitHubJson(
+    `https://api.github.com/repos/${repoSlug}/releases/latest`
+  );
+  return latest && typeof latest === 'object' ? [latest] : [];
 }
 
 function registerAppProtocol() {
@@ -229,14 +244,18 @@ function registerIpcHandlers() {
     const ext = path.extname(filename).replace(/^\./, '') || 'ptbackup';
     const description = String(payload?.description || 'PhysioRecord File');
 
-    const result = await dialog.showSaveDialog(mainWindow, {
+    const activeWin = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined;
+    const dialogOpts = {
       title: description,
       defaultPath: filename,
       filters: [
         { name: description, extensions: [ext] },
         { name: 'All Files', extensions: ['*'] },
       ],
-    });
+    };
+    const result = activeWin
+      ? await dialog.showSaveDialog(activeWin, dialogOpts)
+      : await dialog.showSaveDialog(dialogOpts);
 
     if (result.canceled || !result.filePath) {
       return { saved: false, cancelled: true };
@@ -252,10 +271,14 @@ function registerIpcHandlers() {
   });
 
   ipcMain.handle('physiorecord:pick-backup-dir', async () => {
-    const result = await dialog.showOpenDialog(mainWindow, {
+    const activeWin = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined;
+    const openOpts = {
       title: 'Select Automatic Encrypted Backup Folder (.ptbackup)',
       properties: ['openDirectory', 'createDirectory'],
-    });
+    };
+    const result = activeWin
+      ? await dialog.showOpenDialog(activeWin, openOpts)
+      : await dialog.showOpenDialog(openOpts);
 
     if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
       return { configured: false, cancelled: true };
@@ -368,11 +391,28 @@ function registerIpcHandlers() {
     return { opened: true };
   });
 
+  // Manual opt-in GitHub Releases sync in Main Process ONLY (zero renderer network calls)
+  ipcMain.handle('physiorecord:fetch-github-releases', async () => {
+    try {
+      const releases = await fetchGitHubReleasesList('Hhi5/physiorecord');
+      return { ok: true, releases };
+    } catch (err) {
+      return {
+        ok: false,
+        releases: [],
+        error: err instanceof Error ? err.message : 'Failed to fetch GitHub Releases',
+      };
+    }
+  });
+
   // Manual opt-in update check in Main Process ONLY (zero renderer network calls)
   ipcMain.handle('physiorecord:check-for-updates', async () => {
     const currentVersion = app.getVersion();
     try {
-      const release = await fetchLatestGitHubRelease('Hhi5/physiorecord');
+      const releasesList = await fetchGitHubReleasesList('Hhi5/physiorecord');
+      const publishedReleases = releasesList.filter((r) => r && r.draft !== true);
+      const release =
+        publishedReleases.find((r) => !r.prerelease) || publishedReleases[0] || null;
       const latestTag = String(release?.tag_name || '').replace(/^v/i, '');
       const releaseUrl =
         String(release?.html_url || '') || 'https://github.com/Hhi5/physiorecord/releases';
@@ -390,7 +430,7 @@ function registerIpcHandlers() {
         typeof release?.published_at === 'string' ? release.published_at : undefined;
       const releaseNotes =
         typeof release?.body === 'string' && release.body.trim()
-          ? release.body.trim().slice(0, 500)
+          ? release.body.trim().slice(0, 6000)
           : undefined;
 
       if (latestTag && compareSemver(latestTag, currentVersion) > 0) {
@@ -404,6 +444,7 @@ function registerIpcHandlers() {
           assetSizeBytes: typeof preferredSetup?.size === 'number' ? preferredSetup.size : undefined,
           publishedAt,
           releaseNotes,
+          releases: publishedReleases,
           messageAr: `يتوفر إصدار جديد (${latestTag}). يُثبَّت فوق النسخة الحالية مباشرة دون حذف بيانات العيادة.`,
           messageEn: `A newer version (${latestTag}) is available. Installing Setup upgrades in place without removing clinic data.`,
         };
@@ -415,6 +456,8 @@ function registerIpcHandlers() {
         latestVersion: latestTag || currentVersion,
         releaseUrl,
         publishedAt,
+        releaseNotes,
+        releases: publishedReleases,
         messageAr: `أنت تستخدم أحدث إصدار حالياً (${currentVersion}).`,
         messageEn: `You are running the latest version (${currentVersion}).`,
       };

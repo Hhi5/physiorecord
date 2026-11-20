@@ -623,6 +623,201 @@ export function applyExamPresetToEpisodeStore(
   };
 }
 
+/**
+ * Unselects a regional exam preset safely:
+ * - Removes `preset.id` from `appliedPresetIds`.
+ * - Prunes ONLY untouched / unmeasured starter items that came exclusively from this preset
+ *   (and are not needed by any remaining active presets).
+ * - NEVER deletes any clinician-recorded measurements, grades, notes, or test outcomes.
+ */
+export function removeExamPresetFromEpisodeStore(
+  store: EpisodeScopedClinicalStore,
+  preset: RegionalExamPresetDefinition,
+  allPresets: ReadonlyArray<RegionalExamPresetDefinition> = BUILT_IN_EXAM_PRESETS_CC0
+): EpisodeScopedClinicalStore {
+  const remainingIds = (store.appliedPresetIds || []).filter((id) => id !== preset.id);
+  const remainingPresets = remainingIds
+    .map((id) => allPresets.find((p) => p.id === id))
+    .filter((p): p is RegionalExamPresetDefinition => Boolean(p));
+
+  const remainingRomKeys = new Set<string>();
+  const remainingMmtKeys = new Set<string>();
+  const remainingTestIds = new Set<string>();
+  const remainingWidgetIds = new Set<string>();
+  for (const rp of remainingPresets) {
+    for (const r of rp.romStarters) remainingRomKeys.add(`${r.jointId}::${r.movementId}::${r.side}`);
+    for (const m of rp.mmtStarters) remainingMmtKeys.add(`${m.muscleGroupId}::${m.side}`);
+    for (const tid of rp.specialTestIds) remainingTestIds.add(tid);
+    for (const w of rp.widgetsToEnable) remainingWidgetIds.add(w);
+  }
+
+  const presetRomKeys = new Set(
+    preset.romStarters.map((r) => `${r.jointId}::${r.movementId}::${r.side}`)
+  );
+  const presetMmtKeys = new Set(
+    preset.mmtStarters.map((m) => `${m.muscleGroupId}::${m.side}`)
+  );
+  const presetTestIds = new Set(preset.specialTestIds);
+
+  const nextRomEntries = (store.objective?.romBattery?.entries || []).filter((e) => {
+    const k = `${e.jointId}::${e.movementId}::${e.laterality}`;
+    const isUntouched =
+      !e.isTested &&
+      (e.measuredAngleDegrees === null || e.measuredAngleDegrees === undefined) &&
+      e.painNrsScore === undefined &&
+      !e.endFeel &&
+      !e.reasonNotTested &&
+      !(e.clinicalNotes && e.clinicalNotes.trim().length > 0);
+    if (isUntouched && presetRomKeys.has(k) && !remainingRomKeys.has(k)) {
+      return false;
+    }
+    return true;
+  });
+
+  const nextMmtEntries = (store.objective?.mmtBattery?.entries || []).filter((e) => {
+    const k = `${e.muscleGroupId}::${e.laterality}`;
+    const isUntouched =
+      !e.isTested &&
+      e.gradeValue === null &&
+      e.painNrsScore === undefined &&
+      !e.substitutionObserved &&
+      !e.reasonNotTested &&
+      !(e.clinicalNotes && e.clinicalNotes.trim().length > 0);
+    if (isUntouched && presetMmtKeys.has(k) && !remainingMmtKeys.has(k)) {
+      return false;
+    }
+    return true;
+  });
+
+  const nextSpecialTests = (store.specialTests || []).filter((t) => {
+    const isUntouched =
+      t.outcome === 'not_tested' && !(t.notes && t.notes.trim().length > 0);
+    if (isUntouched && presetTestIds.has(t.id) && !remainingTestIds.has(t.id)) {
+      return false;
+    }
+    return true;
+  });
+
+  const isScaleUntouched =
+    !store.functionalScales ||
+    (store.functionalScales.rawScore === undefined &&
+      (!store.functionalScales.history || store.functionalScales.history.length === 0));
+
+  let nextFunctionalScales = store.functionalScales;
+  if (
+    isScaleUntouched &&
+    store.functionalScales?.scaleId === preset.recommendedScaleId
+  ) {
+    if (remainingPresets.length > 0) {
+      const fallbackScaleId = remainingPresets[0].recommendedScaleId;
+      const spec = OUTCOME_INSTRUMENTS[fallbackScaleId];
+      nextFunctionalScales = {
+        scaleId: fallbackScaleId,
+        scaleNameAr: spec.nameAr,
+        scaleNameEn: spec.nameEn,
+        scorePercentage: 0,
+        severityLabelAr: 'لم يُقَس بعد',
+        severityLabelEn: 'Not assessed yet',
+        responses: {},
+        maxScore: spec.maxRaw,
+        entryMode: spec.category === 'procedure' ? 'procedure' : 'score_entry',
+        unitLabelAr: spec.unitAr,
+        unitLabelEn: spec.unitEn,
+        officialSourceUrl: spec.officialSourceUrl,
+      };
+    } else {
+      nextFunctionalScales = undefined;
+    }
+  }
+
+  // Only remove extra widgets (such as neuro / gait_posture) added solely by this preset
+  // when they still have no recorded data and no remaining preset enables them.
+  const DEFAULT_BASELINE_WIDGETS = new Set([
+    'body_chart',
+    'rom',
+    'mmt',
+    'special_tests',
+    'functional_scales',
+  ]);
+  const nextActiveWidgetIds = (store.activeWidgetIds || []).filter((wid) => {
+    if (DEFAULT_BASELINE_WIDGETS.has(wid)) return true;
+    if (remainingWidgetIds.has(wid)) return true;
+    if (!preset.widgetsToEnable.includes(wid as RegionalExamPresetDefinition['widgetsToEnable'][number])) {
+      return true;
+    }
+    if (wid === 'neuro') {
+      const ns = store.objective?.neuroScreening;
+      const hasNeuro = Boolean(
+        ns &&
+          (Object.keys(ns.sensoryTable || {}).length > 0 ||
+            (ns.dermatomes || []).some((d) => d.rightStatus !== 'not_tested' || d.leftStatus !== 'not_tested') ||
+            (ns.reflexes || []).some((r) => r.rightGrade !== null || r.leftGrade !== null) ||
+            (ns.myotomes || []).some((m) => m.rightGrade !== null || m.leftGrade !== null) ||
+            (ns.clinicalNotes || '').trim().length > 0)
+      );
+      return hasNeuro;
+    }
+    if (wid === 'gait_posture') {
+      const gp = store.gaitPosture;
+      const hasGait = Boolean(
+        gp &&
+          (gp.tugSeconds !== null ||
+            gp.gaitPattern !== 'normal' ||
+            gp.assistiveDevice !== 'none' ||
+            (gp.postureDeviations?.length || 0) > 0)
+      );
+      return hasGait;
+    }
+    return true;
+  });
+
+  return {
+    ...store,
+    activeWidgetIds: nextActiveWidgetIds,
+    objective: {
+      ...store.objective,
+      romBattery: store.objective?.romBattery
+        ? {
+            ...store.objective.romBattery,
+            entries: nextRomEntries,
+            updatedAt: new Date().toISOString(),
+          }
+        : store.objective?.romBattery,
+      mmtBattery: store.objective?.mmtBattery
+        ? {
+            ...store.objective.mmtBattery,
+            entries: nextMmtEntries,
+            updatedAt: new Date().toISOString(),
+          }
+        : store.objective?.mmtBattery,
+    },
+    specialTests: nextSpecialTests,
+    functionalScales: nextFunctionalScales,
+    appliedPresetIds: remainingIds,
+  };
+}
+
+/**
+ * Toggles a regional exam preset ON/OFF in an EpisodeScopedClinicalStore.
+ */
+export function toggleExamPresetInEpisodeStore(
+  store: EpisodeScopedClinicalStore,
+  preset: RegionalExamPresetDefinition,
+  allPresets: ReadonlyArray<RegionalExamPresetDefinition> = BUILT_IN_EXAM_PRESETS_CC0
+): { store: EpisodeScopedClinicalStore; applied: boolean } {
+  const isAlreadyApplied = (store.appliedPresetIds || []).includes(preset.id);
+  if (isAlreadyApplied) {
+    return {
+      store: removeExamPresetFromEpisodeStore(store, preset, allPresets),
+      applied: false,
+    };
+  }
+  return {
+    store: applyExamPresetToEpisodeStore(store, preset),
+    applied: true,
+  };
+}
+
 export interface ExamPresetPackFile {
   schema: 'physiorecord-exam-presets-pack/v1';
   license: 'CC0-1.0';

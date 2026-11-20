@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Zero invasive permissions: no CAMERA, no CONTACTS, no LOCATION, no external storage permissions.
+    <!-- Zero invasive/dangerous permissions: no CAMERA, no CONTACTS, no LOCATION, no external storage permissions.
+         INTERNET is declared solely for manual user-initiated GitHub Releases sync inside Settings.
          File export/import operates strictly through Android Storage Access Framework (SAF) and FileProvider. -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="false"

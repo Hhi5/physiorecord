@@ -4,8 +4,11 @@
 // =======================================================================
 
 export const OFFICIAL_GITHUB_REPO = 'Hhi5/physiorecord';
-export const OFFICIAL_RELEASES_URL = `https://github.com/${OFFICIAL_GITHUB_REPO}/releases`;
+export const OFFICIAL_GITHUB_REPO_URL = `https://github.com/${OFFICIAL_GITHUB_REPO}`;
+export const OFFICIAL_RELEASES_URL = `${OFFICIAL_GITHUB_REPO_URL}/releases`;
 export const OFFICIAL_LATEST_RELEASE_URL = `${OFFICIAL_RELEASES_URL}/latest`;
+export const OFFICIAL_GITHUB_RELEASES_API_URL = `https://api.github.com/repos/${OFFICIAL_GITHUB_REPO}/releases?per_page=10`;
+export const SYNCED_RELEASES_CACHE_KEY = 'physiorecord_synced_github_releases_v1';
 
 export type UpdateRuntimeTarget = 'web' | 'android' | 'desktop';
 
@@ -13,6 +16,29 @@ export interface GitHubReleaseAssetLike {
   name?: string;
   browser_download_url?: string;
   size?: number;
+}
+
+export interface SyncedGithubReleaseAsset {
+  name: string;
+  downloadUrl: string;
+  sizeBytes?: number;
+}
+
+export interface SyncedGithubReleaseItem {
+  id: number;
+  tagName: string;
+  version: string;
+  name: string;
+  body: string;
+  publishedAt?: string;
+  htmlUrl: string;
+  isPrerelease: boolean;
+  assets: SyncedGithubReleaseAsset[];
+}
+
+export interface CachedSyncedGithubReleases {
+  releases: SyncedGithubReleaseItem[];
+  syncedAt: string;
 }
 
 export interface SelectedReleaseAsset {
@@ -64,7 +90,7 @@ export function compareSemverVersions(a: string, b: string): -1 | 0 | 1 {
 }
 
 /**
- * Strictly allowlist official GitHub Release URLs (releases page, tag, latest, or download asset)
+ * Strictly allowlist official PhysioRecord release URLs (releases page, tag, latest, or download asset)
  * so native external-browser launchers never open untrusted third-party domains.
  */
 export function isAllowedGithubReleaseUrl(url: string): boolean {
@@ -76,24 +102,184 @@ export function isAllowedGithubReleaseUrl(url: string): boolean {
 }
 
 /**
+ * Allowlists both the official PhysioRecord GitHub repository root URL
+ * (`https://github.com/Hhi5/physiorecord`) and official release/download URLs.
+ */
+export function isAllowedOfficialGithubUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (isAllowedGithubReleaseUrl(trimmed)) return true;
+  return /^https:\/\/github\.com\/Hhi5\/physiorecord\/?(\?[^\s#]*)?(#[^\s]*)?$/i.test(trimmed);
+}
+
+/**
+ * Normalize GitHub REST API `/repos/Hhi5/physiorecord/releases` (or single release object)
+ * into clean, strictly validated, semver-sorted release cards.
+ */
+export function normalizeGithubReleasesPayload(raw: unknown): SyncedGithubReleaseItem[] {
+  const rawList = Array.isArray(raw) ? raw : raw && typeof raw === 'object' ? [raw] : [];
+  const items: SyncedGithubReleaseItem[] = [];
+
+  for (let i = 0; i < rawList.length; i += 1) {
+    const entry = rawList[i] as Record<string, unknown> | null;
+    if (!entry || typeof entry !== 'object') continue;
+    if (entry.draft === true) continue;
+
+    const tagName = String(entry.tag_name ?? entry.tagName ?? '').trim();
+    const version = tagName.replace(/^v/i, '').trim();
+    if (!tagName && !version) continue;
+
+    const rawHtmlUrl = String(entry.html_url ?? entry.htmlUrl ?? '').trim();
+    const htmlUrl = isAllowedGithubReleaseUrl(rawHtmlUrl) ? rawHtmlUrl : OFFICIAL_RELEASES_URL;
+
+    const rawName = String(entry.name ?? '').trim();
+    const name = rawName || tagName || `v${version}`;
+    const body = String(entry.body ?? '')
+      .replace(/\r\n/g, '\n')
+      .trim()
+      .slice(0, 6000);
+    const publishedAtRaw = String(entry.published_at ?? entry.publishedAt ?? '').trim();
+    const publishedAt = publishedAtRaw || undefined;
+
+    const rawAssets = Array.isArray(entry.assets) ? entry.assets : [];
+    const assets: SyncedGithubReleaseAsset[] = [];
+    for (const a of rawAssets) {
+      if (!a || typeof a !== 'object') continue;
+      const assetObj = a as Record<string, unknown>;
+      const assetName = String(assetObj.name ?? '').trim();
+      const downloadUrl = String(
+        assetObj.browser_download_url ?? assetObj.downloadUrl ?? ''
+      ).trim();
+      if (!assetName || !isAllowedGithubReleaseUrl(downloadUrl)) continue;
+      const rawSize = assetObj.size ?? assetObj.sizeBytes;
+      const sizeBytes =
+        typeof rawSize === 'number' && Number.isFinite(rawSize) && rawSize > 0
+          ? rawSize
+          : undefined;
+      assets.push({ name: assetName, downloadUrl, sizeBytes });
+    }
+
+    const rawId = entry.id;
+    const id = typeof rawId === 'number' && Number.isFinite(rawId) ? rawId : i + 1;
+
+    items.push({
+      id,
+      tagName: tagName || `v${version}`,
+      version: version || tagName,
+      name,
+      body,
+      publishedAt,
+      htmlUrl,
+      isPrerelease: Boolean(entry.prerelease ?? entry.isPrerelease),
+      assets,
+    });
+  }
+
+  return items.sort((a, b) => {
+    const semverDiff = compareSemverVersions(b.version, a.version);
+    if (semverDiff !== 0) return semverDiff;
+    const dateA = a.publishedAt ? Date.parse(a.publishedAt) : 0;
+    const dateB = b.publishedAt ? Date.parse(b.publishedAt) : 0;
+    return (Number.isFinite(dateB) ? dateB : 0) - (Number.isFinite(dateA) ? dateA : 0);
+  });
+}
+
+/**
+ * Convert GitHub Release Markdown body into clean, readable text lines
+ * without exposing raw Markdown syntax clutter in the UI.
+ */
+export function extractReleaseNotesLines(body: string): string[] {
+  if (!body || !String(body).trim()) return [];
+  const lines = String(body)
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !/^---+$/.test(line));
+
+  const cleaned: string[] = [];
+  for (const rawLine of lines) {
+    // Strip Markdown links [label](url) -> label, bold/code wrappers, headings, bullet prefixes
+    const stripped = rawLine
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '$1')
+      .replace(/^#{1,6}\s+/, '')
+      .replace(/^[-*•+]\s+/, '')
+      .replace(/^\d+[.)]\s+/, '')
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .trim();
+    if (stripped) {
+      cleaned.push(stripped);
+    }
+  }
+  return cleaned;
+}
+
+export function loadCachedGithubReleases(): CachedSyncedGithubReleases | null {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return null;
+    const raw = window.localStorage.getItem(SYNCED_RELEASES_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { releases?: unknown; syncedAt?: unknown };
+    const releases = normalizeGithubReleasesPayload(parsed?.releases);
+    if (releases.length === 0) return null;
+    const syncedAt =
+      typeof parsed?.syncedAt === 'string' && parsed.syncedAt.trim()
+        ? parsed.syncedAt
+        : new Date().toISOString();
+    return { releases, syncedAt };
+  } catch {
+    return null;
+  }
+}
+
+export function saveCachedGithubReleases(
+  releases: SyncedGithubReleaseItem[],
+  syncedAt: string = new Date().toISOString()
+): CachedSyncedGithubReleases {
+  const normalized = normalizeGithubReleasesPayload(releases);
+  const payload: CachedSyncedGithubReleases = { releases: normalized, syncedAt };
+  try {
+    if (typeof window !== 'undefined' && window.localStorage && normalized.length > 0) {
+      window.localStorage.setItem(SYNCED_RELEASES_CACHE_KEY, JSON.stringify(payload));
+    }
+  } catch {
+    // Ignore storage quota errors
+  }
+  return payload;
+}
+
+/**
  * Pick the safest in-place upgrade installer asset from a GitHub Release assets array:
  * - `android`: signed `.apk` (strictly prefers non-debug APK if multiple exist)
  * - `desktop`: Windows `Setup-*.exe` (preserves `%APPDATA%\PhysioRecord` in-place), falling back to `.exe`
  * - `web`: `Web-PWA-*.zip` bundle
  */
 export function selectPlatformReleaseAsset(
-  assets: readonly GitHubReleaseAssetLike[] | undefined | null,
+  assets: readonly (GitHubReleaseAssetLike | SyncedGithubReleaseAsset)[] | undefined | null,
   target: UpdateRuntimeTarget
 ): SelectedReleaseAsset | null {
   if (!Array.isArray(assets) || assets.length === 0) return null;
 
-  const valid = assets.filter(
-    (item): item is { name: string; browser_download_url: string; size?: number } =>
-      typeof item?.name === 'string' &&
-      item.name.trim().length > 0 &&
-      typeof item?.browser_download_url === 'string' &&
-      item.browser_download_url.startsWith('https://')
-  );
+  const valid = assets
+    .map((item) => {
+      const a = item as GitHubReleaseAssetLike & Partial<SyncedGithubReleaseAsset>;
+      return {
+        name: typeof a?.name === 'string' ? a.name.trim() : '',
+        url:
+          typeof a?.browser_download_url === 'string'
+            ? a.browser_download_url
+            : typeof a?.downloadUrl === 'string'
+              ? a.downloadUrl
+              : '',
+        size:
+          typeof a?.size === 'number'
+            ? a.size
+            : typeof a?.sizeBytes === 'number'
+              ? a.sizeBytes
+              : undefined,
+      };
+    })
+    .filter((item) => item.name.length > 0 && item.url.startsWith('https://'));
   if (valid.length === 0) return null;
 
   if (target === 'android') {
@@ -103,8 +289,8 @@ export function selectPlatformReleaseAsset(
       apks.find((a) => !a.name.toLowerCase().includes('-debug')) || apks[0];
     return {
       fileName: signedReleaseApk.name,
-      downloadUrl: signedReleaseApk.browser_download_url,
-      sizeBytes: typeof signedReleaseApk.size === 'number' ? signedReleaseApk.size : undefined,
+      downloadUrl: signedReleaseApk.url,
+      sizeBytes: signedReleaseApk.size,
       kind: 'apk',
     };
   }
@@ -116,16 +302,16 @@ export function selectPlatformReleaseAsset(
     if (setupExe) {
       return {
         fileName: setupExe.name,
-        downloadUrl: setupExe.browser_download_url,
-        sizeBytes: typeof setupExe.size === 'number' ? setupExe.size : undefined,
+        downloadUrl: setupExe.url,
+        sizeBytes: setupExe.size,
         kind: 'windows-setup',
       };
     }
     const portableExe = exes.find((a) => /portable/i.test(a.name)) || exes[0];
     return {
       fileName: portableExe.name,
-      downloadUrl: portableExe.browser_download_url,
-      sizeBytes: typeof portableExe.size === 'number' ? portableExe.size : undefined,
+      downloadUrl: portableExe.url,
+      sizeBytes: portableExe.size,
       kind: /portable/i.test(portableExe.name) ? 'windows-portable' : 'windows-setup',
     };
   }
@@ -136,8 +322,8 @@ export function selectPlatformReleaseAsset(
   if (!webZip) return null;
   return {
     fileName: webZip.name,
-    downloadUrl: webZip.browser_download_url,
-    sizeBytes: typeof webZip.size === 'number' ? webZip.size : undefined,
+    downloadUrl: webZip.url,
+    sizeBytes: webZip.size,
     kind: 'web-zip',
   };
 }
