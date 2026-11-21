@@ -17,6 +17,8 @@ import {
   saveTextFilePortable,
   triggerPlatformPrint,
 } from '../platform/nativeBridge';
+import { useDeviceFormFactor } from '../hooks/useDeviceFormFactor';
+import { getLockScreenBiometricCopy } from '../utils/deviceBiometricCopy';
 import {
   Lock,
   ShieldCheck,
@@ -35,6 +37,7 @@ import {
   Printer,
   Fingerprint,
   Globe,
+  Laptop,
 } from 'lucide-react';
 
 const MOTIVATIONAL_CLINICAL_QUOTES: ReadonlyArray<{
@@ -80,6 +83,7 @@ export const LockScreen: React.FC = () => {
     kdfProgress,
     isPrfSupported,
     isPrfEnrolled,
+    biometricMode,
     isPinEnrolled,
     schemaDowngradeError,
     resetPasswordWithRecovery,
@@ -88,6 +92,11 @@ export const LockScreen: React.FC = () => {
   } = useVault();
   const { language, isRtl, bi } = useLanguage();
   const { theme, toggleTheme } = useTheme();
+  const deviceFormFactor = useDeviceFormFactor();
+  const biometricCopy = useMemo(
+    () => getLockScreenBiometricCopy(deviceFormFactor, biometricMode),
+    [deviceFormFactor, biometricMode]
+  );
 
   const [motivationalQuote] = useState(() => {
     try {
@@ -1091,6 +1100,7 @@ export const LockScreen: React.FC = () => {
                 {!isSetup && isPrfSupported && isPrfEnrolled && (
                   <button
                     type="button"
+                    data-testid="lock-biometric-unlock-btn"
                     disabled={submitting}
                     onClick={async () => {
                       setLocalError(null);
@@ -1102,9 +1112,9 @@ export const LockScreen: React.FC = () => {
                         setLocalError(
                           msg ||
                             bi(
-                              'تعذر فتح القفل بمفتاح المرور. استخدم كلمة المرور الرئيسية.',
-                              'Passkey unlock failed. Use your master password.',
-                              'کردنەوە بە کلیلی تێپەڕبوون سەرکەوتوو نەبوو. وشەی نهێنی سەرەکی بەکاربهێنە.'
+                              biometricCopy.unlockFailed.ar,
+                              biometricCopy.unlockFailed.en,
+                              biometricCopy.unlockFailed.ckb
                             )
                         );
                       } finally {
@@ -1113,12 +1123,16 @@ export const LockScreen: React.FC = () => {
                     }}
                     className="mt-2.5 w-full h-11 px-4 rounded-full bg-surface hover:bg-layer-hover text-xs font-semibold text-foreground disabled:opacity-50 transition-all cursor-pointer inline-flex items-center justify-center gap-2"
                   >
-                    <Fingerprint className="w-4 h-4 text-primary" />
+                    {deviceFormFactor === 'desktop' ? (
+                      <Laptop className="w-4 h-4 text-primary" />
+                    ) : (
+                      <Fingerprint className="w-4 h-4 text-primary" />
+                    )}
                     <span>
                       {bi(
-                        'فتح بقفل الحاسوب / البصمة',
-                        'Unlock with Device Lock / Passkey',
-                        'کردنەوە بە قفڵی ئامێر / پەنجەمۆر'
+                        biometricCopy.unlockButton.ar,
+                        biometricCopy.unlockButton.en,
+                        biometricCopy.unlockButton.ckb
                       )}
                     </span>
                   </button>
@@ -1150,7 +1164,11 @@ export const LockScreen: React.FC = () => {
                     className="font-bold text-foreground underline underline-offset-4 hover:text-primary cursor-pointer"
                   >
                     {isPrfSupported && isPrfEnrolled
-                      ? bi('استعادة بقفل الجهاز أو مفتاح الطوارئ', 'Recover with Device Lock or Key', 'گەڕاندنەوە بە قفڵی ئامێر یان کلیل')
+                      ? bi(
+                          biometricCopy.forgotPasswordLink.ar,
+                          biometricCopy.forgotPasswordLink.en,
+                          biometricCopy.forgotPasswordLink.ckb
+                        )
                       : bi('استعادة بمفتاح الطوارئ', 'Recover here', 'گەڕاندنەوە لێرە')}
                   </button>
                 </div>
@@ -1214,8 +1232,18 @@ export const LockScreen: React.FC = () => {
                       : 'text-muted-foreground-1 hover:text-foreground'
                   }`}
                 >
-                  <Fingerprint className="size-3.5 shrink-0" />
-                  <span>{bi('بقفل الجهاز (سريع)', 'Device Lock (Fast)', 'بە قفڵی ئامێر')}</span>
+                  {deviceFormFactor === 'desktop' ? (
+                    <Laptop className="size-3.5 shrink-0" />
+                  ) : (
+                    <Fingerprint className="size-3.5 shrink-0" />
+                  )}
+                  <span>
+                    {bi(
+                      biometricCopy.recoveryTab.ar,
+                      biometricCopy.recoveryTab.en,
+                      biometricCopy.recoveryTab.ckb
+                    )}
+                  </span>
                 </button>
                 <button
                   type="button"
@@ -1241,9 +1269,9 @@ export const LockScreen: React.FC = () => {
             <p className="text-xs text-muted-foreground-2 leading-relaxed">
               {recoveryMethod === 'prf' && isPrfSupported && isPrfEnrolled
                 ? bi(
-                    'استخدم قفل الحاسوب أو بصمة جهازك (Windows Hello / Touch ID / بصمة الهاتف) لتعيين كلمة مرور رئيسية جديدة فوراً دون فقدان أي سجل.',
-                    'Use your PC lock or device biometrics (Windows Hello / Touch ID / Passkey) to set a new master password immediately without losing any clinical record.',
-                    'قفڵی ئامێر یان پەنجەمۆرەکەت بەکاربهێنە بۆ دانانی وشەی نهێنی نوێ بەبێ لەدەستدانی هیچ تۆمارێک.'
+                    biometricCopy.recoveryDescription.ar,
+                    biometricCopy.recoveryDescription.en,
+                    biometricCopy.recoveryDescription.ckb
                   )
                 : bi(
                     'أدخل مفتاح الاسترداد الطارئ المكون من 32 خانة لفك تغليف مفتاح البيانات الأصلي (DEK) وتعيين كلمة مرور جديدة دون فقدان أي سجل.',
@@ -1347,16 +1375,20 @@ export const LockScreen: React.FC = () => {
                   className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   {recoveryMethod === 'prf' && isPrfSupported && isPrfEnrolled && (
-                    <Fingerprint className="size-3.5 shrink-0" />
+                    deviceFormFactor === 'desktop' ? (
+                      <Laptop className="size-3.5 shrink-0" />
+                    ) : (
+                      <Fingerprint className="size-3.5 shrink-0" />
+                    )
                   )}
                   <span>
                     {submitting
                       ? bi('جاري الاسترداد...', 'Recovering...', 'خەریکی گەڕاندنەوەیە...')
                       : recoveryMethod === 'prf' && isPrfSupported && isPrfEnrolled
                         ? bi(
-                            'تحقق بقفل الجهاز وتعيين كلمة المرور',
-                            'Verify Device Lock & Reset Password',
-                            'پشکنینی قفڵی ئامێر و دانانی وشەی نهێنی'
+                            biometricCopy.recoverySubmit.ar,
+                            biometricCopy.recoverySubmit.en,
+                            biometricCopy.recoverySubmit.ckb
                           )
                         : bi(
                             'استرداد الخزينة وحفظ كلمة المرور',

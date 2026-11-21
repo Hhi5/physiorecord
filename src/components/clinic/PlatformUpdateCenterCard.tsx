@@ -49,6 +49,7 @@ import {
   openSafeExternalUrl,
   type ElectronDesktopUpdateStatus,
 } from '../../platform/nativeBridge';
+import { useDeviceFormFactor } from '../../hooks/useDeviceFormFactor';
 import {
   applyPwaUpdate,
   checkForPwaUpdate,
@@ -70,6 +71,7 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
   const { bi, isRtl } = useLanguage();
   const pwa = usePwaStatus();
   const runtimeTarget = getAppRuntimeTarget();
+  const deviceFormFactor = useDeviceFormFactor();
 
   const [androidInfo, setAndroidInfo] = useState<{
     packageName: string;
@@ -147,8 +149,14 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
     runtimeTarget === 'desktop'
       ? bi('سطح المكتب (Windows Setup)', 'Windows Desktop (Electron)', 'سەر مێز (Windows)')
       : runtimeTarget === 'android'
-        ? bi('أندرويد (Signed APK)', 'Android Native (Signed APK)', 'ئەندرۆید (APK)')
-        : bi('تطبيق الويب (Web / PWA)', 'Web / PWA Browser', 'وێب (PWA)');
+        ? deviceFormFactor === 'tablet'
+          ? bi('أندرويد — التابلت (Signed APK)', 'Android Tablet (Signed APK)', 'ئەندرۆید — تابلێت (APK)')
+          : bi('أندرويد — الهاتف (Signed APK)', 'Android Mobile (Signed APK)', 'ئەندرۆید — مۆبایل (APK)')
+        : deviceFormFactor === 'desktop'
+          ? bi('تطبيق الويب — الحاسوب (Web / PWA)', 'Web / PWA (Desktop)', 'وێب — کۆمپیوتەر (PWA)')
+          : deviceFormFactor === 'tablet'
+            ? bi('تطبيق الويب — التابلت (Web / PWA)', 'Web / PWA (Tablet)', 'وێب — تابلێت (PWA)')
+            : bi('تطبيق الويب — الهاتف (Web / PWA)', 'Web / PWA (Mobile)', 'وێب — مۆبایل (PWA)');
 
   const latestSyncedRelease = useMemo(() => {
     if (syncedReleases.length === 0) return null;

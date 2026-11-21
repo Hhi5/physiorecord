@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { usePatients } from '../context/PatientContext';
+import { useDeviceFormFactor } from '../hooks/useDeviceFormFactor';
 import { DemoBadge } from './ui/Primitives';
 import { ClinicOperationsService } from '../services/clinicOperationsService';
 import type { SettingsViewMode } from '../types/clinicManagement';
@@ -96,6 +97,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const { isRtl, bi } = useLanguage();
   const { patients } = usePatients();
+  const deviceFormFactor = useDeviceFormFactor();
 
   const [activeTab, setActiveTab] = useState<SettingsTabId>(initialTab);
   const [mobileView, setMobileView] = useState<'menu' | 'detail'>('menu');
@@ -230,11 +232,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     {
       id: 'display',
       label: bi('اللغة والمظهر', 'Display', 'زمان و شێواز'),
-      subtitle: bi(
-        'اللغة، الوضع الليلي والنهاري، الألوان، حجم الخط وخيارات الأداء',
-        'Interface language, dark/light mode, accent color, typography & performance',
-        'زمان، دۆخی شەو/ڕۆژ، ڕەنگەکان، قەبارەی فۆنت و کارایی'
-      ),
+      subtitle:
+        deviceFormFactor === 'desktop'
+          ? bi(
+              'اللغة، الوضع الليلي والنهاري، الألوان، خطوط الحاسوب، عرض المحتوى والأداء',
+              'Interface language, theme mode, desktop fonts, content width & performance',
+              'زمان، دۆخی شەو/ڕۆژ، ڕەنگەکان، فۆنتی کۆمپیوتەر، پانی و کارایی'
+            )
+          : deviceFormFactor === 'tablet'
+            ? bi(
+                'اللغة، الوضع الليلي والنهاري، أزرار التابلت، حجم الخط وعرض المحتوى',
+                'Interface language, theme mode, tablet touch targets, typography & width',
+                'زمان، دۆخی شەو/ڕۆژ، دوگمەکانی تابلێت، قەبارەی فۆنت و پانی'
+              )
+            : bi(
+                'اللغة، الوضع الليلي والنهاري، أزرار الهاتف، حجم الخط وخيارات الأداء',
+                'Interface language, theme mode, mobile touch targets, typography & performance',
+                'زمان، دۆخی شەو/ڕۆژ، دوگمەکانی مۆبایل، قەبارەی فۆنت و کارایی'
+              ),
       icon: <Type className="size-4 shrink-0" />,
       visible: true,
     },
@@ -288,11 +303,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     {
       id: 'security',
       label: bi('الأمان', 'Security', 'ئاسایش'),
-      subtitle: bi(
-        'النسخ الاحتياطي والاسترداد، القفل التلقائي، البصمة والتحديثات',
-        'Encrypted backups, recovery key drill, auto-lock, biometrics & updates',
-        'کۆپی یەدەگ، قفڵی خۆکار، پەنجەمۆر و نوێکردنەوەکان'
-      ),
+      subtitle:
+        deviceFormFactor === 'desktop'
+          ? bi(
+              'النسخ الاحتياطي والاسترداد، القفل التلقائي، قفل الحاسوب أو رمز PIN والتحديثات',
+              'Encrypted backups, recovery drill, auto-lock, PC Lock / PIN & updates',
+              'کۆپی یەدەگ، قفڵی خۆکار، قفڵی کۆمپیوتەر یان PIN و نوێکردنەوەکان'
+            )
+          : deviceFormFactor === 'tablet'
+            ? bi(
+                'النسخ الاحتياطي والاسترداد، القفل التلقائي، بصمة التابلت أو الوجه والتحديثات',
+                'Encrypted backups, recovery drill, auto-lock, tablet biometrics & updates',
+                'کۆپی یەدەگ، قفڵی خۆکار، پەنجەمۆر یان ڕووخساری تابلێت و نوێکردنەوەکان'
+              )
+            : bi(
+                'النسخ الاحتياطي والاسترداد، القفل التلقائي، بصمة الهاتف أو الوجه والتحديثات',
+                'Encrypted backups, recovery drill, auto-lock, phone biometrics & updates',
+                'کۆپی یەدەگ، قفڵی خۆکار، پەنجەمۆر یان ڕووخساری مۆبایل و نوێکردنەوەکان'
+              ),
       icon: <Shield className="size-4 shrink-0" />,
       visible: true,
     },
@@ -595,6 +623,45 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <div className="divide-y divide-card-divider">
                         {matchedItems.map((item) => {
                           const ckbMeta = SETTINGS_CATALOG_CKB[item.id];
+                          const isLockItem = item.id === 'hub-security-lock';
+                          const itemTitle = isLockItem
+                            ? deviceFormFactor === 'desktop'
+                              ? bi(
+                                  'قفل الحاسوب أو رمز PIN',
+                                  'PC Lock, Windows Hello & PIN Unlock',
+                                  'قفڵی کۆمپیوتەر یان کۆدی PIN'
+                                )
+                              : deviceFormFactor === 'tablet'
+                                ? bi(
+                                    'بصمة التابلت والقفل التلقائي',
+                                    'Tablet Biometrics & Auto-Lock',
+                                    'پەنجەمۆری تابلێت و قفڵی خۆکار'
+                                  )
+                                : bi(
+                                    'بصمة الهاتف والقفل التلقائي',
+                                    'Phone Biometrics & Auto-Lock',
+                                    'پەنجەمۆری مۆبایل و قفڵی خۆکار'
+                                  )
+                            : bi(item.titleAr, item.titleEn, ckbMeta?.title);
+                          const itemDesc = isLockItem
+                            ? deviceFormFactor === 'desktop'
+                              ? bi(
+                                  'التحكم بقفل الحاسوب (Windows Hello) أو رمز PIN السريع ومؤقت الخمول لهذا الجهاز',
+                                  'Manage PC Lock (Windows Hello), Quick PIN unlock & desktop auto-lock timer',
+                                  'بەڕێوەبردنی قفڵی کۆمپیوتەر (Windows Hello)، کۆدی PIN و کاتی قفڵی خۆکار'
+                                )
+                              : deviceFormFactor === 'tablet'
+                                ? bi(
+                                    'إدارة بصمة الإصبع أو الوجه على التابلت ومؤقت القفل التلقائي لهذا الجهاز',
+                                    'Manage tablet fingerprint/face unlock and auto-lock timeout for this tablet',
+                                    'بەڕێوەبردنی پەنجەمۆر یان ناسینەوەی ڕووخسار و قفڵی خۆکار بۆ ئەم تابلێتە'
+                                  )
+                                : bi(
+                                    'إدارة بصمة الهاتف أو الوجه (Biometrics) ومؤقت القفل التلقائي لهذا الجهاز',
+                                    'Manage phone fingerprint/face unlock and auto-lock timeout for this phone',
+                                    'بەڕێوەبردنی پەنجەمۆر یان ناسینەوەی ڕووخساری مۆبایل و قفڵی خۆکار'
+                                  )
+                            : bi(item.descAr, item.descEn, ckbMeta?.desc);
                           return (
                             <button
                               key={item.id}
@@ -611,7 +678,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                               <div className="min-w-0 space-y-0.5">
                                 <div className="flex flex-wrap items-center gap-1.5">
                                   <span className="text-xs font-bold text-foreground">
-                                    {bi(item.titleAr, item.titleEn, ckbMeta?.title)}
+                                    {itemTitle}
                                   </span>
                                   {item.isAdvanced && (
                                     <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
@@ -620,7 +687,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                   )}
                                 </div>
                                 <p className="text-xs text-muted-foreground-1">
-                                  {bi(item.descAr, item.descEn, ckbMeta?.desc)}
+                                  {itemDesc}
                                 </p>
                               </div>
                               <span className="text-xs font-bold text-primary shrink-0">

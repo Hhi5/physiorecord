@@ -318,6 +318,58 @@ export function getAppRuntimeTarget(): AppRuntimeTarget {
   return 'web';
 }
 
+export type DeviceFormFactor = 'desktop' | 'tablet' | 'mobile';
+
+export function getDeviceFormFactor(): DeviceFormFactor {
+  if (isElectronDesktop()) return 'desktop';
+
+  const w = getGlobalWindow() as (GlobalNativeWindow & { navigator?: Navigator }) | null;
+  const nav = w?.navigator ?? (typeof navigator !== 'undefined' ? navigator : null);
+  const ua = nav?.userAgent || '';
+  const maxTouchPoints = typeof nav?.maxTouchPoints === 'number' ? nav.maxTouchPoints : 0;
+  const innerW = typeof w?.innerWidth === 'number' ? w.innerWidth : 0;
+  const innerH = typeof w?.innerHeight === 'number' ? w.innerHeight : 0;
+
+  if (isNativeAndroid()) {
+    if (/\bMobile\b/i.test(ua)) return 'mobile';
+    if (innerW > 0 && innerH > 0 && Math.min(innerW, innerH) >= 600) {
+      return 'tablet';
+    }
+    if (ua && !/\bMobile\b/i.test(ua) && innerW >= 768) {
+      return 'tablet';
+    }
+    return 'mobile';
+  }
+
+  if (/\b(iPhone|iPod)\b/i.test(ua)) return 'mobile';
+  if (/\biPad\b/i.test(ua) || (/\bMacintosh\b/i.test(ua) && maxTouchPoints > 1)) {
+    return 'tablet';
+  }
+  if (/\bAndroid\b/i.test(ua)) {
+    return /\bMobile\b/i.test(ua) ? 'mobile' : 'tablet';
+  }
+  if (/\b(Tablet|PlayBook|Silk|Kindle)\b/i.test(ua)) return 'tablet';
+  if (/\b(Mobile|Opera Mini|IEMobile|WPDesktop|BlackBerry|webOS)\b/i.test(ua)) {
+    return 'mobile';
+  }
+
+  const isCoarsePointer =
+    Boolean(w?.matchMedia?.('(pointer: coarse)')?.matches) || maxTouchPoints > 1;
+  if (isCoarsePointer && innerW > 0 && innerW <= 1366) {
+    return innerW < 768 ? 'mobile' : 'tablet';
+  }
+
+  if (innerW > 0 && innerW < 768) {
+    return 'mobile';
+  }
+
+  return 'desktop';
+}
+
+export function isMobileOrTabletDevice(): boolean {
+  return getDeviceFormFactor() !== 'desktop';
+}
+
 export async function getAndroidAppVersionInfo(): Promise<{
   packageName: string;
   versionName: string;

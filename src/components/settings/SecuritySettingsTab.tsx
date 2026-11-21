@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Activity,
   BellRing,
@@ -11,13 +11,18 @@ import {
   Fingerprint,
   HardDrive,
   KeyRound,
+  Laptop,
   Lock,
   RefreshCw,
   Shield,
   ShieldCheck,
+  Smartphone,
+  Tablet,
   Upload,
 } from 'lucide-react';
 import { isElectronDesktop } from '../../platform/nativeBridge';
+import { useDeviceFormFactor } from '../../hooks/useDeviceFormFactor';
+import { getSecuritySettingsCopy } from '../../utils/deviceBiometricCopy';
 import { useLanguage } from '../../context/LanguageContext';
 import { useVault } from '../../context/VaultContext';
 import { requestPersistentStorage } from '../../db/db';
@@ -63,6 +68,7 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
   onOpenCsvOnboarding,
 }) => {
   const { language, bi } = useLanguage();
+  const deviceFormFactor = useDeviceFormFactor();
   const {
     autoLockTimeoutMs,
     setAutoLockTimeoutMs,
@@ -86,6 +92,25 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
     passwordReminderState,
     setPasswordReminderEnabled,
   } = useVault();
+
+  const securityCopy = useMemo(
+    () =>
+      getSecuritySettingsCopy({
+        device: deviceFormFactor,
+        isPrfSupported,
+        biometricMode,
+        unavailableReason: biometricUnavailableReason,
+        isElectronShell: isElectronDesktop(),
+      }),
+    [deviceFormFactor, isPrfSupported, biometricMode, biometricUnavailableReason]
+  );
+
+  const DeviceIcon =
+    deviceFormFactor === 'desktop'
+      ? Laptop
+      : deviceFormFactor === 'tablet'
+        ? Tablet
+        : Smartphone;
 
   const [storageEstimate, setStorageEstimate] = useState<{ usageMB: number; quotaMB: number } | null>(null);
   const [localPersistenceState, setLocalPersistenceState] = useState<boolean>(persistenceGranted);
@@ -367,9 +392,9 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
       ) {
         setPrfError(
           bi(
-            'المتصفح يحجب طلب قفل الحاسوب (Windows Hello / Passkey) داخل نافذة المعاينة المضمّنة. افتح التطبيق في تبويب متصفح مستقل أو استخدم تطبيق الحاسوب (.exe).',
-            'Your browser blocks PC Device Lock (Windows Hello / Passkey) inside embedded preview frames. Open the app in a standalone tab or use the Desktop app.',
-            'وێبگەڕ ڕێگە بە قفڵی ئامێر (Windows Hello / Passkey) نادات لە ناو پەنجەرەی هاوپێچکراودا. ئەپەکە لە تابێکی سەربەخۆ بکەرەوە.'
+            securityCopy.biometricIframeBlockedError.ar,
+            securityCopy.biometricIframeBlockedError.en,
+            securityCopy.biometricIframeBlockedError.ckb
           )
         );
       } else {
@@ -567,9 +592,24 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
       {/* 2. Access & Auto-Lock */}
       <section className="p-4 sm:p-5 rounded-2xl bg-card border border-card-line space-y-4">
         <div className="space-y-2.5">
-          <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-            <Clock className="size-4 text-primary" />
-            <span>{bi('القفل التلقائي عند عدم النشاط', 'Inactivity Auto-Lock', 'قفڵکردنی خۆکار لە کاتی بێچالاکی')}</span>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+              <Clock className="size-4 text-primary" />
+              <span>{bi('القفل التلقائي عند عدم النشاط', 'Inactivity Auto-Lock', 'قفڵکردنی خۆکار لە کاتی بێچالاکی')}</span>
+            </div>
+            <span
+              data-testid="settings-security-device-badge"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface border border-line-2 text-xs font-bold text-primary"
+            >
+              <DeviceIcon className="size-3.5 shrink-0" />
+              <span>
+                {bi(
+                  securityCopy.deviceProfileBadge.ar,
+                  securityCopy.deviceProfileBadge.en,
+                  securityCopy.deviceProfileBadge.ckb
+                )}
+              </span>
+            </span>
           </div>
           <p className="text-xs text-muted-foreground-1 leading-relaxed">
             {bi(
@@ -607,6 +647,14 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
               {bi('تحديد يدوي (بالدقائق)...', 'Custom (Enter minutes)...', 'دیاریکردنی دەستی (بە خولەک)...')}
             </option>
           </select>
+
+          <p className="text-xs text-muted-foreground-1 leading-relaxed">
+            {bi(
+              securityCopy.autoLockScopeHint.ar,
+              securityCopy.autoLockScopeHint.en,
+              securityCopy.autoLockScopeHint.ckb
+            )}
+          </p>
 
           {isCustomLockMode && (
             <div className="flex items-center gap-2 pt-1">
@@ -654,7 +702,7 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
           )}
         </div>
 
-        {/* OS Device Lock / Windows Hello / Touch ID / Biometric Passkey */}
+        {/* Device-Specific Biometrics / PC OS Lock */}
         <div
           data-testid="settings-biometric-section"
           className="pt-3.5 border-t border-card-divider space-y-2.5"
@@ -662,12 +710,16 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-foreground">
-                <Fingerprint className="size-4 text-primary shrink-0" />
+                {deviceFormFactor === 'desktop' ? (
+                  <Laptop className="size-4 text-primary shrink-0" />
+                ) : (
+                  <Fingerprint className="size-4 text-primary shrink-0" />
+                )}
                 <span>
                   {bi(
-                    'قفل الحاسوب والنظام (Windows Hello / البصمة / كلمة مرور الجهاز)',
-                    'Device Lock & Passkey (Windows Hello / Touch ID / Biometrics)',
-                    'قفڵی کۆمپیوتەر و سیستەم (Windows Hello / پەنجەمۆر / وشەی نهێنی ئامێر)'
+                    securityCopy.biometricTitle.ar,
+                    securityCopy.biometricTitle.en,
+                    securityCopy.biometricTitle.ckb
                   )}
                 </span>
                 <span aria-hidden="true" className="text-muted-foreground-2">·</span>
@@ -688,53 +740,11 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
                 </span>
               </div>
               <p className="text-xs text-muted-foreground-1 mt-0.5 leading-relaxed">
-                {isPrfSupported
-                  ? biometricMode === 'android-native'
-                    ? bi(
-                        'يستخدم بصمة الإصبع ومخزن المفاتيح الآمن في أندرويد (Android Keystore) لفتح الخزينة بسرعة أو تعيين كلمة مرور جديدة عند النسيان.',
-                        'Uses native Android BiometricPrompt & Android Keystore to unlock quickly or reset a forgotten password without losing records.',
-                        'پەنجەمۆری ئەندرۆید و Android Keystore بەکاردەهێنێت بۆ کردنەوەی خێرا یان گۆڕینی وشەی نهێنی لە کاتی لەبیرچوونەوەدا.'
-                      )
-                    : biometricMode === 'desktop-os'
-                      ? bi(
-                          'يستخدم رمز/كلمة مرور الحاسوب أو البصمة عبر النظام مباشرة (Windows Hello / Touch ID) مع تشفير DPAPI المحلي لفتح الخزينة تماماً مثل غوغل دون أي رمز إضافي.',
-                          'Uses your computer lock credentials directly (Windows Hello PC PIN/password/biometrics or Touch ID) backed by OS DPAPI encryption — just like Google.',
-                          'ڕاستەوخۆ وشەی نهێنی یان کۆدی PINی کۆمپیوتەر (Windows Hello / Touch ID) بەکاردەهێنێت لەگەڵ کۆدکردنی ناوخۆیی DPAPI.'
-                        )
-                      : bi(
-                          'يتيح فتح الخزينة بسرعة وكذلك تعيين كلمة مرور جديدة عبر قفل الحاسوب أو البصمة (Windows Hello / Touch ID / Passkey) تماماً مثل غوغل، مع بقاء مفتاح الطوارئ فعالاً دائماً.',
-                          'Unlocks quickly and resets a forgotten password using your PC/device lock (Windows Hello / Touch ID / Passkey), just like Google.',
-                          'ڕێگەت پێدەدات خێرا بیکەیتەوە و وشەی نهێنی نوێ دابنێیت بە قفڵی کۆمپیوتەر یان پەنجەمۆر (Windows Hello / Touch ID / Passkey).'
-                        )
-                  : biometricUnavailableReason === 'restricted-iframe'
-                    ? bi(
-                        'المتصفح يمنع طلب قفل الحاسوب (Windows Hello / Passkey) داخل نافذة المعاينة المضمّنة. افتح التطبيق في تبويب متصفح مستقل لتفعيل الفتح بكلمة مرور أو رمز الحاسوب مباشرة.',
-                        'Your browser blocks PC Device Lock (Windows Hello / Passkeys) inside embedded preview frames. Open the app in a standalone browser tab to enable PC PIN/password unlock.',
-                        'وێبگەڕ ڕێگە بە قفڵی کۆمپیوتەر (Windows Hello / Passkey) نادات لە ناو پەنجەرەی پێشبینینی هاوپێچکراو. ئەپەکە لە تابێکی سەربەخۆدا بکەرەوە.'
-                      )
-                    : biometricUnavailableReason === 'not-enrolled-os'
-                      ? isElectronDesktop()
-                        ? bi(
-                            'لم يتم إعداد قفل الجهاز (Windows Hello / رمز الحاسوب) في إعدادات ويندوز بعد. فعّله من إعدادات الحساب في ويندوز ثم عد إلى هنا.',
-                            'Windows Hello (PC PIN / biometrics) is not configured in Windows Settings yet. Set it up in Windows Accounts -> Sign-in options first.',
-                            'هێشتا قفڵی ئامێر (Windows Hello / PIN) لە ڕێکخستنەکانی ویندۆزدا دانەنراوە.'
-                          )
-                        : bi(
-                            'لم يتم تسجيل بصمة إصبع في نظام الهاتف بعد. أضف بصمة من إعدادات أندرويد أولاً ثم عد إلى هنا لتفعيلها.',
-                            'No fingerprint is enrolled on this device yet. Add a fingerprint in Android Settings first, then return here to enable it.',
-                            'هێشتا هیچ پەنجەمۆرێک لەسەر مۆبایلەکە تۆمار نەکراوە. سەرەتا لە ڕێکخستنەکانی ئەندرۆید پەنجەمۆر زیاد بکە.'
-                          )
-                      : biometricUnavailableReason === 'no-hardware'
-                        ? bi(
-                            'لا يتوفر قفل نظام مدعوم (Windows Hello / مستشعر بصمة) على هذا الجهاز حالياً.',
-                            'No compatible OS device lock or biometric hardware was detected on this device.',
-                            'هیچ قفڵی سیستەم یان هەستەوەری پەنجەمۆری گونجاو لەسەر ئەم ئامێرە بەردەست نییە.'
-                          )
-                        : bi(
-                            'هذا المتصفح لا يدعم مفتاح مرور النظام (WebAuthn Passkey). جرّب Chrome أو Edge في تبويب مستقل أو استخدم تطبيق الحاسوب (.exe).',
-                            'This browser does not support WebAuthn Platform Passkeys. Try Chrome or Edge in a standalone tab or use the Windows Desktop app (.exe).',
-                            'ئەم وێبگەڕە پشتگیری WebAuthn Passkey ناکات. لە Chrome یان Edge بە سەربەخۆیی بیکەرەوە یان ئەپی کۆمپیوتەر (.exe) بەکاربهێنە.'
-                          )}
+                {bi(
+                  securityCopy.biometricDescription.ar,
+                  securityCopy.biometricDescription.en,
+                  securityCopy.biometricDescription.ckb
+                )}
               </p>
               {prfError && <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold mt-1">{prfError}</p>}
             </div>
@@ -765,7 +775,11 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
                     }}
                     className="min-h-[36px] px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold cursor-pointer"
                   >
-                    {bi('تعيين كلمة مرور بقفل الجهاز', 'Reset Password via Device Lock', 'دانانی وشەی نهێنی بە قفڵی ئامێر')}
+                    {bi(
+                      securityCopy.biometricResetPasswordButton.ar,
+                      securityCopy.biometricResetPasswordButton.en,
+                      securityCopy.biometricResetPasswordButton.ckb
+                    )}
                   </button>
                 )}
                 <button
@@ -779,18 +793,20 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
                     ? bi('جاري المعالجة...', 'Working...', 'جێبەجێ دەکرێت...')
                     : isPrfEnrolled
                       ? bi('تعطيل', 'Disable', 'ناچالاککردن')
-                      : biometricMode === 'android-native'
-                        ? bi('تفعيل البصمة', 'Enable Fingerprint', 'چالاککردنی پەنجەمۆر')
-                        : bi('تفعيل قفل الحاسوب / البصمة', 'Enable Device Lock', 'چالاککردنی قفڵی ئامێر')}
+                      : bi(
+                          securityCopy.biometricEnableButton.ar,
+                          securityCopy.biometricEnableButton.en,
+                          securityCopy.biometricEnableButton.ckb
+                        )}
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Optional In-App Quick PIN Fallback (Collapsed unless active) */}
+        {/* Optional In-App Quick PIN Fallback (Prominent on PCs without OS Lock; collapsed on Mobile/Tablet unless active) */}
         <details
-          open={isPinEnrolled}
+          open={isPinEnrolled || (deviceFormFactor === 'desktop' && !isPrfSupported)}
           data-testid="settings-quick-pin-fallback-details"
           className="pt-3 border-t border-card-divider group"
         >
@@ -799,9 +815,9 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
               <KeyRound className="size-3.5 text-primary shrink-0" />
               <span>
                 {bi(
-                  'بديل يدوي اختياري: رمز PIN داخل التطبيق',
-                  'Optional Fallback: In-App Quick PIN',
-                  'بژاردەی لاوەکی: کۆدی PINی ناوخۆیی'
+                  securityCopy.quickPinSummary.ar,
+                  securityCopy.quickPinSummary.en,
+                  securityCopy.quickPinSummary.ckb
                 )}
               </span>
               {isPinEnrolled && (
@@ -825,9 +841,9 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
                 <KeyRound className="size-4 text-primary shrink-0" />
                 <span>
                   {bi(
-                    'الفتح السريع برمز PIN (للحاسوب والمتصفحات)',
-                    'Quick PIN Unlock (Desktop & Browser)',
-                    'کردنەوەی خێرا بە کۆدی PIN (بۆ کۆمپیوتەر و وێبگەڕ)'
+                    securityCopy.quickPinTitle.ar,
+                    securityCopy.quickPinTitle.en,
+                    securityCopy.quickPinTitle.ckb
                   )}
                 </span>
                 <span aria-hidden="true" className="text-muted-foreground-2">·</span>
@@ -846,9 +862,9 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
               </div>
               <p className="text-xs text-muted-foreground-1 mt-0.5 leading-relaxed">
                 {bi(
-                  'بديل البصمة على الحاسوب والأنظمة التي لا تدعم Passkey: افتح الخزينة برمز رقمي سريع (4–12 رقماً)، مع تعطيله تلقائياً بعد 5 محاولات خاطئة وبقاء كلمة المرور الرئيسية كما هي.',
-                  'Works on Desktop & all browsers without WebAuthn: unlock your vault with a fast numeric PIN (4–12 digits). Automatically disables after 5 failed attempts; your master password remains unchanged.',
-                  'جێگرەوەی پەنجەمۆرە لەسەر کۆمپیوتەر و هەموو وێبگەڕەکان: خەزێنە بە کۆدێکی ژمارەیی (٤–١٢ ژمارە) بکەرەوە و دوای ٥ هەوڵی هەڵە خۆکار ناچالاک دەبێت.'
+                  securityCopy.quickPinDescription.ar,
+                  securityCopy.quickPinDescription.en,
+                  securityCopy.quickPinDescription.ckb
                 )}
               </p>
               {quickPinSaved && (
@@ -1022,9 +1038,9 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
               </div>
               <p className="text-xs text-muted-foreground-1 mt-0.5 leading-relaxed">
                 {bi(
-                  'يدعم الحفظ التلقائي في مدير كلمات مرور المتصفح (Google Password Manager / iCloud Keychain) محلياً دون أي خوادم.',
-                  'Supports native browser/OS autofill saving (Google Password Manager / iCloud Keychain) with zero external servers.',
-                  'پشتگیری پاشەکەوتکردنی خۆکار لە بەڕێوەبەری وشە نهێنییەکانی وێبگەڕ (Google / iCloud) دەکات.'
+                  securityCopy.passwordManagerNote.ar,
+                  securityCopy.passwordManagerNote.en,
+                  securityCopy.passwordManagerNote.ckb
                 )}
               </p>
             </div>
@@ -1088,8 +1104,18 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
                         : 'text-muted-foreground-1 hover:text-foreground'
                     }`}
                   >
-                    <Fingerprint className="size-3.5 shrink-0" />
-                    <span>{bi('عبر البصمة (بدون القديمة)', 'Via Passkey (No Old PW)', 'بە پەنجەمۆر')}</span>
+                    {deviceFormFactor === 'desktop' ? (
+                      <Laptop className="size-3.5 shrink-0" />
+                    ) : (
+                      <Fingerprint className="size-3.5 shrink-0" />
+                    )}
+                    <span>
+                      {bi(
+                        securityCopy.passwordChangeBiometricTab.ar,
+                        securityCopy.passwordChangeBiometricTab.en,
+                        securityCopy.passwordChangeBiometricTab.ckb
+                      )}
+                    </span>
                   </button>
                 </div>
               )}
@@ -1156,13 +1182,21 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
                   className="min-h-[36px] px-4 py-1.5 rounded-xl bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   {pwChangeMode === 'prf' && isPrfSupported && isPrfEnrolled && (
-                    <Fingerprint className="size-3.5 shrink-0" />
+                    deviceFormFactor === 'desktop' ? (
+                      <Laptop className="size-3.5 shrink-0" />
+                    ) : (
+                      <Fingerprint className="size-3.5 shrink-0" />
+                    )
                   )}
                   <span>
                     {pwChangeBusy
                       ? bi('جاري التحديث...', 'Updating...', 'نوێ دەکرێتەوە...')
                       : pwChangeMode === 'prf' && isPrfSupported && isPrfEnrolled
-                        ? bi('تحقق بالبصمة وحفظ كلمة المرور', 'Verify Passkey & Save', 'پشکنینی پەنجەمۆر و پاشەکەوت')
+                        ? bi(
+                            securityCopy.passwordChangeBiometricSubmit.ar,
+                            securityCopy.passwordChangeBiometricSubmit.en,
+                            securityCopy.passwordChangeBiometricSubmit.ckb
+                          )
                         : bi('حفظ كلمة المرور الجديدة', 'Save New Password', 'پاشەکەوتکردنی وشەی نهێنی نوێ')}
                   </span>
                 </button>

@@ -186,7 +186,18 @@ test('Settings search catalog matches Arabic, Kurdish, and English queries for u
     );
   }
 
-  for (const query of ['بصمة', 'بصمه', 'fingerprint', 'پەنجەمۆر', 'biometric']) {
+  for (const query of [
+    'بصمة',
+    'بصمه',
+    'fingerprint',
+    'پەنجەمۆر',
+    'biometric',
+    'حاسوب',
+    'هاتف',
+    'تابلت',
+    'tablet',
+    'pc',
+  ]) {
     const matches = filterSettingsCatalog(query, 'simple');
     assert.ok(
       matches.some((m) => m.id === 'hub-security-lock'),
@@ -348,4 +359,92 @@ test('buildCleanReferringDoctorSalutation prevents duplicated Arabic/English doc
     'Dear Colleague Physician,'
   );
 });
+
+test('getDeviceFormFactor and deviceBiometricCopy separate desktop vs tablet vs mobile cleanly', async () => {
+  const { getDeviceFormFactor, isMobileOrTabletDevice } = await import(
+    '../src/platform/nativeBridge'
+  );
+  const { getLockScreenBiometricCopy, getSecuritySettingsCopy } = await import(
+    '../src/utils/deviceBiometricCopy'
+  );
+
+  const prevWindow = (globalThis as { window?: unknown }).window;
+  try {
+    (globalThis as { window?: unknown }).window = {
+      physiorecordDesktop: { isDesktop: true },
+      innerWidth: 1366,
+      innerHeight: 768,
+      navigator: { userAgent: 'Electron', maxTouchPoints: 0 },
+    };
+    assert.equal(getDeviceFormFactor(), 'desktop');
+    assert.equal(isMobileOrTabletDevice(), false);
+
+    (globalThis as { window?: unknown }).window = {
+      innerWidth: 390,
+      innerHeight: 844,
+      navigator: {
+        userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile',
+        maxTouchPoints: 5,
+      },
+    };
+    assert.equal(getDeviceFormFactor(), 'mobile');
+    assert.equal(isMobileOrTabletDevice(), true);
+
+    (globalThis as { window?: unknown }).window = {
+      innerWidth: 820,
+      innerHeight: 1180,
+      navigator: {
+        userAgent: 'Mozilla/5.0 (Linux; Android 14; SM-X710) AppleWebKit/537.36 Safari/537.36',
+        maxTouchPoints: 5,
+      },
+    };
+    assert.equal(getDeviceFormFactor(), 'tablet');
+    assert.equal(isMobileOrTabletDevice(), true);
+  } finally {
+    if (prevWindow === undefined) {
+      delete (globalThis as { window?: unknown }).window;
+    } else {
+      (globalThis as { window?: unknown }).window = prevWindow;
+    }
+  }
+
+  const desktopLock = getLockScreenBiometricCopy('desktop', 'webauthn-prf');
+  const mobileLock = getLockScreenBiometricCopy('mobile', 'android-native');
+  const tabletLock = getLockScreenBiometricCopy('tablet', 'webauthn-prf');
+
+  assert.ok(desktopLock.unlockButton.ar.includes('الحاسوب'));
+  assert.ok(mobileLock.unlockButton.ar.includes('الهاتف'));
+  assert.ok(tabletLock.unlockButton.ar.includes('التابلت'));
+  assert.ok(!mobileLock.unlockButton.ar.includes('الحاسوب'));
+  assert.ok(!tabletLock.unlockButton.ar.includes('الحاسوب'));
+
+  const mobileSettings = getSecuritySettingsCopy({
+    device: 'mobile',
+    isPrfSupported: true,
+    biometricMode: 'android-native',
+    unavailableReason: 'none',
+    isElectronShell: false,
+  });
+  const tabletSettings = getSecuritySettingsCopy({
+    device: 'tablet',
+    isPrfSupported: true,
+    biometricMode: 'webauthn-prf',
+    unavailableReason: 'none',
+    isElectronShell: false,
+  });
+  const desktopSettings = getSecuritySettingsCopy({
+    device: 'desktop',
+    isPrfSupported: false,
+    biometricMode: 'unsupported',
+    unavailableReason: 'no-hardware',
+    isElectronShell: false,
+  });
+
+  assert.notEqual(mobileSettings.biometricTitle.ar, desktopSettings.biometricTitle.ar);
+  assert.notEqual(tabletSettings.biometricTitle.ar, mobileSettings.biometricTitle.ar);
+  assert.ok(!mobileSettings.quickPinTitle.ar.includes('حاسوب'));
+  assert.ok(!tabletSettings.quickPinTitle.ar.includes('حاسوب'));
+  assert.ok(desktopSettings.quickPinTitle.ar.includes('حاسوب'));
+});
+
 

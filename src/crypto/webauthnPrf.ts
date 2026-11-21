@@ -25,9 +25,11 @@ import {
   enrollNativeAndroidBiometricDek,
   getAndroidNativePlugin,
   getDesktopOsBiometricStatus,
+  getDeviceFormFactor,
   getElectronDesktopBridge,
   getNativeAndroidBiometricStatus,
   isElectronDesktop,
+  isMobileOrTabletDevice,
   isNativeAndroid,
   unlockDesktopOsBiometricDek,
   unlockNativeAndroidBiometricDek,
@@ -267,6 +269,8 @@ function mapWebAuthnErrorToFriendly(err: unknown): Error {
   const name = err instanceof Error ? err.name : '';
   const msg = err instanceof Error ? err.message : String(err ?? '');
   const lower = msg.toLowerCase();
+  const isHandheld = isMobileOrTabletDevice();
+  const deviceKind = getDeviceFormFactor();
 
   if (
     name === 'NotAllowedError' ||
@@ -282,6 +286,14 @@ function mapWebAuthnErrorToFriendly(err: unknown): Error {
         return true;
       }
     })();
+    if (isHandheld) {
+      const devLabel = deviceKind === 'tablet' ? 'التابلت' : 'الهاتف';
+      return new Error(
+        inIframe
+          ? `المتصفح يمنع نافذة بصمة ${devLabel} داخل نافذة المعاينة المضمّنة. افتح التطبيق في تبويب متصفح مستقل أو استخدم تطبيق الأندرويد.`
+          : `تم إلغاء الطلب أو أن المتصفح على ${devLabel} لا يسمح بطلب البصمة (Passkey) في هذا السياق.`
+      );
+    }
     return new Error(
       inIframe
         ? 'المتصفح يمنع نافذة قفل الحاسوب (Windows Hello / Passkey) داخل نافذة المعاينة المضمّنة. افتح التطبيق في تبويب متصفح مستقل أو استخدم نسخة الحاسوب (.exe).'
@@ -289,13 +301,25 @@ function mapWebAuthnErrorToFriendly(err: unknown): Error {
     );
   }
   if (name === 'AbortError') {
-    return new Error('تم إلغاء عملية التحقق عبر قفل الجهاز.');
+    return new Error(
+      isHandheld
+        ? 'تم إلغاء عملية التحقق بالبصمة.'
+        : 'تم إلغاء عملية التحقق عبر قفل الحاسوب.'
+    );
   }
   if (name === 'NotSupportedError' || name === 'InvalidStateError') {
-    return new Error('هذا الجهاز أو المتصفح لا يدعم مفتاح مرور النظام المطلوب (WebAuthn).');
+    return new Error(
+      isHandheld
+        ? 'هذا المتصفح أو الجهاز لا يدعم البصمة المطلوبة عبر الويب (WebAuthn).'
+        : 'هذا الحاسوب أو المتصفح لا يدعم مفتاح مرور النظام المطلوب (WebAuthn).'
+    );
   }
   if (err instanceof Error) return err;
-  return new Error('تعذر إتمام المصادقة عبر قفل الجهاز.');
+  return new Error(
+    isHandheld
+      ? 'تعذر إتمام المصادقة بالبصمة.'
+      : 'تعذر إتمام المصادقة عبر قفل الحاسوب.'
+  );
 }
 
 async function requestPrfAssertionOutput(
@@ -349,20 +373,30 @@ export async function enrollPasskeyPrfUnlock(
   vaultKek: CryptoKey
 ): Promise<{ credentialId: Uint8Array }> {
   const availability = await getBiometricAvailabilityInfo();
+  const isHandheld = isMobileOrTabletDevice();
+  const deviceKind = getDeviceFormFactor();
   if (!availability.supported) {
     if (availability.reason === 'not-enrolled-os') {
       throw new Error(
         isElectronDesktop()
           ? 'لم يتم إعداد Windows Hello أو رمز الحاسوب (PIN) في إعدادات ويندوز أولاً.'
-          : 'لم يتم تسجيل بصمة إصبع على الجهاز. أضف بصمة من إعدادات أندرويد أولاً.'
+          : deviceKind === 'tablet'
+            ? 'لم يتم تسجيل بصمة إصبع على التابلت. أضف بصمة من إعدادات التابلت أولاً.'
+            : 'لم يتم تسجيل بصمة إصبع على الهاتف. أضف بصمة من إعدادات الهاتف أولاً.'
       );
     }
     if (availability.reason === 'restricted-iframe') {
       throw new Error(
-        'المتصفح يمنع قفل الحاسوب (Windows Hello / Passkey) داخل نافذة المعاينة المضمّنة. افتح التطبيق في تبويب متصفح مستقل.'
+        isHandheld
+          ? 'المتصفح يمنع طلب البصمة داخل نافذة المعاينة المضمّنة. افتح التطبيق في تبويب متصفح مستقل.'
+          : 'المتصفح يمنع قفل الحاسوب (Windows Hello / Passkey) داخل نافذة المعاينة المضمّنة. افتح التطبيق في تبويب متصفح مستقل.'
       );
     }
-    throw new Error('قفل الجهاز / المصادقة الحيوية غير متوفرة في هذا المتصفح أو الجهاز.');
+    throw new Error(
+      isHandheld
+        ? 'البصمة غير متوفرة في هذا المتصفح أو الجهاز حالياً.'
+        : 'قفل الحاسوب / المصادقة الحيوية غير متوفرة في هذا المتصفح أو الحاسوب.'
+    );
   }
 
   const meta = await database.vaultMeta.get('auth');
@@ -453,7 +487,9 @@ export async function enrollPasskeyPrfUnlock(
     prfOutput = await requestPrfAssertionOutput(credentialId, prfSalt);
   } else {
     throw new Error(
-      'تم التحقق عبر قفل الحاسوب، لكن هذا المتصفح/إصدار النظام لا يدعم بعد امتداد التشفير WebAuthn PRF لحفظ مفتاح الخزينة محلياً. يعمل ذلك مباشرةً في تطبيق الحاسوب (.exe) عبر Windows Hello.'
+      isHandheld
+        ? 'تم التحقق عبر البصمة، لكن هذا المتصفح لا يدعم بعد امتداد التشفير WebAuthn PRF لحفظ مفتاح الخزينة محلياً. استخدم متصفحاً أحدث أو تطبيق الأندرويد (.apk) أو رمز PIN السريع.'
+        : 'تم التحقق عبر قفل الحاسوب، لكن هذا المتصفح/إصدار النظام لا يدعم بعد امتداد التشفير WebAuthn PRF لحفظ مفتاح الخزينة محلياً. يعمل ذلك مباشرةً في تطبيق الحاسوب (.exe) عبر Windows Hello.'
     );
   }
 

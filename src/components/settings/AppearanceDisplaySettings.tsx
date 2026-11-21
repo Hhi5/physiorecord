@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useDeviceFormFactor } from '../../hooks/useDeviceFormFactor';
 import type { SettingsViewMode } from '../../types/clinicManagement';
 import {
   BUILTIN_FONT_OPTIONS,
@@ -64,6 +65,7 @@ export const AppearanceDisplaySettings: React.FC<AppearanceDisplaySettingsProps>
   settingsViewMode = 'advanced',
 }) => {
   const { bi } = useLanguage();
+  const deviceFormFactor = useDeviceFormFactor();
   const {
     displayPrefs,
     updateDisplayPrefs,
@@ -294,7 +296,12 @@ export const AppearanceDisplaySettings: React.FC<AppearanceDisplaySettingsProps>
           </div>
 
           <div className="flex flex-wrap gap-1.5">
-            {CURATED_DEVICE_FONTS.map((df) => {
+            {CURATED_DEVICE_FONTS.filter(
+              (df) =>
+                deviceFormFactor === 'desktop' ||
+                df.family !== 'Segoe UI' ||
+                displayPrefs.fontPreset === 'system:Segoe UI'
+            ).map((df) => {
               const id = `system:${df.family}`;
               const active = displayPrefs.fontPreset === id;
               return (
@@ -367,11 +374,19 @@ export const AppearanceDisplaySettings: React.FC<AppearanceDisplaySettingsProps>
       <SettingsAccordion
         icon={<Maximize2 className="size-4" />}
         title={bi('تفاصيل الخط وكثافة التخطيط', 'Typography Fine-Tuning & Layout', 'وردەکاری فۆنت و شێوازی شاشە')}
-        subtitle={bi(
-          'سُمك الخط، تباعد الأسطر، كثافة العرض، عرض المحتوى واستدارة الحواف.',
-          'Weight, line height, Arabic readability boost, density, width & corner radius.',
-          'ئەستووری فۆنت، دووری دێڕ، چڕی نیشاندان، پانی و خڕی لێوارەکان.'
-        )}
+        subtitle={
+          deviceFormFactor === 'mobile'
+            ? bi(
+                'سُمك الخط، تباعد الأسطر، كثافة العرض واستدارة الحواف.',
+                'Weight, line height, Arabic readability boost, density & corner radius.',
+                'ئەستووری فۆنت، دووری دێڕ، چڕی نیشاندان و خڕی لێوارەکان.'
+              )
+            : bi(
+                'سُمك الخط، تباعد الأسطر، كثافة العرض، عرض المحتوى واستدارة الحواف.',
+                'Weight, line height, Arabic readability boost, density, width & corner radius.',
+                'ئەستووری فۆنت، دووری دێڕ، چڕی نیشاندان، پانی و خڕی لێوارەکان.'
+              )
+        }
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1">
@@ -481,7 +496,11 @@ export const AppearanceDisplaySettings: React.FC<AppearanceDisplaySettingsProps>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-card-divider">
+        <div
+          className={`grid grid-cols-1 ${
+            deviceFormFactor === 'mobile' ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3'
+          } gap-3 pt-2 border-t border-card-divider`}
+        >
           <div className="space-y-1">
             <span id="appearance-density-label" className="text-xs font-bold text-muted-foreground-1 block">
               {bi('كثافة العرض', 'Display Density', 'چڕی نیشاندان')}
@@ -508,34 +527,36 @@ export const AppearanceDisplaySettings: React.FC<AppearanceDisplaySettingsProps>
             </div>
           </div>
 
-          <div className="space-y-1">
-            <span id="appearance-width-label" className="text-xs font-bold text-muted-foreground-1 block">
-              {bi('عرض المحتوى', 'Content Width', 'پانی ناوەڕۆک')}
-            </span>
-            <div className="flex gap-1" role="group" aria-labelledby="appearance-width-label">
-              {([
-                { val: 'narrow', ar: 'ضيق', en: 'Narrow', ckb: 'تەسک' },
-                { val: 'standard', ar: 'قياسي', en: 'Std', ckb: 'ئاسایی' },
-                { val: 'wide', ar: 'عريض', en: 'Wide', ckb: 'فراوان' },
-                { val: 'full', ar: 'كامل', en: 'Full', ckb: 'تەواو' },
-              ] as const).map((opt) => (
-                <button
-                  key={opt.val}
-                  type="button"
-                  onClick={() =>
-                    updateDisplayPrefs({ contentMaxWidth: opt.val as ContentWidthMode })
-                  }
-                  className={`flex-1 min-h-[34px] py-1.5 rounded-xl border text-xs font-bold cursor-pointer ${
-                    displayPrefs.contentMaxWidth === opt.val
-                      ? 'bg-primary/10 border-primary text-primary'
-                      : 'bg-surface border-line-2 text-foreground hover:bg-layer-hover'
-                  }`}
-                >
-                  {bi(opt.ar, opt.en, opt.ckb)}
-                </button>
-              ))}
+          {deviceFormFactor !== 'mobile' && (
+            <div className="space-y-1" data-testid="appearance-content-width-control">
+              <span id="appearance-width-label" className="text-xs font-bold text-muted-foreground-1 block">
+                {bi('عرض المحتوى', 'Content Width', 'پانی ناوەڕۆک')}
+              </span>
+              <div className="flex gap-1" role="group" aria-labelledby="appearance-width-label">
+                {([
+                  { val: 'narrow', ar: 'ضيق', en: 'Narrow', ckb: 'تەسک' },
+                  { val: 'standard', ar: 'قياسي', en: 'Std', ckb: 'ئاسایی' },
+                  { val: 'wide', ar: 'عريض', en: 'Wide', ckb: 'فراوان' },
+                  { val: 'full', ar: 'كامل', en: 'Full', ckb: 'تەواو' },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.val}
+                    type="button"
+                    onClick={() =>
+                      updateDisplayPrefs({ contentMaxWidth: opt.val as ContentWidthMode })
+                    }
+                    className={`flex-1 min-h-[34px] py-1.5 rounded-xl border text-xs font-bold cursor-pointer ${
+                      displayPrefs.contentMaxWidth === opt.val
+                        ? 'bg-primary/10 border-primary text-primary'
+                        : 'bg-surface border-line-2 text-foreground hover:bg-layer-hover'
+                    }`}
+                  >
+                    {bi(opt.ar, opt.en, opt.ckb)}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="space-y-1">
             <span id="appearance-radius-label" className="text-xs font-bold text-muted-foreground-1 block">
@@ -589,12 +610,44 @@ export const AppearanceDisplaySettings: React.FC<AppearanceDisplaySettingsProps>
             onChange={(next) => updateDisplayPrefs({ highContrast: next })}
           />
           <SettingsSwitchRow
-            title={bi('أزرار وحقول لمس أكبر (44px+)', 'Larger Click & Touch Targets (44px+)', 'دوگمە و خانەی گەورەتر (44px+)')}
-            description={bi(
-              'يكبّر مساحة الضغط للأزرار والقوائم المنسدلة للأجهزة اللوحية.',
-              'Expands minimum button and control height for tablet ergonomics.',
-              'بۆشایی کرتەکردن بۆ دوگمە و لیستەکان گەورە دەکات.'
-            )}
+            title={
+              deviceFormFactor === 'desktop'
+                ? bi(
+                    'أزرار وحقول نقر أكبر (44px+)',
+                    'Larger Click Targets & Inputs (44px+)',
+                    'دوگمە و خانەی کرتەکردنی گەورەتر (44px+)'
+                  )
+                : deviceFormFactor === 'tablet'
+                  ? bi(
+                      'أزرار وحقول لمس أكبر للتابلت (44px+)',
+                      'Larger Tablet Touch Targets (44px+)',
+                      'دوگمە و خانەی دەستلێدانی گەورەتر بۆ تابلێت (44px+)'
+                    )
+                  : bi(
+                      'أزرار وحقول لمس أكبر للهاتف (44px+)',
+                      'Larger Phone Touch Targets (44px+)',
+                      'دوگمە و خانەی دەستلێدانی گەورەتر بۆ مۆبایل (44px+)'
+                    )
+            }
+            description={
+              deviceFormFactor === 'desktop'
+                ? bi(
+                    'يكبّر مساحة النقر بالماوس للأزرار والقوائم والحقول المنسدلة على شاشات الحاسوب.',
+                    'Expands minimum button and dropdown heights for easier mouse clicking on desktop.',
+                    'بۆشایی کرتەکردن بە ماوس بۆ دوگمە و لیستەکان لەسەر کۆمپیوتەر گەورە دەکات.'
+                  )
+                : deviceFormFactor === 'tablet'
+                  ? bi(
+                      'يكبّر مساحة اللمس للأزرار والقوائم المنسدلة لسهولة الاستخدام على شاشة التابلت.',
+                      'Expands minimum button and control height for comfortable tablet touch ergonomics.',
+                      'بۆشایی دەستلێدان بۆ دوگمە و لیستەکان بۆ ئاسانی بەکارهێنان لەسەر تابلێت گەورە دەکات.'
+                    )
+                  : bi(
+                      'يكبّر مساحة اللمس للأزرار والحقول لتسهيل الإدخال بيد واحدة على شاشة الهاتف.',
+                      'Expands touch targets and input heights for reliable one-handed phone ergonomics.',
+                      'بۆشایی دەستلێدان بۆ دوگمە و خانەکان گەورە دەکات بۆ ئاسانی بەکارهێنان لەسەر مۆبایل.'
+                    )
+            }
             checked={displayPrefs.largeHitTargets}
             onChange={(next) => updateDisplayPrefs({ largeHitTargets: next })}
           />
