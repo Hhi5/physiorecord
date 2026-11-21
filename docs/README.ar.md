@@ -58,9 +58,9 @@
       <sub><b>الحاسوب — مركز قيادة اليوم (العربية RTL)</b></sub>
     </td>
     <td align="center" width="50%">
-      <img src="ui-redesign/desktop-finance-en.png" alt="واجهة الحسابات والمالية على الحاسوب" />
+      <img src="ui-redesign/desktop-finance-en.png" alt="واجهة الصندوق والحسابات على الحاسوب" />
       <br />
-      <sub><b>الحاسوب — السجل المالي والباقات (الإنجليزية LTR)</b></sub>
+      <sub><b>الحاسوب — الصندوق والحسابات المالية (الإنجليزية LTR)</b></sub>
     </td>
   </tr>
 </table>

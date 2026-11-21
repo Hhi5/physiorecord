@@ -54,9 +54,9 @@
       <sub><b>Desktop — Today Command Center (Arabic RTL)</b></sub>
     </td>
     <td align="center" width="50%">
-      <img src="docs/ui-redesign/desktop-finance-en.png" alt="PhysioRecord Desktop Financial Ledger (English LTR)" />
+      <img src="docs/ui-redesign/desktop-finance-en.png" alt="PhysioRecord Desktop Clinic Cashbook & Finance (English LTR)" />
       <br />
-      <sub><b>Desktop — Financial Ledger & Packages (English LTR)</b></sub>
+      <sub><b>Desktop — Clinic Cashbook & Finance (English LTR)</b></sub>
     </td>
   </tr>
 </table>
