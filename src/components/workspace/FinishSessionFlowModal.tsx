@@ -25,6 +25,7 @@ import {
   WEEKDAYS_IRAQI_ORDER,
   getWeekdayFromDateStr,
 } from '../../utils/date';
+import { commitDurationDraft, sanitizeDurationDraft } from '../../utils/durationInput';
 import { getPatientDisplayName } from '../../utils/mrn';
 import type { NoteCompletenessReport } from '../../utils/reEvalNudge';
 import {
@@ -181,6 +182,7 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
   const [nextDate, setNextDate] = useState(suggestedNextVisit.date);
   const [nextTime, setNextTime] = useState(suggestedNextVisit.time);
   const [nextDuration, setNextDuration] = useState<number>(suggestedNextVisit.duration);
+  const [nextDurationDraft, setNextDurationDraft] = useState<string>(String(suggestedNextVisit.duration));
   const [nextRoom, setNextRoom] = useState(suggestedNextVisit.room);
 
   const wasOpenRef = useRef(false);
@@ -210,6 +212,7 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
     setNextDate(suggestedNextVisit.date);
     setNextTime(suggestedNextVisit.time);
     setNextDuration(suggestedNextVisit.duration);
+    setNextDurationDraft(String(suggestedNextVisit.duration));
     setNextRoom(suggestedNextVisit.room);
   }, [isOpen, session.status, activePackage, unpaidInvoice, smartMemory.lastPaymentMethod, suggestedNextVisit]);
 
@@ -383,6 +386,11 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
     const activeStaff = ClinicOperationsService.getActiveStaff();
 
     if (bookNextVisit && nextDate) {
+      const committedDuration = commitDurationDraft(nextDurationDraft, {
+        min: 5,
+        max: 240,
+        fallback: nextDuration || 45,
+      });
       const booked = ClinicOperationsService.saveAppointment({
         patientId: session.patientId,
         patientName,
@@ -390,7 +398,7 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
         episodeId: session.episodeId,
         date: nextDate,
         startTime: nextTime,
-        durationMinutes: Math.max(5, Math.min(240, nextDuration || 45)),
+        durationMinutes: committedDuration,
         visitType: 'follow_up',
         therapistName: language === 'en' ? activeStaff.nameEn : activeStaff.nameAr,
         roomOrBed: nextRoom,
@@ -400,7 +408,7 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
       finalUndo.createdAppointmentId = booked.id;
 
       void ClinicOperationsService.updateSmartMemoryAsync({
-        lastDurationMinutes: Math.max(5, Math.min(240, nextDuration || 45)),
+        lastDurationMinutes: committedDuration,
         lastRoom: nextRoom,
       }).catch(() => undefined);
     }
@@ -880,12 +888,32 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
                     {bi('المدة (دقيقة):', 'Duration (min):', 'ماوە (خولەک):')}
                   </label>
                   <input
-                    type="number"
-                    min={5}
-                    max={240}
-                    value={nextDuration}
-                    onChange={(e) => setNextDuration(Math.max(5, Math.min(240, Number(e.target.value) || 45)))}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground font-mono font-bold"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    dir="ltr"
+                    lang="en"
+                    autoComplete="off"
+                    value={nextDurationDraft}
+                    placeholder="45"
+                    onChange={(e) => {
+                      const next = sanitizeDurationDraft(e.target.value, 3);
+                      setNextDurationDraft(next);
+                      if (next) {
+                        const parsed = Number.parseInt(next, 10);
+                        if (Number.isFinite(parsed)) setNextDuration(parsed);
+                      }
+                    }}
+                    onBlur={() => {
+                      const committed = commitDurationDraft(nextDurationDraft, {
+                        min: 5,
+                        max: 240,
+                        fallback: 45,
+                      });
+                      setNextDuration(committed);
+                      setNextDurationDraft(String(committed));
+                    }}
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground font-mono font-bold text-left tabular-nums"
                   />
                 </div>
                 <div>

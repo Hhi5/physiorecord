@@ -84,6 +84,7 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation "androidx.webkit:webkit:$androidxWebkitVersion"
+    implementation "androidx.biometric:biometric:1.1.0"
     if (findProject(':capacitor-android') != null) {
         implementation project(':capacitor-android')
     }

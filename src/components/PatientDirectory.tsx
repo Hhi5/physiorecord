@@ -18,6 +18,7 @@ import {
   hasPatientRedFlagsOrContraindications,
   getPatientDisplayName,
 } from '../utils/mrn';
+import { localizeDemoText } from '../utils/demoLocalization';
 import { findAllDirectoryDuplicatePairs } from '../utils/dataQualityPhaseD';
 import {
   computeTherapistCaseloadSummary,
@@ -628,10 +629,11 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                 setSearchIndexActivated(true);
                 setSearchQuery(e.target.value);
               }}
-              aria-label={bi('بحث في سجل المرضى', 'Search patient directory')}
+              aria-label={bi('بحث في سجل المرضى', 'Search patient directory', 'گەڕان لە تۆماری نەخۆشەکاندا')}
               placeholder={bi(
                 'بحث بالاسم، الهاتف، MRN، أو التشخيص...',
-                'Search name, phone, MRN, or diagnosis...'
+                'Search name, phone, MRN, or diagnosis...',
+                'گەڕان بەپێی ناو، مۆبایل، MRN، یان دەستنیشانکردن...'
               )}
               className="pr-input-bare w-full min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm text-foreground"
             />
@@ -642,7 +644,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                 className="min-h-[34px] px-2.5 py-1 rounded-xl bg-surface hover:bg-layer-hover text-xs font-semibold text-muted-foreground-1 hover:text-foreground inline-flex items-center gap-1 cursor-pointer shrink-0"
               >
                 <X className="size-3" />
-                <span>{bi('مسح', 'Clear')}</span>
+                <span>{bi('مسح', 'Clear', 'سڕینەوە')}</span>
               </button>
             )}
           </div>
@@ -654,8 +656,8 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
               className="min-h-[44px] sm:min-h-[40px] px-3 py-1 rounded-2xl bg-card/90 shadow-2xs text-xs font-bold text-primary inline-flex items-center gap-1.5 cursor-pointer shrink-0"
             >
               <span>
-                {bi('الفئة:', 'Gender:')}{' '}
-                {filterGender === 'male' ? bi('ذكور', 'Male') : bi('إناث', 'Female')}
+                {bi('الفئة:', 'Gender:', 'ڕەگەز:')}{' '}
+                {filterGender === 'male' ? bi('ذكور', 'Male', 'نێر') : bi('إناث', 'Female', 'مێ')}
               </span>
               <X className="size-3.5" />
             </button>
@@ -678,7 +680,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
               }`}
             >
               <Users className="size-3.5 shrink-0" />
-              <span>{bi('كل المعالجين', 'All Therapists')}</span>
+              <span>{bi('كل المعالجين', 'All Therapists', 'هەموو چارەسەرکاران')}</span>
               <span className="font-mono opacity-80">
                 (<Num value={therapistCaseload.totalActive + therapistCaseload.totalCompleted} />)
               </span>
@@ -773,7 +775,8 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
           <p className="text-sm font-medium">
             {bi(
               'جاري فك تشفير وتحميل السجلات السريرية المعتمدة...',
-              'Decrypting and loading verified clinical records...'
+              'Decrypting and loading verified clinical records...',
+              'کۆدشکاندن و بارکردنی تۆمارە کلینیکییەکان...'
             )}
           </p>
         </div>
@@ -852,7 +855,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                             data-testid="patient-imported-badge"
                             className="text-xs font-semibold text-sky-700 dark:text-sky-300 shrink-0"
                           >
-                            · {bi('مستورد', 'Imported')}
+                            · {bi('مستورد', 'Imported', 'هاوردەکراو')}
                           </span>
                         )}
                         {age !== undefined && (
@@ -885,9 +888,12 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                         <span className="text-muted-foreground-1 truncate max-w-[200px] sm:max-w-md">
                           {completionMetaByPatient.get(patient.id)?.isCompleted &&
                           completionMetaByPatient.get(patient.id)?.dischargeSummary
-                            ? completionMetaByPatient.get(patient.id)!.dischargeSummary
-                            : p.medicalHistory ||
-                              p.occupation ||
+                            ? localizeDemoText(
+                                completionMetaByPatient.get(patient.id)!.dischargeSummary,
+                                language
+                              )
+                            : localizeDemoText(p.medicalHistory, language) ||
+                              localizeDemoText(p.occupation, language) ||
                               bi('ملف سريري نشط', 'Active clinical chart', 'دۆسیەی چالاک')}
                         </span>
 
@@ -898,7 +904,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                           >
                             <Award className="size-3.5 shrink-0" />
                             <span>
-                              {bi('أنهى العلاج', 'Completed')}
+                              {bi('أنهى العلاج', 'Completed', 'چارەسەر تەواوبوو')}
                               {completionMetaByPatient.get(patient.id)?.dischargeDate
                                 ? ` · ${formatDateDDMMYYYY(
                                     completionMetaByPatient.get(patient.id)!.dischargeDate!
@@ -920,7 +926,10 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
 
                         {hasRedFlags && (
                           <span
-                            title={p.redFlags || p.contraindications || p.precautions}
+                            title={localizeDemoText(
+                              p.redFlags || p.contraindications || p.precautions,
+                              language
+                            )}
                             className="text-rose-700 dark:text-rose-400 font-bold inline-flex items-center gap-1 shrink-0"
                           >
                             <AlertCircle className="size-3.5 shrink-0" />

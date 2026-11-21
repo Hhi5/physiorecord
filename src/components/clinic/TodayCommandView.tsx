@@ -41,6 +41,7 @@ import {
   buildUserInitiatedWhatsAppHref,
 } from '../../utils/whatsappTemplates';
 import { getPatientDisplayName, isDemoPatient } from '../../utils/mrn';
+import { localizeDemoText } from '../../utils/demoLocalization';
 import { evaluateReEvalDueStatus } from '../../utils/reEvalNudge';
 import { computeOnboardingChecklistSummary } from '../../utils/settingsOnboardingPhaseF';
 import {
@@ -1149,7 +1150,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                                     privacyBlur ? 'blur-xs select-none' : ''
                                   }`}
                                 >
-                                  {appt.patientName}
+                                  {localizeDemoText(appt.patientName, language)}
                                 </span>
                                 {isDemo && <DemoBadge />}
                               </div>
@@ -1160,12 +1161,12 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
                                     data-testid="today-reeval-due-badge"
                                     className="font-bold text-amber-700 dark:text-amber-300"
                                   >
-                                    · {bi('إعادة تقييم', 'Re-eval')}
+                                    · {bi('إعادة تقييم', 'Re-eval', 'دووبارە هەڵسەنگاندن')}
                                   </span>
                                 )}
                                 {appt.roomOrBed && (
                                   <span className="hidden sm:inline truncate">
-                                    · {appt.roomOrBed}
+                                    · {localizeDemoText(appt.roomOrBed, language)}
                                   </span>
                                 )}
                               </div>

@@ -16,7 +16,7 @@ export const HTTP_HEADER_CSP =
   "default-src 'self'; script-src 'self' https://apis.google.com; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://lh3.googleusercontent.com; font-src 'self'; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com; connect-src 'self' https://api.github.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apis.google.com http:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
 
 export const ANDROID_META_CSP =
-  "default-src 'self'; script-src 'self' https://apis.google.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://lh3.googleusercontent.com; font-src 'self' data:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com; connect-src 'self' https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apis.google.com http:; object-src 'none'; base-uri 'self'; form-action 'self'";
+  "default-src 'self'; script-src 'self' https://apis.google.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://lh3.googleusercontent.com; font-src 'self' data:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com; connect-src 'self' https://api.github.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apis.google.com http:; object-src 'none'; base-uri 'self'; form-action 'self'";
 
 export const DESKTOP_META_CSP =
   "default-src 'self' app:; script-src 'self' app:; worker-src 'self' app: blob:; style-src 'self' app: 'unsafe-inline'; img-src 'self' app: data: blob:; font-src 'self' app: data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'";
@@ -27,6 +27,8 @@ function listPublicFiles(dir, baseDir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
+      const relDir = path.relative(baseDir, full).split(path.sep).join('/');
+      if (relDir === 'assets/aistudio') continue;
       results.push(...listPublicFiles(full, baseDir));
     } else {
       const rel = path.relative(baseDir, full).split(path.sep).join('/');

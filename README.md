@@ -37,9 +37,10 @@
 
 - **Local-First & Zero-Backend Sovereignty:** Works 100% offline out of the box with zero PhysioRecord backend servers, zero mandatory accounts, and zero telemetry (`Same-Origin` strict `CSP` enforced by automated offline E2E tests).
 - **Optional `$0` Multi-Device Sync (User-Controlled & Non-Destructive):** Opt in only if needed via **Local Clinic Wi-Fi (LAN Hub)** over your regular clinic router, **End-to-End Encrypted Google Drive** (`drive.file` scope — encrypted locally with `AES-256-GCM` before upload so Google never sees plaintext PHI), or manual encrypted `.ptsync.json` files. Merging is strictly additive and never deletes local therapist records.
+- **Opt-In In-App Release Notifications:** Disabled by default for strict zero-network privacy; when enabled in **Settings → Security**, checks official GitHub Releases (throttled to every 6 hours) and displays an in-app banner whenever a newer Android APK, Windows EXE, or Web release is published.
 - **Power-Cut Resilient Drafting:** Encrypted `IndexedDB` draft buffers (`Dexie v10`) auto-save clinical notes, flowsheets, invoices, and appointments every 2 seconds and flush on page hide so sudden power outages never erase active charting.
-- **Built for Real PT Clinical Flow:** Interactive front/back anatomical Body Charts, `ROM`, `MMT`, Orthopedic Special Tests, `ASIA` Neuro tables, `MCID/MDC`-linked outcome calculators, immutable `SHA-256` finalized `SOAP` notes with append-only addenda, and audited deliberate deletion of mistaken finalized sessions.
-- **Tailored for Iraqi Clinic Operations:** Supports solo and team RBAC modes, weekly recurring appointments, Iraqi home-visit addresses, multi-currency `ISO 4217` invoicing defaulting to IQD (`25,000 د.ع`), local payment channels (`نقداً`, `ZainCash`, `QiCard`, `أخرى`), installment debt aging, and A4/A6 thermal/office printouts.
+- **Built for Real PT Clinical Flow:** Interactive front/back anatomical Body Charts, mobile-friendly bilateral `ROM`, free-text/smart `MMT`, Orthopedic Special Tests, full `ISNCSCI / ASIA` Neuro exam (10 key myotomes, 28 sensory levels, DTR & AIS), `MCID/MDC`-linked outcome calculators, immutable `SHA-256` finalized `SOAP` notes with append-only addenda, and audited deliberate deletion of mistaken finalized sessions.
+- **Tailored for Iraqi Clinic Operations:** Native **Arabic (`ar` RTL)**, **Kurdish Sorani (`ckb` RTL)**, and **English (`en` LTR)** interfaces; solo and team RBAC modes; weekly recurring appointments with manual duration entry; Iraqi home-visit addresses; multi-currency `ISO 4217` invoicing defaulting to IQD (`25,000 د.ع`); local payment channels (`نقداً`, `ZainCash`, `QiCard`, `أخرى`); installment debt aging; and A4/A6 thermal/office printouts.
 
 ---
 
@@ -89,19 +90,20 @@
 ## Core Capabilities
 
 ### 1. Physical Therapy Clinical Documentation
-- **Interactive Body Chart:** Front and back anatomical SVG views with pin markers, custom pain-type labels, per-pin color legends, and photo goniometric angle/plumb-line studio (`Konva`).
-- **Musculoskeletal & Neuro Assessments:** Active/Passive/Assisted `ROM` (without distracting normative overlays), free-text or smart `MMT` (`0–5`), Orthopedic Special Tests across 9 joint regions, `ASIA/ISNCSCI` dermatomes/myotomes/DTR, regional Red Flags screening, and cardiopulmonary vitals (`BP`, `HR`, `SpO2`).
+- **Interactive Body Chart & Encrypted Attachments:** Front and back anatomical SVG views with pin markers, custom pain-type labels, per-pin color legends, localized clinical photo/PDF vault with side-by-side comparison, and photo goniometric angle/plumb-line studio (`Konva`).
+- **Musculoskeletal & Neuro Assessments:** Bilateral Active/Passive/Assisted `ROM` (clean numeric inputs without distracting normative overlays), free-text or smart `MMT` (`0–5`), Orthopedic Special Tests across 9 joint regions, `ISNCSCI / ASIA` neurological exam (10 key myotomes with primary muscles, 28 sensory levels, DTR & AIS classification summary), regional Red Flags screening, and cardiopulmonary vitals (`BP`, `HR`, `SpO2`).
 - **Outcome Measures & Goals:** Score-entry calculators (`ODI`, `NDI`, `QuickDASH`, `SPADI`, `LEFS`) with `MCID/MDC` deltas, open functional tests (`NPRS`, `PSFS`, `TUG`, `30s-CST`, `5xSTS`), Custom Measure Builder, Problem Lists, and `SMART / GAS` goals.
 - **Immutable `SOAP` + Flowsheets:** Unified visit charting with `/` slash templates, 1-tap regional exam presets, exercise flowsheet progression helpers, `SHA-256` finalization seals, and append-only `clinicalAddenda`.
 
 ### 2. Clinic Operations & Iraqi Finance
 - **Solo & Team Workflows:** Switch between fast Solo Mode (10-second walk-in registration & Today command view) and multi-therapist Team Mode (`Reception Command Center`, Staff Roster, `Admin PIN` RBAC, and privacy screen blur).
-- **Scheduling & Home Visits:** Daily/weekly manual recurring schedules with non-blocking overbooking warnings, Iraqi home-visit addresses (Neighborhood / Mahalla / Zukak / Landmark + travel buffer & fee), branches, closed days, and waiting-room Patient Kiosk mode.
+- **Scheduling & Home Visits:** Daily/weekly manual recurring schedules with editable session durations and non-blocking overbooking warnings, Iraqi home-visit addresses (Neighborhood / Mahalla / Zukak / Landmark + travel buffer & fee), branches, closed days, and waiting-room Patient Kiosk mode.
 - **Billing, Installments & Retention:** Blank-default invoice creation (`فحص`, `جلسة مفردة`, `كورس`), Iraqi payment methods (`نقداً`, `ZainCash`, `QiCard`, `أخرى`), multi-installment plans, `30/60/90+` day debt aging, recurring clinic expenses, daily `Z-Reports`, referring physician progress letters, and patient retention queues.
 
-### 3. Portability, Printing & Multi-Device Clinic Sync
+### 3. Portability, Printing, Sync & Safe Updates
 - **Print Portal (`A4` / `A6`) & Discharge Summary:** Single-page auto-fitted invoices, receipts, referring physician reports, treatment journey & discharge summaries (with dedicated Completed Treatment archive), full patient dossiers, visit/balance cards, HEP sheets, and signed informed consents.
 - **Zero-Cost Multi-Therapist Sync (Optional, Strictly Non-Destructive):** Sync across clinic PC and therapists' phones via **Local Wi-Fi (LAN)** over the clinic's regular Wi-Fi router (no hotspot or internet needed) or **End-to-End Encrypted Google Drive (`$0`)** with offline outbox queueing and additive merging that never deletes therapist data.
+- **In-App GitHub Release Update Alerts (Opt-In):** Keep Android, Windows, and Web installations current via optional GitHub Release notifications and safe in-place upgrades (`org.physiorecord.app`) that preserve the encrypted local vault.
 - **Standards & Backups:** Encrypted `.ptbackup` `V3.0` archives (streaming `gzip` + `AES-GCM` chunks, backward compatible with `V1.1`/`V2.0`), `HL7 FHIR R4` JSON Bundles, `CSV`/`XLSX` patient onboarding with rollback, and privacy-filtered `.ics` calendar exports.
 
 ---
@@ -178,7 +180,7 @@ npm run dev
 
 ### Public Demo Mode
 
-Launch the app with `?demo=1` (e.g., `http://localhost:3000/?demo=1`) or build with `VITE_PUBLIC_DEMO=true` to reveal the demo banner for one-click seeding and purging of `CC0-1.0` fictional Iraqi physical therapy cases (`src/data/syntheticPatients.ts`).
+Launch the app with `?demo=1` (e.g., `http://localhost:3000/?demo=1`) or build with `VITE_PUBLIC_DEMO=true` to reveal the demo banner for one-click seeding and purging of `CC0-1.0` fictional physical therapy cases (`src/data/syntheticPatients.ts`) — dynamically localized in **Arabic**, **Kurdish Sorani (`ckb`)**, and **English** whenever you switch interface language.
 
 ---
 

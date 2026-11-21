@@ -148,7 +148,7 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
       </div>
 
       {/* Movements Table / Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
         {currentJointConfig.movements.map((mov) => {
           const isMidline = currentJointConfig.applicableLateralities.includes('midline');
           const leftVal = getEntryValue(currentJointConfig.jointId, mov.movementId, 'left');
@@ -162,9 +162,9 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
           return (
             <div
               key={mov.movementId}
-              className="p-3 sm:p-3.5 rounded-2xl bg-surface/65 transition-colors space-y-2.5"
+              className="p-3 rounded-2xl bg-surface/65 border border-black/[0.04] dark:border-white/[0.06] transition-colors space-y-2"
             >
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2 px-0.5">
                 <h3 className="text-xs font-bold text-foreground">
                   {bi(mov.nameAr, mov.nameEn)}
                 </h3>
@@ -182,13 +182,16 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                 )}
               </div>
 
-              {/* Bilateral or Midline Stepper Inputs */}
+              {/* Bilateral or Midline Angle Inputs */}
               {isMidline ? (
                 <div className="flex items-center justify-between gap-3 pt-2 border-t border-black/[0.045] dark:border-white/[0.06]">
-                  <span className="text-xs text-muted-foreground-1 font-medium">
-                    {bi('الزاوية المقاسة:', 'Angle:', 'گۆشەی پێوراو:')}
+                  <span className="text-xs text-muted-foreground-1 font-semibold">
+                    {bi('الزاوية المقاسة', 'Measured Angle', 'گۆشەی پێوراو')}
                   </span>
-                  <div className="flex items-center gap-1.5" dir="ltr">
+                  <div
+                    dir="ltr"
+                    className="pr-pill-input-wrap inline-flex items-center rounded-xl bg-card border border-layer-line/80 px-2.5 h-9 focus-within:border-primary transition-colors"
+                  >
                     <input
                       type="number"
                       inputMode="numeric"
@@ -198,6 +201,7 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                       aria-label={`${bi(mov.nameAr, mov.nameEn)} (${movementType})`}
                       value={midlineVal ?? ''}
                       placeholder="0–180"
+                      style={{ minHeight: 'unset' }}
                       onChange={(e) =>
                         handleUpdateEntry(
                           currentJointConfig.jointId,
@@ -206,20 +210,23 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                           e.target.value === '' ? null : Number(e.target.value)
                         )
                       }
-                      className="compact-btn w-20 h-8 px-2 py-1 text-center font-bold font-mono text-xs tabular-nums rounded-xl bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="pr-input-bare w-16 h-8 text-center font-bold font-mono text-xs tabular-nums text-foreground"
                     />
-                    <span className="text-xs font-bold text-muted-foreground-1">°</span>
+                    <span className="text-xs font-bold text-muted-foreground-1 select-none ps-1">°</span>
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-2 border-t border-black/[0.045] dark:border-white/[0.06]">
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-black/[0.045] dark:border-white/[0.06]">
                   {/* Right Side */}
-                  <div className="flex items-center justify-between gap-1.5 p-2 rounded-xl bg-card">
-                    <span className="text-xs font-bold text-foreground shrink-0">
+                  <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-card border border-black/[0.045] dark:border-white/[0.06]">
+                    <span className="text-xs font-extrabold text-foreground shrink-0">
                       <span className="sm:hidden">{bi('يمين', 'R', 'ڕاست')}</span>
-                      <span className="hidden sm:inline">{bi('يمين (R):', 'Right (R):', 'لای ڕاست (R):')}</span>
+                      <span className="hidden sm:inline">{bi('يمين (R)', 'Right (R)', 'ڕاست (R)')}</span>
                     </span>
-                    <div className="flex items-center gap-1" dir="ltr">
+                    <div
+                      dir="ltr"
+                      className="pr-pill-input-wrap inline-flex items-center rounded-lg bg-surface/85 border border-layer-line/80 px-2 h-9 focus-within:border-primary transition-colors"
+                    >
                       <input
                         type="number"
                         inputMode="numeric"
@@ -228,7 +235,8 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                         disabled={readOnly}
                         aria-label={`${bi(mov.nameAr, mov.nameEn)} - ${bi('يمين', 'Right')} (${movementType})`}
                         value={rightVal ?? ''}
-                        placeholder="°"
+                        placeholder="—"
+                        style={{ minHeight: 'unset' }}
                         onChange={(e) =>
                           handleUpdateEntry(
                             currentJointConfig.jointId,
@@ -237,19 +245,22 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                             e.target.value === '' ? null : Number(e.target.value)
                           )
                         }
-                        className="compact-btn w-14 sm:w-20 h-8 px-1.5 py-1 text-center font-bold font-mono text-xs tabular-nums rounded-lg bg-surface/75 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="pr-input-bare w-11 sm:w-14 h-8 text-center font-bold font-mono text-xs tabular-nums text-foreground"
                       />
-                      <span className="text-xs font-bold text-muted-foreground-1">°</span>
+                      <span className="text-xs font-bold text-muted-foreground-1 select-none">°</span>
                     </div>
                   </div>
 
                   {/* Left Side */}
-                  <div className="flex items-center justify-between gap-1.5 p-2 rounded-xl bg-card">
-                    <span className="text-xs font-bold text-foreground shrink-0">
+                  <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-card border border-black/[0.045] dark:border-white/[0.06]">
+                    <span className="text-xs font-extrabold text-foreground shrink-0">
                       <span className="sm:hidden">{bi('يسار', 'L', 'چەپ')}</span>
-                      <span className="hidden sm:inline">{bi('يسار (L):', 'Left (L):', 'چەپ (L):')}</span>
+                      <span className="hidden sm:inline">{bi('يسار (L)', 'Left (L)', 'چەپ (L)')}</span>
                     </span>
-                    <div className="flex items-center gap-1" dir="ltr">
+                    <div
+                      dir="ltr"
+                      className="pr-pill-input-wrap inline-flex items-center rounded-lg bg-surface/85 border border-layer-line/80 px-2 h-9 focus-within:border-primary transition-colors"
+                    >
                       <input
                         type="number"
                         inputMode="numeric"
@@ -258,7 +269,8 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                         disabled={readOnly}
                         aria-label={`${bi(mov.nameAr, mov.nameEn)} - ${bi('يسار', 'Left')} (${movementType})`}
                         value={leftVal ?? ''}
-                        placeholder="°"
+                        placeholder="—"
+                        style={{ minHeight: 'unset' }}
                         onChange={(e) =>
                           handleUpdateEntry(
                             currentJointConfig.jointId,
@@ -267,9 +279,9 @@ export const RomWidget: React.FC<RomWidgetProps> = ({
                             e.target.value === '' ? null : Number(e.target.value)
                           )
                         }
-                        className="compact-btn w-14 sm:w-20 h-8 px-1.5 py-1 text-center font-bold font-mono text-xs tabular-nums rounded-lg bg-surface/75 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="pr-input-bare w-11 sm:w-14 h-8 text-center font-bold font-mono text-xs tabular-nums text-foreground"
                       />
-                      <span className="text-xs font-bold text-muted-foreground-1">°</span>
+                      <span className="text-xs font-bold text-muted-foreground-1 select-none">°</span>
                     </div>
                   </div>
                 </div>

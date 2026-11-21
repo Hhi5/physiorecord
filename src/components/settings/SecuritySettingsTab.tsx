@@ -26,6 +26,7 @@ import { getReminderIntervalDays } from '../../utils/passwordReminderSchedule';
 import { VAULT_CREDENTIAL_USERNAME } from '../../utils/passwordManagerHelper';
 import { PlatformUpdateCenterCard } from '../clinic/PlatformUpdateCenterCard';
 import { PasswordReminderModal } from '../PasswordReminderModal';
+import { sanitizeDurationDraft } from '../../utils/durationInput';
 import { SettingsAccordion, SettingsSwitchRow } from './SettingsPrimitives';
 
 interface SecuritySettingsTabProps {
@@ -69,6 +70,8 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
     lastRecoveryDrillAt,
     isPrfSupported,
     isPrfEnrolled,
+    biometricMode,
+    biometricUnavailableReason,
     enrollPrf,
     disablePrf,
     changeVaultPassword,
@@ -465,22 +468,29 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
               <input
                 id="settings-custom-lock-minutes"
                 aria-label={bi('مدة القفل المخصصة بالدقائق', 'Custom auto-lock minutes', 'ماوەی قفڵکردنی تایبەت بە خولەک')}
-                type="number"
-                min={1}
-                max={1440}
-                step={1}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 dir="ltr"
+                lang="en"
+                autoComplete="off"
                 value={customLockMinutes}
                 onChange={(e) => {
-                  const raw = e.target.value;
+                  const raw = sanitizeDurationDraft(e.target.value, 4);
                   setCustomLockMinutes(raw);
                   const parsed = parseInt(raw, 10);
                   if (!Number.isNaN(parsed) && parsed >= 1) {
                     setAutoLockTimeoutMs(Math.min(1440, parsed) * 60_000);
                   }
                 }}
+                onBlur={() => {
+                  const parsed = parseInt(customLockMinutes, 10);
+                  const valid = Number.isFinite(parsed) && parsed >= 1 ? Math.min(1440, parsed) : 10;
+                  setCustomLockMinutes(String(valid));
+                  setAutoLockTimeoutMs(valid * 60_000);
+                }}
                 placeholder="20"
-                className="w-28 px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-mono font-bold text-foreground tabular-nums focus:outline-none focus:border-primary"
+                className="w-28 px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-mono font-bold text-foreground text-left tabular-nums focus:outline-none focus:border-primary"
               />
               <span className="text-xs font-semibold text-muted-foreground-1">
                 {bi('دقيقة (1 – 1440)', 'minutes (1 – 1440)', 'خولەک (1 – 1440)')}
@@ -499,29 +509,80 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
           )}
         </div>
 
-        {/* Biometric / Passkey Quick Unlock & Password Reset */}
-        {isPrfSupported && (
-          <div className="pt-3.5 border-t border-card-divider space-y-2.5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-                  <Fingerprint className="size-4 text-primary" />
-                  <span>{bi('الفتح والاسترداد بالبصمة / مفتاح المرور', 'Biometrics / Passkey Unlock & Reset', 'کردنەوە و گەڕاندنەوە بە پەنجەمۆر')}</span>
-                  <span aria-hidden="true" className="text-muted-foreground-2">·</span>
-                  <span className={`font-semibold ${isPrfEnrolled ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground-1'}`}>
-                    {isPrfEnrolled ? bi('مفعّل', 'Active', 'چالاکە') : bi('غير مفعّل', 'Off', 'ناچالاکە')}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground-1 mt-0.5 leading-relaxed">
+        {/* Biometric / Fingerprint / Passkey Quick Unlock & Password Reset (Always Visible) */}
+        <div
+          data-testid="settings-biometric-section"
+          className="pt-3.5 border-t border-card-divider space-y-2.5"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-foreground">
+                <Fingerprint className="size-4 text-primary shrink-0" />
+                <span>
                   {bi(
-                    'يتيح فتح الخزينة بسرعة وكذلك تعيين كلمة مرور جديدة عبر البصمة عند النسيان، مع بقاء مفتاح الطوارئ فعالاً دائماً.',
-                    'Unlocks quickly and lets you reset a forgotten master password via biometrics without losing any records.',
-                    'ڕێگەت پێدەدات خێرا بیکەیتەوە و لە کاتی لەبیرچوونەوەدا وشەی نهێنی نوێ بە پەنجەمۆر دابنێیت.'
+                    'الفتح والاسترداد بالبصمة / مفتاح المرور',
+                    'Fingerprint / Biometric Unlock & Reset',
+                    'کردنەوە و گەڕاندنەوە بە پەنجەمۆر'
                   )}
-                </p>
-                {prfError && <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold mt-1">{prfError}</p>}
+                </span>
+                <span aria-hidden="true" className="text-muted-foreground-2">·</span>
+                <span
+                  className={`font-semibold ${
+                    !isPrfSupported
+                      ? 'text-amber-700 dark:text-amber-400'
+                      : isPrfEnrolled
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : 'text-muted-foreground-1'
+                  }`}
+                >
+                  {!isPrfSupported
+                    ? bi('غير متاح على هذا الجهاز', 'Unavailable here', 'لێرە بەردەست نییە')
+                    : isPrfEnrolled
+                      ? bi('مفعّل', 'Active', 'چالاکە')
+                      : bi('غير مفعّل', 'Off', 'ناچالاکە')}
+                </span>
               </div>
+              <p className="text-xs text-muted-foreground-1 mt-0.5 leading-relaxed">
+                {isPrfSupported
+                  ? biometricMode === 'android-native'
+                    ? bi(
+                        'يستخدم بصمة الإصبع ومخزن المفاتيح الآمن في أندرويد (Android Keystore) لفتح الخزينة بسرعة أو تعيين كلمة مرور جديدة عند النسيان.',
+                        'Uses native Android BiometricPrompt & Android Keystore to unlock quickly or reset a forgotten password without losing records.',
+                        'پەنجەمۆری ئەندرۆید و Android Keystore بەکاردەهێنێت بۆ کردنەوەی خێرا یان گۆڕینی وشەی نهێنی لە کاتی لەبیرچوونەوەدا.'
+                      )
+                    : bi(
+                        'يتيح فتح الخزينة بسرعة وكذلك تعيين كلمة مرور جديدة عبر البصمة أو مفتاح المرور عند النسيان، مع بقاء مفتاح الطوارئ فعالاً دائماً.',
+                        'Unlocks quickly and lets you reset a forgotten master password via biometrics/passkey without losing any records.',
+                        'ڕێگەت پێدەدات خێرا بیکەیتەوە و لە کاتی لەبیرچوونەوەدا وشەی نهێنی نوێ بە پەنجەمۆر دابنێیت.'
+                      )
+                  : biometricUnavailableReason === 'not-enrolled-os'
+                    ? bi(
+                        'لم يتم تسجيل بصمة إصبع في نظام الهاتف بعد. أضف بصمة من إعدادات أندرويد أولاً ثم عد إلى هنا لتفعيلها.',
+                        'No fingerprint is enrolled on this device yet. Add a fingerprint in Android Settings first, then return here to enable it.',
+                        'هێشتا هیچ پەنجەمۆرێک لەسەر مۆبایلەکە تۆمار نەکراوە. سەرەتا لە ڕێکخستنەکانی ئەندرۆید پەنجەمۆر زیاد بکە.'
+                      )
+                    : biometricUnavailableReason === 'no-hardware'
+                      ? bi(
+                          'لا يوجد مستشعر بصمة متوافق على هذا الجهاز. يمكنك الاستمرار باستخدام كلمة المرور الرئيسية ومفتاح الاسترداد.',
+                          'No compatible biometric sensor was detected on this device. Continue using your master password and recovery key.',
+                          'هیچ هەستەوەری پەنجەمۆری گونجاو لەسەر ئەم ئامێرە نییە.'
+                        )
+                      : biometricUnavailableReason === 'desktop-electron'
+                        ? bi(
+                            'الفتح بالبصمة متاح على تطبيق أندرويد ومتصفحات الويب الداعمة لـ Passkey؛ على نسخة سطح المكتب استخدم كلمة المرور الرئيسية.',
+                            'Biometric unlock is available on the Android app and Passkey-enabled browsers; on Windows Desktop use your master password.',
+                            'کردنەوە بە پەنجەمۆر لە بەرنامەی ئەندرۆید و وێبگەڕە پشتگیرکراوەکاندا بەردەستە.'
+                          )
+                        : bi(
+                            'البصمة غير مدعومة في هذا المتصفح (تتطلب تطبيق أندرويد المحدّث أو متصفح Chrome/Edge/Safari عبر HTTPS مع بصمة مفعّلة).',
+                            'Biometrics are unavailable in this browser context (requires the updated Android APK or HTTPS Chrome/Edge/Safari with a platform authenticator).',
+                            'پەنجەمۆر لەم وێبگەڕەدا پشتگیری ناکرێت (پێویستی بە وەشانی نوێی APKی ئەندرۆید یان وێبگەڕی HTTPS هەیە).'
+                          )}
+              </p>
+              {prfError && <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold mt-1">{prfError}</p>}
+            </div>
 
+            {isPrfSupported && (
               <div className="flex flex-wrap items-center gap-2 shrink-0">
                 {isPrfEnrolled && (
                   <button
@@ -534,11 +595,12 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
                     }}
                     className="min-h-[36px] px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold cursor-pointer"
                   >
-                    {bi('تعيين كلمة مرور بالبصمة', 'Reset Password via Passkey', 'دانانی وشەی نهێنی بە پەنجەمۆر')}
+                    {bi('تعيين كلمة مرور بالبصمة', 'Reset Password via Biometrics', 'دانانی وشەی نهێنی بە پەنجەمۆر')}
                   </button>
                 )}
                 <button
                   type="button"
+                  data-testid="settings-toggle-biometric-btn"
                   disabled={prfBusy}
                   onClick={() => void handleTogglePrf()}
                   className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-surface hover:bg-layer-hover border border-line-2 text-xs font-bold text-foreground disabled:opacity-50 cursor-pointer shrink-0"
@@ -546,13 +608,13 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
                   {prfBusy
                     ? bi('جاري المعالجة...', 'Working...', 'جێبەجێ دەکرێت...')
                     : isPrfEnrolled
-                    ? bi('تعطيل', 'Disable', 'ناچالاککردن')
-                    : bi('تفعيل البصمة', 'Enable Passkey', 'چالاککردنی پەنجەمۆر')}
+                      ? bi('تعطيل', 'Disable', 'ناچالاککردن')
+                      : bi('تفعيل البصمة', 'Enable Fingerprint', 'چالاککردنی پەنجەمۆر')}
                 </button>
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Password Change / Anti-Lockout Protection (Signal Reminders + OS Password Manager + Passkey Reset) */}
         <div className="pt-3.5 border-t border-card-divider space-y-3">

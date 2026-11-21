@@ -31,6 +31,7 @@ import type {
 } from '../../../types/clinical';
 import type { ReferralSourceType, ReferringDoctorEntry } from '../../../types/clinicManagement';
 import { STRUCTURED_PRECAUTIONS_CATALOG } from '../../../utils/modalitySafetyChecker';
+import { localizeDemoText } from '../../../utils/demoLocalization';
 import { ModalDialog } from '../../ui/Dialog';
 import { AutoResizeTextarea } from '../../ui/Primitives';
 import { RedFlagChecklistPanel } from '../RedFlagChecklistPanel';
@@ -147,7 +148,7 @@ export const ChartHistoryTab: React.FC<ChartHistoryTabProps> = ({
   isSaving,
   saveSuccess,
 }) => {
-  const { bi } = useLanguage();
+  const { bi, language } = useLanguage();
 
   const [sectionFilter, setSectionFilter] = useState<HistorySectionFilter>('safety_history');
 
@@ -411,7 +412,7 @@ export const ChartHistoryTab: React.FC<ChartHistoryTabProps> = ({
                         {bi('موانع الاستعمال:', 'Contraindications:', 'قەدەغەکراوەکان:')}
                       </span>
                       <p className="text-foreground leading-relaxed whitespace-pre-wrap">
-                        {contraindications.trim()}
+                        {localizeDemoText(contraindications.trim(), language)}
                       </p>
                     </div>
                   </div>
@@ -449,7 +450,7 @@ export const ChartHistoryTab: React.FC<ChartHistoryTabProps> = ({
                       )}
                       {redFlags.trim() && (
                         <p className="text-muted-foreground-1 leading-relaxed whitespace-pre-wrap pt-0.5">
-                          {redFlags.trim()}
+                          {localizeDemoText(redFlags.trim(), language)}
                         </p>
                       )}
                     </div>
@@ -495,7 +496,7 @@ export const ChartHistoryTab: React.FC<ChartHistoryTabProps> = ({
                     medicalHistory.trim() ? 'text-foreground font-medium' : 'text-muted-foreground-2'
                   }`}
                 >
-                  {medicalHistory.trim() ||
+                  {localizeDemoText(medicalHistory.trim(), language) ||
                     bi('لا توجد أمراض مزمنة مسجلة', 'No chronic conditions recorded', 'هیچ نەخۆشییەکی درێژخایەن تۆمار نەکراوە')}
                 </p>
               </div>
@@ -509,7 +510,7 @@ export const ChartHistoryTab: React.FC<ChartHistoryTabProps> = ({
                     previousSurgeries.trim() ? 'text-foreground font-medium' : 'text-muted-foreground-2'
                   }`}
                 >
-                  {previousSurgeries.trim() ||
+                  {localizeDemoText(previousSurgeries.trim(), language) ||
                     bi('لا توجد عمليات جراحية مسجلة', 'No previous surgeries recorded', 'هیچ نەشتەرگەرییەک تۆمار نەکراوە')}
                 </p>
               </div>

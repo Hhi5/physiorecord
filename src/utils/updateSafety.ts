@@ -9,6 +9,10 @@ export const OFFICIAL_RELEASES_URL = `${OFFICIAL_GITHUB_REPO_URL}/releases`;
 export const OFFICIAL_LATEST_RELEASE_URL = `${OFFICIAL_RELEASES_URL}/latest`;
 export const OFFICIAL_GITHUB_RELEASES_API_URL = `https://api.github.com/repos/${OFFICIAL_GITHUB_REPO}/releases?per_page=10`;
 export const SYNCED_RELEASES_CACHE_KEY = 'physiorecord_synced_github_releases_v1';
+export const AUTO_UPDATE_CHECK_PREF_KEY = 'physiorecord_auto_update_check_v1';
+export const DISMISSED_UPDATE_TAG_KEY = 'physiorecord_dismissed_update_tag_v1';
+export const GITHUB_RELEASES_UPDATED_EVENT = 'physiorecord-github-releases-updated';
+export const AUTO_UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 export type UpdateRuntimeTarget = 'web' | 'android' | 'desktop';
 
@@ -368,3 +372,99 @@ export function evaluateBackupRecencyForUpdate(
     lastBackupDateLabel: new Date(parsedMs).toISOString().slice(0, 10),
   };
 }
+
+/**
+ * Opt-in automatic GitHub release check preference.
+ * Defaults to `false` to preserve zero unsolicited network requests on fresh installs.
+ */
+export function isAutoUpdateCheckEnabled(): boolean {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return false;
+    return window.localStorage.getItem(AUTO_UPDATE_CHECK_PREF_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function setAutoUpdateCheckEnabled(enabled: boolean): void {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(AUTO_UPDATE_CHECK_PREF_KEY, enabled ? 'true' : 'false');
+      window.dispatchEvent(new CustomEvent(GITHUB_RELEASES_UPDATED_EVENT));
+    }
+  } catch {
+    // Ignore storage quota errors
+  }
+}
+
+export function getDismissedUpdateTag(): string | null {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return null;
+    const tag = window.localStorage.getItem(DISMISSED_UPDATE_TAG_KEY);
+    return tag && tag.trim() ? tag.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+export function dismissUpdateTag(tagName: string): void {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage && tagName.trim()) {
+      window.localStorage.setItem(DISMISSED_UPDATE_TAG_KEY, tagName.trim());
+      window.dispatchEvent(new CustomEvent(GITHUB_RELEASES_UPDATED_EVENT));
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+export function notifyGithubReleasesUpdated(): void {
+  try {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(GITHUB_RELEASES_UPDATED_EVENT));
+    }
+  } catch {
+    // Ignore event dispatch errors
+  }
+}
+
+/**
+ * Pure predicate deciding whether a background auto-check should run now.
+ */
+export function shouldRunAutoUpdateCheck(params: {
+  enabled: boolean;
+  lastSyncedAt?: string | null;
+  nowMs?: number;
+  intervalMs?: number;
+}): boolean {
+  if (!params.enabled) return false;
+  if (!params.lastSyncedAt) return true;
+  const parsedMs = Date.parse(params.lastSyncedAt);
+  if (!Number.isFinite(parsedMs)) return true;
+  const now = params.nowMs ?? Date.now();
+  const interval = params.intervalMs ?? AUTO_UPDATE_CHECK_INTERVAL_MS;
+  return now - parsedMs >= interval;
+}
+
+/**
+ * Pure resolver returning the newest non-prerelease GitHub release that is newer than
+ * `currentAppVersion` and has not been dismissed by the user.
+ */
+export function getPendingUpdateNotification(params: {
+  releases: readonly SyncedGithubReleaseItem[] | null | undefined;
+  currentAppVersion: string;
+  dismissedTag?: string | null;
+}): SyncedGithubReleaseItem | null {
+  if (!Array.isArray(params.releases) || params.releases.length === 0) return null;
+  const stable = params.releases.find((r) => !r.isPrerelease) ?? params.releases[0];
+  if (!stable) return null;
+  if (compareSemverVersions(stable.version, params.currentAppVersion) <= 0) {
+    return null;
+  }
+  const dismissed = (params.dismissedTag || '').trim().toLowerCase();
+  if (dismissed && stable.tagName.trim().toLowerCase() === dismissed) {
+    return null;
+  }
+  return stable;
+}
+

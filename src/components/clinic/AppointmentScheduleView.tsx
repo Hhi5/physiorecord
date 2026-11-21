@@ -31,7 +31,9 @@ import {
   buildUserInitiatedWhatsAppHref,
 } from '../../utils/whatsappTemplates';
 import { getPatientMrn, isDemoPatient, getPatientDisplayName } from '../../utils/mrn';
+import { localizeDemoText } from '../../utils/demoLocalization';
 import { openSafeExternalUrl } from '../../platform/nativeBridge';
+import { sanitizeDurationDraft } from '../../utils/durationInput';
 import { Num, DemoBadge, DatePickerInput, TimePickerInput, TimeDisplay } from '../ui/Primitives';
 import { ClampedMenuPanel } from '../ui/ClampedMenuPanel';
 import { useViewportClampedMenu } from '../../utils/menuViewportClamp';
@@ -1382,7 +1384,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                     className={`font-bold text-foreground break-words ${privacyBlur ? 'blur-sm select-none' : ''}`}
                     data-privacy-blurred={privacyBlur ? 'true' : undefined}
                   >
-                    {s.entry.patientName}
+                    {localizeDemoText(s.entry.patientName, language)}
                   </div>
                   <div className="text-muted-foreground-1 break-words">
                     {bi(s.matchReasonAr, s.matchReasonEn)}
@@ -1813,7 +1815,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                             className={`text-sm font-bold text-foreground ${privacyBlur ? 'blur-sm select-none' : ''}`}
                             data-privacy-blurred={privacyBlur ? 'true' : undefined}
                           >
-                            {appt.patientName}
+                            {localizeDemoText(appt.patientName, language)}
                           </span>
                           {appt.isDemo && <DemoBadge />}
                           {isHomeVisit && (
@@ -2227,7 +2229,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                       <div className="min-w-0 space-y-1.5">
                         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
                           <span className="text-sm font-bold text-foreground break-words">
-                            {rule.patientName}
+                            {localizeDemoText(rule.patientName, language)}
                           </span>
                           {rule.isDemo && <DemoBadge />}
                           {ruleIsHome && (
@@ -2458,7 +2460,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                           className={`text-sm font-bold text-foreground ${privacyBlur ? 'blur-sm select-none' : ''}`}
                           data-privacy-blurred={privacyBlur ? 'true' : undefined}
                         >
-                          {entry.patientName}
+                          {localizeDemoText(entry.patientName, language)}
                         </span>
                         {entry.isDemo && <DemoBadge />}
                         <span
@@ -3054,14 +3056,15 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                     </label>
                     <input
                       id="appt-sheet-custom-dur"
-                      type="number"
-                      min={5}
-                      max={480}
-                      step={1}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       dir="ltr"
+                      lang="en"
+                      autoComplete="off"
                       value={customDurationDraft}
                       onChange={(e) => {
-                        const raw = e.target.value;
+                        const raw = sanitizeDurationDraft(e.target.value, 3);
                         setCustomDurationDraft(raw);
                         const parsed = parseInt(raw, 10);
                         if (!Number.isNaN(parsed) && parsed >= 5) {
@@ -3069,7 +3072,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                         }
                       }}
                       placeholder="75"
-                      className="w-28 px-3 py-2 text-xs rounded-xl bg-surface/80 border border-black/[0.06] dark:border-white/[0.08] text-foreground font-mono font-bold tabular-nums focus:outline-none focus:border-primary"
+                      className="w-28 px-3 py-2 text-xs rounded-xl bg-surface/80 border border-black/[0.06] dark:border-white/[0.08] text-foreground font-mono font-bold text-left tabular-nums focus:outline-none focus:border-primary"
                     />
                     <span className="text-xs font-semibold text-muted-foreground-1">
                       {bi('دقيقة (5 – 480 دقيقة)', 'minutes (5 – 480 min)', 'خولەک (5 – 480 خولەک)')}
@@ -3251,15 +3254,16 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                       </label>
                       <input
                         id="appt-sheet-hv-before"
-                        type="number"
-                        min={0}
-                        max={240}
-                        step={5}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         dir="ltr"
+                        lang="en"
+                        autoComplete="off"
                         value={travelBufferBeforeStr}
-                        onChange={(e) => setTravelBufferBeforeStr(e.target.value)}
+                        onChange={(e) => setTravelBufferBeforeStr(sanitizeDurationDraft(e.target.value, 3))}
                         placeholder="0"
-                        className="w-full px-3 py-2 text-xs rounded-xl bg-surface/80 border border-black/[0.06] dark:border-white/[0.08] text-foreground font-mono font-bold tabular-nums focus:outline-none focus:border-primary"
+                        className="w-full px-3 py-2 text-xs rounded-xl bg-surface/80 border border-black/[0.06] dark:border-white/[0.08] text-foreground font-mono font-bold text-left tabular-nums focus:outline-none focus:border-primary"
                       />
                     </div>
                     <div>
@@ -3272,15 +3276,16 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
                       </label>
                       <input
                         id="appt-sheet-hv-after"
-                        type="number"
-                        min={0}
-                        max={240}
-                        step={5}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         dir="ltr"
+                        lang="en"
+                        autoComplete="off"
                         value={travelBufferAfterStr}
-                        onChange={(e) => setTravelBufferAfterStr(e.target.value)}
+                        onChange={(e) => setTravelBufferAfterStr(sanitizeDurationDraft(e.target.value, 3))}
                         placeholder="0"
-                        className="w-full px-3 py-2 text-xs rounded-xl bg-surface/80 border border-black/[0.06] dark:border-white/[0.08] text-foreground font-mono font-bold tabular-nums focus:outline-none focus:border-primary"
+                        className="w-full px-3 py-2 text-xs rounded-xl bg-surface/80 border border-black/[0.06] dark:border-white/[0.08] text-foreground font-mono font-bold text-left tabular-nums focus:outline-none focus:border-primary"
                       />
                     </div>
                   </div>

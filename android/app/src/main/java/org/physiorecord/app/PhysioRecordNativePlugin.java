@@ -16,8 +16,19 @@ import android.print.PrintManager;
 import android.provider.OpenableColumns;
 import android.webkit.WebView;
 
+import android.content.SharedPreferences;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyPermanentlyInvalidatedException;
+import android.security.keystore.KeyProperties;
+import android.util.Base64;
+
 import androidx.activity.result.ActivityResult;
+import androidx.annotation.NonNull;
+import androidx.biometric.BiometricManager;
+import androidx.biometric.BiometricPrompt;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+import androidx.fragment.app.FragmentActivity;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -26,9 +37,14 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-import android.util.Base64;
-
 import org.json.JSONObject;
+
+import java.security.KeyStore;
+import java.util.Arrays;
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -713,6 +729,375 @@ public class PhysioRecordNativePlugin extends Plugin {
                 if (activeOAuthServer == server) {
                     activeOAuthServer = null;
                 }
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // 6. Hardware-Backed Android BiometricPrompt + Android Keystore Vault Unlock
+    //    Wraps the 256-bit vault DEK with an Android Keystore AES-256-GCM key
+    //    requiring BIOMETRIC_STRONG CryptoObject verification on every use.
+    // -----------------------------------------------------------------------
+    private static final String BIOMETRIC_KEY_ALIAS = "org.physiorecord.vault.biometric.dek.v1";
+    private static final String BIOMETRIC_PREFS_NAME = "physiorecord_biometric_vault";
+    private static final String BIOMETRIC_PREF_CIPHERTEXT = "wrapped_dek_b64";
+    private static final String BIOMETRIC_PREF_IV = "wrapped_dek_iv_b64";
+
+    private SharedPreferences getBiometricPrefs(Context ctx) {
+        return ctx.getSharedPreferences(BIOMETRIC_PREFS_NAME, Context.MODE_PRIVATE);
+    }
+
+    private void deleteBiometricArtifacts(Context ctx) {
+        try {
+            getBiometricPrefs(ctx).edit().clear().apply();
+        } catch (Exception ignored) {
+        }
+        try {
+            KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
+            ks.load(null);
+            if (ks.containsAlias(BIOMETRIC_KEY_ALIAS)) {
+                ks.deleteEntry(BIOMETRIC_KEY_ALIAS);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private boolean isBiometricDekStored(Context ctx) {
+        try {
+            SharedPreferences prefs = getBiometricPrefs(ctx);
+            String ct = prefs.getString(BIOMETRIC_PREF_CIPHERTEXT, null);
+            String iv = prefs.getString(BIOMETRIC_PREF_IV, null);
+            if (ct == null || ct.isEmpty() || iv == null || iv.isEmpty()) {
+                return false;
+            }
+            KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
+            ks.load(null);
+            return ks.containsAlias(BIOMETRIC_KEY_ALIAS);
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    private SecretKey generateBiometricKeystoreKey() throws Exception {
+        KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
+        ks.load(null);
+        if (ks.containsAlias(BIOMETRIC_KEY_ALIAS)) {
+            ks.deleteEntry(BIOMETRIC_KEY_ALIAS);
+        }
+
+        KeyGenerator keyGenerator = KeyGenerator.getInstance(
+                KeyProperties.KEY_ALGORITHM_AES,
+                "AndroidKeyStore"
+        );
+        KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(
+                BIOMETRIC_KEY_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT
+        )
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setKeySize(256)
+                .setUserAuthenticationRequired(true)
+                .setInvalidatedByBiometricEnrollment(true);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            builder.setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG);
+        } else {
+            // Require fresh BiometricPrompt CryptoObject authentication per operation on API 24-29
+            builder.setUserAuthenticationValidityDurationSeconds(-1);
+        }
+
+        keyGenerator.init(builder.build());
+        return keyGenerator.generateKey();
+    }
+
+    private SecretKey loadBiometricKeystoreKey() throws Exception {
+        KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
+        ks.load(null);
+        return (SecretKey) ks.getKey(BIOMETRIC_KEY_ALIAS, null);
+    }
+
+    @PluginMethod
+    public void isBiometricAvailable(PluginCall call) {
+        Context ctx = getContext();
+        if (ctx == null) {
+            JSObject ret = new JSObject();
+            ret.put("available", false);
+            ret.put("status", "unavailable");
+            ret.put("enrolled", false);
+            call.resolve(ret);
+            return;
+        }
+
+        int canAuth = BiometricManager.from(ctx)
+                .canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG);
+        String status;
+        switch (canAuth) {
+            case BiometricManager.BIOMETRIC_SUCCESS:
+                status = "ready";
+                break;
+            case BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED:
+                status = "none_enrolled";
+                break;
+            case BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE:
+                status = "no_hardware";
+                break;
+            case BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE:
+                status = "hw_unavailable";
+                break;
+            case BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED:
+                status = "security_update_required";
+                break;
+            default:
+                status = "unavailable";
+                break;
+        }
+
+        JSObject ret = new JSObject();
+        ret.put("available", canAuth == BiometricManager.BIOMETRIC_SUCCESS);
+        ret.put("status", status);
+        ret.put("enrolled", isBiometricDekStored(ctx));
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void hasBiometricDek(PluginCall call) {
+        Context ctx = getContext();
+        JSObject ret = new JSObject();
+        ret.put("enrolled", ctx != null && isBiometricDekStored(ctx));
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void clearBiometricDek(PluginCall call) {
+        Context ctx = getContext();
+        if (ctx != null) {
+            deleteBiometricArtifacts(ctx);
+        }
+        JSObject ret = new JSObject();
+        ret.put("cleared", true);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void enrollBiometricDek(PluginCall call) {
+        final String dekBase64 = call.getString("dekBase64", "");
+        final String title = call.getString("title", "تفعيل الفتح بالبصمة");
+        final String subtitle = call.getString("subtitle", "استخدم بصمة الإصبع لحماية مفتاح الخزينة");
+        final String negativeLabel = call.getString("negativeLabel", "إلغاء");
+
+        final Activity rawActivity = getActivity();
+        if (!(rawActivity instanceof FragmentActivity)) {
+            call.reject("Biometric prompt requires an active Android FragmentActivity.");
+            return;
+        }
+        final FragmentActivity activity = (FragmentActivity) rawActivity;
+
+        final byte[] rawDek;
+        try {
+            rawDek = Base64.decode(dekBase64, Base64.DEFAULT);
+        } catch (Exception ex) {
+            call.reject("Invalid DEK payload.");
+            return;
+        }
+        if (rawDek == null || rawDek.length != 32) {
+            if (rawDek != null) Arrays.fill(rawDek, (byte) 0);
+            call.reject("DEK must be exactly 32 bytes.");
+            return;
+        }
+
+        int canAuth = BiometricManager.from(activity)
+                .canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG);
+        if (canAuth != BiometricManager.BIOMETRIC_SUCCESS) {
+            Arrays.fill(rawDek, (byte) 0);
+            if (canAuth == BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED) {
+                call.reject("لم يتم تسجيل بصمة إصبع على الجهاز. أضف بصمة من إعدادات أندرويد أولاً.");
+            } else {
+                call.reject("المصادقة الحيوية القوية (البصمة) غير متوفرة على هذا الجهاز.");
+            }
+            return;
+        }
+
+        final Cipher cipher;
+        try {
+            SecretKey secretKey = generateBiometricKeystoreKey();
+            cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+        } catch (Exception ex) {
+            Arrays.fill(rawDek, (byte) 0);
+            call.reject("تعذر تهيئة مفتاح البصمة الآمن: " + ex.getMessage(), ex);
+            return;
+        }
+
+        activity.runOnUiThread(() -> {
+            BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
+                    .setTitle(title)
+                    .setSubtitle(subtitle)
+                    .setNegativeButtonText(negativeLabel)
+                    .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+                    .setConfirmationRequired(false)
+                    .build();
+
+            BiometricPrompt prompt = new BiometricPrompt(
+                    activity,
+                    ContextCompat.getMainExecutor(activity),
+                    new BiometricPrompt.AuthenticationCallback() {
+                        @Override
+                        public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
+                            try {
+                                BiometricPrompt.CryptoObject cryptoObj = result.getCryptoObject();
+                                Cipher authedCipher = cryptoObj != null ? cryptoObj.getCipher() : null;
+                                if (authedCipher == null) {
+                                    call.reject("تعذر التحقق من وحدة التشفير الحيوية.");
+                                    return;
+                                }
+                                byte[] ciphertext = authedCipher.doFinal(rawDek);
+                                byte[] iv = authedCipher.getIV();
+                                getBiometricPrefs(activity)
+                                        .edit()
+                                        .putString(BIOMETRIC_PREF_CIPHERTEXT, Base64.encodeToString(ciphertext, Base64.NO_WRAP))
+                                        .putString(BIOMETRIC_PREF_IV, Base64.encodeToString(iv, Base64.NO_WRAP))
+                                        .apply();
+                                JSObject ret = new JSObject();
+                                ret.put("enrolled", true);
+                                call.resolve(ret);
+                            } catch (Exception ex) {
+                                deleteBiometricArtifacts(activity);
+                                call.reject("فشل حفظ مفتاح البصمة المشفر: " + ex.getMessage(), ex);
+                            } finally {
+                                Arrays.fill(rawDek, (byte) 0);
+                            }
+                        }
+
+                        @Override
+                        public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
+                            Arrays.fill(rawDek, (byte) 0);
+                            deleteBiometricArtifacts(activity);
+                            call.reject(errString != null && errString.length() > 0
+                                    ? errString.toString()
+                                    : "تم إلغاء المصادقة بالبصمة.");
+                        }
+
+                        @Override
+                        public void onAuthenticationFailed() {
+                            // BiometricPrompt keeps the sheet open for retries
+                        }
+                    }
+            );
+
+            try {
+                prompt.authenticate(promptInfo, new BiometricPrompt.CryptoObject(cipher));
+            } catch (Exception ex) {
+                Arrays.fill(rawDek, (byte) 0);
+                deleteBiometricArtifacts(activity);
+                call.reject("تعذر عرض نافذة البصمة: " + ex.getMessage(), ex);
+            }
+        });
+    }
+
+    @PluginMethod
+    public void unlockBiometricDek(PluginCall call) {
+        final String title = call.getString("title", "فتح خزينة PhysioRecord");
+        final String subtitle = call.getString("subtitle", "ضع إصبعك لفتح السجلات المشفرة");
+        final String negativeLabel = call.getString("negativeLabel", "استخدام كلمة المرور");
+
+        final Activity rawActivity = getActivity();
+        if (!(rawActivity instanceof FragmentActivity)) {
+            call.reject("Biometric prompt requires an active Android FragmentActivity.");
+            return;
+        }
+        final FragmentActivity activity = (FragmentActivity) rawActivity;
+
+        SharedPreferences prefs = getBiometricPrefs(activity);
+        String ctB64 = prefs.getString(BIOMETRIC_PREF_CIPHERTEXT, null);
+        String ivB64 = prefs.getString(BIOMETRIC_PREF_IV, null);
+        if (ctB64 == null || ctB64.isEmpty() || ivB64 == null || ivB64.isEmpty()) {
+            call.reject("لم يتم تفعيل الفتح بالبصمة على هذا الجهاز.");
+            return;
+        }
+
+        final byte[] ciphertext;
+        final byte[] iv;
+        try {
+            ciphertext = Base64.decode(ctB64, Base64.DEFAULT);
+            iv = Base64.decode(ivB64, Base64.DEFAULT);
+        } catch (Exception ex) {
+            deleteBiometricArtifacts(activity);
+            call.reject("بيانات البصمة المحفوظة تالفة. افتح بكلمة المرور ثم أعد التفعيل.");
+            return;
+        }
+
+        final Cipher cipher;
+        try {
+            SecretKey secretKey = loadBiometricKeystoreKey();
+            if (secretKey == null) {
+                deleteBiometricArtifacts(activity);
+                call.reject("مفتاح البصمة غير موجود. افتح بكلمة المرور الرئيسية ثم أعد تفعيل البصمة.");
+                return;
+            }
+            cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(128, iv));
+        } catch (KeyPermanentlyInvalidatedException invEx) {
+            deleteBiometricArtifacts(activity);
+            call.reject("تغيرت بصمات الجهاز، لذلك تم إبطال مفتاح البصمة تلقائياً لحماية البيانات. افتح بكلمة المرور الرئيسية ثم أعد تفعيل البصمة.");
+            return;
+        } catch (Exception ex) {
+            call.reject("تعذر تهيئة فك التشفير بالبصمة: " + ex.getMessage(), ex);
+            return;
+        }
+
+        activity.runOnUiThread(() -> {
+            BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
+                    .setTitle(title)
+                    .setSubtitle(subtitle)
+                    .setNegativeButtonText(negativeLabel)
+                    .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+                    .setConfirmationRequired(false)
+                    .build();
+
+            BiometricPrompt prompt = new BiometricPrompt(
+                    activity,
+                    ContextCompat.getMainExecutor(activity),
+                    new BiometricPrompt.AuthenticationCallback() {
+                        @Override
+                        public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
+                            byte[] rawDek = null;
+                            try {
+                                BiometricPrompt.CryptoObject cryptoObj = result.getCryptoObject();
+                                Cipher authedCipher = cryptoObj != null ? cryptoObj.getCipher() : null;
+                                if (authedCipher == null) {
+                                    call.reject("تعذر التحقق من وحدة التشفير الحيوية.");
+                                    return;
+                                }
+                                rawDek = authedCipher.doFinal(ciphertext);
+                                String dekB64 = Base64.encodeToString(rawDek, Base64.NO_WRAP);
+                                JSObject ret = new JSObject();
+                                ret.put("dekBase64", dekB64);
+                                call.resolve(ret);
+                            } catch (Exception ex) {
+                                call.reject("فشل فك تشفير مفتاح الخزينة بالبصمة: " + ex.getMessage(), ex);
+                            } finally {
+                                if (rawDek != null) Arrays.fill(rawDek, (byte) 0);
+                            }
+                        }
+
+                        @Override
+                        public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
+                            call.reject(errString != null && errString.length() > 0
+                                    ? errString.toString()
+                                    : "تم إلغاء الفتح بالبصمة.");
+                        }
+
+                        @Override
+                        public void onAuthenticationFailed() {
+                            // User can retry fingerprint
+                        }
+                    }
+            );
+
+            try {
+                prompt.authenticate(promptInfo, new BiometricPrompt.CryptoObject(cipher));
+            } catch (Exception ex) {
+                call.reject("تعذر عرض نافذة البصمة: " + ex.getMessage(), ex);
             }
         });
     }

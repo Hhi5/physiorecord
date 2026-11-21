@@ -24,6 +24,7 @@ import {
   formatIraqiPhoneDisplay,
 } from '../../utils/date';
 import { Num, Fraction, Money, DemoBadge, TimeDisplay } from '../ui/Primitives';
+import { localizeDemoBilingualTitle, localizeDemoText } from '../../utils/demoLocalization';
 import { ClampedMenuPanel } from '../ui/ClampedMenuPanel';
 import {
   Calendar,
@@ -53,7 +54,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
   onOpenPatient,
   onNavigateTab,
 }) => {
-  const { bi, isRtl } = useLanguage();
+  const { bi, isRtl, language } = useLanguage();
   const { patients } = usePatients();
 
   const [todayDate] = useState<string>(localDate());
@@ -475,7 +476,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                               privacyBlur ? 'blur-xs select-none' : ''
                             }`}
                           >
-                            <span>{appt.patientName}</span>
+                            <span>{localizeDemoText(appt.patientName, language)}</span>
                             <ArrowOpenIcon className="w-3.5 h-3.5 text-muted-foreground-1" />
                           </button>
                           {appt.isDemo && <DemoBadge />}
@@ -505,7 +506,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                           )}
                           {appt.roomOrBed && (
                             <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary font-semibold text-xs">
-                              {appt.roomOrBed}
+                              {localizeDemoText(appt.roomOrBed, language)}
                             </span>
                           )}
                         </div>
@@ -636,7 +637,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                             privacyBlur ? 'blur-xs select-none' : ''
                           }`}
                         >
-                          {w.patientName}
+                          {localizeDemoText(w.patientName, language)}
                         </span>
                         {w.isDemo && <DemoBadge />}
                       </div>
@@ -730,12 +731,12 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
                               privacyBlur ? 'blur-xs select-none' : ''
                             }`}
                           >
-                            {inv.patientName}
+                            {localizeDemoText(inv.patientName, language)}
                           </button>
                           {inv.isDemo && <DemoBadge />}
                         </div>
                         <span className="text-xs text-muted-foreground-1 block leading-snug">
-                          {bi(inv.titleAr, inv.titleEn)}{' '}
+                          {localizeDemoBilingualTitle(inv.titleAr, inv.titleEn, language)}{' '}
                           {inv.packageTotalSessions ? (
                             <>
                               (

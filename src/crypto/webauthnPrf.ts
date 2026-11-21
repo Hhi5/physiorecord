@@ -18,9 +18,33 @@ import {
   wrapDEK,
 } from './vault';
 import { broadcastVaultEvent } from '../utils/vaultEvents';
+import {
+  clearNativeAndroidBiometricDek,
+  enrollNativeAndroidBiometricDek,
+  getAndroidNativePlugin,
+  getNativeAndroidBiometricStatus,
+  isElectronDesktop,
+  isNativeAndroid,
+  unlockNativeAndroidBiometricDek,
+} from '../platform/nativeBridge';
 
 const PRF_WRAP_INFO = 'physiorecord-webauthn-prf-dek-wrap-v1';
 const PRF_WRAP_AAD = new TextEncoder().encode('webauthn-prf-dek-wrap:v1');
+
+export type BiometricUnlockMode = 'android-native' | 'webauthn-prf' | 'unsupported';
+export type BiometricUnavailableReason =
+  | 'none'
+  | 'not-enrolled-os'
+  | 'no-hardware'
+  | 'desktop-electron'
+  | 'browser-unsupported';
+
+export interface BiometricAvailabilityInfo {
+  supported: boolean;
+  mode: BiometricUnlockMode;
+  reason: BiometricUnavailableReason;
+  enrolledOnNative: boolean;
+}
 
 interface PrfExtensionOutput {
   enabled?: boolean;
@@ -44,34 +68,120 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
 }
 
 /**
- * Feature-detect platform authenticator & WebAuthn support cleanly without throwing.
+ * Feature-detect biometric unlock availability across Native Android (BiometricPrompt + Keystore)
+ * and Web/PWA (WebAuthn PRF), returning a structured reason when unavailable so UI never hides silently.
  */
-export async function isWebAuthnPrfSupported(): Promise<boolean> {
+export async function getBiometricAvailabilityInfo(): Promise<BiometricAvailabilityInfo> {
   try {
-    const win = window as Window & { electronAPI?: { isElectron?: boolean } };
+    // 1. Native Android Capacitor shell (BiometricPrompt + Android Keystore AES-256-GCM)
+    const androidPlugin = getAndroidNativePlugin();
+    if (androidPlugin?.isBiometricAvailable) {
+      const nativeStatus = await getNativeAndroidBiometricStatus();
+      if (nativeStatus.available) {
+        return {
+          supported: true,
+          mode: 'android-native',
+          reason: 'none',
+          enrolledOnNative: nativeStatus.enrolled,
+        };
+      }
+      return {
+        supported: false,
+        mode: 'unsupported',
+        reason: nativeStatus.status === 'none_enrolled' ? 'not-enrolled-os' : 'no-hardware',
+        enrolledOnNative: nativeStatus.enrolled,
+      };
+    }
+
+    if (isElectronDesktop()) {
+      return {
+        supported: false,
+        mode: 'unsupported',
+        reason: 'desktop-electron',
+        enrolledOnNative: false,
+      };
+    }
+
+    // Older Android APK without native biometric plugin method
+    if (isNativeAndroid()) {
+      return {
+        supported: false,
+        mode: 'unsupported',
+        reason: 'browser-unsupported',
+        enrolledOnNative: false,
+      };
+    }
+
+    const win =
+      typeof window !== 'undefined'
+        ? (window as Window &
+            typeof globalThis & {
+              electronAPI?: { isElectron?: boolean };
+            })
+        : null;
     if (
-      typeof window === 'undefined' ||
-      window.location?.protocol === 'app:' ||
+      !win ||
+      win.location?.protocol === 'app:' ||
       win.electronAPI?.isElectron ||
-      typeof window.PublicKeyCredential === 'undefined' ||
+      typeof win.PublicKeyCredential === 'undefined' ||
       typeof navigator === 'undefined' ||
       !navigator.credentials ||
       typeof navigator.credentials.create !== 'function' ||
       typeof navigator.credentials.get !== 'function'
     ) {
-      return false;
+      return {
+        supported: false,
+        mode: 'unsupported',
+        reason: 'browser-unsupported',
+        enrolledOnNative: false,
+      };
     }
 
-    if (typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
+    if (typeof win.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
       const available =
-        await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-      return Boolean(available);
+        await win.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+      return {
+        supported: Boolean(available),
+        mode: available ? 'webauthn-prf' : 'unsupported',
+        reason: available ? 'none' : 'browser-unsupported',
+        enrolledOnNative: false,
+      };
     }
 
-    return true;
+    return {
+      supported: true,
+      mode: 'webauthn-prf',
+      reason: 'none',
+      enrolledOnNative: false,
+    };
   } catch {
-    return false;
+    return {
+      supported: false,
+      mode: 'unsupported',
+      reason: 'browser-unsupported',
+      enrolledOnNative: false,
+    };
   }
+}
+
+/**
+ * Feature-detect platform authenticator (Native Android BiometricPrompt OR WebAuthn PRF) cleanly without throwing.
+ */
+export async function isWebAuthnPrfSupported(): Promise<boolean> {
+  const info = await getBiometricAvailabilityInfo();
+  return info.supported;
+}
+
+/**
+ * Check whether biometric unlock is currently enrolled (either via native Android Keystore or WebAuthn PRF metadata).
+ */
+export async function isBiometricUnlockEnrolled(meta?: VaultMetaEntity | null): Promise<boolean> {
+  const androidPlugin = getAndroidNativePlugin();
+  if (androidPlugin?.isBiometricAvailable) {
+    const status = await getNativeAndroidBiometricStatus();
+    if (status.enrolled) return true;
+  }
+  return Boolean(meta?.prfCredentialId && meta?.prfWrappedDek);
 }
 
 async function deriveWrappingKeyFromPrfOutput(
@@ -132,20 +242,37 @@ async function requestPrfAssertionOutput(
 }
 
 /**
- * Enroll a hardware passkey / biometric PRF key to unlock DEK cleanly on this device.
+ * Enroll biometric unlock (Native Android BiometricPrompt + Keystore OR WebAuthn PRF passkey).
  */
 export async function enrollPasskeyPrfUnlock(
   database: PhysioRecordDatabase,
   vaultKek: CryptoKey
 ): Promise<{ credentialId: Uint8Array }> {
-  const supported = await isWebAuthnPrfSupported();
-  if (!supported) {
-    throw new Error('المصادقة الحيوية WebAuthn غير متوفرة في هذا المتصفح أو الجهاز.');
+  const availability = await getBiometricAvailabilityInfo();
+  if (!availability.supported) {
+    if (availability.reason === 'not-enrolled-os') {
+      throw new Error('لم يتم تسجيل بصمة إصبع على الجهاز. أضف بصمة من إعدادات أندرويد أولاً.');
+    }
+    throw new Error('المصادقة الحيوية غير متوفرة في هذا المتصفح أو الجهاز.');
   }
 
   const meta = await database.vaultMeta.get('auth');
   if (!meta) {
     throw new Error('الخزينة غير مهيأة.');
+  }
+
+  // Native Android BiometricPrompt + Android Keystore AES-256-GCM wrapping
+  if (availability.mode === 'android-native') {
+    const rawDek = await decryptRawDEKForBackup(meta.wrappedDek, meta.wrappedDekIv, vaultKek);
+    try {
+      const enrolled = await enrollNativeAndroidBiometricDek(rawDek);
+      if (!enrolled) {
+        throw new Error('تعذر تفعيل الفتح بالبصمة على هذا الجهاز.');
+      }
+      return { credentialId: new TextEncoder().encode('android-keystore-biometric-v1') };
+    } finally {
+      rawDek.fill(0);
+    }
   }
 
   const prfSalt = randomBytes(32);
@@ -225,11 +352,26 @@ export async function enrollPasskeyPrfUnlock(
 }
 
 /**
- * Unlock the operational DEK using an enrolled WebAuthn PRF passkey.
+ * Unlock the operational DEK using Native Android BiometricPrompt OR an enrolled WebAuthn PRF passkey.
  */
 export async function unlockOperationalDekWithPrf(
   meta: VaultMetaEntity
 ): Promise<CryptoKey> {
+  const androidPlugin = getAndroidNativePlugin();
+  if (androidPlugin?.unlockBiometricDek && androidPlugin?.isBiometricAvailable) {
+    const nativeStatus = await getNativeAndroidBiometricStatus();
+    if (nativeStatus.enrolled) {
+      let rawDek: Uint8Array | null = null;
+      try {
+        rawDek = await unlockNativeAndroidBiometricDek();
+        const generation = meta.vaultGeneration ?? 1;
+        return await importOperationalDekFromRawBytes(rawDek, generation);
+      } finally {
+        if (rawDek) rawDek.fill(0);
+      }
+    }
+  }
+
   if (!meta.prfCredentialId || !meta.prfSalt || !meta.prfWrappedDek || !meta.prfWrappedDekIv) {
     throw new Error('لم يتم تفعيل مفتاح المرور الحيوي لهذه الخزينة.');
   }
@@ -287,26 +429,40 @@ export async function resetVaultPasswordWithPrf(
   if (!meta) {
     throw new Error('الخزينة غير مهيأة.');
   }
-  if (!meta.prfCredentialId || !meta.prfSalt || !meta.prfWrappedDek || !meta.prfWrappedDekIv) {
+
+  const androidPlugin = getAndroidNativePlugin();
+  const useNativeAndroid =
+    Boolean(androidPlugin?.unlockBiometricDek && androidPlugin?.isBiometricAvailable) &&
+    (await getNativeAndroidBiometricStatus()).enrolled;
+
+  if (
+    !useNativeAndroid &&
+    (!meta.prfCredentialId || !meta.prfSalt || !meta.prfWrappedDek || !meta.prfWrappedDekIv)
+  ) {
     throw new Error('لم يتم تفعيل البصمة أو مفتاح المرور الحيوي لهذه الخزينة.');
   }
 
-  // 1. Authenticate user biometrically & derive PRF wrapping key
-  const prfOutput = await requestPrfAssertionOutput(meta.prfCredentialId, meta.prfSalt);
+  let prfOutput: Uint8Array | null = null;
   let rawDek: Uint8Array | null = null;
 
   try {
-    const wrappingKey = await deriveWrappingKeyFromPrfOutput(prfOutput, meta.prfSalt);
-    const rawBuf = await crypto.subtle.decrypt(
-      {
-        name: 'AES-GCM',
-        iv: toArrayBuffer(meta.prfWrappedDekIv),
-        additionalData: PRF_WRAP_AAD,
-      },
-      wrappingKey,
-      toArrayBuffer(meta.prfWrappedDek)
-    );
-    rawDek = new Uint8Array(rawBuf);
+    // 1. Authenticate user biometrically & unwrap raw DEK transiently
+    if (useNativeAndroid) {
+      rawDek = await unlockNativeAndroidBiometricDek();
+    } else {
+      prfOutput = await requestPrfAssertionOutput(meta.prfCredentialId!, meta.prfSalt!);
+      const wrappingKey = await deriveWrappingKeyFromPrfOutput(prfOutput, meta.prfSalt!);
+      const rawBuf = await crypto.subtle.decrypt(
+        {
+          name: 'AES-GCM',
+          iv: toArrayBuffer(meta.prfWrappedDekIv!),
+          additionalData: PRF_WRAP_AAD,
+        },
+        wrappingKey,
+        toArrayBuffer(meta.prfWrappedDek!)
+      );
+      rawDek = new Uint8Array(rawBuf);
+    }
 
     // 2. Derive fresh Vault KEK for the new password
     const newSalt = randomBytes(CONSTANTS.SALT_BYTES);
@@ -322,7 +478,7 @@ export async function resetVaultPasswordWithPrf(
     const operationalDek = await importOperationalDekFromRawBytes(rawDek, currentGen);
     bindDekToGeneration(operationalDek, currentGen);
 
-    // 4. Persist updated password envelope (keeping PRF & Emergency Recovery envelopes valid)
+    // 4. Persist updated password envelope (keeping Biometric/PRF & Emergency Recovery envelopes valid)
     await database.vaultMeta.put({
       ...meta,
       id: 'auth',
@@ -349,19 +505,23 @@ export async function resetVaultPasswordWithPrf(
       vaultGeneration: currentGen,
     };
   } finally {
-    prfOutput.fill(0);
+    if (prfOutput) prfOutput.fill(0);
     if (rawDek) rawDek.fill(0);
   }
 }
 
 /**
- * Remove stored WebAuthn PRF wrapping metadata cleanly (password unlock remains unaffected).
+ * Remove stored biometric / WebAuthn PRF wrapping metadata cleanly (password unlock remains unaffected).
  */
 export async function disablePasskeyPrfUnlock(database: PhysioRecordDatabase): Promise<void> {
-  await database.vaultMeta.update('auth', {
-    prfCredentialId: undefined,
-    prfSalt: undefined,
-    prfWrappedDek: undefined,
-    prfWrappedDekIv: undefined,
-  });
+  await clearNativeAndroidBiometricDek();
+  const meta = await database.vaultMeta.get('auth');
+  if (meta) {
+    await database.vaultMeta.update('auth', {
+      prfCredentialId: undefined,
+      prfSalt: undefined,
+      prfWrappedDek: undefined,
+      prfWrappedDekIv: undefined,
+    });
+  }
 }

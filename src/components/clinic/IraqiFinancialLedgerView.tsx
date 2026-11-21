@@ -17,6 +17,7 @@ import {
 import { localDate, formatDateDDMMYYYY } from '../../utils/date';
 import { DrawerDialog, ModalDialog } from '../ui/Dialog';
 import { getPatientMrn, isDemoPatient } from '../../utils/mrn';
+import { localizeDemoBilingualTitle, localizeDemoText } from '../../utils/demoLocalization';
 import {
   Num,
   Fraction,
@@ -1253,7 +1254,7 @@ export const IraqiFinancialLedgerView: React.FC<IraqiFinancialLedgerViewProps> =
                           className="py-3.5 px-4 font-bold text-foreground pr-cell-primary md:table-cell"
                         >
                           <div className="flex flex-wrap items-center gap-2">
-                            <span>{language === 'en' ? exp.titleEn : exp.titleAr}</span>
+                            <span>{localizeDemoBilingualTitle(exp.titleAr, exp.titleEn, language)}</span>
                             {exp.isDemo && <DemoBadge />}
                             <span className="text-xs font-medium text-muted-foreground-1">
                               ·{' '}
@@ -1274,12 +1275,12 @@ export const IraqiFinancialLedgerView: React.FC<IraqiFinancialLedgerViewProps> =
                           {exp.patientName && (
                             <div className="text-xs font-normal text-muted-foreground-1 mt-0.5">
                               {bi('المريض: ', 'Patient: ', 'نەخۆش: ')}
-                              {exp.patientName}
+                              {localizeDemoText(exp.patientName, language)}
                             </div>
                           )}
                           {exp.notes && (
                             <div className="text-xs font-normal text-muted-foreground-1 mt-0.5">
-                              {exp.notes}
+                              {localizeDemoText(exp.notes, language)}
                             </div>
                           )}
                         </td>
@@ -1407,12 +1408,12 @@ export const IraqiFinancialLedgerView: React.FC<IraqiFinancialLedgerViewProps> =
                       <div className="flex items-start justify-between gap-2.5">
                         <div className="flex items-center gap-2.5 min-w-0">
                           <div className="size-9 rounded-full bg-primary/10 text-primary font-extrabold text-xs flex items-center justify-center shrink-0">
-                            {group.patientName.trim().slice(0, 1) || <User className="size-4" />}
+                            {localizeDemoText(group.patientName, language).trim().slice(0, 1) || <User className="size-4" />}
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="text-sm font-bold text-foreground truncate max-w-[175px]">
-                                {group.patientName}
+                                {localizeDemoText(group.patientName, language)}
                               </span>
                               {group.isDemo && <DemoBadge />}
                             </div>
@@ -1500,9 +1501,11 @@ export const IraqiFinancialLedgerView: React.FC<IraqiFinancialLedgerViewProps> =
                           </div>
                         ) : (
                           <span className="text-muted-foreground-1 truncate min-w-0 flex-1">
-                            {language === 'en'
-                              ? group.invoices[0]?.titleEn
-                              : group.invoices[0]?.titleAr}
+                            {localizeDemoBilingualTitle(
+                              group.invoices[0]?.titleAr,
+                              group.invoices[0]?.titleEn,
+                              language
+                            )}
                           </span>
                         )}
 
@@ -1550,7 +1553,7 @@ export const IraqiFinancialLedgerView: React.FC<IraqiFinancialLedgerViewProps> =
         dir={isRtl ? 'rtl' : 'ltr'}
         maxWidthClassName="max-w-xl"
         className="bg-card"
-        title={selectedPatientGroup?.patientName || ''}
+        title={localizeDemoText(selectedPatientGroup?.patientName, language) || ''}
         subtitle={
           selectedPatientGroup
             ? bi(
@@ -1662,7 +1665,7 @@ export const IraqiFinancialLedgerView: React.FC<IraqiFinancialLedgerViewProps> =
                           )}
                         </div>
                         <div className="text-xs font-bold text-foreground mt-1">
-                          {language === 'en' ? inv.titleEn : inv.titleAr}
+                          {localizeDemoBilingualTitle(inv.titleAr, inv.titleEn, language)}
                         </div>
                       </div>
 

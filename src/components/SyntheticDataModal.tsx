@@ -18,7 +18,8 @@ import { SessionService } from '../services/sessionService';
 import { SoapService } from '../services/soapService';
 import { ClinicOperationsService } from '../services/clinicOperationsService';
 import { computePatientAge } from '../utils/date';
-import { hasAnyDemoPatients } from '../utils/mrn';
+import { getPatientDisplayName, hasAnyDemoPatients } from '../utils/mrn';
+import { localizeDemoText } from '../utils/demoLocalization';
 import { DemoBadge } from './ui/Primitives';
 import { GeometricHeaderBackdrop } from './ui/Dialog';
 import { X, Database, ShieldCheck, Sparkles, CheckCircle2, Trash2 } from 'lucide-react';
@@ -39,7 +40,7 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
 }) => {
   const { patients, savePatient, deleteAllDemoPatients, refreshPatients } = usePatients();
   const { dek } = useVault();
-  const { bi, isRtl } = useLanguage();
+  const { bi, isRtl, language } = useLanguage();
   const [seeding, setSeeding] = useState(false);
   const [deletingDemo, setDeletingDemo] = useState(false);
   const [successCount, setSuccessCount] = useState<number | null>(null);
@@ -506,12 +507,17 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
               </div>
               <div className="min-w-0">
                 <h2 id="synthetic-modal-title" className="text-sm sm:text-base font-bold text-primary-foreground truncate">
-                  {bi('إدراج بيانات سريرية تجريبية', 'Insert Synthetic Clinical Demonstration Data')}
+                  {bi(
+                    'إدراج بيانات سريرية تجريبية',
+                    'Insert Synthetic Clinical Demonstration Data',
+                    'زیادکردنی داتای کلینیکی تاقیکاری'
+                  )}
                 </h2>
                 <p className="text-xs text-primary-foreground/85 line-clamp-1">
                   {bi(
                     'بيانات وهمية سريرية لاختبار وتجربة كافة ميزات النظام والمخططات الحركية',
-                    'Clinical mock cases to test and verify all system features and kinetic progress'
+                    'Clinical mock cases to test and verify all system features and kinetic progress',
+                    'کەیسی تاقیکاری بۆ تاقیکردنەوەی هەموو تایبەتمەندییەکانی سیستەم'
                   )}
                 </p>
               </div>
@@ -597,7 +603,8 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
             <h3 className="text-xs font-bold text-foreground">
               {bi(
                 `الحالات السريرية الجاهزة للإدراج (${targetPatients.length} حالات):`,
-                `Clinical Cases Ready for Seeding (${targetPatients.length} cases):`
+                `Clinical Cases Ready for Seeding (${targetPatients.length} cases):`,
+                `کەیسە کلینیکییە ئامادەکان (${targetPatients.length} کەیس):`
               )}
             </h3>
             <div className="inline-flex items-center gap-1.5">
@@ -611,7 +618,7 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
                     : 'bg-layer text-foreground hover:bg-layer-hover'
                 }`}
               >
-                {bi('5 حالات أساسية', '5 Core Cases')}
+                {bi('5 حالات أساسية', '5 Core Cases', '٥ کەیسی سەرەکی')}
               </button>
               <button
                 type="button"
@@ -623,7 +630,7 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
                     : 'bg-layer text-foreground hover:bg-layer-hover'
                 }`}
               >
-                {bi('10 حالات عراقية موسعة', '10 Extended Iraqi Cases')}
+                {bi('10 حالات عراقية موسعة', '10 Extended Iraqi Cases', '١٠ کەیسی عێراقی فراوان')}
               </button>
             </div>
           </div>
@@ -633,17 +640,19 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
               <div key={p.id || idx} className="p-3 bg-muted/40 rounded-xl border border-card-line text-xs">
                 <div className="flex items-center justify-between font-bold text-foreground mb-1">
                   <div className="flex items-center gap-2">
-                    <span>{isRtl ? p.fullNameAr : p.fullName}</span>
+                    <span>{getPatientDisplayName(p, language)}</span>
                     <bdi dir="ltr" className="font-mono text-xs text-muted-foreground-1">
                       {p.mrn}
                     </bdi>
                     <DemoBadge />
                   </div>
                   <span className="text-primary font-normal">
-                    {p.gender === 'male' ? bi('ذكر', 'Male') : bi('أنثى', 'Female')}، {computePatientAge(p.dateOfBirth, p.age)} {bi('سنة', 'yo')}
+                    {p.gender === 'male' ? bi('ذكر', 'Male', 'نێر') : bi('أنثى', 'Female', 'مێ')} · {computePatientAge(p.dateOfBirth, p.age)} {bi('سنة', 'yo', 'ساڵ')}
                   </span>
                 </div>
-                <p className="text-muted-foreground-1 line-clamp-1">{p.medicalHistory}</p>
+                <p className="text-muted-foreground-1 line-clamp-1">
+                  {localizeDemoText(p.medicalHistory, language)}
+                </p>
               </div>
             ))}
           </div>
@@ -684,7 +693,7 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
                 className="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-colors disabled:bg-surface disabled:text-muted-foreground-2 disabled:border disabled:border-layer-line disabled:cursor-not-allowed cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>{bi('حذف كافة البيانات التجريبية', 'Delete all demo data')}</span>
+                <span>{bi('حذف كافة البيانات التجريبية', 'Delete all demo data', 'سڕینەوەی هەموو داتا تاقیکارییەکان')}</span>
               </button>
             )}
             {hasDemoRecords && confirmDeleteDemo && (
@@ -696,14 +705,14 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
                   className="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>{deletingDemo ? bi('جاري الحذف...', 'Deleting...') : bi('تأكيد الحذف النهائي', 'Confirm Delete')}</span>
+                  <span>{deletingDemo ? bi('جاري الحذف...', 'Deleting...', 'دەسڕدرێتەوە...') : bi('تأكيد الحذف النهائي', 'Confirm Delete', 'دڵنیاکردنەوەی سڕینەوە')}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmDeleteDemo(false)}
                   className="px-2.5 py-2 border border-layer-line bg-layer text-foreground rounded-lg text-xs font-semibold cursor-pointer"
                 >
-                  {bi('إلغاء', 'Cancel')}
+                  {bi('إلغاء', 'Cancel', 'پاشگەزبوونەوە')}
                 </button>
               </div>
             )}
@@ -714,7 +723,7 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 border border-layer-line bg-layer text-muted-foreground-1 hover:text-foreground rounded-lg text-xs font-bold hover:bg-layer-hover transition-colors cursor-pointer"
             >
-              {bi('إغلاق', 'Close')}
+              {bi('إغلاق', 'Close', 'داخستن')}
             </button>
             <button
               type="button"

@@ -17,6 +17,8 @@ import {
   Grid3x3,
   Plus,
   Ruler,
+  Paperclip,
+  X,
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
@@ -27,6 +29,7 @@ import {
 } from '../../utils/attachmentMedia';
 import { localDate } from '../../utils/date';
 import { ModalDialog } from '../ui/Dialog';
+import { DatePickerInput } from '../ui/Primitives';
 import type {
   EncryptedAttachmentRecord,
   PatientAttachmentCategory,
@@ -392,11 +395,10 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
               <label className="block text-xs font-semibold text-foreground mb-1">
                 {bi('تاريخ الالتقاط', 'Captured Date', 'بەرواری گرتن')}
               </label>
-              <input
-                type="date"
+              <DatePickerInput
                 value={capturedAt}
-                onChange={(e) => setCapturedAt(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-card-stroke bg-layer text-xs text-foreground"
+                onChange={setCapturedAt}
+                ariaLabel={bi('تاريخ الالتقاط', 'Captured Date', 'بەرواری گرتن')}
               />
             </div>
 
@@ -428,8 +430,78 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
                 type="file"
                 accept="image/*,.pdf,application/pdf"
                 onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                className="w-full text-xs text-foreground file:me-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-primary/15 file:text-primary file:font-semibold"
+                className="sr-only"
+                aria-label={bi(
+                  'اختيار صورة أو ملف PDF',
+                  'Choose image or PDF file',
+                  'هەڵبژاردنی وێنە یان فایلی PDF'
+                )}
               />
+              {selectedFile ? (
+                <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-primary/40 bg-primary/8">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="size-8 rounded-lg bg-primary/15 text-primary inline-flex items-center justify-center shrink-0">
+                      {selectedFile.type === 'application/pdf' ? (
+                        <FileText className="size-4" />
+                      ) : (
+                        <Camera className="size-4" />
+                      )}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-foreground truncate">{selectedFile.name}</p>
+                      <p className="text-xs text-muted-foreground-1 font-mono tabular-nums">
+                        {formatReadableBytes(selectedFile.size)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      style={{ minHeight: 'unset' }}
+                      className="compact-btn px-2.5 py-1.5 rounded-lg bg-card hover:bg-layer-hover text-xs font-bold text-primary cursor-pointer"
+                    >
+                      {bi('تغيير', 'Change', 'گۆڕین')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedFile(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      aria-label={bi('إزالة الملف', 'Remove file', 'لابردنی فایل')}
+                      style={{ minHeight: 'unset' }}
+                      className="compact-btn size-7 rounded-lg bg-card hover:bg-rose-500/10 text-muted-foreground-1 hover:text-rose-600 inline-flex items-center justify-center cursor-pointer"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  data-testid="custom-attachment-file-picker"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl border border-dashed border-primary/45 bg-layer hover:bg-primary/6 hover:border-primary transition-colors flex items-center justify-between gap-2.5 text-start cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    <span className="size-8 rounded-lg bg-primary/12 text-primary inline-flex items-center justify-center shrink-0">
+                      <Paperclip className="size-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-xs font-bold text-foreground truncate">
+                        {bi('اختيار صورة أو ملف PDF', 'Choose Image or PDF', 'هەڵبژاردنی وێنە یان PDF')}
+                      </span>
+                      <span className="block text-xs text-muted-foreground-1 truncate">
+                        {bi('لم يتم اختيار أي ملف بعد', 'No file chosen yet', 'هێشتا هیچ فایلێک هەڵنەبژێردراوە')}
+                      </span>
+                    </span>
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg bg-primary/12 text-primary text-xs font-bold shrink-0">
+                    {bi('تصفح', 'Browse', 'گەڕان')}
+                  </span>
+                </button>
+              )}
             </div>
             <div>
               <label className="block text-xs font-semibold text-foreground mb-1">

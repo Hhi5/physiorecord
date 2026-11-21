@@ -20,6 +20,7 @@ import { ClinicOperationsService } from '../../../services/clinicOperationsServi
 import type { SessionRecord } from '../../../types/clinical';
 import { formatDateDDMMYYYY } from '../../../utils/date';
 import { formatElapsedMmSs as formatTimerMmSs } from '../../../utils/sessionTimerState';
+import { localizeDemoText } from '../../../utils/demoLocalization';
 
 export interface SessionTopBarProps {
   session: SessionRecord;
@@ -80,7 +81,7 @@ export const SessionTopBar: React.FC<SessionTopBarProps> = ({
   onCancelPendingNav,
   onRequestDeleteSession,
 }) => {
-  const { bi, isRtl } = useLanguage();
+  const { language, bi, isRtl } = useLanguage();
 
   return (
     <>
@@ -124,15 +125,15 @@ export const SessionTopBar: React.FC<SessionTopBarProps> = ({
             </span>
             <span className="hidden lg:inline text-muted-foreground-1">·</span>
             <span className="hidden lg:inline text-foreground font-bold truncate max-w-[160px]">
-              {patientName}
+              {localizeDemoText(patientName, language)}
             </span>
-            <span className="text-muted-foreground-1 shrink-0">·</span>
-            <span className="text-muted-foreground-1 font-medium tabular-nums shrink-0">
+            <span className="hidden sm:inline text-muted-foreground-1 shrink-0">·</span>
+            <span className="hidden sm:inline text-muted-foreground-1 font-medium tabular-nums shrink-0">
               <bdi dir="ltr">{formatDateDDMMYYYY(session.data.sessionDate)}</bdi>
             </span>
             <span className="hidden md:inline text-muted-foreground-1">·</span>
             <span className="hidden md:inline text-xs font-bold text-foreground truncate max-w-[220px]">
-              {episodeTitle}
+              {localizeDemoText(episodeTitle, language)}
             </span>
             {isLocked && (
               <span className="py-0.5 px-2 rounded-full bg-emerald-500/12 text-emerald-700 dark:text-emerald-400 font-bold inline-flex items-center gap-1 shrink-0 text-xs">

@@ -349,13 +349,12 @@ export const ChartModals: React.FC<ChartModalsProps> = ({
                 {bi('الجنس', 'Gender', 'ڕەگەز')}
               </label>
               <select
-                value={editGender}
+                value={editGender === 'female' ? 'female' : 'male'}
                 onChange={(e) => setEditGender(e.target.value as 'male' | 'female' | 'other')}
                 className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
               >
                 <option value="male">{bi('ذكر', 'Male', 'نێر')}</option>
                 <option value="female">{bi('أنثى', 'Female', 'مێ')}</option>
-                <option value="other">{bi('أخرى', 'Other', 'هی تر')}</option>
               </select>
             </div>
           </div>

@@ -72,6 +72,32 @@ export interface AndroidPhysioRecordPlugin {
     displayName?: string;
     photoURL?: string;
   }>;
+  isBiometricAvailable?: () => Promise<{
+    available: boolean;
+    status: string;
+    enrolled: boolean;
+  }>;
+  hasBiometricDek?: () => Promise<{
+    enrolled: boolean;
+  }>;
+  enrollBiometricDek?: (options: {
+    dekBase64: string;
+    title?: string;
+    subtitle?: string;
+    negativeLabel?: string;
+  }) => Promise<{
+    enrolled: boolean;
+  }>;
+  unlockBiometricDek?: (options?: {
+    title?: string;
+    subtitle?: string;
+    negativeLabel?: string;
+  }) => Promise<{
+    dekBase64: string;
+  }>;
+  clearBiometricDek?: () => Promise<{
+    cleared: boolean;
+  }>;
 }
 
 export interface ElectronDesktopUpdateStatus {
@@ -286,6 +312,126 @@ export async function getAndroidAppVersionInfo(): Promise<{
     return await androidPlugin.getAppVersionInfo();
   } catch {
     return null;
+  }
+}
+
+export interface NativeAndroidBiometricStatus {
+  supportedBridge: boolean;
+  available: boolean;
+  status:
+    | 'ready'
+    | 'none_enrolled'
+    | 'no_hardware'
+    | 'hw_unavailable'
+    | 'security_update_required'
+    | 'unavailable';
+  enrolled: boolean;
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function base64ToBytes(b64: string): Uint8Array {
+  const binary = atob(b64);
+  const out = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    out[i] = binary.charCodeAt(i);
+  }
+  return out;
+}
+
+export async function getNativeAndroidBiometricStatus(): Promise<NativeAndroidBiometricStatus> {
+  const androidPlugin = getAndroidNativePlugin();
+  if (!androidPlugin?.isBiometricAvailable) {
+    return {
+      supportedBridge: false,
+      available: false,
+      status: 'unavailable',
+      enrolled: false,
+    };
+  }
+  try {
+    const res = await androidPlugin.isBiometricAvailable();
+    const rawStatus = res?.status;
+    const status: NativeAndroidBiometricStatus['status'] =
+      rawStatus === 'ready' ||
+      rawStatus === 'none_enrolled' ||
+      rawStatus === 'no_hardware' ||
+      rawStatus === 'hw_unavailable' ||
+      rawStatus === 'security_update_required'
+        ? rawStatus
+        : 'unavailable';
+    return {
+      supportedBridge: true,
+      available: Boolean(res?.available),
+      status,
+      enrolled: Boolean(res?.enrolled),
+    };
+  } catch {
+    return {
+      supportedBridge: true,
+      available: false,
+      status: 'unavailable',
+      enrolled: false,
+    };
+  }
+}
+
+export async function enrollNativeAndroidBiometricDek(
+  rawDek: Uint8Array,
+  prompt?: { title?: string; subtitle?: string; negativeLabel?: string }
+): Promise<boolean> {
+  const androidPlugin = getAndroidNativePlugin();
+  if (!androidPlugin?.enrollBiometricDek) {
+    throw new Error('المصادقة الحيوية الأصلية غير متوفرة في هذا الإصدار.');
+  }
+  const dekBase64 = bytesToBase64(rawDek);
+  const res = await androidPlugin.enrollBiometricDek({
+    dekBase64,
+    title: prompt?.title,
+    subtitle: prompt?.subtitle,
+    negativeLabel: prompt?.negativeLabel,
+  });
+  return Boolean(res?.enrolled);
+}
+
+export async function unlockNativeAndroidBiometricDek(prompt?: {
+  title?: string;
+  subtitle?: string;
+  negativeLabel?: string;
+}): Promise<Uint8Array> {
+  const androidPlugin = getAndroidNativePlugin();
+  if (!androidPlugin?.unlockBiometricDek) {
+    throw new Error('المصادقة الحيوية الأصلية غير متوفرة في هذا الإصدار.');
+  }
+  const res = await androidPlugin.unlockBiometricDek({
+    title: prompt?.title,
+    subtitle: prompt?.subtitle,
+    negativeLabel: prompt?.negativeLabel,
+  });
+  if (!res?.dekBase64) {
+    throw new Error('تعذر استرجاع مفتاح التشفير عبر البصمة.');
+  }
+  const rawDek = base64ToBytes(res.dekBase64);
+  if (rawDek.length !== 32) {
+    rawDek.fill(0);
+    throw new Error('طول مفتاح التشفير المسترجع غير صالح.');
+  }
+  return rawDek;
+}
+
+export async function clearNativeAndroidBiometricDek(): Promise<void> {
+  const androidPlugin = getAndroidNativePlugin();
+  if (!androidPlugin?.clearBiometricDek) return;
+  try {
+    await androidPlugin.clearBiometricDek();
+  } catch {
+    // Non-fatal cleanup
   }
 }
 

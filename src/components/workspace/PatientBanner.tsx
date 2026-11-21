@@ -19,6 +19,7 @@ import {
 } from '../../utils/mrn';
 import { DemoBadge, Num } from '../ui/Primitives';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
+import { localizeDemoText } from '../../utils/demoLocalization';
 import {
   ArrowLeft,
   ArrowRight,
@@ -59,17 +60,17 @@ export const PatientBanner: React.FC<PatientBannerProps> = ({
 
   return (
     <div
-      className="sticky top-0 z-20 bg-card/95 backdrop-blur-sm border-b border-card-divider/60 ps-11 sm:ps-12 pe-3 sm:pe-5 py-1.5 shrink-0 transition-colors"
+      className="sticky top-0 z-20 bg-card/95 backdrop-blur-sm border-b border-card-divider/60 px-3 sm:px-5 py-1.5 shrink-0 transition-colors"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       <div className="flex items-center justify-between gap-2">
         {/* Start: Back + Compact Patient Identity */}
-        <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
           <button
             type="button"
             onClick={onBackToDirectory}
             aria-label={bi('العودة لدليل المرضى', 'Back to patient directory', 'گەڕانەوە بۆ تۆماری نەخۆشەکان')}
-            className="size-8 rounded-lg hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            className="compact-btn size-8 rounded-lg hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shrink-0"
             title={bi('العودة لدليل المرضى', 'Back to directory', 'گەڕانەوە بۆ تۆمار')}
           >
             {isRtl ? <ArrowRight className="size-4" /> : <ArrowLeft className="size-4" />}
@@ -87,12 +88,12 @@ export const PatientBanner: React.FC<PatientBannerProps> = ({
               )}
               {isDemo && <DemoBadge />}
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground-1 truncate">
-              <bdi dir="ltr" className="font-mono font-semibold text-primary">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground-1 min-w-0 overflow-hidden">
+              <bdi dir="ltr" className="font-mono font-semibold text-primary shrink-0">
                 {mrn}
               </bdi>
-              <span aria-hidden="true">·</span>
-              <span className="shrink-0">
+              <span aria-hidden="true" className="shrink-0">·</span>
+              <span className="whitespace-nowrap shrink-0">
                 {d.gender === 'male' ? bi('ذكر', 'Male', 'نێر') : bi('أنثى', 'Female', 'مێ')}
                 {age !== undefined && (
                   <>
@@ -123,9 +124,9 @@ export const PatientBanner: React.FC<PatientBannerProps> = ({
             type="button"
             onClick={() => setIsPinned(ClinicOperationsService.togglePinnedPatient(patient.id))}
             aria-pressed={isPinned}
-            aria-label={isPinned ? bi('إلغاء تثبيت المريض', 'Unpin patient') : bi('تثبيت المريض', 'Pin patient')}
+            aria-label={isPinned ? bi('إلغاء تثبيت المريض', 'Unpin patient', 'لابردنی جێگیرکردن') : bi('تثبيت المريض', 'Pin patient', 'جێگیرکردنی نەخۆش')}
             title={bi('تثبيت المريض في الوصول السريع', 'Pin patient for quick access', 'جێگیرکردنی نەخۆش بۆ دەستگەیشتنی خێرا')}
-            className={`size-8 sm:w-auto sm:px-2.5 rounded-lg text-xs font-semibold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer ${
+            className={`compact-btn size-8 sm:w-auto sm:px-2.5 rounded-lg text-xs font-semibold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer ${
               isPinned
                 ? 'text-amber-700 dark:text-amber-300 hover:bg-surface/80'
                 : 'text-muted-foreground-1 hover:text-foreground hover:bg-layer-hover'
@@ -181,7 +182,9 @@ export const PatientBanner: React.FC<PatientBannerProps> = ({
               <span className="font-bold text-rose-700 dark:text-rose-400">
                 {bi('علامات حمراء:', 'Red Flags:', 'ئاڵا سوورەکان:')}
               </span>
-              <span className="text-foreground font-medium"><bdi dir="auto">{d.redFlags}</bdi></span>
+              <span className="text-foreground font-medium">
+                <bdi dir="auto">{localizeDemoText(d.redFlags, language)}</bdi>
+              </span>
             </div>
           )}
           {hasContraText && (
@@ -189,7 +192,9 @@ export const PatientBanner: React.FC<PatientBannerProps> = ({
               <span className="font-bold text-rose-700 dark:text-rose-400">
                 {bi('موانع الاستعمال:', 'Contraindications:', 'قەدەغەکراوەکان:')}
               </span>
-              <span className="text-foreground font-medium"><bdi dir="auto">{d.contraindications}</bdi></span>
+              <span className="text-foreground font-medium">
+                <bdi dir="auto">{localizeDemoText(d.contraindications, language)}</bdi>
+              </span>
             </div>
           )}
           {hasPrecautionsText && (
@@ -197,7 +202,9 @@ export const PatientBanner: React.FC<PatientBannerProps> = ({
               <span className="font-bold text-amber-700 dark:text-amber-300">
                 {bi('محاذير واحتياطات:', 'Precautions:', 'وریابوون و ئاگادارییەکان:')}
               </span>
-              <span className="text-foreground font-medium"><bdi dir="auto">{d.precautions}</bdi></span>
+              <span className="text-foreground font-medium">
+                <bdi dir="auto">{localizeDemoText(d.precautions, language)}</bdi>
+              </span>
             </div>
           )}
           {hasAllergiesText && (
@@ -205,7 +212,7 @@ export const PatientBanner: React.FC<PatientBannerProps> = ({
               <span className="font-bold text-muted-foreground-1">
                 {bi('الحساسية:', 'Allergies:', 'هەستیاری:')}
               </span>
-              <span className="text-foreground">{d.allergies}</span>
+              <span className="text-foreground">{localizeDemoText(d.allergies, language)}</span>
             </div>
           )}
         </div>

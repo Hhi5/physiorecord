@@ -6,6 +6,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Bell,
   Calendar,
   CheckCircle2,
   ChevronDown,
@@ -31,10 +32,13 @@ import {
   compareSemverVersions,
   evaluateBackupRecencyForUpdate,
   extractReleaseNotesLines,
+  isAutoUpdateCheckEnabled,
   loadCachedGithubReleases,
   normalizeGithubReleasesPayload,
+  notifyGithubReleasesUpdated,
   saveCachedGithubReleases,
   selectPlatformReleaseAsset,
+  setAutoUpdateCheckEnabled,
   type SyncedGithubReleaseItem,
 } from '../../utils/updateSafety';
 import {
@@ -93,6 +97,9 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
   >(null);
 
   const [pendingAction, setPendingAction] = useState<PendingUpdateAction | null>(null);
+  const [autoCheckEnabled, setAutoCheckEnabled] = useState<boolean>(() =>
+    isAutoUpdateCheckEnabled()
+  );
 
   useEffect(() => {
     let active = true;
@@ -172,6 +179,7 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
         if (Array.isArray(res.releases) && res.releases.length > 0) {
           const normalized = normalizeGithubReleasesPayload(res.releases);
           const cached = saveCachedGithubReleases(normalized);
+          notifyGithubReleasesUpdated();
           setSyncedReleases(cached.releases);
           setLastSyncedAt(cached.syncedAt);
           if (cached.releases[0]) {
@@ -205,6 +213,7 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
       }
 
       const cached = saveCachedGithubReleases(result.releases);
+      notifyGithubReleasesUpdated();
       setSyncedReleases(cached.releases);
       setLastSyncedAt(cached.syncedAt);
       if (cached.releases[0]) {
@@ -277,6 +286,81 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
             `ژینگەی کارپێکردن: ${runtimeLabel}. نوێکردنەوە فەرمییەکان هەمان ناسنامە و کلیلی واژۆ دەپارێزن بەبێ سڕینەوەی زانیارییەکان.`
           )}
         </p>
+
+        {/* Opt-In In-App GitHub Release Update Notification Toggle (Top of Card for Easy Discovery) */}
+        <div
+          data-testid="auto-update-notification-row"
+          className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-card border border-primary/25 text-xs"
+        >
+          <div className="flex items-start gap-2.5 min-w-0">
+            <Bell className="size-4 text-primary shrink-0 mt-0.5" />
+            <div className="space-y-0.5 min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 font-bold text-foreground">
+                <span>
+                  {bi(
+                    'إشعارات التحديثات داخل التطبيق (GitHub)',
+                    'In-App Update Notifications (GitHub)',
+                    'ئاگادارکردنەوەی نوێکردنەوە لە ناو بەرنامەدا (گیتهەب)'
+                  )}
+                </span>
+                <span aria-hidden="true" className="text-muted-foreground-2">·</span>
+                <span
+                  className={
+                    autoCheckEnabled
+                      ? 'text-emerald-700 dark:text-emerald-400 font-bold'
+                      : 'text-muted-foreground-1 font-semibold'
+                  }
+                >
+                  {autoCheckEnabled
+                    ? bi('مفعّل', 'Active', 'چالاکە')
+                    : bi('متوقف', 'Off', 'ناچالاکە')}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground-1 leading-relaxed">
+                {bi(
+                  'عند التفعيل، يتحقق التطبيق كل 6 ساعات (عند وجود إنترنت) من إصدارات GitHub ويعرض لك إشعاراً فور توفر نسخة جديدة، دون إرسال أي بيانات.',
+                  'When enabled, checks official GitHub releases every 6 hours while online and shows an in-app banner whenever a newer version is published (zero telemetry).',
+                  'کاتێک چالاک بێت، هەر ٦ کاتژمێر جارێک پشکنینی وەشانی نوێی گیتهەب دەکات و ئاگاداریت پیشان دەدات بەبێ ناردنی هیچ داتایەک.'
+                )}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={autoCheckEnabled}
+            data-testid="auto-update-check-toggle"
+            onClick={() => {
+              const next = !autoCheckEnabled;
+              setAutoCheckEnabled(next);
+              setAutoUpdateCheckEnabled(next);
+              notifyGithubReleasesUpdated();
+              if (next && syncedReleases.length === 0 && !syncingReleases) {
+                void handleSyncGitHubReleases();
+              }
+            }}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors cursor-pointer ${
+              autoCheckEnabled ? 'bg-primary' : 'bg-muted-foreground-2/40'
+            }`}
+            aria-label={bi(
+              'تفعيل إشعار التحديث التلقائي من GitHub',
+              'Toggle automatic GitHub release notifications',
+              'چالاککردنی ئاگادارکردنەوەی نوێکردنەوەی گیتهەب'
+            )}
+          >
+            <span
+              className={`inline-block size-4 rounded-full bg-white shadow-xs transition-transform ${
+                autoCheckEnabled
+                  ? isRtl
+                    ? '-translate-x-6'
+                    : 'translate-x-6'
+                  : isRtl
+                    ? '-translate-x-1'
+                    : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
 
         {/* Official GitHub Repository Banner */}
         <div

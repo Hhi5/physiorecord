@@ -54,6 +54,7 @@ import {
 } from '../../utils/iraqReferralsRetentionC6C7';
 import { STRUCTURED_PRECAUTIONS_CATALOG } from '../../utils/modalitySafetyChecker';
 import { evaluateReEvalDueStatus } from '../../utils/reEvalNudge';
+import { localizeDemoText } from '../../utils/demoLocalization';
 import type { SessionPainPointInput } from '../organui/OrganClinicalCharts';
 import type { PrintableDocumentType } from '../print/PrintDocumentModal';
 import { ChartEvaluationTab } from './chart/ChartEvaluationTab';
@@ -759,7 +760,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
   const navigationTabs: ChartNavigationTab[] = [
     {
       id: 'overview',
-      label: bi('المتابعة', 'Follow-up & Sessions', 'بەدواداچوون'),
+      label: bi('المتابعة', 'Sessions', 'بەدواداچوون'),
       icon: Clock,
       count: episodeSessions.length,
     },
@@ -775,7 +776,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
     },
     {
       id: 'profile',
-      label: bi('الملف والمالية', 'Financial & Docs', 'دارایی و دۆکیومێنت'),
+      label: bi('الملف والمالية', 'Finance', 'دارایی'),
       icon: Wallet,
     },
   ];
@@ -783,19 +784,19 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
   // Inline Clinical Safety Alerts (Red for Red Flags/Contraindications, Orange for Precautions)
   const redAlerts = useMemo(() => {
     const list: string[] = [];
-    if (redFlags.trim()) list.push(redFlags.trim());
-    if (contraindications.trim()) list.push(contraindications.trim());
+    if (redFlags.trim()) list.push(localizeDemoText(redFlags.trim(), language));
+    if (contraindications.trim()) list.push(localizeDemoText(contraindications.trim(), language));
     for (const item of redFlagChecklist) {
       if (item.status === 'present') {
         list.push(bi(item.labelAr, item.labelEn));
       }
     }
     return list;
-  }, [redFlags, contraindications, redFlagChecklist, bi]);
+  }, [redFlags, contraindications, redFlagChecklist, bi, language]);
 
   const cautionAlerts = useMemo(() => {
     const list: string[] = [];
-    if (precautions.trim()) list.push(precautions.trim());
+    if (precautions.trim()) list.push(localizeDemoText(precautions.trim(), language));
     for (const id of structuredPrecautions) {
       const cat = STRUCTURED_PRECAUTIONS_CATALOG.find((item) => item.id === id);
       if (cat) {
@@ -806,7 +807,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
       }
     }
     return list;
-  }, [precautions, structuredPrecautions, customPrecautions, bi]);
+  }, [precautions, structuredPrecautions, customPrecautions, bi, language]);
 
   const handleSaveMasterAndEpisode = async (
     overrides?: Partial<PatientClinicalData>

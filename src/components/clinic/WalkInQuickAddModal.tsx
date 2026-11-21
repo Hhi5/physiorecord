@@ -4,7 +4,7 @@
 // Today's Appointment + Draft Session and jumps directly to Quick SOAP.
 // =======================================================================
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useVault } from '../../context/VaultContext';
 import { usePatients } from '../../context/PatientContext';
@@ -16,6 +16,7 @@ import { PhoneInput, TimePickerInput } from '../ui/Primitives';
 import { CLINIC_ROOMS } from './AppointmentScheduleView';
 import type { PatientRecord } from '../../types/clinical';
 import { localDate } from '../../utils/date';
+import { commitDurationDraft, sanitizeDurationDraft } from '../../utils/durationInput';
 import { Zap, UserPlus, AlertCircle } from 'lucide-react';
 
 interface WalkInQuickAddModalProps {
@@ -44,17 +45,27 @@ export const WalkInQuickAddModal: React.FC<WalkInQuickAddModalProps> = ({
     const now = new Date();
     return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   });
-  const [durationMinutes, setDurationMinutes] = useState<number>(
-    smartMemory.lastDurationMinutes || 45
-  );
+  const initialDuration = smartMemory.lastDurationMinutes || 45;
+  const [durationMinutes, setDurationMinutes] = useState<number>(initialDuration);
+  const [durationDraft, setDurationDraft] = useState<string>(String(initialDuration));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      const freshDefault = ClinicOperationsService.getSmartMemory().lastDurationMinutes || 45;
+      setDurationMinutes(freshDefault);
+      setDurationDraft(String(freshDefault));
+    }
+  }, [isOpen]);
 
   const resetForm = () => {
     setFullName('');
     setPhone('');
     setGender('male');
     setChiefComplaintOrRegion('');
+    setDurationMinutes(initialDuration);
+    setDurationDraft(String(initialDuration));
     setError(null);
   };
 
@@ -124,6 +135,12 @@ export const WalkInQuickAddModal: React.FC<WalkInQuickAddModalProps> = ({
         dek
       );
 
+      const committedDuration = commitDurationDraft(durationDraft, {
+        min: 5,
+        max: 240,
+        fallback: durationMinutes || 45,
+      });
+
       // 3. Create Today's Appointment marked in_session
       const room = smartMemory.lastRoom || CLINIC_ROOMS[1].ar;
       ClinicOperationsService.saveAppointment({
@@ -133,7 +150,7 @@ export const WalkInQuickAddModal: React.FC<WalkInQuickAddModalProps> = ({
         episodeId: episode.id,
         date: today,
         startTime,
-        durationMinutes: Math.max(5, Math.min(240, durationMinutes || 45)),
+        durationMinutes: committedDuration,
         visitType: 'initial_evaluation',
         therapistName: bi(activeStaff.nameAr, activeStaff.nameEn),
         roomOrBed: room,
@@ -148,7 +165,7 @@ export const WalkInQuickAddModal: React.FC<WalkInQuickAddModalProps> = ({
         {
           sessionDate: today,
           sessionTime: startTime,
-          sessionDurationMinutes: Math.max(5, Math.min(240, durationMinutes || 45)),
+          sessionDurationMinutes: committedDuration,
           sessionType: 'initial_evaluation',
           attendanceStatus: 'attended',
           therapistName: bi(activeStaff.nameAr, activeStaff.nameEn),
@@ -162,7 +179,7 @@ export const WalkInQuickAddModal: React.FC<WalkInQuickAddModalProps> = ({
       // Remember smart defaults & visit history
       ClinicOperationsService.recordPatientVisitMemory(patient.id);
       void ClinicOperationsService.updateSmartMemoryAsync({
-        lastDurationMinutes: Math.max(5, Math.min(240, durationMinutes || 45)),
+        lastDurationMinutes: committedDuration,
         lastRoom: room,
       }).catch(() => undefined);
 
@@ -307,22 +324,47 @@ export const WalkInQuickAddModal: React.FC<WalkInQuickAddModalProps> = ({
             </label>
             <input
               id="walkin-duration-field"
-              type="number"
-              min={5}
-              max={240}
-              value={durationMinutes}
-              onChange={(e) => setDurationMinutes(Math.max(5, Math.min(240, Number(e.target.value) || 45)))}
-              className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground font-mono font-bold focus:outline-none focus:border-primary"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              dir="ltr"
+              lang="en"
+              autoComplete="off"
+              spellCheck={false}
+              data-testid="walkin-duration-input"
+              value={durationDraft}
+              placeholder="45"
+              onChange={(e) => {
+                const next = sanitizeDurationDraft(e.target.value, 3);
+                setDurationDraft(next);
+                if (next) {
+                  const parsed = Number.parseInt(next, 10);
+                  if (Number.isFinite(parsed)) setDurationMinutes(parsed);
+                }
+              }}
+              onBlur={() => {
+                const committed = commitDurationDraft(durationDraft, {
+                  min: 5,
+                  max: 240,
+                  fallback: 45,
+                });
+                setDurationMinutes(committed);
+                setDurationDraft(String(committed));
+              }}
+              className="w-full px-3 py-2 text-xs rounded-xl bg-layer border border-layer-line text-foreground font-mono font-bold text-left tabular-nums focus:outline-none focus:border-primary"
             />
             <div className="flex items-center gap-1 mt-1.5" dir="ltr">
               {[30, 45, 60].map((mins) => (
                 <button
                   key={mins}
                   type="button"
-                  onClick={() => setDurationMinutes(mins)}
+                  onClick={() => {
+                    setDurationMinutes(mins);
+                    setDurationDraft(String(mins));
+                  }}
                   style={{ minHeight: 'unset' }}
                   className={`compact-btn flex-1 py-1 rounded-lg text-xs font-mono font-bold border transition-colors cursor-pointer ${
-                    durationMinutes === mins
+                    durationDraft === String(mins)
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'bg-surface text-foreground border-layer-line hover:bg-layer-hover'
                   }`}

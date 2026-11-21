@@ -27,6 +27,7 @@ import {
 } from '../types/clinical';
 import { useLanguage } from '../context/LanguageContext';
 import { localDate, formatDateDDMMYYYY } from '../utils/date';
+import { commitDurationDraft, sanitizeDurationDraft } from '../utils/durationInput';
 import { AutoResizeTextarea, DatePickerInput, TimePickerInput } from './ui/Primitives';
 
 interface SessionModalProps {
@@ -58,6 +59,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
   const [sessionDate, setSessionDate] = useState<string>(localDate());
   const [sessionTime, setSessionTime] = useState<string>('10:00');
   const [sessionDurationMinutes, setSessionDurationMinutes] = useState<number>(45);
+  const [sessionDurationDraft, setSessionDurationDraft] = useState<string>('45');
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus>('attended');
   const [cancellationReason, setCancellationReason] = useState<string>('');
   const [therapistName, setTherapistName] = useState<string>('د. المعالج الطبيعي');
@@ -74,7 +76,9 @@ export const SessionModal: React.FC<SessionModalProps> = ({
       setSessionType(sessionToEdit.sessionType);
       setSessionDate(sessionToEdit.sessionDate);
       setSessionTime(d.sessionTime || '10:00');
-      setSessionDurationMinutes(d.sessionDurationMinutes || 45);
+      const dur = d.sessionDurationMinutes || 45;
+      setSessionDurationMinutes(dur);
+      setSessionDurationDraft(String(dur));
       setAttendanceStatus(sessionToEdit.attendanceStatus);
       setCancellationReason(d.cancellationReason || '');
       setTherapistName(d.therapistName || 'د. المعالج الطبيعي');
@@ -87,6 +91,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
       setSessionDate(localDate());
       setSessionTime('10:00');
       setSessionDurationMinutes(45);
+      setSessionDurationDraft('45');
       setAttendanceStatus('attended');
       setCancellationReason('');
       setTherapistName('د. المعالج الطبيعي');
@@ -131,12 +136,17 @@ export const SessionModal: React.FC<SessionModalProps> = ({
 
     setSubmitting(true);
     try {
+      const committedDuration = commitDurationDraft(sessionDurationDraft, {
+        min: 5,
+        max: 240,
+        fallback: sessionDurationMinutes || 45,
+      });
       const payload: Partial<SessionClinicalData> = {
         sessionNumber: parsedNumber,
         sessionType,
         sessionDate,
         sessionTime,
-        sessionDurationMinutes: Number(sessionDurationMinutes),
+        sessionDurationMinutes: committedDuration,
         attendanceStatus,
         cancellationReason: attendanceStatus !== 'attended' ? cancellationReason.trim() : undefined,
         therapistName: therapistName.trim(),
@@ -269,12 +279,16 @@ export const SessionModal: React.FC<SessionModalProps> = ({
               </label>
               <input
                 id="session-number-input"
-                type="number"
-                min="1"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                dir="ltr"
+                lang="en"
+                autoComplete="off"
                 placeholder={bi(`تلقائي (${calculatedSessionNumber})`, `Auto (${calculatedSessionNumber})`)}
                 value={customSessionNumber}
-                onChange={(e) => setCustomSessionNumber(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-surface border border-layer-line text-foreground rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-hidden"
+                onChange={(e) => setCustomSessionNumber(sanitizeDurationDraft(e.target.value, 4))}
+                className="w-full px-3 py-2 text-xs bg-surface border border-layer-line text-foreground font-mono text-left tabular-nums rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-hidden"
               />
             </div>
 
@@ -318,13 +332,32 @@ export const SessionModal: React.FC<SessionModalProps> = ({
               </label>
               <input
                 id="session-duration-input"
-                type="number"
-                min="10"
-                max="180"
-                step="5"
-                value={sessionDurationMinutes}
-                onChange={(e) => setSessionDurationMinutes(Number(e.target.value))}
-                className="w-full px-3 py-2 text-xs bg-surface border border-layer-line text-foreground rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-hidden"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                dir="ltr"
+                lang="en"
+                autoComplete="off"
+                value={sessionDurationDraft}
+                placeholder="45"
+                onChange={(e) => {
+                  const next = sanitizeDurationDraft(e.target.value, 3);
+                  setSessionDurationDraft(next);
+                  if (next) {
+                    const parsed = Number.parseInt(next, 10);
+                    if (Number.isFinite(parsed)) setSessionDurationMinutes(parsed);
+                  }
+                }}
+                onBlur={() => {
+                  const committed = commitDurationDraft(sessionDurationDraft, {
+                    min: 5,
+                    max: 240,
+                    fallback: 45,
+                  });
+                  setSessionDurationMinutes(committed);
+                  setSessionDurationDraft(String(committed));
+                }}
+                className="w-full px-3 py-2 text-xs bg-surface border border-layer-line text-foreground font-mono font-bold text-left tabular-nums rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-hidden"
               />
             </div>
           </div>

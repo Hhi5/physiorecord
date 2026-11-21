@@ -31,7 +31,23 @@ import { DemoBadge } from '../ui/Primitives';
 import { BrandLogo } from '../ui/BrandLogo';
 import { ModalDialog } from '../ui/Dialog';
 import { PatientSearchEngine } from '../../utils/arabicSearch';
-import { isPublicDemoUrlOrEnv } from '../../utils/settingsOnboardingPhaseF';
+import {
+  APP_SEMVER_VERSION,
+  isPublicDemoUrlOrEnv,
+} from '../../utils/settingsOnboardingPhaseF';
+import {
+  GITHUB_RELEASES_UPDATED_EVENT,
+  dismissUpdateTag,
+  getDismissedUpdateTag,
+  getPendingUpdateNotification,
+  isAutoUpdateCheckEnabled,
+  loadCachedGithubReleases,
+  notifyGithubReleasesUpdated,
+  saveCachedGithubReleases,
+  shouldRunAutoUpdateCheck,
+  type SyncedGithubReleaseItem,
+} from '../../utils/updateSafety';
+import { fetchOfficialGitHubReleases } from '../../platform/nativeBridge';
 import {
   ACTIVE_MODAL_DIALOG_SELECTOR,
   evaluateEscapeShortcut,
@@ -139,6 +155,7 @@ import type {
 import {
   User,
   AlertTriangle,
+  Download,
   X,
   Database,
   KeyRound,
@@ -255,6 +272,14 @@ export const AppLayout: React.FC = () => {
   );
   const [backupBannerDismissed, setBackupBannerDismissed] = useState(false);
   const [iosInstallDismissed, setIosInstallDismissed] = useState(false);
+  const [pendingGithubUpdate, setPendingGithubUpdate] = useState<SyncedGithubReleaseItem | null>(
+    () =>
+      getPendingUpdateNotification({
+        releases: loadCachedGithubReleases()?.releases,
+        currentAppVersion: APP_SEMVER_VERSION,
+        dismissedTag: getDismissedUpdateTag(),
+      })
+  );
   const pwa = usePwaStatus();
 
   const [isTourOpen, setIsTourOpen] = useState(false);
@@ -305,6 +330,52 @@ export const AppLayout: React.FC = () => {
       window.removeEventListener('physiorecord-backup-updated', syncOperationsState);
       window.removeEventListener('physiorecord-demo-data-changed', syncOperationsState);
       window.removeEventListener('physiorecord-page-tours-updated', syncPageTours);
+    };
+  }, []);
+
+  // In-App GitHub Release Update Notification (100% offline/local by default; auto-check is strictly opt-in)
+  useEffect(() => {
+    const refreshPendingUpdate = () => {
+      setPendingGithubUpdate(
+        getPendingUpdateNotification({
+          releases: loadCachedGithubReleases()?.releases,
+          currentAppVersion: APP_SEMVER_VERSION,
+          dismissedTag: getDismissedUpdateTag(),
+        })
+      );
+    };
+    refreshPendingUpdate();
+    window.addEventListener(GITHUB_RELEASES_UPDATED_EVENT, refreshPendingUpdate);
+
+    let cancelled = false;
+    const autoEnabled = isAutoUpdateCheckEnabled();
+    const cached = loadCachedGithubReleases();
+    const isAutomatedTest = typeof navigator !== 'undefined' && Boolean(navigator.webdriver);
+    const isOnline = typeof navigator === 'undefined' ? true : navigator.onLine !== false;
+
+    if (
+      autoEnabled &&
+      isOnline &&
+      !isAutomatedTest &&
+      shouldRunAutoUpdateCheck({
+        enabled: true,
+        lastSyncedAt: cached?.syncedAt,
+      })
+    ) {
+      void fetchOfficialGitHubReleases()
+        .then((res) => {
+          if (cancelled || !res.ok || res.releases.length === 0) return;
+          saveCachedGithubReleases(res.releases);
+          notifyGithubReleasesUpdated();
+        })
+        .catch(() => {
+          // Silent failure keeps offline clinical workflow uninterrupted
+        });
+    }
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener(GITHUB_RELEASES_UPDATED_EVENT, refreshPendingUpdate);
     };
   }, []);
 
@@ -1463,6 +1534,50 @@ export const AppLayout: React.FC = () => {
                 className="min-h-[36px] px-3 py-1 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
               >
                 {bi('تحديث وإعادة التحميل', 'Reload to Update', 'نوێکردنەوە و بارکردنەوە')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* In-App GitHub Release Update Notification Banner */}
+        {pendingGithubUpdate && !pwa.updateReady && (
+          <div
+            data-testid="github-update-notification-banner"
+            className="relative z-10 px-3 sm:px-5 py-2 bg-emerald-500/12 border-b border-emerald-500/25 flex flex-wrap items-center justify-between gap-2 text-xs text-foreground shrink-0"
+          >
+            <div className="flex items-center gap-2 min-w-0 flex-1 font-semibold">
+              <Download className="size-4 text-primary shrink-0" />
+              <span className="truncate sm:whitespace-normal">
+                {bi(
+                  `يتوفر تحديث جديد للتطبيق (${pendingGithubUpdate.tagName}) على GitHub — بياناتك المحلية محفوظة بالكامل.`,
+                  `New app update (${pendingGithubUpdate.tagName}) is available on GitHub — your local data stays intact.`,
+                  `نوێکردنەوەیەکی نوێی بەرنامە (${pendingGithubUpdate.tagName}) لە گیتهەب بەردەستە — داتاکانت پارێزراون.`
+                )}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                data-testid="github-update-banner-details-btn"
+                onClick={() => {
+                  setSettingsInitialTab('security');
+                  setIsSettingsModalOpen(true);
+                }}
+                className="min-h-[34px] px-3 py-1 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer whitespace-nowrap"
+              >
+                {bi('التفاصيل والتحديث', 'Update Details', 'وردەکاری و نوێکردنەوە')}
+              </button>
+              <button
+                type="button"
+                data-testid="dismiss-github-update-banner-btn"
+                onClick={() => {
+                  dismissUpdateTag(pendingGithubUpdate.tagName);
+                  setPendingGithubUpdate(null);
+                }}
+                aria-label={bi('إخفاء إشعار التحديث', 'Dismiss update notification', 'شاردنەوەی ئاگاداری نوێکردنەوە')}
+                className="size-8 rounded-lg hover:bg-layer-hover text-muted-foreground-1 hover:text-foreground inline-flex items-center justify-center cursor-pointer shrink-0"
+              >
+                <X className="size-4" />
               </button>
             </div>
           </div>

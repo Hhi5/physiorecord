@@ -24,6 +24,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
+import { sanitizeDurationDraft } from '../../../utils/durationInput';
 import {
   ClinicOperationsService,
   PT_EXERCISE_CATALOG,
@@ -1868,9 +1869,12 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
                           </label>
                           <input
                             id={`pa-duration-${pa.id}`}
-                            type="number"
-                            min={1}
-                            max={120}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            dir="ltr"
+                            lang="en"
+                            autoComplete="off"
                             disabled={isLocked}
                             value={
                               numericDrafts[durKey] !== undefined
@@ -1878,7 +1882,7 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
                                 : String(pa.durationMinutes)
                             }
                             onChange={(e) => {
-                              const raw = e.target.value;
+                              const raw = sanitizeDurationDraft(e.target.value, 3);
                               setNumericDrafts((prev) => ({ ...prev, [durKey]: raw }));
                               const parsed = Number(raw);
                               if (
@@ -1894,7 +1898,7 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
                                 onMarkDirty();
                               }
                             }}
-                            className={`w-full px-2 py-1.5 rounded-xl bg-card font-mono text-center text-foreground ${
+                            className={`w-full px-2 py-1.5 rounded-xl bg-card font-mono tabular-nums text-center text-foreground ${
                               numericErrors[durKey] ? 'ring-1 ring-rose-500 text-rose-600' : ''
                             }`}
                           />
@@ -2059,9 +2063,12 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
                         <div className="flex items-center gap-1">
                           <input
                             id={`mt-duration-${mt.id}`}
-                            type="number"
-                            min={1}
-                            max={120}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            dir="ltr"
+                            lang="en"
+                            autoComplete="off"
                             disabled={isLocked}
                             value={
                               numericDrafts[durKey] !== undefined
@@ -2069,7 +2076,7 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
                                 : String(mt.durationMinutes)
                             }
                             onChange={(e) => {
-                              const raw = e.target.value;
+                              const raw = sanitizeDurationDraft(e.target.value, 3);
                               setNumericDrafts((prev) => ({ ...prev, [durKey]: raw }));
                               const parsed = Number(raw);
                               if (
@@ -2085,7 +2092,7 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
                                 onMarkDirty();
                               }
                             }}
-                            className={`w-full px-2 py-1.5 rounded-xl bg-card font-mono text-center text-foreground ${
+                            className={`w-full px-2 py-1.5 rounded-xl bg-card font-mono tabular-nums text-center text-foreground ${
                               numericErrors[durKey] ? 'ring-1 ring-rose-500 text-rose-600' : ''
                             }`}
                           />

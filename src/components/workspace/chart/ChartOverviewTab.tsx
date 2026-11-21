@@ -15,6 +15,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import type { EpisodeRecord, PatientRecord, SessionRecord } from '../../../types/clinical';
 import type { EpisodeScopedClinicalStore } from '../../../types/clinicManagement';
 import { formatDateDDMMYYYY } from '../../../utils/date';
+import { localizeDemoText } from '../../../utils/demoLocalization';
 import type { SessionPainPointInput } from '../../organui/OrganClinicalCharts';
 import { Fraction, Num } from '../../ui/Primitives';
 import { ChartSessionsTab } from './ChartSessionsTab';
@@ -54,7 +55,7 @@ export const ChartOverviewTab: React.FC<ChartOverviewTabProps> = ({
   onOpenSession,
   isContextCollapsed = false,
 }) => {
-  const { bi } = useLanguage();
+  const { language, bi } = useLanguage();
 
   // Active open draft session (highest session number / latest date)
   const latestDraftSession = useMemo(() => {
@@ -118,24 +119,24 @@ export const ChartOverviewTab: React.FC<ChartOverviewTabProps> = ({
     mmtEntries.length > 0 || romEntries.length > 0 || hasNeuro || specialTests.length > 0;
 
   // Avoid repeating episode title already shown in the header episode selector
-  const episodeTitle = activeEpisode?.data.title || '';
+  const episodeTitle = localizeDemoText(activeEpisode?.data.title || '', language);
+  const rawDiagnosis = localizeDemoText(activeEpisode?.data.medicalDiagnosis || '', language);
   const diagnosisText =
-    activeEpisode?.data.medicalDiagnosis &&
-    activeEpisode.data.medicalDiagnosis !== episodeTitle
-      ? activeEpisode.data.medicalDiagnosis
-      : '';
+    rawDiagnosis && rawDiagnosis !== episodeTitle ? rawDiagnosis : '';
+  const rawImpression = localizeDemoText(episodeStore.clinicalImpression || '', language);
   const impressionText =
-    episodeStore.clinicalImpression &&
-    episodeStore.clinicalImpression !== episodeTitle &&
-    episodeStore.clinicalImpression !== diagnosisText
-      ? episodeStore.clinicalImpression
+    rawImpression &&
+    rawImpression !== episodeTitle &&
+    rawImpression !== diagnosisText
+      ? rawImpression
       : '';
+  const rawComplaint = localizeDemoText(episodeStore.chiefComplaint || '', language);
   const complaintText =
-    episodeStore.chiefComplaint &&
-    episodeStore.chiefComplaint !== episodeTitle &&
-    episodeStore.chiefComplaint !== diagnosisText &&
-    episodeStore.chiefComplaint !== impressionText
-      ? episodeStore.chiefComplaint
+    rawComplaint &&
+    rawComplaint !== episodeTitle &&
+    rawComplaint !== diagnosisText &&
+    rawComplaint !== impressionText
+      ? rawComplaint
       : '';
 
   const summaryLine =
@@ -149,7 +150,7 @@ export const ChartOverviewTab: React.FC<ChartOverviewTabProps> = ({
       : !diagnosisText && impressionText && complaintText
       ? complaintText
       : '';
-  const goalsText = episodeStore.patientPersonalGoals || '';
+  const goalsText = localizeDemoText(episodeStore.patientPersonalGoals || '', language);
 
   return (
     <div className="max-w-7xl mx-auto space-y-3.5">

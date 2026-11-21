@@ -26,11 +26,14 @@ import {
 } from '../crypto/vault';
 import { deriveKEKWithWorker } from '../crypto/cryptoWorkerClient';
 import {
-  isWebAuthnPrfSupported,
+  getBiometricAvailabilityInfo,
+  isBiometricUnlockEnrolled,
   enrollPasskeyPrfUnlock,
   unlockOperationalDekWithPrf,
   resetVaultPasswordWithPrf,
   disablePasskeyPrfUnlock,
+  type BiometricUnavailableReason,
+  type BiometricUnlockMode,
 } from '../crypto/webauthnPrf';
 import {
   loadPasswordReminderState,
@@ -49,6 +52,7 @@ import { ClinicOperationsService } from '../services/clinicOperationsService';
 import { DraftRecoveryService } from '../services/draftRecoveryService';
 import { LocalStorageMigrationService, type LocalStorageMigrationResult } from '../services/localStorageMigrationService';
 import {
+  clearNativeAndroidBiometricDek,
   detectDexieSchemaDowngradeError,
   isNativeAppShell,
   type DexieSchemaDowngradeInfo,
@@ -88,6 +92,8 @@ interface VaultContextType {
   kdfProgress: number;
   isPrfSupported: boolean;
   isPrfEnrolled: boolean;
+  biometricMode: BiometricUnlockMode;
+  biometricUnavailableReason: BiometricUnavailableReason;
   keyUsageStatus: EncryptionKeyUsageStatus | null;
   schemaDowngradeError: DexieSchemaDowngradeInfo | null;
   lastRepairSummary: VaultRepairSummary | null;
@@ -148,6 +154,9 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [kdfProgress, setKdfProgress] = useState<number>(0);
   const [isPrfSupported, setIsPrfSupported] = useState<boolean>(false);
   const [isPrfEnrolled, setIsPrfEnrolled] = useState<boolean>(false);
+  const [biometricMode, setBiometricMode] = useState<BiometricUnlockMode>('unsupported');
+  const [biometricUnavailableReason, setBiometricUnavailableReason] =
+    useState<BiometricUnavailableReason>('browser-unsupported');
   const [keyUsageStatus, setKeyUsageStatus] = useState<EncryptionKeyUsageStatus | null>(null);
   const [schemaDowngradeError, setSchemaDowngradeError] = useState<DexieSchemaDowngradeInfo | null>(null);
   const [secondsUntilAutoLock, setSecondsUntilAutoLock] = useState<number | null>(null);
@@ -396,9 +405,13 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const meta = await db.vaultMeta.get('auth');
         setSchemaDowngradeError(null);
         setIsInitialized(!!meta);
-        setIsPrfEnrolled(Boolean(meta?.prfCredentialId && meta?.prfWrappedDek));
-        const prfSupported = await isWebAuthnPrfSupported();
-        setIsPrfSupported(prfSupported);
+        const availability = await getBiometricAvailabilityInfo();
+        setIsPrfSupported(availability.supported);
+        setBiometricMode(availability.mode);
+        setBiometricUnavailableReason(availability.reason);
+        setIsPrfEnrolled(
+          availability.enrolledOnNative || Boolean(meta?.prfCredentialId && meta?.prfWrappedDek)
+        );
         const persistent = await requestPersistentStorage();
         setPersistenceGranted(persistent || isNativeAppShell());
       } catch (err) {
@@ -582,7 +595,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       refreshPasswordReminderStatus();
 
       const latestMeta = await db.vaultMeta.get('auth');
-      setIsPrfEnrolled(Boolean(latestMeta?.prfCredentialId && latestMeta?.prfWrappedDek));
+      setIsPrfEnrolled(await isBiometricUnlockEnrolled(latestMeta));
 
       // Refresh persistent storage grant status after user gesture
       try {
@@ -748,7 +761,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const meta = await db.vaultMeta.get('auth');
       const gen = meta?.vaultGeneration ?? 1;
       setVaultGeneration(gen);
-      setIsPrfEnrolled(Boolean(meta?.prfCredentialId && meta?.prfWrappedDek));
+      setIsPrfEnrolled(await isBiometricUnlockEnrolled(meta));
       const reminderState = recordPasswordChangedSchedule();
       setPasswordReminderState(reminderState);
       setIsPasswordReminderDueNow(false);
@@ -889,6 +902,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Wipe database completely and purge all local clinical data
   const wipeDatabase = useCallback(async () => {
     lock(true);
+    await clearNativeAndroidBiometricDek();
     await db.delete();
     await db.open();
 
@@ -929,6 +943,8 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         kdfProgress,
         isPrfSupported,
         isPrfEnrolled,
+        biometricMode,
+        biometricUnavailableReason,
         keyUsageStatus,
         schemaDowngradeError,
         lastRepairSummary,

@@ -6,6 +6,7 @@
 
 import type { PatientClinicalData, PatientRecord } from '../types/clinical';
 import { ClinicOperationsService } from '../services/clinicOperationsService';
+import { localizeDemoText } from './demoLocalization';
 
 export function formatMrnNumber(num: number): string {
   const safeNum = Math.max(1, Math.floor(num));
@@ -191,10 +192,17 @@ export function getPatientDisplayName(
   if (!data) return '—';
   const ar = data.fullNameAr?.trim() || '';
   const en = data.fullName?.trim() || '';
-  if (lang !== 'en') {
-    return ar || en || '—';
+  if (lang === 'ckb') {
+    const candidate = ar || en;
+    if (!candidate) return '—';
+    return localizeDemoText(candidate, 'ckb');
   }
-  return en || ar || '—';
+  if (lang === 'en') {
+    const candidate = en || ar;
+    if (!candidate) return '—';
+    return localizeDemoText(candidate, 'en');
+  }
+  return ar || en || '—';
 }
 
 export function getPatientSecondaryName(
@@ -205,5 +213,9 @@ export function getPatientSecondaryName(
   const ar = data.fullNameAr?.trim() || '';
   const en = data.fullName?.trim() || '';
   if (!ar || !en || ar === en) return null;
+  if (lang === 'ckb') {
+    const primary = getPatientDisplayName(data, 'ckb');
+    return en && en !== primary ? en : null;
+  }
   return lang !== 'en' ? en : ar;
 }

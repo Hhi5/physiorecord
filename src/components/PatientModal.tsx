@@ -278,8 +278,17 @@ export const PatientModal: React.FC<PatientModalProps> = ({
     setError(null);
     setFieldErrors({});
 
-    if (!formData.fullNameAr?.trim()) {
-      const msg = t('errArabicNameRequired');
+    const primaryNameValue =
+      language === 'en'
+        ? (formData.fullName?.trim() || formData.fullNameAr?.trim() || '')
+        : (formData.fullNameAr?.trim() || formData.fullName?.trim() || '');
+
+    if (!primaryNameValue) {
+      const msg = bi(
+        t('errArabicNameRequired'),
+        'Patient full name is required.',
+        'نووسینی ناوی تەواوی نەخۆش پێویستە.'
+      );
       setError(msg);
       setFieldErrors({ fullNameAr: msg });
       setTimeout(() => {
@@ -312,7 +321,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({
     setSaving(true);
     try {
       const computedAgeFromDob = computePatientAge(formData.dateOfBirth, formData.age);
-      const cleanArName = formData.fullNameAr.trim();
+      const cleanArName = formData.fullNameAr?.trim() || formData.fullName?.trim() || '';
       const cleanEnName = formData.fullName?.trim() || cleanArName;
       const canonicalPhone = formData.phoneNumber
         ? normalizeIraqiPhoneStorage(formData.phoneNumber)
@@ -375,27 +384,44 @@ export const PatientModal: React.FC<PatientModalProps> = ({
             </div>
           )}
 
-          {/* Minimal First Step: Arabic Name, Phone, Sex, Age or DOB */}
+          {/* Minimal First Step: Patient Name, Phone, Sex, Age or DOB */}
           <div className="space-y-3.5">
             <div>
               <label htmlFor="patient-fullname-ar" className="block text-xs font-semibold text-foreground mb-1">
-                {bi('اسم المريض الثلاثي بالعربية', 'Patient Arabic Full Name')} <span className="text-rose-500">*</span>
+                {bi('اسم المريض الثلاثي بالعربية', 'Patient Full Name', 'ناوی سیانیی نەخۆش')}{' '}
+                <span className="text-rose-500">*</span>
               </label>
               <input
                 id="patient-fullname-ar"
                 ref={arabicNameInputRef}
                 type="text"
-                value={formData.fullNameAr || ''}
+                value={
+                  language === 'en'
+                    ? (formData.fullName ?? '')
+                    : (formData.fullNameAr || '')
+                }
                 onChange={(e) => {
                   const val = e.target.value;
-                  setFormData({ ...formData, fullNameAr: val });
+                  if (language === 'en') {
+                    setFormData((prev) => ({
+                      ...prev,
+                      fullName: val,
+                      ...(prev.fullNameAr === prev.fullName ? { fullNameAr: val } : {}),
+                    }));
+                  } else {
+                    setFormData((prev) => ({ ...prev, fullNameAr: val }));
+                  }
                   if (val.trim() && fieldErrors.fullNameAr) {
                     setFieldErrors({});
                     setError(null);
                   }
                 }}
                 aria-invalid={Boolean(fieldErrors.fullNameAr)}
-                placeholder="مثال: أحمد فهد الشمري"
+                placeholder={bi(
+                  'مثال: أحمد فهد الشمري',
+                  'e.g., Ahmed Fahad Al-Shammari',
+                  'نموونە: ئەحمەد فەهد ئەلشەمەری'
+                )}
                 className={`w-full px-3.5 py-2 rounded-xl bg-surface border text-foreground text-sm focus:outline-none focus:ring-2 ${
                   fieldErrors.fullNameAr
                     ? 'border-rose-500 focus:ring-rose-500/20 focus:border-rose-500'
@@ -412,11 +438,11 @@ export const PatientModal: React.FC<PatientModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="patient-phone-input" className="block text-xs font-semibold text-foreground mb-1">
-                  {bi('رقم الهاتف العراقي', 'Iraqi Phone Number')}
+                  {bi('رقم الهاتف العراقي', 'Iraqi Phone Number', 'ژمارەی تەلەفۆن')}
                 </label>
                 <PhoneInput
                   id="patient-phone-input"
-                  ariaLabel={bi('رقم الهاتف العراقي', 'Iraqi Phone Number')}
+                  ariaLabel={bi('رقم الهاتف العراقي', 'Iraqi Phone Number', 'ژمارەی تەلەفۆن')}
                   value={formData.phoneNumber || ''}
                   onChange={(val) => setFormData({ ...formData, phoneNumber: val })}
                   placeholder="0770 123 4567"
@@ -425,17 +451,16 @@ export const PatientModal: React.FC<PatientModalProps> = ({
 
               <div>
                 <label htmlFor="patient-gender-select" className="block text-xs font-semibold text-foreground mb-1">
-                  {bi('الجنس', 'Gender')}
+                  {bi('الجنس', 'Gender', 'ڕەگەز')}
                 </label>
                 <select
                   id="patient-gender-select"
-                  value={formData.gender}
+                  value={formData.gender === 'female' ? 'female' : 'male'}
                   onChange={(e) => setFormData({ ...formData, gender: e.target.value as Gender })}
                   className="w-full px-3.5 py-2 rounded-xl bg-surface border border-layer-line text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 >
-                  <option value="male">{bi('ذكر', 'Male')}</option>
-                  <option value="female">{bi('أنثى', 'Female')}</option>
-                  <option value="other">{bi('أخرى', 'Other')}</option>
+                  <option value="male">{bi('ذكر', 'Male', 'نێر')}</option>
+                  <option value="female">{bi('أنثى', 'Female', 'مێ')}</option>
                 </select>
               </div>
             </div>
@@ -883,16 +908,30 @@ export const PatientModal: React.FC<PatientModalProps> = ({
             <div className="p-4 pt-2 border-t border-card-divider space-y-3">
               <div>
                 <label htmlFor="patient-fullname-en" className="block text-xs font-semibold text-foreground mb-1">
-                  {bi('الاسم بالإنجليزية (اختياري)', 'Full Name in English (Optional)')}
+                  {bi(
+                    'الاسم بالإنجليزية (اختياري)',
+                    'Full Name in Arabic / Kurdish (Optional)',
+                    'ناو بە ئینگلیزی (ئارەزوومەندانە)'
+                  )}
                 </label>
                 <input
                   id="patient-fullname-en"
                   type="text"
-                  value={formData.fullName || ''}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  placeholder="e.g., Ahmed Fahad Al-Shammari"
-                  className="w-full px-3.5 py-2 rounded-lg bg-surface border border-layer-line text-foreground text-sm focus:outline-none focus:border-primary text-left font-sans"
-                  dir="ltr"
+                  value={language === 'en' ? (formData.fullNameAr || '') : (formData.fullName || '')}
+                  onChange={(e) =>
+                    language === 'en'
+                      ? setFormData({ ...formData, fullNameAr: e.target.value })
+                      : setFormData({ ...formData, fullName: e.target.value })
+                  }
+                  placeholder={
+                    language === 'en'
+                      ? 'مثال: أحمد فهد الشمري'
+                      : 'e.g., Ahmed Fahad Al-Shammari'
+                  }
+                  className={`w-full px-3.5 py-2 rounded-lg bg-surface border border-layer-line text-foreground text-sm focus:outline-none focus:border-primary font-sans ${
+                    language === 'en' ? 'text-right' : 'text-left'
+                  }`}
+                  dir={language === 'en' ? 'rtl' : 'ltr'}
                 />
               </div>
 

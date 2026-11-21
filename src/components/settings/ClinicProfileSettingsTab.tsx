@@ -22,6 +22,7 @@ import type {
   WhatsAppTemplatesConfig,
 } from '../../types/clinicManagement';
 import { processClinicImageUpload, isValidEncryptedImageDataUrl } from '../../utils/imageUtils';
+import { commitDurationDraft, sanitizeDurationDraft } from '../../utils/durationInput';
 import { Money, MoneyInput, TimePickerInput } from '../ui/Primitives';
 import { SettingsAccordion } from './SettingsPrimitives';
 
@@ -41,6 +42,9 @@ export const ClinicProfileSettingsTab: React.FC<ClinicProfileSettingsTabProps> =
 
   const [clinicProfile, setClinicProfile] = useState<ClinicProfileData>(() =>
     ClinicOperationsService.getClinicProfile()
+  );
+  const [defaultDurationDraft, setDefaultDurationDraft] = useState<string>(() =>
+    String(ClinicOperationsService.getClinicProfile().defaultSessionDurationMinutes ?? 45)
   );
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
@@ -70,7 +74,9 @@ export const ClinicProfileSettingsTab: React.FC<ClinicProfileSettingsTabProps> =
       setClinicServices(ClinicOperationsService.getClinicServices());
     };
     if (isModalOpen) {
-      setClinicProfile(ClinicOperationsService.getClinicProfile());
+      const freshProfile = ClinicOperationsService.getClinicProfile();
+      setClinicProfile(freshProfile);
+      setDefaultDurationDraft(String(freshProfile.defaultSessionDurationMinutes ?? 45));
       setImageUploadError(null);
       syncClinicState();
     }
@@ -102,12 +108,14 @@ export const ClinicProfileSettingsTab: React.FC<ClinicProfileSettingsTabProps> =
             : [0, 1, 2, 3, 4],
         workHoursStart: clinicProfile.workHoursStart || '09:00',
         workHoursEnd: clinicProfile.workHoursEnd || '21:00',
-        defaultSessionDurationMinutes: Math.max(
-          10,
-          Math.min(240, Number(clinicProfile.defaultSessionDurationMinutes || 45))
-        ),
+        defaultSessionDurationMinutes: commitDurationDraft(defaultDurationDraft, {
+          min: 10,
+          max: 240,
+          fallback: clinicProfile.defaultSessionDurationMinutes || 45,
+        }),
       });
       setClinicProfile(updated);
+      setDefaultDurationDraft(String(updated.defaultSessionDurationMinutes ?? 45));
       setProfileSaved(true);
       setTimeout(() => setProfileSaved(false), 3000);
     } finally {
@@ -519,17 +527,34 @@ export const ClinicProfileSettingsTab: React.FC<ClinicProfileSettingsTabProps> =
             </label>
             <input
               id="clinic-default-duration"
-              type="number"
-              min={10}
-              max={240}
-              value={clinicProfile.defaultSessionDurationMinutes ?? 45}
-              onChange={(e) =>
-                setClinicProfile((p) => ({
-                  ...p,
-                  defaultSessionDurationMinutes: Math.max(10, Number(e.target.value) || 45),
-                }))
-              }
-              className={`${inputClass} font-bold tabular-nums`}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              dir="ltr"
+              lang="en"
+              autoComplete="off"
+              value={defaultDurationDraft}
+              placeholder="45"
+              onChange={(e) => {
+                const next = sanitizeDurationDraft(e.target.value, 3);
+                setDefaultDurationDraft(next);
+                if (next) {
+                  const parsed = Number.parseInt(next, 10);
+                  if (Number.isFinite(parsed)) {
+                    setClinicProfile((p) => ({ ...p, defaultSessionDurationMinutes: parsed }));
+                  }
+                }
+              }}
+              onBlur={() => {
+                const committed = commitDurationDraft(defaultDurationDraft, {
+                  min: 10,
+                  max: 240,
+                  fallback: 45,
+                });
+                setDefaultDurationDraft(String(committed));
+                setClinicProfile((p) => ({ ...p, defaultSessionDurationMinutes: committed }));
+              }}
+              className={`${inputClass} font-mono font-bold text-left tabular-nums`}
             />
           </div>
         </div>

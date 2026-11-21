@@ -36,6 +36,7 @@ import type { PostDischargeFollowUpDueItem } from '../../../utils/iraqReferralsR
 import type { ReEvalNudgeEvaluation } from '../../../utils/reEvalNudge';
 import { formatDateDDMMYYYY } from '../../../utils/date';
 import { getPatientDisplayName, getPatientMrn, isDemoPatient } from '../../../utils/mrn';
+import { localizeDemoText } from '../../../utils/demoLocalization';
 import type { PrintableDocumentType } from '../../print/PrintDocumentModal';
 import { Money, Num } from '../../ui/Primitives';
 import { ClampedMenuPanel } from '../../ui/ClampedMenuPanel';
@@ -222,120 +223,122 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
   return (
     <div className="max-w-7xl mx-auto w-full space-y-2.5">
       <div className="pr-surface rounded-2xl px-3.5 py-3 sm:px-4 space-y-2">
-        {/* Line 1: Identity + the only 2 actions the therapist needs here */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {onBackToDirectory && (
-            <button
-              type="button"
-              onClick={onBackToDirectory}
-              title={bi('العودة إلى سجل المرضى', 'Back to Patient Directory', 'گەڕانەوە بۆ لیستی نەخۆشەکان')}
-              className="compact-btn size-9 rounded-xl bg-surface/80 hover:bg-surface flex items-center justify-center text-foreground hover:text-primary transition-colors cursor-pointer shrink-0"
-            >
-              <ChevronLeft className="size-5 rtl:rotate-0 ltr:rotate-180" />
-            </button>
-          )}
-
-          <div className="relative shrink-0 select-none hidden sm:block">
-            <input
-              ref={avatarFileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              aria-label={bi('رفع صورة المريض', 'Upload patient photo', 'بارکردنی وێنەی نەخۆش')}
-              onChange={onAvatarFileSelect}
-            />
-            <button
-              type="button"
-              onClick={() => avatarFileInputRef.current?.click()}
-              title={bi('تغيير صورة المريض', 'Change patient photo', 'گۆڕینی وێنەی نەخۆش')}
-              className="compact-btn size-10 rounded-full bg-primary/10 text-primary font-black text-base flex items-center justify-center overflow-hidden cursor-pointer relative group"
-            >
-              {patient.data.avatarUrl || patient.data.photoDataUrl ? (
-                <img
-                  src={patient.data.avatarUrl || patient.data.photoDataUrl}
-                  alt={displayName}
-                  className="size-full object-cover"
-                />
-              ) : (
-                displayName.slice(0, 1) || <User className="size-5 text-primary" />
-              )}
-              <span className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Camera className="size-3.5 text-white" />
-              </span>
-            </button>
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <h1 className="text-sm sm:text-lg font-black text-foreground truncate">{displayName}</h1>
-              {isDemoPatient(patient) && (
-                <span className="text-xs font-extrabold tracking-wider text-orange-600 dark:text-orange-400 shrink-0">
-                  DEMO
-                </span>
-              )}
-              {isPinned && <Star className="size-3.5 fill-amber-500 text-amber-500 shrink-0" />}
-            </div>
-            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground-1 min-w-0">
+        {/* Line 1: Clean 2-row mobile layout (full patient name visible, zero clutter) -> single row on sm+ */}
+        <div className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 sm:flex-1">
+            {onBackToDirectory && (
               <button
                 type="button"
-                onClick={() => {
-                  if (navigator?.clipboard?.writeText) {
-                    navigator.clipboard.writeText(mrn);
-                    setMrnCopied(true);
-                    setTimeout(() => setMrnCopied(false), 2000);
-                  }
-                }}
-                title={bi('نسخ كود المريض', 'Copy MRN', 'کۆپیکردنی کۆد')}
-                className="compact-btn inline-flex items-center gap-1 font-mono font-bold text-foreground/80 hover:text-primary transition-colors cursor-pointer shrink-0"
+                onClick={onBackToDirectory}
+                title={bi('العودة إلى سجل المرضى', 'Back to Patient Directory', 'گەڕانەوە بۆ لیستی نەخۆشەکان')}
+                className="compact-btn size-9 rounded-xl bg-surface/80 hover:bg-surface flex items-center justify-center text-foreground hover:text-primary transition-colors cursor-pointer shrink-0"
               >
-                <span>{mrn}</span>
-                {mrnCopied && <Check className="size-3 text-emerald-600" />}
-                {!mrnCopied && <Copy className="size-3 opacity-60 hidden sm:inline" />}
+                <ChevronLeft className="size-5 rtl:rotate-180 ltr:rotate-0" />
               </button>
-              <span>·</span>
-              <span className="whitespace-nowrap">
-                {patientAge ? `${patientAge} ${bi('سنة', 'yrs', 'ساڵ')}` : '—'}
-              </span>
-              <span>·</span>
-              <span className="truncate">{genderLabel}</span>
+            )}
+
+            <div className="relative shrink-0 select-none hidden sm:block">
+              <input
+                ref={avatarFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                aria-label={bi('رفع صورة المريض', 'Upload patient photo', 'بارکردنی وێنەی نەخۆش')}
+                onChange={onAvatarFileSelect}
+              />
+              <button
+                type="button"
+                onClick={() => avatarFileInputRef.current?.click()}
+                title={bi('تغيير صورة المريض', 'Change patient photo', 'گۆڕینی وێنەی نەخۆش')}
+                className="compact-btn size-10 rounded-full bg-primary/10 text-primary font-black text-base flex items-center justify-center overflow-hidden cursor-pointer relative group"
+              >
+                {patient.data.avatarUrl || patient.data.photoDataUrl ? (
+                  <img
+                    src={patient.data.avatarUrl || patient.data.photoDataUrl}
+                    alt={displayName}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  displayName.slice(0, 1) || <User className="size-5 text-primary" />
+                )}
+                <span className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Camera className="size-3.5 text-white" />
+                </span>
+              </button>
             </div>
-          </div>
 
-          <button
-            type="button"
-            data-tour="chart-new-session-btn"
-            onClick={onOpenNewSession}
-            className="compact-btn h-9 px-3 sm:px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-xs inline-flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
-          >
-            <Plus className="size-4 shrink-0" />
-            <span className="sm:hidden">{bi('جلسة', 'Session', 'دانیشتن')}</span>
-            <span className="hidden sm:inline">{bi('جلسة جديدة', 'New Session', 'دانیشتنی نوێ')}</span>
-          </button>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <h1 className="text-base sm:text-lg font-black text-foreground truncate">{displayName}</h1>
+                {isDemoPatient(patient) && (
+                  <span className="text-xs font-extrabold tracking-wider text-orange-600 dark:text-orange-400 shrink-0">
+                    DEMO
+                  </span>
+                )}
+                {isPinned && <Star className="size-3.5 fill-amber-500 text-amber-500 shrink-0" />}
+              </div>
+              <div className="hidden sm:flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground-1 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (navigator?.clipboard?.writeText) {
+                      navigator.clipboard.writeText(mrn);
+                      setMrnCopied(true);
+                      setTimeout(() => setMrnCopied(false), 2000);
+                    }
+                  }}
+                  title={bi('نسخ كود المريض', 'Copy MRN', 'کۆپیکردنی کۆد')}
+                  className="compact-btn inline-flex items-center gap-1 font-mono font-bold text-foreground/80 hover:text-primary transition-colors cursor-pointer shrink-0"
+                >
+                  <span>{mrn}</span>
+                  {mrnCopied && <Check className="size-3 text-emerald-600" />}
+                  {!mrnCopied && <Copy className="size-3 opacity-60 hidden sm:inline" />}
+                </button>
+                <span>·</span>
+                <span className="whitespace-nowrap">
+                  {patientAge ? `${patientAge} ${bi('سنة', 'yrs', 'ساڵ')}` : '—'}
+                </span>
+                <span>·</span>
+                <span className="truncate">{genderLabel}</span>
+              </div>
+            </div>
 
-          {onStartChartTour && (
-            <button
-              type="button"
-              data-testid="chart-header-tour-btn"
-              onClick={onStartChartTour}
-              title={bi('شرح سجل المريض (جولة تفاعلية)', 'Patient Chart Guide', 'ڕێبەری دۆسیەی نەخۆش')}
-              aria-label={bi('شرح سجل المريض (جولة تفاعلية)', 'Patient Chart Guide', 'ڕێبەری دۆسیەی نەخۆش')}
-              className="compact-btn size-9 rounded-xl bg-surface/80 hover:bg-surface text-muted-foreground-1 hover:text-primary flex items-center justify-center transition-colors cursor-pointer focus:outline-none shrink-0"
-            >
-              <Compass className="size-4" />
-            </button>
-          )}
+            <div className="hidden sm:flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                data-tour="chart-new-session-btn"
+                onClick={onOpenNewSession}
+                className="compact-btn h-9 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-xs inline-flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <Plus className="size-4 shrink-0" />
+                <span>{bi('جلسة جديدة', 'New Session', 'دانیشتنی نوێ')}</span>
+              </button>
 
-          <div ref={moreMenuRef} className="relative shrink-0">
-            <button
-              type="button"
-              data-tour="chart-more-btn"
-              onClick={() => setIsMoreMenuOpen((v) => !v)}
-              aria-label={bi('خيارات إضافية لملف المريض', 'More patient chart actions', 'بژاردەی زیاتر')}
-              aria-expanded={isMoreMenuOpen}
-              className="compact-btn size-9 rounded-xl bg-surface/80 hover:bg-surface text-muted-foreground-1 hover:text-foreground flex items-center justify-center transition-colors cursor-pointer focus:outline-none"
-            >
-              <MoreHorizontal className="size-4.5" />
-            </button>
+              {onStartChartTour && (
+                <button
+                  type="button"
+                  data-testid="chart-header-tour-btn"
+                  onClick={onStartChartTour}
+                  title={bi('شرح سجل المريض (جولة تفاعلية)', 'Patient Chart Guide', 'ڕێبەری دۆسیەی نەخۆش')}
+                  aria-label={bi('شرح سجل المريض (جولة تفاعلية)', 'Patient Chart Guide', 'ڕێبەری دۆسیەی نەخۆش')}
+                  className="compact-btn size-9 rounded-xl bg-surface/80 hover:bg-surface text-muted-foreground-1 hover:text-primary flex items-center justify-center transition-colors cursor-pointer focus:outline-none shrink-0"
+                >
+                  <Compass className="size-4" />
+                </button>
+              )}
+            </div>
+
+            <div ref={moreMenuRef} className="relative shrink-0">
+              <button
+                type="button"
+                data-tour="chart-more-btn"
+                onClick={() => setIsMoreMenuOpen((v) => !v)}
+                aria-label={bi('خيارات إضافية لملف المريض', 'More patient chart actions', 'بژاردەی زیاتر')}
+                aria-expanded={isMoreMenuOpen}
+                className="compact-btn size-9 rounded-xl bg-surface/80 hover:bg-surface text-muted-foreground-1 hover:text-foreground flex items-center justify-center transition-colors cursor-pointer focus:outline-none"
+              >
+                <MoreHorizontal className="size-4.5" />
+              </button>
 
             {isMoreMenuOpen && (
               <ClampedMenuPanel className="absolute end-0 top-full mt-1.5 w-60 rounded-2xl bg-card shadow-2xl p-1.5 z-40 divide-y divide-black/[0.045] dark:divide-white/[0.06]">
@@ -471,6 +474,43 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
                 </div>
               </ClampedMenuPanel>
             )}
+            </div>
+          </div>
+
+          {/* Mobile-only compact row: MRN · Age · Gender + New Session CTA */}
+          <div className="flex sm:hidden items-center justify-between gap-2 ps-1">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground-1 min-w-0 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => {
+                  if (navigator?.clipboard?.writeText) {
+                    navigator.clipboard.writeText(mrn);
+                    setMrnCopied(true);
+                    setTimeout(() => setMrnCopied(false), 2000);
+                  }
+                }}
+                title={bi('نسخ كود المريض', 'Copy MRN', 'کۆپیکردنی کۆد')}
+                className="compact-btn inline-flex items-center gap-1 font-mono font-bold text-foreground/85 hover:text-primary transition-colors cursor-pointer shrink-0"
+              >
+                <span>{mrn}</span>
+                {mrnCopied && <Check className="size-3 text-emerald-600" />}
+              </button>
+              <span className="shrink-0">·</span>
+              <span className="whitespace-nowrap shrink-0">
+                {patientAge ? `${patientAge} ${bi('سنة', 'yrs', 'ساڵ')}` : '—'}
+              </span>
+              <span className="shrink-0">·</span>
+              <span className="truncate">{genderLabel}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={onOpenNewSession}
+              className="compact-btn h-8 px-3 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-xs inline-flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            >
+              <Plus className="size-3.5 shrink-0" />
+              <span>{bi('جلسة', 'Session', 'دانیشتن')}</span>
+            </button>
           </div>
         </div>
 
@@ -495,12 +535,14 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
                 }}
                 className="peer appearance-none opacity-0 absolute inset-0 w-full h-9 !min-h-[36px] z-10 cursor-pointer"
               >
-                {episodes.map((ep) => (
-                  <option key={ep.id} value={ep.id}>
-                    {ep.data.title || ep.data.medicalDiagnosis} (
-                    {formatDateDDMMYYYY(ep.data.startDate || ep.startDate)})
-                  </option>
-                ))}
+                {episodes.map((ep) => {
+                  const epLabel = localizeDemoText(ep.data.title || ep.data.medicalDiagnosis, language);
+                  return (
+                    <option key={ep.id} value={ep.id}>
+                      {epLabel} ({formatDateDDMMYYYY(ep.data.startDate || ep.startDate)})
+                    </option>
+                  );
+                })}
                 <option value={NEW_EPISODE_OPTION}>
                   {bi('+ بدء حلقة جديدة', '+ Start new episode', '+ قۆناغی نوێ')}
                 </option>
@@ -511,7 +553,10 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
               >
                 <span className="truncate block min-w-0">
                   {activeEpisode
-                    ? `${activeEpisode.data.title || activeEpisode.data.medicalDiagnosis} (${formatDateDDMMYYYY(
+                    ? `${localizeDemoText(
+                        activeEpisode.data.title || activeEpisode.data.medicalDiagnosis,
+                        language
+                      )} (${formatDateDDMMYYYY(
                         activeEpisode.data.startDate || activeEpisode.startDate
                       )})`
                     : ''}
@@ -951,12 +996,12 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
           </div>
         )}
 
-      {/* 4 Underline Tabs — always one line, even at 360px */}
+      {/* 4 Underline Tabs — clean horizontal layout with zero collision at any screen width */}
       <div
         role="tablist"
         data-tour="chart-tabs"
         aria-label={bi('أقسام ملف المريض', 'Patient chart sections', 'بەشەکانی تۆماری نەخۆش')}
-        className="grid grid-cols-4 sm:flex sm:items-center sm:justify-start sm:gap-6 border-b border-black/[0.06] dark:border-white/[0.08]"
+        className="flex items-center justify-between sm:justify-start gap-2 sm:gap-6 overflow-x-auto pr-hide-scrollbar border-b border-black/[0.06] dark:border-white/[0.08]"
       >
         {navigationTabs.map((tab) => {
           const Icon = tab.icon;
@@ -969,7 +1014,7 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
               data-tour={`chart-tab-${tab.id}`}
               aria-selected={isSelected}
               onClick={() => onSelectTab(tab.id)}
-              className={`compact-btn h-10 px-1 sm:px-2.5 text-xs border-b-2 inline-flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
+              className={`compact-btn shrink-0 h-10 px-1.5 sm:px-2.5 text-xs border-b-2 inline-flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
                 isSelected
                   ? 'border-primary text-primary font-extrabold'
                   : 'border-transparent text-muted-foreground-1 hover:text-foreground font-semibold'

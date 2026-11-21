@@ -178,7 +178,7 @@ export const AccountMenuPopover: React.FC<AccountMenuPopoverProps> = ({
             </div>
           ) : (
             <div className="text-xs text-muted-foreground-1 truncate">
-              {bi('بيانات محلية مشفرة', 'Offline encrypted vault')}
+              {bi('بيانات محلية مشفرة', 'Offline encrypted vault', 'داتای ناوخۆیی کۆدکراو')}
             </div>
           )}
         </div>
@@ -344,7 +344,11 @@ export const AccountMenuPopover: React.FC<AccountMenuPopoverProps> = ({
           <button
             type="button"
             onClick={toggleTheme}
-            aria-label={theme === 'dark' ? bi('الوضع النهاري', 'Light Mode') : bi('الوضع الليلي', 'Dark Mode')}
+            aria-label={
+              theme === 'dark'
+                ? bi('الوضع النهاري', 'Light Mode', 'دۆخی ڕۆژانە')
+                : bi('الوضع الليلي', 'Dark Mode', 'دۆخی شەوانە')
+            }
             className="min-h-[40px] md:min-h-[34px] px-2 rounded-xl hover:bg-surface text-foreground text-xs font-semibold inline-flex items-center gap-2 cursor-pointer transition-colors"
           >
             {theme === 'dark' ? (
@@ -352,7 +356,11 @@ export const AccountMenuPopover: React.FC<AccountMenuPopoverProps> = ({
             ) : (
               <Moon className="size-4 text-muted-foreground-1 shrink-0" />
             )}
-            <span>{theme === 'dark' ? bi('نهاري', 'Light') : bi('ليلي', 'Dark')}</span>
+            <span>
+              {theme === 'dark'
+                ? bi('نهاري', 'Light', 'ڕۆژانە')
+                : bi('ليلي', 'Dark', 'شەوانە')}
+            </span>
           </button>
           <LanguageSwitcher variant="borderless" compact />
         </div>
