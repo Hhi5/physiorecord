@@ -1175,6 +1175,13 @@ export interface VaultMetaEntity {
   prfWrappedDek?: Uint8Array; // Raw DEK wrapped under HKDF(PRF output)
   prfWrappedDekIv?: Uint8Array; // 12-byte IV for prfWrappedDek
   prfEnabledAt?: string; // ISO 8601 enrollment timestamp
+  pinSalt?: Uint8Array; // Optional 16-byte PBKDF2 salt for desktop/browser Quick Vault PIN unlock
+  pinWrappedDek?: Uint8Array; // Raw DEK wrapped under Quick PIN PBKDF2 key
+  pinWrappedDekIv?: Uint8Array; // 12-byte IV for pinWrappedDek
+  pinKdfIterations?: number; // PBKDF2 iterations for Quick PIN
+  pinEnabledAt?: string; // ISO 8601 timestamp when Quick PIN was configured
+  pinFailedAttempts?: number; // Consecutive wrong Quick PIN attempt counter
+  pinLockedUntilMs?: number; // Epoch ms until next Quick PIN attempt is permitted
   recoveryKeyGroupSalt?: Uint8Array; // 16-byte salt for SHA-256 verification of individual recovery key groups (Phase A4)
   recoveryKeyGroupDigests?: string[]; // Hex SHA-256(salt || groupIndex || normalizedGroup) digests for drill verification
   lastRecoveryDrillAt?: string; // ISO 8601 timestamp of last verified recovery drill / sandbox backup test

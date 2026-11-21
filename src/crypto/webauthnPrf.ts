@@ -19,24 +19,29 @@ import {
 } from './vault';
 import { broadcastVaultEvent } from '../utils/vaultEvents';
 import {
+  clearDesktopOsBiometricDek,
   clearNativeAndroidBiometricDek,
+  enrollDesktopOsBiometricDek,
   enrollNativeAndroidBiometricDek,
   getAndroidNativePlugin,
+  getDesktopOsBiometricStatus,
+  getElectronDesktopBridge,
   getNativeAndroidBiometricStatus,
   isElectronDesktop,
   isNativeAndroid,
+  unlockDesktopOsBiometricDek,
   unlockNativeAndroidBiometricDek,
 } from '../platform/nativeBridge';
 
 const PRF_WRAP_INFO = 'physiorecord-webauthn-prf-dek-wrap-v1';
 const PRF_WRAP_AAD = new TextEncoder().encode('webauthn-prf-dek-wrap:v1');
 
-export type BiometricUnlockMode = 'android-native' | 'webauthn-prf' | 'unsupported';
+export type BiometricUnlockMode = 'android-native' | 'desktop-os' | 'webauthn-prf' | 'unsupported';
 export type BiometricUnavailableReason =
   | 'none'
   | 'not-enrolled-os'
   | 'no-hardware'
-  | 'desktop-electron'
+  | 'restricted-iframe'
   | 'browser-unsupported';
 
 export interface BiometricAvailabilityInfo {
@@ -93,11 +98,31 @@ export async function getBiometricAvailabilityInfo(): Promise<BiometricAvailabil
       };
     }
 
+    // 2. Windows / macOS Electron Desktop (Windows Hello / Touch ID + safeStorage DPAPI/Keychain)
+    const electronBridge = getElectronDesktopBridge();
+    if (electronBridge?.isOsBiometricAvailable) {
+      const desktopStatus = await getDesktopOsBiometricStatus();
+      if (desktopStatus.available) {
+        return {
+          supported: true,
+          mode: 'desktop-os',
+          reason: 'none',
+          enrolledOnNative: desktopStatus.enrolled,
+        };
+      }
+      return {
+        supported: false,
+        mode: 'unsupported',
+        reason: desktopStatus.status === 'not-enrolled-os' ? 'not-enrolled-os' : 'no-hardware',
+        enrolledOnNative: desktopStatus.enrolled,
+      };
+    }
+
     if (isElectronDesktop()) {
       return {
         supported: false,
         mode: 'unsupported',
-        reason: 'desktop-electron',
+        reason: 'browser-unsupported',
         enrolledOnNative: false,
       };
     }
@@ -137,6 +162,36 @@ export async function getBiometricAvailabilityInfo(): Promise<BiometricAvailabil
       };
     }
 
+    const isInsideIframe = (() => {
+      try {
+        return win.self !== win.top;
+      } catch {
+        return true;
+      }
+    })();
+
+    // Detect embedded iframe / Permissions-Policy restriction blocking WebAuthn credentials
+    const doc =
+      typeof document !== 'undefined'
+        ? (document as Document & {
+            permissionsPolicy?: { allowsFeature?: (feature: string) => boolean };
+            featurePolicy?: { allowsFeature?: (feature: string) => boolean };
+          })
+        : null;
+    const policy = doc?.permissionsPolicy ?? doc?.featurePolicy;
+    if (
+      policy &&
+      typeof policy.allowsFeature === 'function' &&
+      !policy.allowsFeature('publickey-credentials-create')
+    ) {
+      return {
+        supported: false,
+        mode: 'unsupported',
+        reason: isInsideIframe ? 'restricted-iframe' : 'browser-unsupported',
+        enrolledOnNative: false,
+      };
+    }
+
     if (typeof win.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
       const available =
         await win.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
@@ -165,7 +220,7 @@ export async function getBiometricAvailabilityInfo(): Promise<BiometricAvailabil
 }
 
 /**
- * Feature-detect platform authenticator (Native Android BiometricPrompt OR WebAuthn PRF) cleanly without throwing.
+ * Feature-detect platform authenticator (Native Android BiometricPrompt, Desktop Windows Hello/Touch ID, OR WebAuthn PRF).
  */
 export async function isWebAuthnPrfSupported(): Promise<boolean> {
   const info = await getBiometricAvailabilityInfo();
@@ -173,13 +228,18 @@ export async function isWebAuthnPrfSupported(): Promise<boolean> {
 }
 
 /**
- * Check whether biometric unlock is currently enrolled (either via native Android Keystore or WebAuthn PRF metadata).
+ * Check whether device/biometric unlock is currently enrolled.
  */
 export async function isBiometricUnlockEnrolled(meta?: VaultMetaEntity | null): Promise<boolean> {
   const androidPlugin = getAndroidNativePlugin();
   if (androidPlugin?.isBiometricAvailable) {
     const status = await getNativeAndroidBiometricStatus();
     if (status.enrolled) return true;
+  }
+  const electronBridge = getElectronDesktopBridge();
+  if (electronBridge?.isOsBiometricAvailable) {
+    const desktopStatus = await getDesktopOsBiometricStatus();
+    if (desktopStatus.enrolled) return true;
   }
   return Boolean(meta?.prfCredentialId && meta?.prfWrappedDek);
 }
@@ -203,31 +263,71 @@ async function deriveWrappingKeyFromPrfOutput(
   );
 }
 
+function mapWebAuthnErrorToFriendly(err: unknown): Error {
+  const name = err instanceof Error ? err.name : '';
+  const msg = err instanceof Error ? err.message : String(err ?? '');
+  const lower = msg.toLowerCase();
+
+  if (
+    name === 'NotAllowedError' ||
+    name === 'SecurityError' ||
+    lower.includes('credentialscontainer') ||
+    lower.includes('permissions policy') ||
+    lower.includes('not allowed')
+  ) {
+    const inIframe = (() => {
+      try {
+        return typeof window !== 'undefined' && window.self !== window.top;
+      } catch {
+        return true;
+      }
+    })();
+    return new Error(
+      inIframe
+        ? 'المتصفح يمنع نافذة قفل الحاسوب (Windows Hello / Passkey) داخل نافذة المعاينة المضمّنة. افتح التطبيق في تبويب متصفح مستقل أو استخدم نسخة الحاسوب (.exe).'
+        : 'تم إلغاء الطلب أو أن المتصفح لا يسمح بطلب قفل الحاسوب (Windows Hello / Passkey) في هذا السياق.'
+    );
+  }
+  if (name === 'AbortError') {
+    return new Error('تم إلغاء عملية التحقق عبر قفل الجهاز.');
+  }
+  if (name === 'NotSupportedError' || name === 'InvalidStateError') {
+    return new Error('هذا الجهاز أو المتصفح لا يدعم مفتاح مرور النظام المطلوب (WebAuthn).');
+  }
+  if (err instanceof Error) return err;
+  return new Error('تعذر إتمام المصادقة عبر قفل الجهاز.');
+}
+
 async function requestPrfAssertionOutput(
   credentialId: Uint8Array,
   prfSalt: Uint8Array
 ): Promise<Uint8Array> {
   const challenge = randomBytes(32);
-  const assertion = (await navigator.credentials.get({
-    publicKey: {
-      challenge: toArrayBuffer(challenge),
-      allowCredentials: [
-        {
-          id: toArrayBuffer(credentialId),
-          type: 'public-key',
-        },
-      ],
-      userVerification: 'required',
-      timeout: 60_000,
-      extensions: {
-        prf: {
-          eval: {
-            first: toArrayBuffer(prfSalt),
+  let assertion: PublicKeyCredential | null;
+  try {
+    assertion = (await navigator.credentials.get({
+      publicKey: {
+        challenge: toArrayBuffer(challenge),
+        allowCredentials: [
+          {
+            id: toArrayBuffer(credentialId),
+            type: 'public-key',
           },
-        },
-      } as unknown as AuthenticationExtensionsClientInputs,
-    },
-  })) as PublicKeyCredential | null;
+        ],
+        userVerification: 'required',
+        timeout: 60_000,
+        extensions: {
+          prf: {
+            eval: {
+              first: toArrayBuffer(prfSalt),
+            },
+          },
+        } as unknown as AuthenticationExtensionsClientInputs,
+      },
+    })) as PublicKeyCredential | null;
+  } catch (err: unknown) {
+    throw mapWebAuthnErrorToFriendly(err);
+  }
 
   if (!assertion) {
     throw new Error('تم إلغاء المصادقة الحيوية أو لم تُستكمل.');
@@ -251,9 +351,18 @@ export async function enrollPasskeyPrfUnlock(
   const availability = await getBiometricAvailabilityInfo();
   if (!availability.supported) {
     if (availability.reason === 'not-enrolled-os') {
-      throw new Error('لم يتم تسجيل بصمة إصبع على الجهاز. أضف بصمة من إعدادات أندرويد أولاً.');
+      throw new Error(
+        isElectronDesktop()
+          ? 'لم يتم إعداد Windows Hello أو رمز الحاسوب (PIN) في إعدادات ويندوز أولاً.'
+          : 'لم يتم تسجيل بصمة إصبع على الجهاز. أضف بصمة من إعدادات أندرويد أولاً.'
+      );
     }
-    throw new Error('المصادقة الحيوية غير متوفرة في هذا المتصفح أو الجهاز.');
+    if (availability.reason === 'restricted-iframe') {
+      throw new Error(
+        'المتصفح يمنع قفل الحاسوب (Windows Hello / Passkey) داخل نافذة المعاينة المضمّنة. افتح التطبيق في تبويب متصفح مستقل.'
+      );
+    }
+    throw new Error('قفل الجهاز / المصادقة الحيوية غير متوفرة في هذا المتصفح أو الجهاز.');
   }
 
   const meta = await database.vaultMeta.get('auth');
@@ -275,41 +384,60 @@ export async function enrollPasskeyPrfUnlock(
     }
   }
 
+  // Native Desktop Electron (Windows Hello / Touch ID + safeStorage DPAPI/Keychain)
+  if (availability.mode === 'desktop-os') {
+    const rawDek = await decryptRawDEKForBackup(meta.wrappedDek, meta.wrappedDekIv, vaultKek);
+    try {
+      const enrolled = await enrollDesktopOsBiometricDek(rawDek);
+      if (!enrolled) {
+        throw new Error('تعذر تفعيل الفتح بقفل النظام (Windows Hello / Touch ID).');
+      }
+      return { credentialId: new TextEncoder().encode('desktop-os-biometric-v1') };
+    } finally {
+      rawDek.fill(0);
+    }
+  }
+
   const prfSalt = randomBytes(32);
   const challenge = randomBytes(32);
   const userId = randomBytes(16);
 
-  const credential = (await navigator.credentials.create({
-    publicKey: {
-      challenge: toArrayBuffer(challenge),
-      rp: {
-        name: 'PhysioRecord Local EHR',
-        id: window.location.hostname || undefined,
-      },
-      user: {
-        id: toArrayBuffer(userId),
-        name: 'physiorecord-local-owner',
-        displayName: 'PhysioRecord Vault Owner',
-      },
-      pubKeyCredParams: [
-        { type: 'public-key', alg: -7 },
-        { type: 'public-key', alg: -257 },
-      ],
-      authenticatorSelection: {
-        authenticatorAttachment: 'platform',
-        userVerification: 'required',
-        residentKey: 'preferred',
-      },
-      timeout: 60_000,
-      extensions: {
-        prf: {
-          eval: {
-            first: toArrayBuffer(prfSalt),
-          },
+  let credential: PublicKeyCredential | null;
+  try {
+    credential = (await navigator.credentials.create({
+      publicKey: {
+        challenge: toArrayBuffer(challenge),
+        rp: {
+          name: 'PhysioRecord Local EHR',
+          id: window.location.hostname || undefined,
         },
-      } as unknown as AuthenticationExtensionsClientInputs,
-    },
-  })) as PublicKeyCredential | null;
+        user: {
+          id: toArrayBuffer(userId),
+          name: 'physiorecord-local-owner',
+          displayName: 'PhysioRecord Vault Owner',
+        },
+        pubKeyCredParams: [
+          { type: 'public-key', alg: -7 },
+          { type: 'public-key', alg: -257 },
+        ],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          userVerification: 'required',
+          residentKey: 'preferred',
+        },
+        timeout: 60_000,
+        extensions: {
+          prf: {
+            eval: {
+              first: toArrayBuffer(prfSalt),
+            },
+          },
+        } as unknown as AuthenticationExtensionsClientInputs,
+      },
+    })) as PublicKeyCredential | null;
+  } catch (err: unknown) {
+    throw mapWebAuthnErrorToFriendly(err);
+  }
 
   if (!credential) {
     throw new Error('لم يتم إنشاء مفتاح المرور الحيوي.');
@@ -324,7 +452,9 @@ export async function enrollPasskeyPrfUnlock(
   } else if (extResults?.prf?.enabled) {
     prfOutput = await requestPrfAssertionOutput(credentialId, prfSalt);
   } else {
-    throw new Error('هذا المفتاح الحيوي لا يدعم ميزة WebAuthn PRF المطلوبة لتغليف مفتاح التشفير.');
+    throw new Error(
+      'تم التحقق عبر قفل الحاسوب، لكن هذا المتصفح/إصدار النظام لا يدعم بعد امتداد التشفير WebAuthn PRF لحفظ مفتاح الخزينة محلياً. يعمل ذلك مباشرةً في تطبيق الحاسوب (.exe) عبر Windows Hello.'
+    );
   }
 
   const rawDek = await decryptRawDEKForBackup(meta.wrappedDek, meta.wrappedDekIv, vaultKek);
@@ -372,8 +502,23 @@ export async function unlockOperationalDekWithPrf(
     }
   }
 
+  const electronBridge = getElectronDesktopBridge();
+  if (electronBridge?.unlockOsBiometricDek && electronBridge?.isOsBiometricAvailable) {
+    const desktopStatus = await getDesktopOsBiometricStatus();
+    if (desktopStatus.enrolled) {
+      let rawDek: Uint8Array | null = null;
+      try {
+        rawDek = await unlockDesktopOsBiometricDek();
+        const generation = meta.vaultGeneration ?? 1;
+        return await importOperationalDekFromRawBytes(rawDek, generation);
+      } finally {
+        if (rawDek) rawDek.fill(0);
+      }
+    }
+  }
+
   if (!meta.prfCredentialId || !meta.prfSalt || !meta.prfWrappedDek || !meta.prfWrappedDekIv) {
-    throw new Error('لم يتم تفعيل مفتاح المرور الحيوي لهذه الخزينة.');
+    throw new Error('لم يتم تفعيل قفل الجهاز أو مفتاح المرور الحيوي لهذه الخزينة.');
   }
 
   const prfOutput = await requestPrfAssertionOutput(meta.prfCredentialId, meta.prfSalt);
@@ -435,20 +580,29 @@ export async function resetVaultPasswordWithPrf(
     Boolean(androidPlugin?.unlockBiometricDek && androidPlugin?.isBiometricAvailable) &&
     (await getNativeAndroidBiometricStatus()).enrolled;
 
+  const electronBridge = getElectronDesktopBridge();
+  const useDesktopOs =
+    !useNativeAndroid &&
+    Boolean(electronBridge?.unlockOsBiometricDek && electronBridge?.isOsBiometricAvailable) &&
+    (await getDesktopOsBiometricStatus()).enrolled;
+
   if (
     !useNativeAndroid &&
+    !useDesktopOs &&
     (!meta.prfCredentialId || !meta.prfSalt || !meta.prfWrappedDek || !meta.prfWrappedDekIv)
   ) {
-    throw new Error('لم يتم تفعيل البصمة أو مفتاح المرور الحيوي لهذه الخزينة.');
+    throw new Error('لم يتم تفعيل قفل الجهاز أو مفتاح المرور الحيوي لهذه الخزينة.');
   }
 
   let prfOutput: Uint8Array | null = null;
   let rawDek: Uint8Array | null = null;
 
   try {
-    // 1. Authenticate user biometrically & unwrap raw DEK transiently
+    // 1. Authenticate user biometrically / via Windows Hello & unwrap raw DEK transiently
     if (useNativeAndroid) {
       rawDek = await unlockNativeAndroidBiometricDek();
+    } else if (useDesktopOs) {
+      rawDek = await unlockDesktopOsBiometricDek();
     } else {
       prfOutput = await requestPrfAssertionOutput(meta.prfCredentialId!, meta.prfSalt!);
       const wrappingKey = await deriveWrappingKeyFromPrfOutput(prfOutput, meta.prfSalt!);
@@ -515,6 +669,7 @@ export async function resetVaultPasswordWithPrf(
  */
 export async function disablePasskeyPrfUnlock(database: PhysioRecordDatabase): Promise<void> {
   await clearNativeAndroidBiometricDek();
+  await clearDesktopOsBiometricDek();
   const meta = await database.vaultMeta.get('auth');
   if (meta) {
     await database.vaultMeta.update('auth', {

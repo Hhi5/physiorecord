@@ -1038,7 +1038,7 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background overflow-hidden transition-colors">
+    <div className="flex-1 flex flex-col h-full bg-background-1 overflow-hidden transition-colors">
       {/* Main Content Scroll Canvas */}
       <div
         tabIndex={0}

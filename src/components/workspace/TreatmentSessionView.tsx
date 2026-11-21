@@ -1606,7 +1606,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-12 bg-background">
+      <div className="flex-1 flex items-center justify-center p-12 bg-background-1">
         <div className="flex flex-col items-center gap-3">
           <div className="size-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
           <p className="text-xs text-muted-foreground-1 font-medium">
@@ -1622,7 +1622,7 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background overflow-hidden transition-colors">
+    <div className="flex-1 flex flex-col h-full bg-background-1 overflow-hidden transition-colors">
       <SessionTopBar
         session={session}
         patientName={patientName}

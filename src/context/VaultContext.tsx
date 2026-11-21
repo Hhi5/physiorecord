@@ -36,6 +36,13 @@ import {
   type BiometricUnlockMode,
 } from '../crypto/webauthnPrf';
 import {
+  isPinUnlockEnrolled,
+  enrollVaultPinUnlock,
+  unlockOperationalDekWithPin,
+  disablePinUnlock,
+  type PinUnlockOutcome,
+} from '../crypto/vaultPin';
+import {
   loadPasswordReminderState,
   isPasswordReminderDue,
   recordPasswordMemoryVerified,
@@ -92,6 +99,7 @@ interface VaultContextType {
   kdfProgress: number;
   isPrfSupported: boolean;
   isPrfEnrolled: boolean;
+  isPinEnrolled: boolean;
   biometricMode: BiometricUnlockMode;
   biometricUnavailableReason: BiometricUnavailableReason;
   keyUsageStatus: EncryptionKeyUsageStatus | null;
@@ -125,6 +133,9 @@ interface VaultContextType {
   unlockWithPrf: () => Promise<boolean>;
   enrollPrf: () => Promise<void>;
   disablePrf: () => Promise<void>;
+  unlockWithPin: (pin: string) => Promise<PinUnlockOutcome>;
+  enrollPin: (pin: string, masterPasswordForVerification?: string) => Promise<void>;
+  disablePin: () => Promise<void>;
   refreshKeyUsageStatus: () => Promise<EncryptionKeyUsageStatus | null>;
   rotateDekNow: () => Promise<KeyRotationSummary>;
   resetPasswordWithRecovery: (recoveryKey: string, newPassword: string) => Promise<{ newRecoveryKeyFormatted: string }>;
@@ -154,6 +165,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [kdfProgress, setKdfProgress] = useState<number>(0);
   const [isPrfSupported, setIsPrfSupported] = useState<boolean>(false);
   const [isPrfEnrolled, setIsPrfEnrolled] = useState<boolean>(false);
+  const [isPinEnrolled, setIsPinEnrolled] = useState<boolean>(false);
   const [biometricMode, setBiometricMode] = useState<BiometricUnlockMode>('unsupported');
   const [biometricUnavailableReason, setBiometricUnavailableReason] =
     useState<BiometricUnavailableReason>('browser-unsupported');
@@ -412,6 +424,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setIsPrfEnrolled(
           availability.enrolledOnNative || Boolean(meta?.prfCredentialId && meta?.prfWrappedDek)
         );
+        setIsPinEnrolled(isPinUnlockEnrolled(meta));
         const persistent = await requestPersistentStorage();
         setPersistenceGranted(persistent || isNativeAppShell());
       } catch (err) {
@@ -518,6 +531,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setVaultGeneration(gen);
       setIsInitialized(true);
       setIsPrfEnrolled(false);
+      setIsPinEnrolled(false);
       // Initialize Signal-style spaced reminder for the brand-new password (first check in 1 day)
       const reminderState = recordPasswordChangedSchedule();
       setPasswordReminderState(reminderState);
@@ -581,6 +595,12 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           } catch (prfErr: unknown) {
             recordSafeNonFatalWarning('vault', 'disable_prf_after_rotation', prfErr);
           }
+          try {
+            await disablePinUnlock(db);
+            setIsPinEnrolled(false);
+          } catch (pinErr: unknown) {
+            recordSafeNonFatalWarning('vault', 'disable_pin_after_rotation', pinErr);
+          }
         }
       } catch (rotErr) {
         console.warn('Auto DEK rotation check failed (non-fatal):', rotErr);
@@ -596,6 +616,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const latestMeta = await db.vaultMeta.get('auth');
       setIsPrfEnrolled(await isBiometricUnlockEnrolled(latestMeta));
+      setIsPinEnrolled(isPinUnlockEnrolled(latestMeta));
 
       // Refresh persistent storage grant status after user gesture
       try {
@@ -724,6 +745,87 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsPrfEnrolled(false);
   }, []);
 
+  const unlockWithPin = useCallback(
+    async (pin: string): Promise<PinUnlockOutcome> => {
+      const meta = await db.vaultMeta.get('auth');
+      if (!meta) throw new Error('الخزينة غير مهيأة بعد');
+      setKdfProgress(0);
+      try {
+        const outcome = await unlockOperationalDekWithPin(
+          db,
+          pin,
+          deriveKEKWithWorker,
+          (pct) => setKdfProgress(pct)
+        );
+        if (outcome.disabledByFailures) {
+          setIsPinEnrolled(false);
+        }
+        if (outcome.ok && outcome.operationalDek) {
+          const gen = outcome.vaultGeneration ?? (meta.vaultGeneration ?? 1);
+          await finalizeUnlockWithDek(outcome.operationalDek, null, gen);
+        }
+        return outcome;
+      } finally {
+        setKdfProgress(0);
+      }
+    },
+    [finalizeUnlockWithDek]
+  );
+
+  const enrollPin = useCallback(
+    async (pin: string, masterPasswordForVerification?: string): Promise<void> => {
+      if (!dekRef.current) {
+        throw new Error('الخزينة مقفلة.');
+      }
+      let effectiveKek = vaultKek;
+      if (!effectiveKek) {
+        const pw = masterPasswordForVerification ?? '';
+        if (!pw) {
+          throw new Error('يرجى إدخال كلمة المرور الرئيسية للتحقق وتفعيل رمز PIN.');
+        }
+        const meta = await db.vaultMeta.get('auth');
+        if (!meta) throw new Error('الخزينة غير مهيأة.');
+        setKdfProgress(0);
+        try {
+          const candidateKek = await deriveKEKWithWorker(
+            pw,
+            meta.salt,
+            meta.kdfIterations || CONSTANTS.DEFAULT_PBKDF2_ITERATIONS,
+            (pct) => setKdfProgress(pct)
+          );
+          const valid = await checkVerifier(candidateKek, meta.verifierIv, meta.verifierCiphertext);
+          if (!valid) {
+            throw new Error('كلمة المرور الرئيسية غير صحيحة.');
+          }
+          effectiveKek = candidateKek;
+          setVaultKek(candidateKek);
+        } finally {
+          setKdfProgress(0);
+        }
+      }
+
+      setKdfProgress(0);
+      try {
+        await enrollVaultPinUnlock(
+          db,
+          effectiveKek,
+          pin,
+          deriveKEKWithWorker,
+          (pct) => setKdfProgress(pct)
+        );
+        setIsPinEnrolled(true);
+      } finally {
+        setKdfProgress(0);
+      }
+    },
+    [vaultKek]
+  );
+
+  const disablePin = useCallback(async (): Promise<void> => {
+    await disablePinUnlock(db);
+    setIsPinEnrolled(false);
+  }, []);
+
   const rotateDekNow = useCallback(async (): Promise<KeyRotationSummary> => {
     if (!dekRef.current) {
       throw new Error('الخزينة مقفلة.');
@@ -737,7 +839,13 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (prfErr: unknown) {
       recordSafeNonFatalWarning('vault', 'disable_prf_after_manual_rotation', prfErr);
     }
+    try {
+      await disablePinUnlock(db);
+    } catch (pinErr: unknown) {
+      recordSafeNonFatalWarning('vault', 'disable_pin_after_manual_rotation', pinErr);
+    }
     setIsPrfEnrolled(false);
+    setIsPinEnrolled(false);
     await ClinicOperationsService.hydrateEncryptedCache(summary.newOperationalDek, db, {
       lazyHeavyStores: true,
     });
@@ -762,6 +870,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const gen = meta?.vaultGeneration ?? 1;
       setVaultGeneration(gen);
       setIsPrfEnrolled(await isBiometricUnlockEnrolled(meta));
+      setIsPinEnrolled(isPinUnlockEnrolled(meta));
       const reminderState = recordPasswordChangedSchedule();
       setPasswordReminderState(reminderState);
       setIsPasswordReminderDueNow(false);
@@ -922,6 +1031,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setIsInitialized(false);
     setIsPrfEnrolled(false);
+    setIsPinEnrolled(false);
     setKeyUsageStatus(null);
     setLastMigrationResult(null);
     const freshReminder = loadPasswordReminderState();
@@ -943,6 +1053,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         kdfProgress,
         isPrfSupported,
         isPrfEnrolled,
+        isPinEnrolled,
         biometricMode,
         biometricUnavailableReason,
         keyUsageStatus,
@@ -976,6 +1087,9 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         unlockWithPrf,
         enrollPrf,
         disablePrf,
+        unlockWithPin,
+        enrollPin,
+        disablePin,
         refreshKeyUsageStatus,
         rotateDekNow,
         resetPasswordWithRecovery,

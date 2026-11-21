@@ -47,7 +47,10 @@ import {
   shouldRunAutoUpdateCheck,
   type SyncedGithubReleaseItem,
 } from '../../utils/updateSafety';
-import { fetchOfficialGitHubReleases } from '../../platform/nativeBridge';
+import {
+  fetchOfficialGitHubReleases,
+  getElectronDesktopBridge,
+} from '../../platform/nativeBridge';
 import {
   ACTIVE_MODAL_DIALOG_SELECTOR,
   evaluateEscapeShortcut,
@@ -377,6 +380,20 @@ export const AppLayout: React.FC = () => {
       cancelled = true;
       window.removeEventListener(GITHUB_RELEASES_UPDATED_EVENT, refreshPendingUpdate);
     };
+  }, []);
+
+  // Sync frameless Electron Windows titleBarOverlay glyph colors with active Light/Dark theme
+  useEffect(() => {
+    const bridge = getElectronDesktopBridge();
+    if (!bridge?.setTitleBarTheme) return;
+    const syncOverlay = () => {
+      const isDark = document.documentElement.classList.contains('dark');
+      void bridge.setTitleBarTheme?.({ isDark });
+    };
+    syncOverlay();
+    const observer = new MutationObserver(syncOverlay);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -1296,6 +1313,15 @@ export const AppLayout: React.FC = () => {
           isPrivacyCoverOpen ? 'filter blur-md pointer-events-none select-none' : ''
         }`}
       >
+        {/* Seamless Transparent Window Drag Strip (Windows/macOS Electron desktop only — replaces blue native title bar) */}
+        {Boolean(getElectronDesktopBridge()) && (
+          <div
+            aria-hidden="true"
+            data-testid="electron-window-drag-strip"
+            className="hidden md:block h-8 w-full shrink-0 pr-electron-drag-strip select-none"
+          />
+        )}
+
         {/* Minimal Mobile Top Strip (< md, hidden inside Patient Chart / Session Focus Mode) */}
         {!selectedPatient && !isSessionFocusMode && (
           <header

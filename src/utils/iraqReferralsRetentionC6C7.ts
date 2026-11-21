@@ -22,6 +22,7 @@ import type {
   ReferralSourceType,
   ReferringDoctorEntry,
 } from '../types/clinicManagement';
+import { buildCleanReferringDoctorSalutation } from './printPreviewScale';
 import {
   addDaysToDateStr,
   buildWhatsAppReminderUrl,
@@ -695,9 +696,12 @@ export function buildDoctorReportBackLetter(
     lines.push(`التاريخ: ${issueDateStr}`);
     lines.push('');
     lines.push(
-      `تحية طيبة وبعد، إلى الدكتور/ة ${doctorName}${doctorSpecialty ? ` (${doctorSpecialty})` : ''}${
-        doctorFacility ? ` — ${doctorFacility}` : ''
-      }`
+      buildCleanReferringDoctorSalutation({
+        doctorName,
+        doctorSpecialty,
+        doctorFacility,
+        isAr: true,
+      })
     );
     lines.push('');
     lines.push(

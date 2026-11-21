@@ -172,6 +172,7 @@ export interface ElectronDesktopBridge {
   }) => Promise<{
     opened: boolean;
   }>;
+  setTitleBarTheme?: (options: { isDark: boolean }) => Promise<boolean>;
   checkForUpdates?: () => Promise<ElectronDesktopUpdateStatus>;
   fetchGithubReleases?: () => Promise<{
     ok: boolean;
@@ -244,6 +245,22 @@ export interface ElectronDesktopBridge {
     writtenFile?: string;
     peerEnvelopes?: unknown[];
     error?: string;
+  }>;
+  isOsBiometricAvailable?: () => Promise<{
+    available: boolean;
+    status: string;
+    enrolled: boolean;
+  }>;
+  enrollOsBiometricDek?: (options: {
+    dekBase64: string;
+  }) => Promise<{
+    enrolled: boolean;
+  }>;
+  unlockOsBiometricDek?: () => Promise<{
+    dekBase64: string;
+  }>;
+  clearOsBiometricDek?: () => Promise<{
+    cleared: boolean;
   }>;
 }
 
@@ -430,6 +447,84 @@ export async function clearNativeAndroidBiometricDek(): Promise<void> {
   if (!androidPlugin?.clearBiometricDek) return;
   try {
     await androidPlugin.clearBiometricDek();
+  } catch {
+    // Non-fatal cleanup
+  }
+}
+
+export interface DesktopOsBiometricStatus {
+  supportedBridge: boolean;
+  available: boolean;
+  status: 'ready' | 'not-enrolled-os' | 'unavailable';
+  enrolled: boolean;
+}
+
+export async function getDesktopOsBiometricStatus(): Promise<DesktopOsBiometricStatus> {
+  const bridge = getElectronDesktopBridge();
+  if (!bridge?.isOsBiometricAvailable) {
+    return {
+      supportedBridge: false,
+      available: false,
+      status: 'unavailable',
+      enrolled: false,
+    };
+  }
+  try {
+    const res = await bridge.isOsBiometricAvailable();
+    const status: DesktopOsBiometricStatus['status'] =
+      res?.status === 'ready'
+        ? 'ready'
+        : res?.status === 'not-enrolled-os'
+          ? 'not-enrolled-os'
+          : 'unavailable';
+    return {
+      supportedBridge: true,
+      available: Boolean(res?.available),
+      status,
+      enrolled: Boolean(res?.enrolled),
+    };
+  } catch {
+    return {
+      supportedBridge: true,
+      available: false,
+      status: 'unavailable',
+      enrolled: false,
+    };
+  }
+}
+
+export async function enrollDesktopOsBiometricDek(rawDek: Uint8Array): Promise<boolean> {
+  const bridge = getElectronDesktopBridge();
+  if (!bridge?.enrollOsBiometricDek) {
+    throw new Error('قفل النظام غير متاح في هذا الإصدار.');
+  }
+  const dekBase64 = bytesToBase64(rawDek);
+  const res = await bridge.enrollOsBiometricDek({ dekBase64 });
+  return Boolean(res?.enrolled);
+}
+
+export async function unlockDesktopOsBiometricDek(): Promise<Uint8Array> {
+  const bridge = getElectronDesktopBridge();
+  if (!bridge?.unlockOsBiometricDek) {
+    throw new Error('قفل النظام غير متاح في هذا الإصدار.');
+  }
+  const res = await bridge.unlockOsBiometricDek();
+  if (!res?.dekBase64) {
+    throw new Error('تعذر استرجاع مفتاح التشفير عبر قفل النظام.');
+  }
+  const rawDek = base64ToBytes(res.dekBase64);
+  if (rawDek.length !== 32) {
+    rawDek.fill(0);
+    throw new Error('طول مفتاح التشفير المسترجع غير صالح.');
+  }
+  return rawDek;
+}
+
+export async function clearDesktopOsBiometricDek(): Promise<void> {
+  const bridge = getElectronDesktopBridge();
+  if (!bridge?.clearOsBiometricDek) return;
+  try {
+    await bridge.clearOsBiometricDek();
   } catch {
     // Non-fatal cleanup
   }

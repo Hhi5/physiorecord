@@ -7,6 +7,7 @@ import {
   Clock,
   Copy,
   Database,
+  ExternalLink,
   Fingerprint,
   HardDrive,
   KeyRound,
@@ -16,6 +17,7 @@ import {
   ShieldCheck,
   Upload,
 } from 'lucide-react';
+import { isElectronDesktop } from '../../platform/nativeBridge';
 import { useLanguage } from '../../context/LanguageContext';
 import { useVault } from '../../context/VaultContext';
 import { requestPersistentStorage } from '../../db/db';
@@ -27,6 +29,7 @@ import { VAULT_CREDENTIAL_USERNAME } from '../../utils/passwordManagerHelper';
 import { PlatformUpdateCenterCard } from '../clinic/PlatformUpdateCenterCard';
 import { PasswordReminderModal } from '../PasswordReminderModal';
 import { sanitizeDurationDraft } from '../../utils/durationInput';
+import { normalizeVaultPinInput, validateVaultPin } from '../../crypto/vaultPin';
 import { SettingsAccordion, SettingsSwitchRow } from './SettingsPrimitives';
 
 interface SecuritySettingsTabProps {
@@ -70,10 +73,14 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
     lastRecoveryDrillAt,
     isPrfSupported,
     isPrfEnrolled,
+    isPinEnrolled,
+    vaultKek,
     biometricMode,
     biometricUnavailableReason,
     enrollPrf,
     disablePrf,
+    enrollPin,
+    disablePin,
     changeVaultPassword,
     resetPasswordWithPrf,
     passwordReminderState,
@@ -88,6 +95,15 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
   const [rotationError, setRotationError] = useState<string | null>(null);
   const [prfBusy, setPrfBusy] = useState(false);
   const [prfError, setPrfError] = useState<string | null>(null);
+
+  // Quick Vault PIN Unlock (Desktop & Browser alternative to biometrics)
+  const [showQuickPinForm, setShowQuickPinForm] = useState(false);
+  const [quickPinInput, setQuickPinInput] = useState('');
+  const [quickPinConfirm, setQuickPinConfirm] = useState('');
+  const [quickPinMasterPw, setQuickPinMasterPw] = useState('');
+  const [quickPinBusy, setQuickPinBusy] = useState(false);
+  const [quickPinError, setQuickPinError] = useState<string | null>(null);
+  const [quickPinSaved, setQuickPinSaved] = useState(false);
 
   // Password Change / Passkey Password Reset inline form
   const [showPasswordChangeForm, setShowPasswordChangeForm] = useState(false);
@@ -119,6 +135,12 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
     setRotatedRecoveryKey(null);
     setRotationError(null);
     setPrfError(null);
+    setQuickPinError(null);
+    setQuickPinSaved(false);
+    setQuickPinInput('');
+    setQuickPinConfirm('');
+    setQuickPinMasterPw('');
+    setShowQuickPinForm(false);
     setPwChangeError(null);
     setPwChangeSaved(false);
     setCurrentPasswordInput('');
@@ -218,6 +240,113 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
     }
   };
 
+  const handleSaveQuickPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setQuickPinError(null);
+    setQuickPinSaved(false);
+
+    const validation = validateVaultPin(quickPinInput);
+    if (!validation.valid) {
+      if (validation.errorCode === 'non_digits') {
+        setQuickPinError(
+          bi(
+            'يجب أن يتكوّن رمز PIN من أرقام فقط (0–9).',
+            'Quick PIN must contain digits only (0–9).',
+            'کۆدی PIN دەبێت تەنها لە ژمارە (0–9) پێکهاتبێت.'
+          )
+        );
+      } else if (validation.errorCode === 'too_short' || validation.errorCode === 'too_long') {
+        setQuickPinError(
+          bi(
+            'يجب أن يتكوّن رمز PIN من 4 إلى 12 رقماً.',
+            'Quick PIN must be between 4 and 12 digits.',
+            'کۆدی PIN دەبێت لە نێوان ٤ بۆ ١٢ ژمارەدا بێت.'
+          )
+        );
+      } else {
+        setQuickPinError(
+          bi(
+            'هذا الرمز سهل التخمين (مثل 1234 أو 0000). يرجى اختيار رمز أقوى.',
+            'This PIN is too easy to guess (e.g. 1234 or 0000). Please pick a stronger code.',
+            'ئەم کۆدە زۆر ئاسانە (وەک 1234 یان 0000). تکایە کۆدێکی بەهێزتر هەڵبژێرە.'
+          )
+        );
+      }
+      return;
+    }
+
+    const normalizedConfirm = normalizeVaultPinInput(quickPinConfirm);
+    if (validation.normalized !== normalizedConfirm) {
+      setQuickPinError(
+        bi(
+          'رمزا PIN غير متطابقين.',
+          'PIN confirmation does not match.',
+          'هەردوو کۆدی PIN وەک یەک نین.'
+        )
+      );
+      return;
+    }
+
+    if (!vaultKek && !quickPinMasterPw) {
+      setQuickPinError(
+        bi(
+          'يرجى إدخال كلمة المرور الرئيسية لتأكيد تفعيل رمز PIN.',
+          'Please enter your master password to authorize setting a Quick PIN.',
+          'تکایە وشەی نهێنی سەرەکی بنووسە بۆ دڵنیاکردنەوەی دانانی کۆدی PIN.'
+        )
+      );
+      return;
+    }
+
+    setQuickPinBusy(true);
+    try {
+      await enrollPin(validation.normalized, quickPinMasterPw || undefined);
+      setQuickPinInput('');
+      setQuickPinConfirm('');
+      setQuickPinMasterPw('');
+      setShowQuickPinForm(false);
+      setQuickPinSaved(true);
+      setTimeout(() => setQuickPinSaved(false), 4000);
+    } catch (err: unknown) {
+      setQuickPinError(
+        err instanceof Error
+          ? err.message
+          : bi(
+              'تعذر حفظ رمز PIN السريع.',
+              'Failed to save Quick PIN.',
+              'پاشەکەوتکردنی کۆدی PIN سەرکەوتوو نەبوو.'
+            )
+      );
+    } finally {
+      setQuickPinBusy(false);
+    }
+  };
+
+  const handleDisableQuickPin = async () => {
+    setQuickPinBusy(true);
+    setQuickPinError(null);
+    setQuickPinSaved(false);
+    try {
+      await disablePin();
+      setShowQuickPinForm(false);
+      setQuickPinInput('');
+      setQuickPinConfirm('');
+      setQuickPinMasterPw('');
+    } catch (err: unknown) {
+      setQuickPinError(
+        err instanceof Error
+          ? err.message
+          : bi(
+              'تعذر تعطيل رمز PIN السريع.',
+              'Failed to disable Quick PIN.',
+              'ناچالاککردنی کۆدی PIN سەرکەوتوو نەبوو.'
+            )
+      );
+    } finally {
+      setQuickPinBusy(false);
+    }
+  };
+
   const handleTogglePrf = async () => {
     setPrfBusy(true);
     setPrfError(null);
@@ -228,15 +357,31 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
         await enrollPrf();
       }
     } catch (err: unknown) {
-      setPrfError(
-        err instanceof Error
-          ? err.message
-          : bi(
+      const raw = err instanceof Error ? err.message : '';
+      const lower = raw.toLowerCase();
+      if (
+        lower.includes('credentialscontainer') ||
+        lower.includes('notallowederror') ||
+        lower.includes('not allowed') ||
+        lower.includes('permissions policy')
+      ) {
+        setPrfError(
+          bi(
+            'المتصفح يحجب طلب قفل الحاسوب (Windows Hello / Passkey) داخل نافذة المعاينة المضمّنة. افتح التطبيق في تبويب متصفح مستقل أو استخدم تطبيق الحاسوب (.exe).',
+            'Your browser blocks PC Device Lock (Windows Hello / Passkey) inside embedded preview frames. Open the app in a standalone tab or use the Desktop app.',
+            'وێبگەڕ ڕێگە بە قفڵی ئامێر (Windows Hello / Passkey) نادات لە ناو پەنجەرەی هاوپێچکراودا. ئەپەکە لە تابێکی سەربەخۆ بکەرەوە.'
+          )
+        );
+      } else {
+        setPrfError(
+          raw ||
+            bi(
               'تعذر تغيير حالة البصمة على هذا الجهاز.',
               'Unable to update biometric unlock on this device.',
               'نەتوانرا دۆخی پەنجەمۆر لەسەر ئەم ئامێرە بگۆڕدرێت.'
             )
-      );
+        );
+      }
     } finally {
       setPrfBusy(false);
     }
@@ -509,7 +654,7 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
           )}
         </div>
 
-        {/* Biometric / Fingerprint / Passkey Quick Unlock & Password Reset (Always Visible) */}
+        {/* OS Device Lock / Windows Hello / Touch ID / Biometric Passkey */}
         <div
           data-testid="settings-biometric-section"
           className="pt-3.5 border-t border-card-divider space-y-2.5"
@@ -520,9 +665,9 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
                 <Fingerprint className="size-4 text-primary shrink-0" />
                 <span>
                   {bi(
-                    'الفتح والاسترداد بالبصمة / مفتاح المرور',
-                    'Fingerprint / Biometric Unlock & Reset',
-                    'کردنەوە و گەڕاندنەوە بە پەنجەمۆر'
+                    'قفل الحاسوب والنظام (Windows Hello / البصمة / كلمة مرور الجهاز)',
+                    'Device Lock & Passkey (Windows Hello / Touch ID / Biometrics)',
+                    'قفڵی کۆمپیوتەر و سیستەم (Windows Hello / پەنجەمۆر / وشەی نهێنی ئامێر)'
                   )}
                 </span>
                 <span aria-hidden="true" className="text-muted-foreground-2">·</span>
@@ -536,7 +681,7 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
                   }`}
                 >
                   {!isPrfSupported
-                    ? bi('غير متاح على هذا الجهاز', 'Unavailable here', 'لێرە بەردەست نییە')
+                    ? bi('غير متاح هنا', 'Unavailable here', 'لێرە بەردەست نییە')
                     : isPrfEnrolled
                       ? bi('مفعّل', 'Active', 'چالاکە')
                       : bi('غير مفعّل', 'Off', 'ناچالاکە')}
@@ -550,37 +695,62 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
                         'Uses native Android BiometricPrompt & Android Keystore to unlock quickly or reset a forgotten password without losing records.',
                         'پەنجەمۆری ئەندرۆید و Android Keystore بەکاردەهێنێت بۆ کردنەوەی خێرا یان گۆڕینی وشەی نهێنی لە کاتی لەبیرچوونەوەدا.'
                       )
-                    : bi(
-                        'يتيح فتح الخزينة بسرعة وكذلك تعيين كلمة مرور جديدة عبر البصمة أو مفتاح المرور عند النسيان، مع بقاء مفتاح الطوارئ فعالاً دائماً.',
-                        'Unlocks quickly and lets you reset a forgotten master password via biometrics/passkey without losing any records.',
-                        'ڕێگەت پێدەدات خێرا بیکەیتەوە و لە کاتی لەبیرچوونەوەدا وشەی نهێنی نوێ بە پەنجەمۆر دابنێیت.'
-                      )
-                  : biometricUnavailableReason === 'not-enrolled-os'
-                    ? bi(
-                        'لم يتم تسجيل بصمة إصبع في نظام الهاتف بعد. أضف بصمة من إعدادات أندرويد أولاً ثم عد إلى هنا لتفعيلها.',
-                        'No fingerprint is enrolled on this device yet. Add a fingerprint in Android Settings first, then return here to enable it.',
-                        'هێشتا هیچ پەنجەمۆرێک لەسەر مۆبایلەکە تۆمار نەکراوە. سەرەتا لە ڕێکخستنەکانی ئەندرۆید پەنجەمۆر زیاد بکە.'
-                      )
-                    : biometricUnavailableReason === 'no-hardware'
+                    : biometricMode === 'desktop-os'
                       ? bi(
-                          'لا يوجد مستشعر بصمة متوافق على هذا الجهاز. يمكنك الاستمرار باستخدام كلمة المرور الرئيسية ومفتاح الاسترداد.',
-                          'No compatible biometric sensor was detected on this device. Continue using your master password and recovery key.',
-                          'هیچ هەستەوەری پەنجەمۆری گونجاو لەسەر ئەم ئامێرە نییە.'
+                          'يستخدم رمز/كلمة مرور الحاسوب أو البصمة عبر النظام مباشرة (Windows Hello / Touch ID) مع تشفير DPAPI المحلي لفتح الخزينة تماماً مثل غوغل دون أي رمز إضافي.',
+                          'Uses your computer lock credentials directly (Windows Hello PC PIN/password/biometrics or Touch ID) backed by OS DPAPI encryption — just like Google.',
+                          'ڕاستەوخۆ وشەی نهێنی یان کۆدی PINی کۆمپیوتەر (Windows Hello / Touch ID) بەکاردەهێنێت لەگەڵ کۆدکردنی ناوخۆیی DPAPI.'
                         )
-                      : biometricUnavailableReason === 'desktop-electron'
+                      : bi(
+                          'يتيح فتح الخزينة بسرعة وكذلك تعيين كلمة مرور جديدة عبر قفل الحاسوب أو البصمة (Windows Hello / Touch ID / Passkey) تماماً مثل غوغل، مع بقاء مفتاح الطوارئ فعالاً دائماً.',
+                          'Unlocks quickly and resets a forgotten password using your PC/device lock (Windows Hello / Touch ID / Passkey), just like Google.',
+                          'ڕێگەت پێدەدات خێرا بیکەیتەوە و وشەی نهێنی نوێ دابنێیت بە قفڵی کۆمپیوتەر یان پەنجەمۆر (Windows Hello / Touch ID / Passkey).'
+                        )
+                  : biometricUnavailableReason === 'restricted-iframe'
+                    ? bi(
+                        'المتصفح يمنع طلب قفل الحاسوب (Windows Hello / Passkey) داخل نافذة المعاينة المضمّنة. افتح التطبيق في تبويب متصفح مستقل لتفعيل الفتح بكلمة مرور أو رمز الحاسوب مباشرة.',
+                        'Your browser blocks PC Device Lock (Windows Hello / Passkeys) inside embedded preview frames. Open the app in a standalone browser tab to enable PC PIN/password unlock.',
+                        'وێبگەڕ ڕێگە بە قفڵی کۆمپیوتەر (Windows Hello / Passkey) نادات لە ناو پەنجەرەی پێشبینینی هاوپێچکراو. ئەپەکە لە تابێکی سەربەخۆدا بکەرەوە.'
+                      )
+                    : biometricUnavailableReason === 'not-enrolled-os'
+                      ? isElectronDesktop()
                         ? bi(
-                            'الفتح بالبصمة متاح على تطبيق أندرويد ومتصفحات الويب الداعمة لـ Passkey؛ على نسخة سطح المكتب استخدم كلمة المرور الرئيسية.',
-                            'Biometric unlock is available on the Android app and Passkey-enabled browsers; on Windows Desktop use your master password.',
-                            'کردنەوە بە پەنجەمۆر لە بەرنامەی ئەندرۆید و وێبگەڕە پشتگیرکراوەکاندا بەردەستە.'
+                            'لم يتم إعداد قفل الجهاز (Windows Hello / رمز الحاسوب) في إعدادات ويندوز بعد. فعّله من إعدادات الحساب في ويندوز ثم عد إلى هنا.',
+                            'Windows Hello (PC PIN / biometrics) is not configured in Windows Settings yet. Set it up in Windows Accounts -> Sign-in options first.',
+                            'هێشتا قفڵی ئامێر (Windows Hello / PIN) لە ڕێکخستنەکانی ویندۆزدا دانەنراوە.'
                           )
                         : bi(
-                            'البصمة غير مدعومة في هذا المتصفح (تتطلب تطبيق أندرويد المحدّث أو متصفح Chrome/Edge/Safari عبر HTTPS مع بصمة مفعّلة).',
-                            'Biometrics are unavailable in this browser context (requires the updated Android APK or HTTPS Chrome/Edge/Safari with a platform authenticator).',
-                            'پەنجەمۆر لەم وێبگەڕەدا پشتگیری ناکرێت (پێویستی بە وەشانی نوێی APKی ئەندرۆید یان وێبگەڕی HTTPS هەیە).'
+                            'لم يتم تسجيل بصمة إصبع في نظام الهاتف بعد. أضف بصمة من إعدادات أندرويد أولاً ثم عد إلى هنا لتفعيلها.',
+                            'No fingerprint is enrolled on this device yet. Add a fingerprint in Android Settings first, then return here to enable it.',
+                            'هێشتا هیچ پەنجەمۆرێک لەسەر مۆبایلەکە تۆمار نەکراوە. سەرەتا لە ڕێکخستنەکانی ئەندرۆید پەنجەمۆر زیاد بکە.'
+                          )
+                      : biometricUnavailableReason === 'no-hardware'
+                        ? bi(
+                            'لا يتوفر قفل نظام مدعوم (Windows Hello / مستشعر بصمة) على هذا الجهاز حالياً.',
+                            'No compatible OS device lock or biometric hardware was detected on this device.',
+                            'هیچ قفڵی سیستەم یان هەستەوەری پەنجەمۆری گونجاو لەسەر ئەم ئامێرە بەردەست نییە.'
+                          )
+                        : bi(
+                            'هذا المتصفح لا يدعم مفتاح مرور النظام (WebAuthn Passkey). جرّب Chrome أو Edge في تبويب مستقل أو استخدم تطبيق الحاسوب (.exe).',
+                            'This browser does not support WebAuthn Platform Passkeys. Try Chrome or Edge in a standalone tab or use the Windows Desktop app (.exe).',
+                            'ئەم وێبگەڕە پشتگیری WebAuthn Passkey ناکات. لە Chrome یان Edge بە سەربەخۆیی بیکەرەوە یان ئەپی کۆمپیوتەر (.exe) بەکاربهێنە.'
                           )}
               </p>
               {prfError && <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold mt-1">{prfError}</p>}
             </div>
+
+            {biometricUnavailableReason === 'restricted-iframe' && typeof window !== 'undefined' && (
+              <a
+                href={window.location.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="settings-open-standalone-tab-link"
+                className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/15 border border-primary/25 text-xs font-bold text-primary inline-flex items-center gap-1.5 shrink-0 transition-colors"
+              >
+                <ExternalLink className="size-3.5 shrink-0" />
+                <span>{bi('فتح في تبويب مستقل', 'Open Standalone Tab', 'کردنەوە لە تابێکی سەربەخۆ')}</span>
+              </a>
+            )}
 
             {isPrfSupported && (
               <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -595,7 +765,7 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
                     }}
                     className="min-h-[36px] px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold cursor-pointer"
                   >
-                    {bi('تعيين كلمة مرور بالبصمة', 'Reset Password via Biometrics', 'دانانی وشەی نهێنی بە پەنجەمۆر')}
+                    {bi('تعيين كلمة مرور بقفل الجهاز', 'Reset Password via Device Lock', 'دانانی وشەی نهێنی بە قفڵی ئامێر')}
                   </button>
                 )}
                 <button
@@ -609,12 +779,232 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
                     ? bi('جاري المعالجة...', 'Working...', 'جێبەجێ دەکرێت...')
                     : isPrfEnrolled
                       ? bi('تعطيل', 'Disable', 'ناچالاککردن')
-                      : bi('تفعيل البصمة', 'Enable Fingerprint', 'چالاککردنی پەنجەمۆر')}
+                      : biometricMode === 'android-native'
+                        ? bi('تفعيل البصمة', 'Enable Fingerprint', 'چالاککردنی پەنجەمۆر')
+                        : bi('تفعيل قفل الحاسوب / البصمة', 'Enable Device Lock', 'چالاککردنی قفڵی ئامێر')}
                 </button>
               </div>
             )}
           </div>
         </div>
+
+        {/* Optional In-App Quick PIN Fallback (Collapsed unless active) */}
+        <details
+          open={isPinEnrolled}
+          data-testid="settings-quick-pin-fallback-details"
+          className="pt-3 border-t border-card-divider group"
+        >
+          <summary className="list-none flex items-center justify-between gap-2 cursor-pointer text-xs font-semibold text-muted-foreground-1 hover:text-foreground select-none">
+            <span className="inline-flex items-center gap-2">
+              <KeyRound className="size-3.5 text-primary shrink-0" />
+              <span>
+                {bi(
+                  'بديل يدوي اختياري: رمز PIN داخل التطبيق',
+                  'Optional Fallback: In-App Quick PIN',
+                  'بژاردەی لاوەکی: کۆدی PINی ناوخۆیی'
+                )}
+              </span>
+              {isPinEnrolled && (
+                <span className="text-emerald-700 dark:text-emerald-400 font-bold">
+                  · {bi('مفعّل', 'Active', 'چالاکە')}
+                </span>
+              )}
+            </span>
+            <span className="text-xs text-muted-foreground-2 group-open:hidden">
+              {bi('عرض', 'Show', 'پیشاندان')}
+            </span>
+          </summary>
+
+        <div
+          data-testid="settings-quick-pin-section"
+          className="pt-3 space-y-2.5"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-foreground">
+                <KeyRound className="size-4 text-primary shrink-0" />
+                <span>
+                  {bi(
+                    'الفتح السريع برمز PIN (للحاسوب والمتصفحات)',
+                    'Quick PIN Unlock (Desktop & Browser)',
+                    'کردنەوەی خێرا بە کۆدی PIN (بۆ کۆمپیوتەر و وێبگەڕ)'
+                  )}
+                </span>
+                <span aria-hidden="true" className="text-muted-foreground-2">·</span>
+                <span
+                  data-testid="settings-quick-pin-status"
+                  className={`font-semibold ${
+                    isPinEnrolled
+                      ? 'text-emerald-700 dark:text-emerald-400'
+                      : 'text-muted-foreground-1'
+                  }`}
+                >
+                  {isPinEnrolled
+                    ? bi('مفعّل', 'Active', 'چالاکە')
+                    : bi('غير مفعّل', 'Off', 'ناچالاکە')}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground-1 mt-0.5 leading-relaxed">
+                {bi(
+                  'بديل البصمة على الحاسوب والأنظمة التي لا تدعم Passkey: افتح الخزينة برمز رقمي سريع (4–12 رقماً)، مع تعطيله تلقائياً بعد 5 محاولات خاطئة وبقاء كلمة المرور الرئيسية كما هي.',
+                  'Works on Desktop & all browsers without WebAuthn: unlock your vault with a fast numeric PIN (4–12 digits). Automatically disables after 5 failed attempts; your master password remains unchanged.',
+                  'جێگرەوەی پەنجەمۆرە لەسەر کۆمپیوتەر و هەموو وێبگەڕەکان: خەزێنە بە کۆدێکی ژمارەیی (٤–١٢ ژمارە) بکەرەوە و دوای ٥ هەوڵی هەڵە خۆکار ناچالاک دەبێت.'
+                )}
+              </p>
+              {quickPinSaved && (
+                <p className="text-xs text-emerald-700 dark:text-emerald-400 font-bold mt-1">
+                  {bi(
+                    'تم حفظ رمز PIN السريع بنجاح — يمكنك استخدامه الآن في شاشة القفل.',
+                    'Quick PIN saved! You can use it next time on the lock screen.',
+                    'کۆدی PIN بە سەرکەوتوویی پاشەکەوت کرا — دەتوانیت لە شاشەی قفڵ بەکاریبهێنیت.'
+                  )}
+                </p>
+              )}
+              {!showQuickPinForm && quickPinError && (
+                <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold mt-1">{quickPinError}</p>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {isPinEnrolled && (
+                <button
+                  type="button"
+                  data-testid="settings-disable-quick-pin-btn"
+                  disabled={quickPinBusy}
+                  onClick={() => void handleDisableQuickPin()}
+                  className="min-h-[36px] px-3 py-1.5 rounded-xl bg-surface hover:bg-layer-hover border border-line-2 text-xs font-bold text-rose-700 dark:text-rose-400 disabled:opacity-50 cursor-pointer"
+                >
+                  {bi('تعطيل', 'Disable', 'ناچالاککردن')}
+                </button>
+              )}
+              <button
+                type="button"
+                data-testid="settings-toggle-quick-pin-form-btn"
+                disabled={quickPinBusy}
+                onClick={() => {
+                  setQuickPinError(null);
+                  setQuickPinSaved(false);
+                  setShowQuickPinForm((prev) => !prev);
+                }}
+                className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-surface hover:bg-layer-hover border border-line-2 text-xs font-bold text-foreground disabled:opacity-50 cursor-pointer shrink-0"
+              >
+                {showQuickPinForm
+                  ? bi('إغلاق', 'Close', 'داخستن')
+                  : isPinEnrolled
+                    ? bi('تغيير رمز PIN', 'Change PIN', 'گۆڕینی کۆدی PIN')
+                    : bi('تفعيل رمز PIN', 'Enable Quick PIN', 'چالاککردنی کۆدی PIN')}
+              </button>
+            </div>
+          </div>
+
+          {showQuickPinForm && (
+            <form
+              onSubmit={(e) => void handleSaveQuickPin(e)}
+              data-testid="settings-quick-pin-form"
+              className="p-3.5 rounded-xl bg-surface/75 border border-line-2 space-y-2.5"
+            >
+              {!vaultKek && (
+                <div>
+                  <label htmlFor="settings-quick-pin-master-pw" className="sr-only">
+                    {bi('كلمة المرور الرئيسية', 'Master password', 'وشەی نهێنی سەرەکی')}
+                  </label>
+                  <input
+                    id="settings-quick-pin-master-pw"
+                    type="password"
+                    autoComplete="current-password"
+                    dir="ltr"
+                    value={quickPinMasterPw}
+                    onChange={(e) => {
+                      setQuickPinMasterPw(e.target.value);
+                      setQuickPinError(null);
+                    }}
+                    placeholder={bi(
+                      'أدخل كلمة المرور الرئيسية أولاً للتحقق',
+                      'Enter master password first to authorize PIN',
+                      'سەرەتا وشەی نهێنی سەرەکی بنووسە بۆ دڵنیاکردنەوە'
+                    )}
+                    className="w-full px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs text-foreground focus:outline-none focus:border-primary"
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  id="settings-quick-pin-input"
+                  data-testid="settings-quick-pin-input"
+                  type="password"
+                  autoComplete="off"
+                  inputMode="numeric"
+                  dir="ltr"
+                  lang="en"
+                  maxLength={12}
+                  aria-label={bi('رمز PIN السريع الجديد', 'New Quick PIN', 'کۆدی PINی نوێ')}
+                  value={quickPinInput}
+                  onChange={(e) => {
+                    setQuickPinInput(normalizeVaultPinInput(e.target.value).replace(/[^0-9]/g, '').slice(0, 12));
+                    setQuickPinError(null);
+                  }}
+                  placeholder={bi('رمز PIN جديد (4–12 رقماً)', 'New PIN (4–12 digits)', 'کۆدی PINی نوێ (٤–١٢ ژمارە)')}
+                  className="px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-mono font-bold text-foreground tracking-widest focus:outline-none focus:border-primary"
+                />
+                <input
+                  id="settings-quick-pin-confirm"
+                  data-testid="settings-quick-pin-confirm"
+                  type="password"
+                  autoComplete="off"
+                  inputMode="numeric"
+                  dir="ltr"
+                  lang="en"
+                  maxLength={12}
+                  aria-label={bi('تأكيد رمز PIN السريع', 'Confirm Quick PIN', 'دڵنیاکردنەوەی کۆدی PIN')}
+                  value={quickPinConfirm}
+                  onChange={(e) => {
+                    setQuickPinConfirm(normalizeVaultPinInput(e.target.value).replace(/[^0-9]/g, '').slice(0, 12));
+                    setQuickPinError(null);
+                  }}
+                  placeholder={bi('تأكيد رمز PIN', 'Confirm PIN', 'دڵنیاکردنەوەی PIN')}
+                  className="px-3 py-2 rounded-xl bg-layer border border-layer-line text-xs font-mono font-bold text-foreground tracking-widest focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <p className="text-xs text-muted-foreground-1">
+                {bi(
+                  'ملاحظة: تُرفض الرموز المتكررة أو المتسلسلة مثل 1234 أو 0000 لحماية بياناتك.',
+                  'Note: Trivial or sequential codes like 1234 or 0000 are rejected.',
+                  'تێبینی: کۆدە سادە و دووبارەکان وەک 1234 یان 0000 ڕەتدەکرێنەوە.'
+                )}
+              </p>
+
+              {quickPinError && (
+                <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold">{quickPinError}</p>
+              )}
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowQuickPinForm(false);
+                    setQuickPinError(null);
+                  }}
+                  className="min-h-[36px] px-3 py-1.5 rounded-xl bg-card border border-line-2 text-xs font-bold text-foreground cursor-pointer"
+                >
+                  {bi('إلغاء', 'Cancel', 'پاشگەزبوونەوە')}
+                </button>
+                <button
+                  type="submit"
+                  data-testid="settings-save-quick-pin-btn"
+                  disabled={quickPinBusy}
+                  className="min-h-[36px] px-4 py-1.5 rounded-xl bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground text-xs font-bold cursor-pointer"
+                >
+                  {quickPinBusy
+                    ? bi('جاري التشفير والحفظ...', 'Encrypting & Saving...', 'کۆدکردن و پاشەکەوتکردن...')
+                    : bi('حفظ رمز PIN', 'Save Quick PIN', 'پاشەکەوتکردنی PIN')}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+        </details>
 
         {/* Password Change / Anti-Lockout Protection (Signal Reminders + OS Password Manager + Passkey Reset) */}
         <div className="pt-3.5 border-t border-card-divider space-y-3">

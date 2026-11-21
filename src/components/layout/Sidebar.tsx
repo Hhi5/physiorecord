@@ -239,26 +239,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
       data-testid="desktop-rail"
       data-expanded={isExpanded ? 'true' : 'false'}
       aria-label={bi('التنقل الرئيسي للعيادة', 'Main Clinic Navigation', 'گەڕانی سەرەکی کلینیک')}
-      className={`hidden md:flex flex-col shrink-0 h-dvh select-none z-30 border-e border-line-2/70 bg-card/85 backdrop-blur-md transition-[width] duration-200 ease-out relative ${
-        isExpanded ? 'w-[224px]' : 'w-[68px]'
+      className={`pr-desktop-rail hidden md:flex flex-col shrink-0 h-dvh select-none z-30 transition-[width] duration-200 ease-out relative ${
+        isExpanded ? 'w-[228px]' : 'w-[72px]'
       }`}
     >
       {/* 1. Top Brand + Collapse Toggle */}
       <div
-        className={`shrink-0 pt-3.5 pb-2.5 flex items-center ${
-          isExpanded ? 'justify-between px-3 gap-2' : 'flex-col gap-2 px-2'
+        className={`shrink-0 pt-4 pb-3 flex items-center ${
+          isExpanded ? 'justify-between px-3.5 gap-2' : 'flex-col gap-2.5 px-2'
         }`}
       >
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="pr-brand-mark">
-            <BrandLogo className="size-8" />
+          <div className="size-9 rounded-full bg-white/15 ring-1 ring-white/25 backdrop-blur-xs grid place-items-center shrink-0 text-white shadow-xs">
+            <BrandLogo className="size-6" />
           </div>
           {isExpanded && (
             <div className="min-w-0">
-              <div className="text-sm font-extrabold tracking-tight text-foreground truncate leading-tight">
+              <div className="text-sm font-extrabold tracking-tight text-white truncate leading-tight">
                 PhysioRecord
               </div>
-              <div className="text-xs text-muted-foreground-1 font-medium truncate">
+              <div className="text-xs text-white/70 font-medium truncate">
                 {bi('سجل مشفر', 'Encrypted EHR', 'تۆماری کۆدکراو')}
               </div>
             </div>
@@ -280,26 +280,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ? bi('طي القائمة الجانبية', 'Collapse rail', 'کۆکردنەوەی لیست')
               : bi('توسيع القائمة الجانبية', 'Expand rail', 'فراوانکردنی لیست')
           }
-          className="size-9 rounded-xl text-muted-foreground-1 hover:text-foreground hover:bg-surface inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+          className="size-8 rounded-full bg-white/12 hover:bg-white/22 text-white/90 hover:text-white inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
         >
           <CollapseIcon className="size-4" />
         </button>
       </div>
 
       {/* 2. Permanent Global Search (Cmd+K) & Unified "+" Quick Add */}
-      <div className={`shrink-0 space-y-2 pb-3 border-b border-card-divider/60 ${isExpanded ? 'px-3' : 'px-2'}`}>
+      <div className={`shrink-0 space-y-2 pb-3 border-b border-white/12 ${isExpanded ? 'px-3.5' : 'px-2.5'}`}>
         <button
           type="button"
           data-testid="rail-search-btn"
           onClick={onOpenGlobalSearch}
           aria-label={bi('بحث شامل أو أمر (Ctrl+K)', 'Search or Command (Ctrl+K)', 'گەڕانی خێرا (Ctrl+K)')}
           title={bi('بحث وأوامر (Ctrl+K)', 'Search & Commands (Ctrl+K)', 'گەڕان و فەرمانەکان (Ctrl+K)')}
-          className={`w-full min-h-[38px] rounded-xl bg-surface/90 hover:bg-surface border border-line-2/60 text-muted-foreground-1 hover:text-foreground text-xs font-semibold flex items-center transition-colors cursor-pointer ${
-            isExpanded ? 'px-2.5 gap-2 justify-between' : 'justify-center px-0'
+          className={`w-full min-h-[38px] rounded-full bg-white/10 hover:bg-white/16 border border-white/15 text-white/85 hover:text-white text-xs font-semibold flex items-center transition-colors cursor-pointer ${
+            isExpanded ? 'px-3 gap-2 justify-between' : 'justify-center px-0'
           }`}
         >
           <span className="flex items-center gap-2 min-w-0">
-            <Search className="size-4 text-primary shrink-0" />
+            <Search className="size-4 text-white/90 shrink-0" />
             {isExpanded && (
               <span className="truncate">{bi('بحث سريع...', 'Search...', 'گەڕان...')}</span>
             )}
@@ -307,7 +307,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {isExpanded && (
             <kbd
               dir="ltr"
-              className="px-1.5 py-0.5 rounded-md bg-card border border-line-2/70 text-[10px] font-mono text-muted-foreground-1 shrink-0"
+              className="px-1.5 py-0.5 rounded-md bg-white/15 border border-white/20 text-[10px] font-mono text-white/90 shrink-0"
             >
               ⌘K
             </kbd>
@@ -327,7 +327,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             aria-label={bi('إضافة سريعة', 'Quick Add', 'زیادکردنی خێرا')}
             title={bi('إضافة سريعة (مريض · موعد · فاتورة)', 'Quick Add (Patient · Appointment · Invoice)')}
-            className={`w-full min-h-[38px] rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer ${
+            className={`w-full min-h-[38px] rounded-full bg-white hover:bg-white/95 text-primary-900 text-xs font-extrabold inline-flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer ${
               isExpanded ? 'px-3' : 'px-0'
             }`}
           >
@@ -349,11 +349,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* 3. Core Clinical Destinations */}
+      {/* 3. Core Clinical Destinations with Liquid Workspace Cutout on Active Item */}
       <nav
         aria-label={bi('الأقسام الأساسية', 'Primary Clinical Navigation', 'بەشە سەرەکییەکان')}
-        className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-3 space-y-1.5 ${
-          isExpanded ? 'px-2.5' : 'px-2'
+        className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-4 space-y-2 ${
+          isExpanded ? 'ps-3.5 pe-0' : 'px-2 flex flex-col items-center'
         }`}
       >
         {coreNavItems.map((item) => {
@@ -362,49 +362,114 @@ export const Sidebar: React.FC<SidebarProps> = ({
             selectedPatient !== null ? item.id === 'directory' : activeNav === item.id;
           const label = bi(item.labelAr, item.labelEn, item.labelCkb);
 
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                onSelectPatient(null);
-                onSelectNav(item.id);
-              }}
-              data-active={isActive}
-              data-nav-id={item.id}
-              aria-label={label}
-              title={label}
-              aria-current={isActive ? 'page' : undefined}
-              className={`pr-nav-item relative ${
-                isExpanded
-                  ? 'justify-start px-3 gap-2.5'
-                  : 'justify-center px-0 min-h-[44px]'
-              }`}
-            >
-              <Icon
-                className={`size-[1.15rem] shrink-0 ${
-                  isActive ? 'text-primary' : 'text-muted-foreground-1'
+          if (!isExpanded) {
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  onSelectPatient(null);
+                  onSelectNav(item.id);
+                }}
+                data-active={isActive}
+                data-nav-id={item.id}
+                aria-label={label}
+                title={label}
+                aria-current={isActive ? 'page' : undefined}
+                className={`relative size-11 rounded-full inline-flex items-center justify-center transition-all duration-150 cursor-pointer shrink-0 ${
+                  isActive
+                    ? 'bg-background-1 text-primary shadow-md ring-2 ring-white/30'
+                    : 'bg-white/10 hover:bg-white/20 text-white/90 hover:text-white'
                 }`}
-              />
-              {isExpanded && <span className="truncate flex-1 text-start">{label}</span>}
-              {isExpanded && item.badge !== undefined && (
-                <span
-                  className={`min-w-[1.375rem] px-1.5 py-0.5 text-xs rounded-full font-bold text-center tabular-nums ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-surface text-muted-foreground-1'
-                  }`}
-                >
-                  <Num value={item.badge} />
-                </span>
+              >
+                <Icon className="size-[1.15rem] shrink-0" />
+              </button>
+            );
+          }
+
+          return (
+            <div key={item.id} className={`relative ${isActive ? 'pe-0' : 'pe-3.5'}`}>
+              {/* Concave Top & Bottom Corner Bridges connecting the active tab seamlessly to the main workspace canvas */}
+              {isActive && (
+                <>
+                  <svg
+                    aria-hidden="true"
+                    data-testid="rail-active-cutout-top"
+                    width={20}
+                    height={19}
+                    viewBox="0 0 20 19"
+                    shapeRendering="geometricPrecision"
+                    className="pointer-events-none absolute -top-[18px] -end-0.5 w-[20px] h-[19px]"
+                  >
+                    <path
+                      d={
+                        isRtl
+                          ? 'M0 0 L2 0 A18 18 0 0 0 20 18 L20 19 L0 19 Z'
+                          : 'M20 0 L20 19 L0 19 L0 18 A18 18 0 0 0 18 0 L20 0 Z'
+                      }
+                      fill="var(--background-1)"
+                    />
+                  </svg>
+                  <svg
+                    aria-hidden="true"
+                    data-testid="rail-active-cutout-bottom"
+                    width={20}
+                    height={19}
+                    viewBox="0 0 20 19"
+                    shapeRendering="geometricPrecision"
+                    className="pointer-events-none absolute -bottom-[18px] -end-0.5 w-[20px] h-[19px]"
+                  >
+                    <path
+                      d={
+                        isRtl
+                          ? 'M0 0 L20 0 L20 1 A18 18 0 0 0 2 19 L0 19 Z'
+                          : 'M20 0 L20 19 L18 19 A18 18 0 0 0 0 1 L0 0 Z'
+                      }
+                      fill="var(--background-1)"
+                    />
+                  </svg>
+                </>
               )}
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onSelectPatient(null);
+                  onSelectNav(item.id);
+                }}
+                data-active={isActive}
+                data-nav-id={item.id}
+                aria-label={label}
+                title={label}
+                aria-current={isActive ? 'page' : undefined}
+                className={`pr-nav-item relative justify-start px-3.5 gap-2.5 ${
+                  isActive ? 'pe-4' : 'bg-white/[0.08] hover:bg-white/[0.16]'
+                }`}
+              >
+                <Icon
+                  className={`size-[1.15rem] shrink-0 ${
+                    isActive ? 'text-primary' : 'text-white/85'
+                  }`}
+                />
+                <span className="truncate flex-1 text-start">{label}</span>
+                {item.badge !== undefined && (
+                  <span
+                    className={`min-w-[1.375rem] px-1.5 py-0.5 text-xs rounded-full font-bold text-center tabular-nums ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-white/15 text-white/90'
+                    }`}
+                  >
+                    <Num value={item.badge} />
+                  </span>
+                )}
+              </button>
+            </div>
           );
         })}
       </nav>
 
       {/* 4. Compact Account & Clinic Utility Popover Trigger */}
-      <div className={`relative shrink-0 border-t border-card-divider/70 ${isExpanded ? 'p-2.5' : 'p-2'}`}>
+      <div className={`relative shrink-0 border-t border-white/12 ${isExpanded ? 'p-3' : 'p-2.5'}`}>
         <button
           ref={accountBtnRef}
           type="button"
@@ -417,27 +482,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }}
           aria-label={bi('قائمة العيادة والإعدادات', 'Clinic & Account Menu', 'مێنووی کلینیک و هەژمار')}
           title={bi('قائمة العيادة والإعدادات', 'Clinic & Account Menu', 'مێنووی کلینیک و هەژمار')}
-          className={`w-full min-h-[44px] rounded-xl hover:bg-surface/90 text-foreground transition-colors flex items-center cursor-pointer ${
-            isExpanded ? 'px-2 py-1.5 justify-between gap-2' : 'justify-center px-0'
+          className={`w-full min-h-[44px] rounded-2xl bg-white/[0.07] hover:bg-white/[0.14] text-white transition-colors flex items-center cursor-pointer ${
+            isExpanded ? 'px-2.5 py-1.5 justify-between gap-2' : 'justify-center px-0'
           }`}
         >
           <span className="relative inline-flex items-center gap-2.5 min-w-0">
-            <span className="relative size-8 rounded-full bg-primary/12 text-primary inline-flex items-center justify-center shrink-0">
+            <span className="relative size-8 rounded-full bg-white/18 text-white inline-flex items-center justify-center shrink-0">
               <User className="size-4" />
               <span
                 aria-hidden="true"
-                className={`absolute -top-0.5 -end-0.5 size-2.5 rounded-full ring-2 ring-card ${
-                  hasAttentionDot ? 'bg-amber-500' : 'bg-emerald-500'
+                className={`absolute -top-0.5 -end-0.5 size-2.5 rounded-full ring-2 ring-primary-900 ${
+                  hasAttentionDot ? 'bg-amber-400' : 'bg-emerald-400'
                 }`}
               />
             </span>
             {isExpanded && (
               <span className="min-w-0 text-start">
-                <span className="flex items-center gap-1.5 text-xs font-extrabold text-foreground truncate">
+                <span className="flex items-center gap-1.5 text-xs font-extrabold text-white truncate">
                   <span className="truncate">{userMenuRoleLabel}</span>
                   {hasDemoRecords && <DemoBadge />}
                 </span>
-                <span className="block text-xs text-muted-foreground-1 truncate">
+                <span className="block text-xs text-white/70 truncate">
                   {isBackupOverdue
                     ? bi('يتطلب نسخ احتياطي', 'Backup recommended', 'پاشەکەوت پێویستە')
                     : bi('الإعدادات والقفل', 'Settings & Lock', 'ڕێکخستن و قوفڵ')}
@@ -445,7 +510,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </span>
             )}
           </span>
-          {isExpanded && <ChevronsUpDown className="size-3.5 text-muted-foreground-1 shrink-0" />}
+          {isExpanded && <ChevronsUpDown className="size-3.5 text-white/75 shrink-0" />}
         </button>
 
         <AccountMenuPopover

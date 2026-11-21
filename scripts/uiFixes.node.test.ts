@@ -267,3 +267,85 @@ test('Native Android BiometricPrompt bridge detects ready/none_enrolled and roun
     }
   }
 });
+
+test('computeFloatingA4Scale keeps floating A4 paper miniature with clean margins on mobile and desktop', async () => {
+  const { A4_HEIGHT_PX, A4_WIDTH_PX, computeFloatingA4Scale } = await import(
+    '../src/utils/printPreviewScale'
+  );
+
+  // Mobile 390x600 stage in mini mode: paper fits inside with generous margins (< 340px wide)
+  const mobileMini = computeFloatingA4Scale({
+    containerWidth: 390,
+    containerHeight: 600,
+    contentHeightPx: A4_HEIGHT_PX,
+    zoomMode: 'mini',
+  });
+  assert.ok(mobileMini.scaledWidth <= 340, `Expected mobile mini width <= 340, got ${mobileMini.scaledWidth}`);
+  assert.ok(mobileMini.scaledWidth >= 240, `Expected mobile mini width >= 240, got ${mobileMini.scaledWidth}`);
+  assert.ok(mobileMini.scaledHeight <= 540, `Expected mobile mini height <= 540, got ${mobileMini.scaledHeight}`);
+
+  // Desktop 1440x740 stage in mini mode: floats as a refined miniature card (<= 500px wide)
+  const desktopMini = computeFloatingA4Scale({
+    containerWidth: 1440,
+    containerHeight: 740,
+    contentHeightPx: A4_HEIGHT_PX,
+    zoomMode: 'mini',
+  });
+  assert.ok(desktopMini.scaledWidth <= 500, `Expected desktop mini width <= 500, got ${desktopMini.scaledWidth}`);
+  assert.ok(desktopMini.scaledWidth >= 360, `Expected desktop mini width >= 360, got ${desktopMini.scaledWidth}`);
+
+  // Readable mode scales up closer to full A4 width without exceeding 1.0x
+  const desktopReadable = computeFloatingA4Scale({
+    containerWidth: 1440,
+    containerHeight: 740,
+    contentHeightPx: A4_HEIGHT_PX,
+    zoomMode: 'readable',
+  });
+  assert.ok(desktopReadable.scale > desktopMini.scale);
+  assert.ok(desktopReadable.scaledWidth <= A4_WIDTH_PX);
+});
+
+test('buildCleanReferringDoctorSalutation prevents duplicated Arabic/English doctor titles', async () => {
+  const { buildCleanReferringDoctorSalutation } = await import('../src/utils/printPreviewScale');
+
+  // Previously produced: "تحية طيبة وبعد، إلى الدكتور/ة الزميل الدكتور المحترم"
+  assert.equal(
+    buildCleanReferringDoctorSalutation({ doctorName: 'الزميل الدكتور', isAr: true }),
+    'تحية طيبة وبعد، إلى الزميل الدكتور المحترم'
+  );
+  assert.equal(
+    buildCleanReferringDoctorSalutation({ doctorName: 'د. علي الشمري', isAr: true }),
+    'تحية طيبة وبعد، إلى د. علي الشمري المحترم'
+  );
+  assert.equal(
+    buildCleanReferringDoctorSalutation({
+      doctorName: 'أحمد كريم',
+      doctorSpecialty: 'جراحة العظام',
+      isAr: true,
+    }),
+    'تحية طيبة وبعد، إلى الدكتور/ة أحمد كريم المحترم (جراحة العظام)'
+  );
+  assert.equal(
+    buildCleanReferringDoctorSalutation({ doctorName: '', isAr: true }),
+    'تحية طيبة وبعد، إلى الزميل الدكتور المحترم'
+  );
+
+  // English cases
+  assert.equal(
+    buildCleanReferringDoctorSalutation({ doctorName: 'Dr. Sarah Al-Ani', isAr: false }),
+    'Dear Dr. Sarah Al-Ani,'
+  );
+  assert.equal(
+    buildCleanReferringDoctorSalutation({ doctorName: 'John Doe', isAr: false }),
+    'Dear Dr. John Doe,'
+  );
+  assert.equal(
+    buildCleanReferringDoctorSalutation({ doctorName: 'Colleague Physician', isAr: false }),
+    'Dear Colleague Physician,'
+  );
+  assert.equal(
+    buildCleanReferringDoctorSalutation({ doctorName: '', isAr: false }),
+    'Dear Colleague Physician,'
+  );
+});
+

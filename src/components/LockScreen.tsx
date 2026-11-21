@@ -3,7 +3,7 @@
 // Supports First-Time Setup, Recovery Key Generation, Vault Unlock & Wipe
 // =======================================================================
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useVault } from '../context/VaultContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -12,6 +12,7 @@ import { BrandLogo } from './ui/BrandLogo';
 import { ModalDialog } from './ui/Dialog';
 import { copySecretWithAutoClear } from '../utils/clipboardPrivacy';
 import { VAULT_CREDENTIAL_USERNAME } from '../utils/passwordManagerHelper';
+import { normalizeVaultPinInput } from '../crypto/vaultPin';
 import {
   saveTextFilePortable,
   triggerPlatformPrint,
@@ -75,9 +76,11 @@ export const LockScreen: React.FC = () => {
     completeSetup,
     unlock,
     unlockWithPrf,
+    unlockWithPin,
     kdfProgress,
     isPrfSupported,
     isPrfEnrolled,
+    isPinEnrolled,
     schemaDowngradeError,
     resetPasswordWithRecovery,
     resetPasswordWithPrf,
@@ -105,8 +108,18 @@ export const LockScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [unlockMethod, setUnlockMethod] = useState<'password' | 'pin'>(() =>
+    isPinEnrolled ? 'pin' : 'password'
+  );
+  const [pinCode, setPinCode] = useState('');
+  const [showPinCode, setShowPinCode] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    setUnlockMethod(isPinEnrolled && isInitialized ? 'pin' : 'password');
+    setPinCode('');
+  }, [isPinEnrolled, isInitialized]);
 
   // Post-setup Recovery Key Display Modal
   const [generatedRecoveryKey, setGeneratedRecoveryKey] = useState<string | null>(null);
@@ -193,6 +206,59 @@ export const LockScreen: React.FC = () => {
                 'تعذر إنشاء الخزينة المشفرة.',
                 'Failed to initialize encrypted vault.',
                 'دروستکردنی خەزێنەی نهێنیکراو سەرکەوتوو نەبوو.'
+              )
+        );
+      } finally {
+        setSubmitting(false);
+      }
+    } else if (isPinEnrolled && unlockMethod === 'pin') {
+      const normalizedPin = normalizeVaultPinInput(pinCode);
+      if (!normalizedPin) {
+        setLocalError(bi('يرجى إدخال رمز PIN السريع.', 'Please enter your Quick PIN.', 'تکایە کۆدی PIN بنووسە.'));
+        return;
+      }
+
+      setSubmitting(true);
+      try {
+        const outcome = await unlockWithPin(normalizedPin);
+        if (!outcome.ok) {
+          if (outcome.disabledByFailures) {
+            setUnlockMethod('password');
+            setPinCode('');
+            setLocalError(
+              bi(
+                'تم تعطيل رمز PIN السريع تلقائياً بعد 5 محاولات خاطئة. افتح الخزينة بكلمة المرور الرئيسية.',
+                'Quick PIN was automatically disabled after 5 failed attempts. Unlock with your master password.',
+                'کۆدی PIN دوای ٥ هەوڵی هەڵە خۆکار ناچالاک کرا. بە وشەی نهێنی سەرەکی بیکەرەوە.'
+              )
+            );
+          } else if (outcome.rateLimited && outcome.remainingSeconds) {
+            setLocalError(
+              bi(
+                `محاولات كثيرة خاطئة. انتظر ${outcome.remainingSeconds} ثانية ثم أعد المحاولة أو استخدم كلمة المرور الرئيسية.`,
+                `Too many wrong PIN attempts. Wait ${outcome.remainingSeconds}s or switch to Master Password.`,
+                `هەوڵی هەڵەی زۆر درا. ${outcome.remainingSeconds} چرکە چاوەڕێ بکە یان وشەی نهێنی سەرەکی بەکاربهێنە.`
+              )
+            );
+          } else {
+            const left = outcome.remainingAttempts ?? 0;
+            setLocalError(
+              bi(
+                `رمز PIN غير صحيح. المحاولات المتبقية قبل الإيقاف: ${left}.`,
+                `Incorrect Quick PIN. Attempts remaining before disable: ${left}.`,
+                `کۆدی PIN هەڵەیە. هەوڵی ماوە: ${left}.`
+              )
+            );
+          }
+        }
+      } catch (err) {
+        setLocalError(
+          err instanceof Error
+            ? err.message
+            : bi(
+                'تعذر فتح الخزينة برمز PIN.',
+                'Failed to unlock vault with PIN.',
+                'کردنەوەی خەزێنە بە کۆدی PIN سەرکەوتوو نەبوو.'
               )
         );
       } finally {
@@ -756,6 +822,97 @@ export const LockScreen: React.FC = () => {
                 aria-hidden="true"
                 className="sr-only"
               />
+              {!isSetup && isPinEnrolled && (
+                <div
+                  role="tablist"
+                  aria-label={bi('طريقة فتح القفل', 'Unlock method', 'شێوازی کردنەوە')}
+                  className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-surface border border-card-line/50"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    data-testid="lock-method-pin-tab"
+                    aria-selected={unlockMethod === 'pin'}
+                    onClick={() => {
+                      setLocalError(null);
+                      setUnlockMethod('pin');
+                    }}
+                    className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
+                      unlockMethod === 'pin'
+                        ? 'bg-primary text-primary-foreground shadow-2xs'
+                        : 'text-muted-foreground-1 hover:text-foreground'
+                    }`}
+                  >
+                    <KeyRound className="w-3.5 h-3.5 shrink-0" />
+                    <span>{bi('رمز PIN السريع', 'Quick PIN', 'کۆدی PIN')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    data-testid="lock-method-password-tab"
+                    aria-selected={unlockMethod === 'password'}
+                    onClick={() => {
+                      setLocalError(null);
+                      setUnlockMethod('password');
+                    }}
+                    className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
+                      unlockMethod === 'password'
+                        ? 'bg-primary text-primary-foreground shadow-2xs'
+                        : 'text-muted-foreground-1 hover:text-foreground'
+                    }`}
+                  >
+                    <Lock className="w-3.5 h-3.5 shrink-0" />
+                    <span>{bi('كلمة المرور', 'Password', 'وشەی نهێنی')}</span>
+                  </button>
+                </div>
+              )}
+
+              {!isSetup && isPinEnrolled && unlockMethod === 'pin' ? (
+                <div>
+                  <label htmlFor="quick-pin-unlock" className="sr-only">
+                    {bi('رمز PIN السريع', 'Quick PIN', 'کۆدی PIN')}
+                  </label>
+                  <div className="pr-pill-input-wrap rounded-2xl bg-surface flex items-center overflow-hidden border border-card-line/50 focus-within:border-primary/45 focus-within:bg-layer transition-all">
+                    <input
+                      id="quick-pin-unlock"
+                      data-testid="lock-quick-pin-input"
+                      name="quickPin"
+                      type={showPinCode ? 'text' : 'password'}
+                      inputMode="numeric"
+                      autoComplete="off"
+                      dir="ltr"
+                      lang="en"
+                      maxLength={12}
+                      required
+                      value={pinCode}
+                      onChange={(e) => {
+                        setPinCode(normalizeVaultPinInput(e.target.value).replace(/[^0-9]/g, '').slice(0, 12));
+                        setLocalError(null);
+                      }}
+                      placeholder={bi('أدخل رمز PIN السريع', 'Enter Quick PIN', 'کۆدی PIN بنووسە')}
+                      className="pr-input-bare flex-1 min-w-0 px-4 py-3.5 text-sm font-mono font-bold tracking-widest text-foreground placeholder:text-muted-foreground-1 placeholder:tracking-normal placeholder:font-sans placeholder:font-normal"
+                    />
+                    <span className="w-px h-5 bg-card-divider shrink-0" aria-hidden="true" />
+                    <button
+                      type="button"
+                      onClick={() => setShowPinCode(!showPinCode)}
+                      aria-label={
+                        showPinCode
+                          ? bi('إخفاء رمز PIN', 'Hide PIN', 'شاردنەوەی PIN')
+                          : bi('إظهار رمز PIN', 'Show PIN', 'پیشاندانی PIN')
+                      }
+                      aria-pressed={showPinCode}
+                      className="pr-eye-bare px-3.5 py-3.5 rounded-none text-muted-foreground-1 hover:text-foreground cursor-pointer flex items-center justify-center shrink-0 focus-visible:bg-layer-hover"
+                    >
+                      {showPinCode ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
               <div>
                 <label htmlFor="password" className="sr-only">
                   {isSetup
@@ -802,6 +959,7 @@ export const LockScreen: React.FC = () => {
                   </button>
                 </div>
               </div>
+              )}
 
               {/* Minimal Setup Password Strength Indicator */}
               {isSetup && password.length > 0 && (
@@ -958,9 +1116,9 @@ export const LockScreen: React.FC = () => {
                     <Fingerprint className="w-4 h-4 text-primary" />
                     <span>
                       {bi(
-                        'فتح بالبصمة / مفتاح المرور',
-                        'Unlock with Passkey',
-                        'کردنەوە بە پەنجەمۆر'
+                        'فتح بقفل الحاسوب / البصمة',
+                        'Unlock with Device Lock / Passkey',
+                        'کردنەوە بە قفڵی ئامێر / پەنجەمۆر'
                       )}
                     </span>
                   </button>
@@ -992,7 +1150,7 @@ export const LockScreen: React.FC = () => {
                     className="font-bold text-foreground underline underline-offset-4 hover:text-primary cursor-pointer"
                   >
                     {isPrfSupported && isPrfEnrolled
-                      ? bi('استعادة بالبصمة أو مفتاح الطوارئ', 'Recover with Passkey or Key', 'گەڕاندنەوە بە پەنجەمۆر یان کلیل')
+                      ? bi('استعادة بقفل الجهاز أو مفتاح الطوارئ', 'Recover with Device Lock or Key', 'گەڕاندنەوە بە قفڵی ئامێر یان کلیل')
                       : bi('استعادة بمفتاح الطوارئ', 'Recover here', 'گەڕاندنەوە لێرە')}
                   </button>
                 </div>
@@ -1057,7 +1215,7 @@ export const LockScreen: React.FC = () => {
                   }`}
                 >
                   <Fingerprint className="size-3.5 shrink-0" />
-                  <span>{bi('بالبصمة (سريع)', 'Passkey (Fast)', 'بە پەنجەمۆر')}</span>
+                  <span>{bi('بقفل الجهاز (سريع)', 'Device Lock (Fast)', 'بە قفڵی ئامێر')}</span>
                 </button>
                 <button
                   type="button"
@@ -1083,9 +1241,9 @@ export const LockScreen: React.FC = () => {
             <p className="text-xs text-muted-foreground-2 leading-relaxed">
               {recoveryMethod === 'prf' && isPrfSupported && isPrfEnrolled
                 ? bi(
-                    'استخدم بصمة جهازك أو مفتاح المرور (Windows Hello / Touch ID / بصمة الهاتف) لتعيين كلمة مرور رئيسية جديدة فوراً دون فقدان أي سجل.',
-                    'Use your device biometrics or Passkey to set a new master password immediately without losing any clinical record.',
-                    'پەنجەمۆری ئامێرەکەت بەکاربهێنە بۆ دانانی وشەی نهێنی نوێ بەبێ لەدەستدانی هیچ تۆمارێک.'
+                    'استخدم قفل الحاسوب أو بصمة جهازك (Windows Hello / Touch ID / بصمة الهاتف) لتعيين كلمة مرور رئيسية جديدة فوراً دون فقدان أي سجل.',
+                    'Use your PC lock or device biometrics (Windows Hello / Touch ID / Passkey) to set a new master password immediately without losing any clinical record.',
+                    'قفڵی ئامێر یان پەنجەمۆرەکەت بەکاربهێنە بۆ دانانی وشەی نهێنی نوێ بەبێ لەدەستدانی هیچ تۆمارێک.'
                   )
                 : bi(
                     'أدخل مفتاح الاسترداد الطارئ المكون من 32 خانة لفك تغليف مفتاح البيانات الأصلي (DEK) وتعيين كلمة مرور جديدة دون فقدان أي سجل.',
@@ -1196,9 +1354,9 @@ export const LockScreen: React.FC = () => {
                       ? bi('جاري الاسترداد...', 'Recovering...', 'خەریکی گەڕاندنەوەیە...')
                       : recoveryMethod === 'prf' && isPrfSupported && isPrfEnrolled
                         ? bi(
-                            'تحقق بالبصمة وتعيين كلمة المرور',
-                            'Verify Passkey & Reset Password',
-                            'پشکنینی پەنجەمۆر و دانانی وشەی نهێنی'
+                            'تحقق بقفل الجهاز وتعيين كلمة المرور',
+                            'Verify Device Lock & Reset Password',
+                            'پشکنینی قفڵی ئامێر و دانانی وشەی نهێنی'
                           )
                         : bi(
                             'استرداد الخزينة وحفظ كلمة المرور',

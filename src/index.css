@@ -674,6 +674,22 @@ html.content-width-narrow .app-content-shell .max-w-7xl {
     display: none !important;
   }
 
+  body.printing-clinical-doc .pr-floating-a4-stage,
+  body.printing-clinical-doc .pr-floating-a4-frame,
+  body.printing-clinical-doc .pr-floating-a4-scaler {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    transform: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+  }
+
   body.printing-clinical-doc .print-sheet-container {
     display: flex !important;
     flex-direction: column !important;
@@ -748,25 +764,14 @@ html.content-width-narrow .app-content-shell .max-w-7xl {
   --pr-accent-softer: color-mix(in oklab, var(--primary-400) 10%, var(--background));
 }
 
-/* ---------- Canvas: calm clinical surface tuned for zero mobile repaint jank ---------- */
+/* ---------- Canvas: calm solid clinical surface matching sidebar active cutout ---------- */
 body {
   background-color: var(--background-1);
-  background-image: linear-gradient(
-    to bottom,
-    color-mix(in oklab, var(--primary-500) 2.5%, var(--background-1)),
-    var(--background-1) 18rem
-  );
-  background-repeat: no-repeat;
   min-height: 100dvh;
 }
 .dark body,
 [data-theme].dark body {
   background-color: var(--background-1);
-  background-image: linear-gradient(
-    to bottom,
-    color-mix(in oklab, var(--primary-500) 4%, var(--background-1)),
-    var(--background-1) 18rem
-  );
 }
 
 @layer components {
@@ -1107,29 +1112,46 @@ body {
   box-shadow: var(--pr-shadow-1);
 }
 
-/* ---------- Calm theme-reactive main canvas & slim rail ---------- */
+/* ---------- Calm theme-reactive main canvas & liquid-cutout desktop rail ---------- */
 .pr-main-canvas {
   background-color: var(--background-1);
-  background-image:
-    radial-gradient(110% 260px at 50% -24px, color-mix(in oklab, var(--primary-500) 14%, transparent) 0%, transparent 72%),
-    linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--primary-500) 9%, var(--background-plain)) 0%,
-      color-mix(in oklab, var(--primary-400) 5%, var(--background-1)) 12rem,
-      var(--background-1) 24rem
-    );
 }
 .dark .pr-main-canvas,
 [data-theme].dark .pr-main-canvas {
   background-color: var(--background-1);
-  background-image:
-    radial-gradient(110% 260px at 50% -24px, color-mix(in oklab, var(--primary-500) 16%, transparent) 0%, transparent 72%),
-    linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--primary-600) 14%, var(--background)) 0%,
-      color-mix(in oklab, var(--primary-700) 6%, var(--background-1)) 12rem,
-      var(--background-1) 24rem
-    );
+}
+
+/* Desktop Sidebar Rail — rich theme-tinted vertical surface so the active cutout flows cleanly into <main> */
+.pr-desktop-rail {
+  background-color: var(--primary-800);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--primary-600) 90%, #020617) 0%,
+    color-mix(in oklab, var(--primary-800) 94%, #020617) 58%,
+    color-mix(in oklab, var(--primary-950) 90%, #020617) 100%
+  );
+  color: rgba(255, 255, 255, 0.92);
+}
+.dark .pr-desktop-rail,
+[data-theme].dark .pr-desktop-rail {
+  background-color: color-mix(in oklab, var(--primary-950) 82%, #020617);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--primary-800) 56%, #020617) 0%,
+    color-mix(in oklab, var(--primary-950) 78%, #020617) 60%,
+    #03090e 100%
+  );
+  color: rgba(241, 245, 249, 0.92);
+}
+
+/* Frameless Electron Windows drag bar (shown only inside desktop EXE) */
+.pr-electron-drag-strip {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+.pr-electron-no-drag {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
 }
 
 .pr-brand-mark {
@@ -1156,30 +1178,38 @@ body {
   align-items: center;
   gap: 0.625rem;
   width: 100%;
-  min-height: 2.625rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.875rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 9999px;
   font-size: var(--font-size-14);
   font-weight: 600;
-  color: var(--sidebar-nav-foreground);
-  border: 1px solid transparent;
+  color: rgba(255, 255, 255, 0.84);
+  border: 0;
   cursor: pointer;
-  transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+  transition: background-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
 }
 .pr-nav-item:hover {
-  background-color: var(--pr-accent-softer);
-  color: var(--foreground);
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
 }
 .pr-nav-item[data-active="true"] {
-  background-color: var(--card);
+  background-color: var(--background-1);
   color: var(--primary-800);
   font-weight: 800;
-  box-shadow: var(--pr-shadow-1);
 }
 .dark .pr-nav-item[data-active="true"],
 [data-theme].dark .pr-nav-item[data-active="true"] {
-  background-color: var(--pr-accent-soft);
-  color: var(--primary-100);
+  background-color: var(--background-1);
+  color: var(--primary-300);
+}
+/* Expanded rail active item extends flush into the workspace canvas */
+.pr-desktop-rail[data-expanded="true"] .pr-nav-item[data-active="true"] {
+  width: calc(100% + 2px);
+  margin-inline-end: -2px;
+  border-start-start-radius: 9999px;
+  border-end-start-radius: 9999px;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
 }
 
 /* ---------- Mobile bottom sheet (modals on phones) ---------- */

@@ -10,7 +10,7 @@ const PREVIEW_SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer',
   'Cross-Origin-Opener-Policy': 'same-origin',
-  'Permissions-Policy': 'camera=(), microphone=(self), geolocation=()',
+  'Permissions-Policy': 'camera=(), microphone=(self), geolocation=(), publickey-credentials-create=(self), publickey-credentials-get=(self)',
 };
 
 export default defineConfig(() => {

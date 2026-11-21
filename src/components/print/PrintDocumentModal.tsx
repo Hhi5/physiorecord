@@ -25,11 +25,14 @@ import {
   Clock,
   Home,
   Minimize2,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCurrency } from '../../context/CurrencyContext';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
 import { GeometricHeaderBackdrop } from '../ui/Dialog';
+import { FloatingA4PreviewStage } from './FloatingA4PreviewStage';
+import type { PrintPreviewZoomMode } from '../../utils/printPreviewScale';
 import {
   getPrintDocumentGlossaryLabels,
   type PrintDocumentGlossaryLabels,
@@ -251,11 +254,15 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
   const [fitSinglePage, setFitSinglePage] = useState<boolean>(() =>
     SINGLE_PAGE_FIT_DOC_TYPES.has(documentType)
   );
+  const [zoomMode, setZoomMode] = useState<PrintPreviewZoomMode>('mini');
+  const [showPersonalize, setShowPersonalize] = useState(false);
 
   useEffect(() => {
     setDocLang(language === 'en' ? 'en' : 'ar');
     setShareFeedback(null);
     setFitSinglePage(SINGLE_PAGE_FIT_DOC_TYPES.has(documentType));
+    setZoomMode('mini');
+    setShowPersonalize(false);
   }, [language, isOpen, documentType]);
 
   const { printScale, isScaled } = useSinglePagePrintFit({
@@ -610,7 +617,7 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
         if (!open) onClose();
       }}
       isDismissable
-      className="react-aria-ModalOverlay print-modal-overlay fixed inset-0 z-[90] bg-slate-950/65 backdrop-blur-xs flex flex-col outline-none print:static print:inset-auto print:!bg-white print:backdrop-blur-none print:block"
+      className="react-aria-ModalOverlay print-modal-overlay fixed inset-0 z-[90] bg-slate-950/90 flex flex-col outline-none print:static print:inset-auto print:!bg-white print:block"
     >
       <Modal
         dir={isRtl ? 'rtl' : 'ltr'}
@@ -620,235 +627,165 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
           aria-label={uiDocTitle}
           className="w-full h-full flex flex-col min-h-0 outline-none print:h-auto print:!bg-white print:block overflow-hidden print:overflow-visible"
         >
-          {/* Pinned Screen-only Top Header & Action Strip (Non-shrinking, Always Visible, Zero Clipping) */}
-          <header className="print-modal-chrome w-full bg-card border-b border-card-line shadow-md shrink-0 print:hidden z-30">
-            <div className="relative overflow-hidden px-4 sm:px-6 py-3 bg-primary text-primary-foreground">
+          {/* Clean Compact Screen-only Top Bar & Zero-Overflow Controls */}
+          <header className="print-modal-chrome w-full bg-card border-b border-card-line shadow-sm shrink-0 print:hidden z-30">
+            <div className="relative overflow-hidden px-3.5 sm:px-6 py-2.5 bg-primary text-primary-foreground">
               <GeometricHeaderBackdrop />
-              <div className="relative z-10 max-w-[210mm] mx-auto flex items-center justify-between gap-3">
+              <div className="relative z-10 max-w-4xl mx-auto flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="size-9 rounded-xl bg-primary-foreground/15 text-primary-foreground border border-primary-foreground/25 flex items-center justify-center shrink-0">
-                    <Printer className="size-4.5" />
+                  <span className="size-8 rounded-xl bg-primary-foreground/15 text-primary-foreground border border-primary-foreground/25 flex items-center justify-center shrink-0">
+                    <Printer className="size-4" />
                   </span>
-                  <div className="min-w-0">
-                    <h2 className="text-sm font-black text-primary-foreground truncate">{uiDocTitle}</h2>
-                    <p className="text-xs text-primary-foreground/85 truncate">
-                      {bi(
-                        'معاينة قبل الطباعة أو الحفظ بصيغة PDF عبر المتصفح (يعمل بدون إنترنت)',
-                        'A4 print preview — use Print or Save as PDF (100% offline)',
-                        'پێشبینینی پێش چاپکردن یان پاشەکەوتکردن وەک PDF لە ڕێگەی وێبگەڕەوە (بێ ئینتەرنێت کاردەکات)'
-                      )}
-                    </p>
-                  </div>
+                  <h2 className="text-sm font-black text-primary-foreground truncate">{uiDocTitle}</h2>
                 </div>
 
                 <button
                   type="button"
                   onClick={onClose}
                   aria-label={bi('إغلاق', 'Close', 'داخستن')}
-                  className="size-9 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground inline-flex items-center justify-center cursor-pointer shrink-0 transition-colors"
+                  className="size-8 !p-0 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground inline-flex items-center justify-center cursor-pointer shrink-0 transition-colors"
                 >
                   <X className="size-4" />
                 </button>
               </div>
             </div>
 
-            {/* Unified Horizontally Scrollable Print & Share Action Strip */}
-            <div className="px-4 sm:px-6 py-2.5 bg-surface/90 border-t border-card-line/80">
-              <div className="max-w-[210mm] mx-auto pr-hscroll overflow-x-auto flex items-center gap-2 whitespace-nowrap">
-                <button
-                  type="button"
-                  onClick={handlePrint}
-                  className="min-h-[36px] px-4 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors shrink-0"
+            {/* Clean Compact Settings Strip (Language + 1-Page Fit + Optional Letter Personalize) */}
+            <div className="px-3.5 sm:px-6 py-2 bg-surface/95 border-t border-card-line/80">
+              <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
+                <div
+                  role="group"
+                  aria-label={bi('لغة المستند', 'Document language', 'زمانی بەڵگەنامە')}
+                  className="inline-flex items-center rounded-xl bg-layer border border-line-2 p-0.5"
                 >
-                  <Printer className="size-3.5" />
-                  <span>{bi('طباعة / حفظ PDF', 'Print / Save PDF', 'چاپکردن / پاشەکەوتکردنی PDF')}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setDocLang(docLang === 'ar' ? 'en' : 'ar')}
-                  className="min-h-[36px] px-3 py-1.5 rounded-xl border border-line-2 bg-card hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
-                >
-                  <Languages className="size-3.5 text-primary" />
-                  <span>
-                    {isDocAr
-                      ? bi('التحويل للإنجليزية (EN)', 'Switch to English (EN)', 'گۆڕین بۆ ئینگلیزی (EN)')
-                      : bi('التحويل للعربية (AR)', 'Switch to Arabic (AR)', 'گۆڕین بۆ عەرەبی (AR)')}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  aria-pressed={fitSinglePage}
-                  onClick={() => setFitSinglePage((v) => !v)}
-                  className={`min-h-[36px] px-3 py-1.5 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 ${
-                    fitSinglePage
-                      ? 'border-primary/40 bg-primary/10 text-primary'
-                      : 'border-line-2 bg-card hover:bg-layer-hover text-foreground'
-                  }`}
-                >
-                  <Minimize2 className="size-3.5" />
-                  <span>
-                    {bi('ملاءمة بصفحة واحدة (A4)', 'Fit to 1 A4 Page', 'گونجاندن لە یەک لاپەڕە (A4)')}
-                  </span>
-                </button>
-
-                {canDirectExportPdf && (
                   <button
                     type="button"
-                    onClick={() => {
-                      void handleDirectExportPdf();
-                    }}
-                    className="min-h-[36px] px-3.5 py-1.5 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                    onClick={() => setDocLang('ar')}
+                    aria-pressed={isDocAr}
+                    className={`min-h-[30px] px-2.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                      isDocAr
+                        ? 'bg-primary text-primary-foreground shadow-2xs'
+                        : 'text-muted-foreground-1 hover:text-foreground'
+                    }`}
                   >
-                    <Download className="size-3.5" />
-                    <span>{bi('تصدير PDF مباشر', 'Direct Save PDF', 'پاشەکەوتکردنی ڕاستەوخۆی PDF')}</span>
+                    عربي
                   </button>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => setDocLang('en')}
+                    aria-pressed={!isDocAr}
+                    className={`min-h-[30px] px-2.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                      !isDocAr
+                        ? 'bg-primary text-primary-foreground shadow-2xs'
+                        : 'text-muted-foreground-1 hover:text-foreground'
+                    }`}
+                  >
+                    EN
+                  </button>
+                </div>
 
-                {webShareEnabled && (
-                  <>
-                    <span className="h-5 w-px bg-card-divider mx-0.5 shrink-0" aria-hidden="true" />
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    aria-pressed={fitSinglePage}
+                    onClick={() => setFitSinglePage((v) => !v)}
+                    className={`min-h-[32px] px-2.5 py-1 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors ${
+                      fitSinglePage
+                        ? 'border-primary/40 bg-primary/10 text-primary'
+                        : 'border-line-2 bg-card hover:bg-layer-hover text-foreground'
+                    }`}
+                  >
+                    <Minimize2 className="size-3.5 shrink-0" />
+                    <span>{bi('صفحة واحدة', '1-Page A4', 'یەک لاپەڕە')}</span>
+                  </button>
 
+                  {isClinicalLetter && (
                     <button
                       type="button"
-                      data-testid="print-web-share-file-btn"
-                      onClick={() => {
-                        void handleWebShareFile();
-                      }}
-                      className="min-h-[36px] px-3 py-1.5 rounded-xl border border-primary/25 bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                      aria-expanded={showPersonalize}
+                      onClick={() => setShowPersonalize((v) => !v)}
+                      className={`min-h-[32px] px-2.5 py-1 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors ${
+                        showPersonalize
+                          ? 'border-primary/40 bg-primary/10 text-primary'
+                          : 'border-line-2 bg-card hover:bg-layer-hover text-foreground'
+                      }`}
                     >
-                      <Share2 className="size-3.5" />
-                      <span>{bi('مشاركة الملف', 'Share File', 'هاوبەشکردنی پەڕگە')}</span>
+                      <SlidersHorizontal className="size-3.5 shrink-0" />
+                      <span>{bi('تخصيص', 'Customize', 'دەستکاری')}</span>
                     </button>
-
-                    <button
-                      type="button"
-                      data-testid="print-copy-summary-btn"
-                      onClick={() => {
-                        void handleCopySummary();
-                      }}
-                      className="min-h-[36px] px-3 py-1.5 rounded-xl border border-line-2 bg-card hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
-                    >
-                      {shareFeedback?.kind === 'copied' ? (
-                        <Check className="size-3.5 text-emerald-600" />
-                      ) : (
-                        <Copy className="size-3.5 text-primary" />
-                      )}
-                      <span>{bi('نسخ الملخص', 'Copy Summary', 'کۆپیکردنی پوختە')}</span>
-                    </button>
-
-                    <a
-                      data-testid="print-whatsapp-fallback-link"
-                      href={whatsappFallbackUrl || '#'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => {
-                        if (whatsappFallbackUrl && isNativeAppShell()) {
-                          e.preventDefault();
-                          void openSafeExternalUrl(whatsappFallbackUrl);
-                        }
-                      }}
-                      className="min-h-[36px] px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-colors shrink-0"
-                    >
-                      <MessageCircle className="size-3.5" />
-                      <span>{bi('إرسال عبر واتساب', 'WhatsApp', 'واتساپ')}</span>
-                    </a>
-
-                    <button
-                      type="button"
-                      data-testid="print-download-share-file-btn"
-                      onClick={() => {
-                        void handleDownloadShareFile();
-                      }}
-                      className="min-h-[36px] px-3 py-1.5 rounded-xl border border-line-2 bg-card hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
-                    >
-                      <Download className="size-3.5 text-primary" />
-                      <span>{bi('تنزيل ملف للمشاركة', 'Download Share File', 'داگرتنی پەڕگە بۆ هاوبەشکردن')}</span>
-                    </button>
-
-                    {shareFeedback && (
-                      <span
-                        data-testid="print-share-status-notice"
-                        role="status"
-                        className="text-emerald-700 dark:text-emerald-400 text-xs font-semibold inline-flex items-center gap-1.5 px-1 shrink-0"
-                      >
-                        <CheckCircle2 className="size-3.5 shrink-0" />
-                        <span>{shareFeedback.text}</span>
-                      </span>
-                    )}
-                  </>
-                )}
+                  )}
+                </div>
               </div>
             </div>
+
+            {/* Optional Collapsible Personalization Drawer for Clinical Letters */}
+            {isClinicalLetter && showPersonalize && (
+              <div className="px-3.5 sm:px-6 py-3 bg-card border-t border-card-line/80">
+                <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {documentType === 'referral_letter' && (
+                    <div>
+                      <label className="block text-xs font-semibold text-foreground mb-1">
+                        {bi(
+                          'إلى الطبيب / التخصص المُحال إليه:',
+                          'Referred To (Physician / Specialty):',
+                          'بۆ پزیشک / پسپۆڕیی ڕەوانەکراو:'
+                        )}
+                      </label>
+                      <input
+                        type="text"
+                        value={recipientDoctor}
+                        onChange={(e) => setRecipientDoctor(e.target.value)}
+                        placeholder={
+                          patient?.data.referringPhysician ||
+                          bi(
+                            'د. اختصاص جراحة العظام والكسور...',
+                            'Dr. Orthopedic Specialist...',
+                            'د. پسپۆڕی نەشتەرگەریی ئێسک و شکان...'
+                          )
+                        }
+                        className="w-full px-3 py-1.5 rounded-xl border border-layer-line bg-layer text-xs text-foreground focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                  )}
+                  <div className={documentType === 'referral_letter' ? '' : 'md:col-span-2'}>
+                    <label className="block text-xs font-semibold text-foreground mb-1">
+                      {bi(
+                        'ملاحظات أو توصيات سريرية إضافية قبل الطباعة (اختياري):',
+                        'Additional Clinical Remarks / Recommendations (Optional):',
+                        'تێبینی یان پێشنیازی پزیشکیی زیاتر پێش چاپکردن (ئیختیاری):'
+                      )}
+                    </label>
+                    <input
+                      type="text"
+                      value={customRecommendation}
+                      onChange={(e) => setCustomRecommendation(e.target.value)}
+                      placeholder={bi(
+                        'مثال: يُنصح بالاستمرار على الجلسات التأهيلية وتقييم الصور الشعاعية...',
+                        'e.g., Recommend continuing structured rehabilitation and follow-up imaging...',
+                        'بۆ نموونە: پێشنیاز دەکرێت بەردەوام بێت لە دانیشتنەکانی شیاندنەوە و هەڵسەنگاندنی وێنەی تیشک...'
+                      )}
+                      className="w-full px-3 py-1.5 rounded-xl border border-layer-line bg-layer text-xs text-foreground focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </header>
 
-          <div
-            id="physiorecord-print-portal"
-            tabIndex={0}
-            className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain touch-pan-y p-3 sm:p-6 flex flex-col items-center focus:outline-none print:overflow-visible print:p-0 print:block"
+          {/* Floating Miniature A4 Paper Preview Stage (Resets to 100% crisp full A4 in @media print) */}
+          <FloatingA4PreviewStage
+            zoomMode={zoomMode}
+            onZoomModeChange={setZoomMode}
+            onBackdropClick={onClose}
           >
-      {/* Screen-only Optional Personalization Bar for Clinical Reports/Letters */}
-      {isClinicalLetter && (
-        <div className="print-modal-chrome w-full max-w-[210mm] mb-4 bg-card border border-card-line rounded-2xl p-3.5 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-3 shrink-0 print:hidden">
-          {documentType === 'referral_letter' && (
-            <div>
-              <label className="block text-xs font-semibold text-foreground mb-1">
-                {bi(
-                  'إلى الطبيب / التخصص المُحال إليه:',
-                  'Referred To (Physician / Specialty):',
-                  'بۆ پزیشک / پسپۆڕیی ڕەوانەکراو:'
-                )}
-              </label>
-              <input
-                type="text"
-                value={recipientDoctor}
-                onChange={(e) => setRecipientDoctor(e.target.value)}
-                placeholder={
-                  patient?.data.referringPhysician ||
-                  bi(
-                    'د. اختصاص جراحة العظام والكسور...',
-                    'Dr. Orthopedic Specialist...',
-                    'د. پسپۆڕی نەشتەرگەریی ئێسک و شکان...'
-                  )
-                }
-                className="w-full px-3 py-1.5 rounded-xl border border-layer-line bg-layer text-xs text-foreground focus:outline-none focus:border-primary"
-              />
-            </div>
-          )}
-          <div className={documentType === 'referral_letter' ? '' : 'md:col-span-2'}>
-            <label className="block text-xs font-semibold text-foreground mb-1">
-              {bi(
-                'ملاحظات أو توصيات سريرية إضافية قبل الطباعة (اختياري):',
-                'Additional Clinical Remarks / Recommendations (Optional):',
-                'تێبینی یان پێشنیازی پزیشکیی زیاتر پێش چاپکردن (ئیختیاری):'
-              )}
-            </label>
-            <input
-              type="text"
-              value={customRecommendation}
-              onChange={(e) => setCustomRecommendation(e.target.value)}
-              placeholder={bi(
-                'مثال: يُنصح بالاستمرار على الجلسات التأهيلية وتقييم الصور الشعاعية...',
-                'e.g., Recommend continuing structured rehabilitation and follow-up imaging...',
-                'بۆ نموونە: پێشنیاز دەکرێت بەردەوام بێت لە دانیشتنەکانی شیاندنەوە و هەڵسەنگاندنی وێنەی تیشک...'
-              )}
-              className="w-full px-3 py-1.5 rounded-xl border border-layer-line bg-layer text-xs text-foreground focus:outline-none focus:border-primary"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Printable A4 Sheet (Full original width with smooth horizontal & vertical pan on mobile) */}
-      <div className="w-full max-w-[210mm] overflow-x-auto overscroll-x-contain touch-auto rounded-none sm:rounded-xl shadow-2xl shrink-0 print:overflow-visible print:max-w-none print:shadow-none print:!bg-white">
-        <div
-          ref={sheetRef}
-          dir={docDir}
-          data-print-fit-scaled={isScaled ? 'true' : undefined}
-          style={{ ['--pr-print-zoom' as string]: String(printScale) }}
-          className="print-sheet-container w-[210mm] min-w-[210mm] min-h-[272mm] print:w-full print:min-w-0 bg-white text-slate-900 border border-slate-300 border-t-4 border-t-slate-900 p-8 sm:p-11 flex flex-col justify-between text-xs leading-relaxed"
-        >
-        <div ref={sheetBodyRef} className="space-y-5 print:space-y-2.5 flex-1">
+            <div
+              ref={sheetRef}
+              dir={docDir}
+              data-print-fit-scaled={isScaled ? 'true' : undefined}
+              style={{ ['--pr-print-zoom' as string]: String(printScale) }}
+              className="print-sheet-container w-[794px] min-w-[794px] min-h-[1123px] print:w-full print:min-w-0 bg-white text-slate-900 border border-slate-300 border-t-4 border-t-slate-900 p-8 sm:p-11 flex flex-col justify-between text-xs leading-relaxed"
+            >
+              <div ref={sheetBodyRef} className="space-y-5 print:space-y-2.5 flex-1">
         {/* Official Institutional Letterhead */}
         <header className="flex items-start justify-between gap-4 border-b-2 border-slate-800 pb-4 print:pb-2.5 print-break-inside-avoid">
           <div className="flex items-start gap-3.5">
@@ -2447,9 +2384,129 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
             </div>
           </div>
         </footer>
-      </div>
-      </div>
-          </div>
+            </div>
+          </FloatingA4PreviewStage>
+
+          {/* Clean Sticky Bottom Action Bar (Zero Horizontal Clipping on Mobile & Desktop) */}
+          <footer className="print-modal-chrome print:hidden shrink-0 w-full bg-card border-t border-card-line px-3 sm:px-6 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] z-30 shadow-[0_-6px_24px_-12px_rgba(15,23,42,0.18)]">
+            <div className="max-w-4xl mx-auto space-y-2">
+              {shareFeedback && (
+                <div
+                  data-testid="print-share-status-notice"
+                  role="status"
+                  className="text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center justify-center gap-1.5"
+                >
+                  <CheckCircle2 className="size-3.5 shrink-0" />
+                  <span>{shareFeedback.text}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-1 sm:flex-none min-w-0">
+                  <button
+                    type="button"
+                    onClick={handlePrint}
+                    className="flex-1 sm:flex-none min-h-[40px] px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                  >
+                    <Printer className="size-4 shrink-0" />
+                    <span className="truncate">
+                      {bi('طباعة / حفظ PDF', 'Print / Save PDF', 'چاپ / پاشەکەوتکردنی PDF')}
+                    </span>
+                  </button>
+
+                  {canDirectExportPdf && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleDirectExportPdf();
+                      }}
+                      className="min-h-[40px] px-3 py-2 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                    >
+                      <Download className="size-4 shrink-0" />
+                      <span className="hidden sm:inline">
+                        {bi('PDF مباشر', 'Direct PDF', 'PDF ڕاستەوخۆ')}
+                      </span>
+                    </button>
+                  )}
+                </div>
+
+                {webShareEnabled && (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      data-testid="print-web-share-file-btn"
+                      aria-label={bi('مشاركة الملف', 'Share File', 'هاوبەشکردنی پەڕگە')}
+                      title={bi('مشاركة الملف', 'Share File', 'هاوبەشکردنی پەڕگە')}
+                      onClick={() => {
+                        void handleWebShareFile();
+                      }}
+                      className="size-10 sm:w-auto sm:px-3 rounded-xl border border-primary/25 bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                    >
+                      <Share2 className="size-4 shrink-0" />
+                      <span className="hidden sm:inline">
+                        {bi('مشاركة', 'Share', 'هاوبەشکردن')}
+                      </span>
+                    </button>
+
+                    <a
+                      data-testid="print-whatsapp-fallback-link"
+                      aria-label={bi('إرسال عبر واتساب', 'WhatsApp', 'واتساپ')}
+                      title={bi('إرسال عبر واتساب', 'WhatsApp', 'واتساپ')}
+                      href={whatsappFallbackUrl || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        if (whatsappFallbackUrl && isNativeAppShell()) {
+                          e.preventDefault();
+                          void openSafeExternalUrl(whatsappFallbackUrl);
+                        }
+                      }}
+                      className="size-10 sm:w-auto sm:px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-2xs transition-colors shrink-0"
+                    >
+                      <MessageCircle className="size-4 shrink-0" />
+                      <span className="hidden sm:inline">
+                        {bi('واتساب', 'WhatsApp', 'واتساپ')}
+                      </span>
+                    </a>
+
+                    <button
+                      type="button"
+                      data-testid="print-copy-summary-btn"
+                      aria-label={bi('نسخ الملخص', 'Copy Summary', 'کۆپیکردنی پوختە')}
+                      title={bi('نسخ الملخص', 'Copy Summary', 'کۆپیکردنی پوختە')}
+                      onClick={() => {
+                        void handleCopySummary();
+                      }}
+                      className="size-10 sm:w-auto sm:px-3 rounded-xl border border-line-2 bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                    >
+                      {shareFeedback?.kind === 'copied' ? (
+                        <Check className="size-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <Copy className="size-4 text-primary shrink-0" />
+                      )}
+                      <span className="hidden sm:inline">
+                        {bi('نسخ', 'Copy', 'کۆپی')}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      data-testid="print-download-share-file-btn"
+                      aria-label={bi('تنزيل ملف للمشاركة', 'Download Share File', 'داگرتنی پەڕگە')}
+                      title={bi('تنزيل ملف للمشاركة', 'Download Share File', 'داگرتنی پەڕگە')}
+                      onClick={() => {
+                        void handleDownloadShareFile();
+                      }}
+                      className="size-10 sm:w-auto sm:px-3 rounded-xl border border-line-2 bg-layer hover:bg-layer-hover text-foreground text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                    >
+                      <Download className="size-4 text-primary shrink-0" />
+                      <span className="hidden sm:inline">HTML</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </footer>
         </AriaDialog>
       </Modal>
     </ModalOverlay>

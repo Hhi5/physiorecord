@@ -33,4 +33,10 @@ contextBridge.exposeInMainWorld('electronAPI', Object.freeze({
   clearConfiguredSyncDirectory: () => ipcRenderer.invoke('physiorecord:clear-sync-dir'),
   exchangeSyncFolderEnvelopes: (options) =>
     ipcRenderer.invoke('physiorecord:sync-folder-exchange', options),
+  setTitleBarTheme: (options) =>
+    ipcRenderer.invoke('physiorecord:set-titlebar-theme', options),
+  isOsBiometricAvailable: () => ipcRenderer.invoke('physiorecord:os-biometric-available'),
+  enrollOsBiometricDek: (options) => ipcRenderer.invoke('physiorecord:os-biometric-enroll', options),
+  unlockOsBiometricDek: () => ipcRenderer.invoke('physiorecord:os-biometric-unlock'),
+  clearOsBiometricDek: () => ipcRenderer.invoke('physiorecord:os-biometric-clear'),
 }));
