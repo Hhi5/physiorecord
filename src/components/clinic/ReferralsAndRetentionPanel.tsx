@@ -77,7 +77,7 @@ import {
 import { GeometricHeaderBackdrop } from '../ui/Dialog';
 import { ModalDialog } from '../ui/Dialog';
 import { FloatingA4PreviewStage } from '../print/FloatingA4PreviewStage';
-import type { PrintPreviewZoomMode } from '../../utils/printPreviewScale';
+import type { PrintPreviewZoomMode } from '../../utils/printLayoutFit';
 import {
   AutoResizeTextarea,
   Fraction,

@@ -11,7 +11,7 @@ import {
   normalizeMarkerHexColor,
   resolveMarkerDisplayMeta,
   sanitizePainTypeCustom,
-} from '../../utils/bodyChartMarkers';
+} from '../../utils/clinicalWidgetHelpers';
 import {
   type PatientBodyChartData,
   type BodyChartMarker,
@@ -22,7 +22,7 @@ import {
 import { resolveAnatomicalRegionFromPoint } from '../../data/clinicalToolkit/bodyChartRegions';
 import { AnatomicalFrontSvg, AnatomicalBackSvg } from './AnatomicalBodySvgs';
 import { Fraction, AutoResizeTextarea } from '../ui/Primitives';
-import { ClampedMenuPanel } from '../ui/ClampedMenuPanel';
+import { ClampedMenuPanel } from '../ui/Primitives';
 import { SpectrumColorPicker } from '../ui/SpectrumColorPicker';
 import { Trash2, Palette } from 'lucide-react';
 

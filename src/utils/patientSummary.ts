@@ -29,7 +29,7 @@ import {
   getPatientMrn,
   getPatientSecondaryName,
 } from './mrn';
-import { resolveMarkerDisplayMeta } from './bodyChartMarkers';
+import { resolveMarkerDisplayMeta } from './clinicalWidgetHelpers';
 import {
   getAttachmentCategoryDisplayLabel,
   normalizeLegacyAttachment,

@@ -13,7 +13,7 @@ import {
   A4_WIDTH_PX,
   computeFloatingA4Scale,
   type PrintPreviewZoomMode,
-} from '../../utils/printPreviewScale';
+} from '../../utils/printLayoutFit';
 
 export interface FloatingA4PreviewStageProps {
   children: React.ReactNode;

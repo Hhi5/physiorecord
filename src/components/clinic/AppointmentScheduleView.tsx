@@ -33,9 +33,9 @@ import {
 import { getPatientMrn, isDemoPatient, getPatientDisplayName } from '../../utils/mrn';
 import { localizeDemoText } from '../../utils/demoLocalization';
 import { openSafeExternalUrl } from '../../platform/nativeBridge';
-import { sanitizeDurationDraft } from '../../utils/durationInput';
+import { sanitizeDurationDraft } from '../../utils/date';
 import { Num, DemoBadge, DatePickerInput, TimePickerInput, TimeDisplay } from '../ui/Primitives';
-import { ClampedMenuPanel } from '../ui/ClampedMenuPanel';
+import { ClampedMenuPanel } from '../ui/Primitives';
 import { useViewportClampedMenu } from '../../utils/menuViewportClamp';
 import { ModalDialog, DrawerDialog } from '../ui/Dialog';
 import {

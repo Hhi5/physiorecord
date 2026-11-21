@@ -57,7 +57,7 @@ import type {
   EpisodeScopedClinicalStore,
 } from '../../types/clinicManagement';
 import { ModalDialog } from '../ui/Dialog';
-import { ClampedMenuPanel } from '../ui/ClampedMenuPanel';
+import { ClampedMenuPanel } from '../ui/Primitives';
 import { ClinicalAbbr, Fraction } from '../ui/Primitives';
 
 type MatrixCategoryFilter = 'all' | 'pain' | 'rom' | 'mmt' | 'scales_tests';

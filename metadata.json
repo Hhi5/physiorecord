@@ -1,6 +1,0 @@
-{
-  "name": "PhysioRecord - Clinical Physical Therapy EHR",
-  "description": "Encrypted local-first clinical physical therapy EHR with episodes of care, SOAP documentation, body chart, ROM/MMT, and neurological screening.",
-  "requestFramePermissions": [],
-  "majorCapabilities": []
-}

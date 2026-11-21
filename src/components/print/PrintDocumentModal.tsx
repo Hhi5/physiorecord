@@ -32,7 +32,7 @@ import { useCurrency } from '../../context/CurrencyContext';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
 import { GeometricHeaderBackdrop } from '../ui/Dialog';
 import { FloatingA4PreviewStage } from './FloatingA4PreviewStage';
-import type { PrintPreviewZoomMode } from '../../utils/printPreviewScale';
+import type { PrintPreviewZoomMode } from '../../utils/printLayoutFit';
 import {
   getPrintDocumentGlossaryLabels,
   type PrintDocumentGlossaryLabels,

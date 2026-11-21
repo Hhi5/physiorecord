@@ -8,6 +8,10 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
+  localizeDemoBilingualTitle,
+  localizeDemoText,
+} from '../demoLocalization';
+import {
   APP_SEMVER_VERSION,
   BUNDLED_CHANGELOG_RELEASES,
   DEXIE_MIGRATION_GUIDE_V1_TO_V10,
@@ -270,5 +274,58 @@ describe('Phase F: Settings, Onboarding & Open-Source Community (F1–F5)', () =
       now: 2250,
     });
     expect(resumeToggle).toEqual({ action: 'toggle_privacy', nextLastEscapeAt: 0 });
+  });
+
+  it('localizes known seeded demo strings across ar, en, and ckb while leaving real notes untouched', () => {
+    expect(localizeDemoText('سلوى قاسم الطائي', 'en')).toBe('Salwa Qasim Al-Taie');
+    expect(localizeDemoText('سلوى قاسم الطائي', 'ckb')).toBe('سەلوا قاسم ئەلتائی');
+    expect(localizeDemoText('Salwa Qasim Al-Taie', 'ckb')).toBe('سەلوا قاسم ئەلتائی');
+
+    const strokeAr =
+      'جلطة دماغية نقص تروية في الشريان الدماغي الأوسط الأيسر قبل 3 أشهر، نتج عنها شلل نصفي أيمن مع حبسة كلامية خفيفة.';
+    expect(localizeDemoText(strokeAr, 'en')).toMatch(/ischemic stroke/i);
+    expect(localizeDemoText(strokeAr, 'ckb')).toMatch(/جەڵتەی مێشکی/);
+
+    const aclTitleAr = 'إعادة تأهيل الركبة اليمنى بعد ترميم الرباط الصليبي (Right ACL Rehab)';
+    expect(localizeDemoText(aclTitleAr, 'en')).toBe(
+      'Right Knee Post-ACL Reconstruction Rehabilitation'
+    );
+    expect(localizeDemoText(aclTitleAr, 'ckb')).toMatch(/ئەژنۆی ڕاست/);
+
+    const realNote = 'Custom patient diagnosis entered manually by Dr. Haidar';
+    expect(localizeDemoText(realNote, 'ar')).toBe(realNote);
+    expect(localizeDemoText(realNote, 'en')).toBe(realNote);
+    expect(localizeDemoText(realNote, 'ckb')).toBe(realNote);
+
+    const ar = 'باقة تأهيل علاجي متكامل (10 جلسات)';
+    const en = '10-Session Comprehensive Rehab Package';
+    expect(localizeDemoBilingualTitle(ar, en, 'ar')).toBe(ar);
+    expect(localizeDemoBilingualTitle(ar, en, 'en')).toBe(en);
+    expect(localizeDemoBilingualTitle(ar, en, 'ckb')).toBe(
+      'پاکێجی چاکسازی چارەسەری تەواو (١٠ دانیشتن)'
+    );
+  });
+
+  it('matches Arabic, Kurdish, and English queries for update notifications and device biometrics/PC lock', () => {
+    for (const query of ['اشعارات', 'إشعارات', 'تحديثات', 'github', 'notifications']) {
+      const matches = filterSettingsCatalog(query, 'simple');
+      expect(matches.some((m) => m.id === 'hub-app-updates')).toBe(true);
+    }
+
+    for (const query of [
+      'بصمة',
+      'بصمه',
+      'fingerprint',
+      'پەنجەمۆر',
+      'biometric',
+      'حاسوب',
+      'هاتف',
+      'تابلت',
+      'tablet',
+      'pc',
+    ]) {
+      const matches = filterSettingsCatalog(query, 'simple');
+      expect(matches.some((m) => m.id === 'hub-security-lock')).toBe(true);
+    }
   });
 });

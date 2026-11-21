@@ -13,7 +13,7 @@ import {
 import {
   VAULT_CREDENTIAL_USERNAME,
   saveVaultPasswordToBrowserManager,
-} from '../passwordManagerHelper';
+} from '../passwordReminderSchedule';
 import {
   generateAndWrapOperationalDEK,
   generateVerifier,

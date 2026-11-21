@@ -11,7 +11,7 @@ import {
   buildCustomSpecialTestItem,
   validateCustomSpecialTestDraft,
   type SpecialTestSide,
-} from '../../utils/specialTestsHelpers';
+} from '../../utils/clinicalWidgetHelpers';
 import { Check, AlertTriangle, XCircle, Plus, Search, Trash2, StickyNote } from 'lucide-react';
 import { ModalDialog } from '../ui/Dialog';
 

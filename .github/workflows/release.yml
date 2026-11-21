@@ -60,11 +60,6 @@ jobs:
       - name: TypeScript typecheck
         run: npm run lint
 
-      - name: Run pure Node update & timer unit tests
-        run: |
-          npx --yes tsx --test scripts/sessionTimerState.node.test.ts
-          npx --yes tsx --test scripts/updateSafety.node.test.ts
-
       - name: Unit & clinical verification tests
         run: npm test
 

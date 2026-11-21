@@ -16,7 +16,7 @@ import { PhoneInput, TimePickerInput } from '../ui/Primitives';
 import { CLINIC_ROOMS } from './AppointmentScheduleView';
 import type { PatientRecord } from '../../types/clinical';
 import { localDate } from '../../utils/date';
-import { commitDurationDraft, sanitizeDurationDraft } from '../../utils/durationInput';
+import { commitDurationDraft, sanitizeDurationDraft } from '../../utils/date';
 import { Zap, UserPlus, AlertCircle } from 'lucide-react';
 
 interface WalkInQuickAddModalProps {

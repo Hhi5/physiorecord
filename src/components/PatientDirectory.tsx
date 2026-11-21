@@ -26,7 +26,7 @@ import {
   type PatientCompletionMeta,
 } from '../utils/treatmentJourneySummary';
 import { Num, DemoBadge, Money } from './ui/Primitives';
-import { ClampedMenuPanel } from './ui/ClampedMenuPanel';
+import { ClampedMenuPanel } from './ui/Primitives';
 import { useViewportClampedMenu } from '../utils/menuViewportClamp';
 import { PatientSearchEngine } from '../utils/arabicSearch';
 import { useVirtualWindow } from '../hooks/useVirtualWindow';

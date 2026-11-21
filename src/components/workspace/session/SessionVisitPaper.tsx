@@ -24,7 +24,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
-import { sanitizeDurationDraft } from '../../../utils/durationInput';
+import { sanitizeDurationDraft } from '../../../utils/date';
 import {
   ClinicOperationsService,
   PT_EXERCISE_CATALOG,

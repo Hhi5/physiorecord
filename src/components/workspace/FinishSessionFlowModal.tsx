@@ -25,7 +25,7 @@ import {
   WEEKDAYS_IRAQI_ORDER,
   getWeekdayFromDateStr,
 } from '../../utils/date';
-import { commitDurationDraft, sanitizeDurationDraft } from '../../utils/durationInput';
+import { commitDurationDraft, sanitizeDurationDraft } from '../../utils/date';
 import { getPatientDisplayName } from '../../utils/mrn';
 import type { NoteCompletenessReport } from '../../utils/reEvalNudge';
 import {

@@ -49,7 +49,7 @@ import {
   openSafeExternalUrl,
   type ElectronDesktopUpdateStatus,
 } from '../../platform/nativeBridge';
-import { useDeviceFormFactor } from '../../hooks/useDeviceFormFactor';
+import { useDeviceFormFactor } from '../../utils/deviceBiometricCopy';
 import {
   applyPwaUpdate,
   checkForPwaUpdate,

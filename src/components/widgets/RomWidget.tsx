@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import type { RomAssessmentBatteryData, RomMovementType, BodyLaterality } from '../../types/clinical';
 import { ROM_JOINTS_CATALOG, ROM_MOVEMENT_TYPES, ROM_END_FEELS } from '../../data/clinicalToolkit/romMmtCatalog';
-import { getRomEntryAngle, upsertRomEntry } from '../../utils/romWidgetHelpers';
+import { getRomEntryAngle, upsertRomEntry } from '../../utils/clinicalWidgetHelpers';
 import { Activity, Plus, Trash2, CheckCircle2, ChevronRight, Gauge } from 'lucide-react';
 
 interface RomWidgetProps {

@@ -22,7 +22,7 @@ import type {
   WhatsAppTemplatesConfig,
 } from '../../types/clinicManagement';
 import { processClinicImageUpload, isValidEncryptedImageDataUrl } from '../../utils/imageUtils';
-import { commitDurationDraft, sanitizeDurationDraft } from '../../utils/durationInput';
+import { commitDurationDraft, sanitizeDurationDraft } from '../../utils/date';
 import { Money, MoneyInput, TimePickerInput } from '../ui/Primitives';
 import { SettingsAccordion } from './SettingsPrimitives';
 

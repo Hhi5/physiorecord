@@ -1,11 +1,7 @@
 @import "tailwindcss";
 
-/* Clinical Design System Semantic Tokens */
+/* Clinical Design System Semantic Tokens & Palettes */
 @import "./styles/themes/theme.css";
-@import "./styles/themes/clinical-default.css";
-@import "./styles/themes/ocean-blue.css";
-@import "./styles/themes/royal-indigo.css";
-@import "./styles/themes/emerald-care.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

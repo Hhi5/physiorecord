@@ -22,7 +22,7 @@ import type {
   ReferralSourceType,
   ReferringDoctorEntry,
 } from '../types/clinicManagement';
-import { buildCleanReferringDoctorSalutation } from './printPreviewScale';
+import { buildCleanReferringDoctorSalutation } from './printLayoutFit';
 import {
   addDaysToDateStr,
   buildWhatsAppReminderUrl,

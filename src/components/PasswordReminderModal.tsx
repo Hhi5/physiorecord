@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useVault } from '../context/VaultContext';
-import { VAULT_CREDENTIAL_USERNAME } from '../utils/passwordManagerHelper';
+import { VAULT_CREDENTIAL_USERNAME } from '../utils/passwordReminderSchedule';
 import { ModalDialog } from './ui/Dialog';
 
 interface PasswordReminderModalProps {

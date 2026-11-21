@@ -52,7 +52,7 @@ import {
   getReminderIntervalDays,
   type PasswordReminderState,
 } from '../utils/passwordReminderSchedule';
-import { saveVaultPasswordToBrowserManager } from '../utils/passwordManagerHelper';
+import { saveVaultPasswordToBrowserManager } from '../utils/passwordReminderSchedule';
 import { subscribeToVaultEvents, broadcastVaultEvent } from '../utils/vaultEvents';
 import { SessionService } from '../services/sessionService';
 import { ClinicOperationsService } from '../services/clinicOperationsService';

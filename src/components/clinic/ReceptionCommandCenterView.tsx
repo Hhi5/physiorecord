@@ -25,7 +25,7 @@ import {
 } from '../../utils/date';
 import { Num, Fraction, Money, DemoBadge, TimeDisplay } from '../ui/Primitives';
 import { localizeDemoBilingualTitle, localizeDemoText } from '../../utils/demoLocalization';
-import { ClampedMenuPanel } from '../ui/ClampedMenuPanel';
+import { ClampedMenuPanel } from '../ui/Primitives';
 import {
   Calendar,
   Users,

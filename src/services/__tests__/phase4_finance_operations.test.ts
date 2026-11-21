@@ -649,4 +649,74 @@ describe('Phase 4 — Finance, Printing, Scheduling, WhatsApp & Informed Consent
     await db.deletePatientPermanently('p4-cons-1', { verifiedBackupString: backupJson });
     expect(await db.consents.where('patientId').equals('p4-cons-1').count()).toBe(0);
   });
+
+  it('4.9: allows concurrent overbooking for the same therapist and across therapists without throwing', () => {
+    const first = ClinicOperationsService.saveAppointment({
+      patientId: 'pat-1',
+      patientName: 'علي حسين',
+      patientPhone: '07701234567',
+      therapistName: 'د. سارة أحمد',
+      date: '2026-11-15',
+      startTime: '10:00',
+      durationMinutes: 45,
+      visitType: 'follow_up',
+      status: 'scheduled',
+      roomOrBed: 'وحدة العلاج الطبيعي 1',
+    });
+
+    const overlapSameTherapist = ClinicOperationsService.detectAppointmentConflicts({
+      date: '2026-11-15',
+      startTime: '10:00',
+      durationMinutes: 45,
+      therapistName: 'د. سارة أحمد',
+      roomOrBed: 'وحدة العلاج الطبيعي 1',
+    });
+    expect(overlapSameTherapist.allowConcurrent).toBe(true);
+    expect(overlapSameTherapist.hasConflict).toBe(true);
+    expect(overlapSameTherapist.allOverlaps?.length).toBe(1);
+    expect(overlapSameTherapist.therapistConflicts.length).toBe(1);
+
+    const secondSameTherapist = ClinicOperationsService.saveAppointment({
+      patientId: 'pat-2',
+      patientName: 'فاطمة محمد',
+      patientPhone: '07801112233',
+      therapistName: 'د. سارة أحمد',
+      date: '2026-11-15',
+      startTime: '10:00',
+      durationMinutes: 45,
+      visitType: 'initial_evaluation',
+      status: 'scheduled',
+      roomOrBed: 'وحدة العلاج الطبيعي 1',
+    });
+
+    const thirdDiffTherapist = ClinicOperationsService.saveAppointment({
+      patientId: 'pat-3',
+      patientName: 'أحمد كريم',
+      patientPhone: '07904445566',
+      therapistName: 'د. مصطفى جبار',
+      date: '2026-11-15',
+      startTime: '10:15',
+      durationMinutes: 30,
+      visitType: 'follow_up',
+      status: 'scheduled',
+      roomOrBed: 'وحدة العلاج الطبيعي 2',
+    });
+
+    const allSaved = ClinicOperationsService.getAppointments().filter(
+      (a) => a.date === '2026-11-15'
+    );
+    expect(allSaved.map((a) => a.id)).toEqual(
+      expect.arrayContaining([first.id, secondSameTherapist.id, thirdDiffTherapist.id])
+    );
+
+    const checkThird = ClinicOperationsService.detectAppointmentConflicts({
+      date: '2026-11-15',
+      startTime: '10:15',
+      durationMinutes: 45,
+      therapistName: 'د. مصطفى جبار',
+      roomOrBed: 'وحدة العلاج الطبيعي 2',
+    });
+    expect(checkThird.allOverlaps?.length).toBe(3);
+    expect(checkThird.therapistConflicts.length).toBe(1);
+  });
 });

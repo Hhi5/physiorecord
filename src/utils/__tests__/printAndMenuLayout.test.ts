@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { computeHorizontalViewportShift } from '../menuViewportClamp';
 import {
+  A4_HEIGHT_PX,
   A4_SINGLE_PAGE_INNER_BUDGET_PX,
+  A4_WIDTH_PX,
+  buildCleanReferringDoctorSalutation,
+  computeFloatingA4Scale,
   computeSinglePagePrintScale,
 } from '../printLayoutFit';
 
@@ -34,7 +38,7 @@ describe('computeHorizontalViewportShift', () => {
   });
 });
 
-describe('computeSinglePagePrintScale', () => {
+describe('computeSinglePagePrintScale & Floating A4 Preview', () => {
   it('returns 1 when content height fits inside A4 single-page budget', () => {
     expect(computeSinglePagePrintScale({ contentHeightPx: 880 })).toBe(1);
     expect(
@@ -60,5 +64,66 @@ describe('computeSinglePagePrintScale', () => {
         minScale: 0.72,
       })
     ).toBe(0.72);
+  });
+
+  it('keeps floating A4 paper miniature with clean margins on mobile and desktop', () => {
+    const mobileMini = computeFloatingA4Scale({
+      containerWidth: 390,
+      containerHeight: 600,
+      contentHeightPx: A4_HEIGHT_PX,
+      zoomMode: 'mini',
+    });
+    expect(mobileMini.scaledWidth).toBeLessThanOrEqual(340);
+    expect(mobileMini.scaledWidth).toBeGreaterThanOrEqual(240);
+    expect(mobileMini.scaledHeight).toBeLessThanOrEqual(540);
+
+    const desktopMini = computeFloatingA4Scale({
+      containerWidth: 1440,
+      containerHeight: 740,
+      contentHeightPx: A4_HEIGHT_PX,
+      zoomMode: 'mini',
+    });
+    expect(desktopMini.scaledWidth).toBeLessThanOrEqual(500);
+    expect(desktopMini.scaledWidth).toBeGreaterThanOrEqual(360);
+
+    const desktopReadable = computeFloatingA4Scale({
+      containerWidth: 1440,
+      containerHeight: 740,
+      contentHeightPx: A4_HEIGHT_PX,
+      zoomMode: 'readable',
+    });
+    expect(desktopReadable.scale).toBeGreaterThan(desktopMini.scale);
+    expect(desktopReadable.scaledWidth).toBeLessThanOrEqual(A4_WIDTH_PX);
+  });
+
+  it('prevents duplicated Arabic/English doctor titles in referral salutations', () => {
+    expect(
+      buildCleanReferringDoctorSalutation({ doctorName: 'الزميل الدكتور', isAr: true })
+    ).toBe('تحية طيبة وبعد، إلى الزميل الدكتور المحترم');
+    expect(
+      buildCleanReferringDoctorSalutation({ doctorName: 'د. علي الشمري', isAr: true })
+    ).toBe('تحية طيبة وبعد، إلى د. علي الشمري المحترم');
+    expect(
+      buildCleanReferringDoctorSalutation({
+        doctorName: 'أحمد كريم',
+        doctorSpecialty: 'جراحة العظام',
+        isAr: true,
+      })
+    ).toBe('تحية طيبة وبعد، إلى الدكتور/ة أحمد كريم المحترم (جراحة العظام)');
+    expect(buildCleanReferringDoctorSalutation({ doctorName: '', isAr: true })).toBe(
+      'تحية طيبة وبعد، إلى الزميل الدكتور المحترم'
+    );
+    expect(
+      buildCleanReferringDoctorSalutation({ doctorName: 'Dr. Sarah Al-Ani', isAr: false })
+    ).toBe('Dear Dr. Sarah Al-Ani,');
+    expect(buildCleanReferringDoctorSalutation({ doctorName: 'John Doe', isAr: false })).toBe(
+      'Dear Dr. John Doe,'
+    );
+    expect(
+      buildCleanReferringDoctorSalutation({ doctorName: 'Colleague Physician', isAr: false })
+    ).toBe('Dear Colleague Physician,');
+    expect(buildCleanReferringDoctorSalutation({ doctorName: '', isAr: false })).toBe(
+      'Dear Colleague Physician,'
+    );
   });
 });

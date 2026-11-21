@@ -39,7 +39,7 @@ import { getPatientDisplayName, getPatientMrn, isDemoPatient } from '../../../ut
 import { localizeDemoText } from '../../../utils/demoLocalization';
 import type { PrintableDocumentType } from '../../print/PrintDocumentModal';
 import { Money, Num } from '../../ui/Primitives';
-import { ClampedMenuPanel } from '../../ui/ClampedMenuPanel';
+import { ClampedMenuPanel } from '../../ui/Primitives';
 
 export type ChartTabId =
   | 'overview'

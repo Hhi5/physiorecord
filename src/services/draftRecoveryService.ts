@@ -12,7 +12,7 @@
  */
 
 import { db, type PhysioRecordDatabase } from '../db/db';
-import { runStrictWriteTransaction } from '../db/durability';
+import { runStrictWriteTransaction } from '../db/db';
 import {
   CURRENT_DEK_VERSION,
   CURRENT_RECORD_CRYPTO_VERSION,
