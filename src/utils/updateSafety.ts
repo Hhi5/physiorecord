@@ -374,15 +374,16 @@ export function evaluateBackupRecencyForUpdate(
 }
 
 /**
- * Opt-in automatic GitHub release check preference.
- * Defaults to `false` to preserve zero unsolicited network requests on fresh installs.
+ * Automatic GitHub release check preference.
+ * Enabled by default so users receive in-app update notifications whenever a
+ * newer GitHub release is published; users can disable it anytime in Settings → Security.
  */
 export function isAutoUpdateCheckEnabled(): boolean {
   try {
-    if (typeof window === 'undefined' || !window.localStorage) return false;
-    return window.localStorage.getItem(AUTO_UPDATE_CHECK_PREF_KEY) === 'true';
+    if (typeof window === 'undefined' || !window.localStorage) return true;
+    return window.localStorage.getItem(AUTO_UPDATE_CHECK_PREF_KEY) !== 'false';
   } catch {
-    return false;
+    return true;
   }
 }
 

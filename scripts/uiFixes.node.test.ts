@@ -17,6 +17,8 @@ import {
 import {
   AUTO_UPDATE_CHECK_INTERVAL_MS,
   getPendingUpdateNotification,
+  isAutoUpdateCheckEnabled,
+  setAutoUpdateCheckEnabled,
   shouldRunAutoUpdateCheck,
   type SyncedGithubReleaseItem,
 } from '../src/utils/updateSafety';
@@ -94,6 +96,31 @@ test('shouldRunAutoUpdateCheck stays off when disabled and throttles by 6 hours 
     shouldRunAutoUpdateCheck({ enabled: true, lastSyncedAt: sevenHoursAgo, nowMs }),
     true
   );
+});
+
+test('isAutoUpdateCheckEnabled defaults to true and respects explicit opt-out', () => {
+  const store = new Map<string, string>();
+  const prevWindow = (globalThis as { window?: unknown }).window;
+  (globalThis as { window?: unknown }).window = {
+    localStorage: {
+      getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+      setItem: (k: string, v: string) => store.set(k, v),
+    },
+    dispatchEvent: () => true,
+  };
+  try {
+    assert.equal(isAutoUpdateCheckEnabled(), true);
+    setAutoUpdateCheckEnabled(false);
+    assert.equal(isAutoUpdateCheckEnabled(), false);
+    setAutoUpdateCheckEnabled(true);
+    assert.equal(isAutoUpdateCheckEnabled(), true);
+  } finally {
+    if (prevWindow === undefined) {
+      delete (globalThis as { window?: unknown }).window;
+    } else {
+      (globalThis as { window?: unknown }).window = prevWindow;
+    }
+  }
 });
 
 test('getPendingUpdateNotification detects newer stable releases and respects dismissal', () => {

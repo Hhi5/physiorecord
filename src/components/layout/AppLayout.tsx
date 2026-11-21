@@ -333,7 +333,7 @@ export const AppLayout: React.FC = () => {
     };
   }, []);
 
-  // In-App GitHub Release Update Notification (100% offline/local by default; auto-check is strictly opt-in)
+  // In-App GitHub Release Update Notification (enabled by default; skipped offline & in automated tests, toggleable in Settings → Security)
   useEffect(() => {
     const refreshPendingUpdate = () => {
       setPendingGithubUpdate(

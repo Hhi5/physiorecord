@@ -475,7 +475,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 : isSearching
                 ? 'shrink-0 flex'
                 : 'flex-1 md:flex-none flex'
-            } flex-col w-full md:w-64 md:shrink-0 md:border-e border-card-divider bg-surface/40 overflow-y-auto`}
+            } flex-col w-full md:w-64 md:shrink-0 md:border-e border-card-divider bg-surface/40 overflow-y-auto pb-[env(safe-area-inset-bottom,0px)]`}
           >
             {/* Search Input */}
             <div className="p-3 border-b border-card-divider/70 shrink-0">
@@ -560,7 +560,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             aria-label={bi('محتوى الإعدادات', 'Settings content', 'ناوەڕۆکی ڕێکخستنەکان')}
             className={`${
               mobileView === 'menu' && !isSearching ? 'hidden md:flex' : 'flex'
-            } flex-1 flex-col min-h-0 overflow-y-auto bg-layer/30 p-4 sm:p-6 focus:outline-none`}
+            } flex-1 flex-col min-h-0 overflow-y-auto bg-layer/30 p-4 sm:p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] focus:outline-none`}
           >
             <div className="w-full max-w-3xl mx-auto space-y-4">
               {/* Live Search Results Panel */}
@@ -704,25 +704,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </main>
         </div>
-
-        {/* Minimal Footer */}
-        <footer className="px-4 sm:px-5 py-2.5 bg-surface/80 border-t border-card-divider flex items-center justify-between gap-2 shrink-0">
-          <span className="text-xs text-muted-foreground-1 truncate">
-            {bi(
-              'التغييرات تُحفظ محلياً داخل الخزينة المشفّرة.',
-              'Settings are saved locally inside your encrypted vault.',
-              'گۆڕانکارییەکان بە شێوەی ناوخۆیی و کۆدکراو پاشەکەوت دەکرێن.'
-            )}
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            data-testid="settings-modal-close-footer-btn"
-            className="min-h-[36px] px-4 py-1.5 rounded-xl bg-card border border-line-2 text-xs font-bold text-foreground hover:bg-layer-hover cursor-pointer transition-colors shrink-0"
-          >
-            {bi('إغلاق', 'Close', 'داخستن')}
-          </button>
-        </footer>
       </div>
 
       <div onClick={(e) => e.stopPropagation()}>
