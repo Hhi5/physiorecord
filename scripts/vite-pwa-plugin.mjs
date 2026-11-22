@@ -18,6 +18,9 @@ export const HTTP_HEADER_CSP =
 export const ANDROID_META_CSP =
   "default-src 'self'; script-src 'self' https://apis.google.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://lh3.googleusercontent.com; font-src 'self' data:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com; connect-src 'self' https://api.github.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apis.google.com http:; object-src 'none'; base-uri 'self'; form-action 'self'";
 
+export const IOS_META_CSP =
+  "default-src 'self' capacitor:; script-src 'self' capacitor: https://apis.google.com; worker-src 'self' capacitor: blob:; style-src 'self' capacitor: 'unsafe-inline'; img-src 'self' capacitor: data: blob: https://lh3.googleusercontent.com; font-src 'self' capacitor: data:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com; connect-src 'self' https://api.github.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apis.google.com http:; object-src 'none'; base-uri 'self'; form-action 'self'";
+
 export const DESKTOP_META_CSP =
   "default-src 'self' app:; script-src 'self' app:; worker-src 'self' app: blob:; style-src 'self' app: 'unsafe-inline'; img-src 'self' app: data: blob:; font-src 'self' app: data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'";
 
@@ -63,7 +66,9 @@ export function physioRecordPwaPlugin() {
             ? DESKTOP_META_CSP
             : appTarget === 'android'
               ? ANDROID_META_CSP
-              : PROD_META_CSP;
+              : appTarget === 'ios'
+                ? IOS_META_CSP
+                : PROD_META_CSP;
         return html.replace(
           '<head>',
           `<head>\n    <meta http-equiv="Content-Security-Policy" content="${metaCsp}" />`
@@ -73,8 +78,8 @@ export function physioRecordPwaPlugin() {
 
     generateBundle(_options, bundle) {
       const appTarget = (process.env.VITE_APP_TARGET || 'web').toLowerCase();
-      if (appTarget === 'android' || appTarget === 'desktop') {
-        // Native Capacitor (Android) and Electron (Windows) bundle local assets directly;
+      if (appTarget === 'android' || appTarget === 'ios' || appTarget === 'desktop') {
+        // Native Capacitor (Android/iOS) and Electron (Windows) bundle local assets directly;
         // skip Service Worker & Web App Manifest emission while keeping strict CSP <meta>.
         return;
       }
@@ -100,6 +105,7 @@ export function physioRecordPwaPlugin() {
       const cacheName = `physiorecord-offline-${cacheRevision}`;
 
       const manifest = {
+        id: '/',
         name: 'PhysioRecord — التوثيق السريري للعلاج الطبيعي',
         short_name: 'PhysioRecord',
         description:
@@ -116,7 +122,7 @@ export function physioRecordPwaPlugin() {
             src: '/icons/physiorecord-icon.svg',
             sizes: 'any',
             type: 'image/svg+xml',
-            purpose: 'any maskable',
+            purpose: 'any',
           },
           {
             src: '/icons/icon-192.png',
@@ -128,7 +134,7 @@ export function physioRecordPwaPlugin() {
             src: '/icons/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable',
+            purpose: 'any',
           },
         ],
       };

@@ -4,7 +4,7 @@
 // =======================================================================
 
 import React, { useState, useEffect } from 'react';
-import { GeometricHeaderBackdrop } from './ui/Dialog';
+import { GeometricHeaderBackdrop } from '../ui/Dialog';
 import { 
   X, 
   Calendar, 
@@ -24,11 +24,11 @@ import {
   type SessionType, 
   type AttendanceStatus,
   type EpisodeRecord 
-} from '../types/clinical';
-import { useLanguage } from '../context/LanguageContext';
-import { localDate, formatDateDDMMYYYY } from '../utils/date';
-import { commitDurationDraft, sanitizeDurationDraft } from '../utils/date';
-import { AutoResizeTextarea, DatePickerInput, TimePickerInput } from './ui/Primitives';
+} from '../../types/clinical';
+import { useLanguage } from '../../context/LanguageContext';
+import { localDate, formatDateDDMMYYYY } from '../../utils/date';
+import { commitDurationDraft, sanitizeDurationDraft } from '../../utils/durationInput';
+import { AutoResizeTextarea, DatePickerInput, TimePickerInput } from '../ui/Primitives';
 
 interface SessionModalProps {
   isOpen: boolean;

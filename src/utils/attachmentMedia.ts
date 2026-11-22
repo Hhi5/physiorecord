@@ -9,6 +9,35 @@ export const ATTACHMENT_THUMBNAIL_MAX_PX = 320;
 export const ATTACHMENT_SINGLE_WARNING_BYTES = 2 * 1024 * 1024; // 2 MB per file warning
 export const ATTACHMENT_TOTAL_WARNING_BYTES = 20 * 1024 * 1024; // 20 MB cumulative storage warning
 export const ATTACHMENT_MAX_PDF_BYTES = 12 * 1024 * 1024; // 12 MB hard limit per single PDF
+export const ATTACHMENT_MAX_IMAGE_BYTES = 25 * 1024 * 1024; // 25 MB raw image safety cap
+
+const ALLOWED_RASTER_IMAGE_MIMES = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/bmp',
+  'image/gif',
+]);
+
+/**
+ * Validates that a persisted attachment data URL strictly matches a safe clinical
+ * preview MIME type before rendering in an <iframe>, <img>, or download anchor.
+ */
+export function isSafeAttachmentDataUrl(
+  dataUrl: string | undefined | null,
+  expectedKind?: 'pdf' | 'image'
+): boolean {
+  if (!dataUrl || typeof dataUrl !== 'string') return false;
+  const trimmed = dataUrl.trim();
+  const isPdfUrl = /^data:application\/pdf(?:;charset=[^;,]+)?;base64,/i.test(trimmed);
+  const isRasterImageUrl = /^data:image\/(?:jpeg|jpg|png|webp|bmp|gif)(?:;charset=[^;,]+)?;base64,/i.test(
+    trimmed
+  );
+  if (expectedKind === 'pdf') return isPdfUrl;
+  if (expectedKind === 'image') return isRasterImageUrl;
+  return isPdfUrl || isRasterImageUrl;
+}
 
 export interface ProcessedAttachmentMedia {
   fileName: string;
@@ -37,7 +66,19 @@ export function formatReadableBytes(bytes: number): string {
   return `${(kb / 1024).toFixed(2)} MB`;
 }
 
-function readBlobAsDataUrl(blob: Blob): Promise<string> {
+async function readBlobAsDataUrl(blob: Blob): Promise<string> {
+  if (typeof FileReader === 'undefined') {
+    const buf = await blob.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 1) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 =
+      typeof btoa === 'function' ? btoa(binary) : Buffer.from(bytes).toString('base64');
+    const mime = blob.type || 'application/octet-stream';
+    return `data:${mime};base64,${base64}`;
+  }
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ''));
@@ -86,12 +127,21 @@ export async function processAttachmentFile(
 ): Promise<ProcessedAttachmentMedia> {
   const originalBytes = file.size;
   const lowerName = file.name.toLowerCase();
-  const isPdf = file.type === 'application/pdf' || lowerName.endsWith('.pdf');
-  const isImage =
-    file.type.startsWith('image/') ||
-    /\.(jpe?g|png|webp|bmp)$/.test(lowerName);
+  const lowerMime = (file.type || '').toLowerCase().trim();
 
-  if (!isPdf && !isImage) {
+  // Explicitly block active SVG/HTML files even if masquerading under image/*
+  if (lowerMime.includes('svg') || lowerName.endsWith('.svg') || lowerName.endsWith('.svgz')) {
+    throw new Error(
+      'ملفات SVG غير مسموح بها أمنياً. يُسمح فقط بالصور (JPG / PNG / WebP) أو تقارير PDF.'
+    );
+  }
+
+  const isPdf = lowerMime === 'application/pdf' || lowerName.endsWith('.pdf');
+  const isRasterImage =
+    ALLOWED_RASTER_IMAGE_MIMES.has(lowerMime) ||
+    (!lowerMime && /\.(jpe?g|png|webp|bmp|gif)$/.test(lowerName));
+
+  if (!isPdf && !isRasterImage) {
     throw new Error(
       'نوع الملف غير مدعوم. يُسمح فقط بالصور (JPG / PNG / WebP) أو تقارير PDF.'
     );
@@ -103,6 +153,20 @@ export async function processAttachmentFile(
         `حجم ملف PDF (${formatReadableBytes(originalBytes)}) يتجاوز الحد الأقصى المسموح (12 MB) للحفاظ على سرعة الخزينة.`
       );
     }
+    if (typeof file.slice === 'function' && typeof file.slice(0, 5).arrayBuffer === 'function') {
+      const headerBuf = await file.slice(0, 5).arrayBuffer();
+      const headerBytes = new Uint8Array(headerBuf);
+      const isPdfMagic =
+        headerBytes.length >= 5 &&
+        headerBytes[0] === 0x25 && // %
+        headerBytes[1] === 0x50 && // P
+        headerBytes[2] === 0x44 && // D
+        headerBytes[3] === 0x46 && // F
+        headerBytes[4] === 0x2d; // -
+      if (!isPdfMagic) {
+        throw new Error('ملف PDF غير صالح أو لا يطابق توقيع PDF القياسي.');
+      }
+    }
     const dataUrl = await readBlobAsDataUrl(file);
     const storedBytes = estimateDataUrlBytes(dataUrl);
     return {
@@ -113,6 +177,12 @@ export async function processAttachmentFile(
       storedBytes,
       sizeWarning: storedBytes > ATTACHMENT_SINGLE_WARNING_BYTES,
     };
+  }
+
+  if (originalBytes > ATTACHMENT_MAX_IMAGE_BYTES) {
+    throw new Error(
+      `حجم الصورة (${formatReadableBytes(originalBytes)}) يتجاوز الحد الأقصى المسموح (25 MB).`
+    );
   }
 
   // Image downscaling (~1600px max edge + ~320px thumbnail)
@@ -135,10 +205,11 @@ export async function processAttachmentFile(
     };
   } catch {
     // Graceful non-browser / headless fallback when Canvas 2D or Image decode isn't present
+    const safeMime = ALLOWED_RASTER_IMAGE_MIMES.has(lowerMime) ? lowerMime : 'image/png';
     const storedBytes = estimateDataUrlBytes(rawDataUrl);
     return {
       fileName: file.name,
-      mimeType: file.type || 'image/png',
+      mimeType: safeMime,
       payloadDataUrl: rawDataUrl,
       thumbnailDataUrl: rawDataUrl,
       originalBytes,

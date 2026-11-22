@@ -4,30 +4,29 @@
 // =======================================================================
 
 import React, { useState } from 'react';
-import { db } from '../db/db';
-import { usePatients } from '../context/PatientContext';
-import { useVault } from '../context/VaultContext';
-import { useLanguage } from '../context/LanguageContext';
+import { db } from '../../db/db';
+import { usePatients } from '../../context/PatientContext';
+import { useVault } from '../../context/VaultContext';
+import { useLanguage } from '../../context/LanguageContext';
 import {
-  SYNTHETIC_PATIENTS,
   generateSyntheticIraqiPatients,
   SYNTHETIC_DATA_LICENSE,
-} from '../data/syntheticPatients';
-import { EpisodeService } from '../services/episodeService';
-import { SessionService } from '../services/sessionService';
-import { SoapService } from '../services/soapService';
-import { ClinicOperationsService } from '../services/clinicOperationsService';
-import { computePatientAge } from '../utils/date';
-import { getPatientDisplayName, hasAnyDemoPatients } from '../utils/mrn';
-import { localizeDemoText } from '../utils/demoLocalization';
-import { DemoBadge } from './ui/Primitives';
-import { GeometricHeaderBackdrop } from './ui/Dialog';
+} from '../../data/syntheticPatients';
+import { EpisodeService } from '../../services/episodeService';
+import { SessionService } from '../../services/sessionService';
+import { SoapService } from '../../services/soapService';
+import { ClinicOperationsService } from '../../services/clinicOperationsService';
+import { computePatientAge } from '../../utils/date';
+import { getPatientDisplayName, hasAnyDemoPatients } from '../../utils/mrn';
+import { localizeDemoText } from '../../utils/demoLocalization';
+import { DemoBadge } from '../ui/Primitives';
+import { GeometricHeaderBackdrop } from '../ui/Dialog';
 import { X, Database, ShieldCheck, Sparkles, CheckCircle2, Trash2 } from 'lucide-react';
 import type {
   EpisodeClinicalData,
   SessionClinicalData,
   SoapNoteData,
-} from '../types/clinical';
+} from '../../types/clinical';
 
 interface SyntheticDataModalProps {
   isOpen: boolean;

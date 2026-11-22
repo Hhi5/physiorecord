@@ -21,19 +21,19 @@ import {
   Upload,
 } from 'lucide-react';
 import { isElectronDesktop } from '../../platform/nativeBridge';
-import { useDeviceFormFactor } from '../../utils/deviceBiometricCopy';
+import { useDeviceFormFactor } from '../../hooks/useDeviceFormFactor';
 import { getSecuritySettingsCopy } from '../../utils/deviceBiometricCopy';
 import { useLanguage } from '../../context/LanguageContext';
 import { useVault } from '../../context/VaultContext';
 import { requestPersistentStorage } from '../../db/db';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
 import type { SettingsViewMode } from '../../types/clinicManagement';
-import { copySecretWithAutoClear } from '../../utils/securityHardening';
+import { copySecretWithAutoClear } from '../../utils/clipboardPrivacy';
 import { getReminderIntervalDays } from '../../utils/passwordReminderSchedule';
-import { VAULT_CREDENTIAL_USERNAME } from '../../utils/passwordReminderSchedule';
+import { VAULT_CREDENTIAL_USERNAME } from '../../utils/passwordManagerHelper';
 import { PlatformUpdateCenterCard } from '../clinic/PlatformUpdateCenterCard';
-import { PasswordReminderModal } from '../PasswordReminderModal';
-import { sanitizeDurationDraft } from '../../utils/date';
+import { PasswordReminderModal } from '../auth/PasswordReminderModal';
+import { sanitizeDurationDraft } from '../../utils/durationInput';
 import { normalizeVaultPinInput, validateVaultPin } from '../../crypto/vaultPin';
 import { SettingsAccordion, SettingsSwitchRow } from './SettingsPrimitives';
 

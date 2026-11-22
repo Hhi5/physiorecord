@@ -4,7 +4,7 @@
 // =======================================================================
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../../context/LanguageContext';
 import type {
   PatientRecord,
   EpisodeRecord,
@@ -12,26 +12,24 @@ import type {
   ClinicalSpecialty,
   OnsetMechanism,
   StructuredRehabGoal,
-} from '../types/clinical';
+} from '../../types/clinical';
 import {
   CLINICAL_SPECIALTIES,
   ONSET_MECHANISMS,
   COMMON_BODY_REGIONS,
   searchBilingualGlossary,
   type BilingualGlossaryEntry,
-} from '../data/terminology';
-import { ClinicOperationsService } from '../services/clinicOperationsService';
-import { localDate, computePatientAge } from '../utils/date';
-import { getPatientDisplayName } from '../utils/mrn';
-import { AutoResizeTextarea, DatePickerInput } from './ui/Primitives';
-import { GeometricHeaderBackdrop, ModalDialog } from './ui/Dialog';
+} from '../../data/terminology';
+import { ClinicOperationsService } from '../../services/clinicOperationsService';
+import { localDate, computePatientAge } from '../../utils/date';
+import { getPatientDisplayName } from '../../utils/mrn';
+import { AutoResizeTextarea, DatePickerInput } from '../ui/Primitives';
+import { ModalDialog } from '../ui/Dialog';
 
 const SmartGoalsGasPanel = React.lazy(() =>
-  import('./workspace/SmartGoalsGasPanel').then((m) => ({ default: m.SmartGoalsGasPanel }))
+  import('../workspace/SmartGoalsGasPanel').then((m) => ({ default: m.SmartGoalsGasPanel }))
 );
 import {
-  X,
-  Layers,
   Save,
   CheckCircle2,
   Sparkles,

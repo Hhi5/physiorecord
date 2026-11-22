@@ -33,7 +33,6 @@ import type {
   BackupStateMetadata,
   ClinicAppointment,
   ClinicExpenseIQD,
-  ClinicRoleId,
   FinancialInvoiceIQD,
   PatientMedicationPlan,
   RecycleBinEntry,

@@ -226,6 +226,7 @@ npm run check:content     # أصول المحتوى
 | --- | --- |
 | اليوم — سطح المكتب (عربي RTL) | [`docs/ui-redesign/desktop-today-ar.png`](ui-redesign/desktop-today-ar.png) |
 | اليوم — سطح المكتب (داكن) | [`docs/ui-redesign/desktop-today-dark-ar.png`](ui-redesign/desktop-today-dark-ar.png) |
+| ملف المريض السريري — سطح المكتب (عربي RTL) | [`docs/ui-redesign/desktop-chart-ar.png`](ui-redesign/desktop-chart-ar.png) |
 | الحسابات — سطح المكتب (إنجليزي LTR) | [`docs/ui-redesign/desktop-finance-en.png`](ui-redesign/desktop-finance-en.png) |
 | اليوم — جوال | [`docs/ui-redesign/mobile-today-ar.png`](ui-redesign/mobile-today-ar.png) |
 | اليوم — جوال 320px (شبكة المرشّحات) | موثّق في `pr-seg-wrap` أدناه |

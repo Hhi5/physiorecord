@@ -20,7 +20,6 @@ import type {
 import {
   localDate,
   formatDateDDMMYYYY,
-  formatTimeIraq,
   formatIraqiPhoneDisplay,
 } from '../../utils/date';
 import { Num, Fraction, Money, DemoBadge, TimeDisplay } from '../ui/Primitives';

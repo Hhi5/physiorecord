@@ -3,11 +3,21 @@
 // Zero network side effects; decoupled for deterministic unit testing.
 // =======================================================================
 
-export const OFFICIAL_GITHUB_REPO = 'Hhi5/physiorecord';
-export const OFFICIAL_GITHUB_REPO_URL = `https://github.com/${OFFICIAL_GITHUB_REPO}`;
-export const OFFICIAL_RELEASES_URL = `${OFFICIAL_GITHUB_REPO_URL}/releases`;
-export const OFFICIAL_LATEST_RELEASE_URL = `${OFFICIAL_RELEASES_URL}/latest`;
-export const OFFICIAL_GITHUB_RELEASES_API_URL = `https://api.github.com/repos/${OFFICIAL_GITHUB_REPO}/releases?per_page=10`;
+import {
+  OFFICIAL_GITHUB_REPO,
+  OFFICIAL_GITHUB_REPO_URL,
+  OFFICIAL_RELEASES_URL,
+  OFFICIAL_LATEST_RELEASE_URL,
+  OFFICIAL_GITHUB_RELEASES_API_URL,
+} from '../config/appConstants';
+
+export {
+  OFFICIAL_GITHUB_REPO,
+  OFFICIAL_GITHUB_REPO_URL,
+  OFFICIAL_RELEASES_URL,
+  OFFICIAL_LATEST_RELEASE_URL,
+  OFFICIAL_GITHUB_RELEASES_API_URL,
+};
 export const SYNCED_RELEASES_CACHE_KEY = 'physiorecord_synced_github_releases_v1';
 export const AUTO_UPDATE_CHECK_PREF_KEY = 'physiorecord_auto_update_check_v1';
 export const DISMISSED_UPDATE_TAG_KEY = 'physiorecord_dismissed_update_tag_v1';

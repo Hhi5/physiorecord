@@ -4,9 +4,9 @@
 
 # PhysioRecord
 
-**Offline-First, Zero-Server, AES-256-GCM Encrypted Electronic Health Record (EHR) & Clinic Operations Platform for Physical Therapy**
+**Offline-First, Zero-Server, AES-256-GCM Encrypted Electronic Health Record (EHR) & Clinic Operations Suite for Physical Therapy**
 
-[English](README.md) · [**العربية**](docs/README.ar.md) · [Documentation Portal](docs/INDEX.md)
+[English](README.md) · [**العربية**](docs/README.ar.md) · [Documentation Portal](docs/INDEX.md) · [Latest Release](https://github.com/Hhi5/physiorecord/releases/latest)
 
 <p>
   <a href="https://github.com/Hhi5/physiorecord/actions/workflows/ci.yml">
@@ -20,10 +20,10 @@
   <img src="https://img.shields.io/badge/Encryption-AES--256--GCM-0284C7?style=flat-square" alt="AES-256-GCM Encryption" />
   <img src="https://img.shields.io/badge/Sync-LAN%20Wi--Fi%20%C2%B7%20E2EE%20Google%20Drive-0D9488?style=flat-square" alt="Optional LAN Wi-Fi and E2EE Google Drive Sync" />
   <img src="https://img.shields.io/badge/Languages-AR%20%C2%B7%20CKB%20%C2%B7%20EN-D97706?style=flat-square" alt="Languages: Arabic, Kurdish Sorani, English" />
-  <img src="https://img.shields.io/badge/Platforms-Web%20PWA%20%7C%20Android%20APK%20%7C%20Windows%20EXE-334155?style=flat-square" alt="Platforms: Web PWA, Android APK, Windows EXE" />
+  <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android%20%7C%20iOS%20%7C%20macOS-334155?style=flat-square" alt="Platforms: Windows, Android, iOS, macOS" />
 </p>
 
-[Overview](#overview) · [Screenshots](#interface-preview) · [Features](#core-capabilities) · [Multi-Device Sync](#multi-device-sync-setup-optional--0) · [Security](#security--local-first-architecture) · [Quick Start](#quick-start) · [Builds](#multi-platform-builds) · [Docs](#documentation-portal)
+[Overview](#overview) · [Install & Platforms](#install--supported-platforms) · [Screenshots](#interface-preview) · [Features](#complete-feature-walkthrough) · [Multi-Device Sync](#multi-device-sync-optional-0) · [Security](#security--trust-architecture) · [Developer Guide](#developer-quick-start) · [Docs](#documentation-portal)
 
 </div>
 
@@ -31,16 +31,35 @@
 
 ## Overview
 
-**PhysioRecord** is an open-source, **offline-first, zero-backend** physical therapy EHR and clinic management suite designed for solo clinicians and multi-therapist practices. Every patient chart, clinical assessment, appointment, and financial ledger entry stays encrypted at rest on the clinic's own device—running identically as an installable **Web PWA**, **Android Universal APK**, or **Windows Desktop (`.exe`)** application with native **Arabic (RTL)**, **Kurdish Sorani (`ckb` RTL)**, and **English (LTR)** interfaces. When a clinic needs multi-device sync, clinicians can opt in to **Local Clinic Wi-Fi (LAN)** or **End-to-End Encrypted Google Drive (`$0` BYOC)**—keeping full ownership of their data with zero subscriptions or vendor servers.
+**PhysioRecord** is an open-source, **offline-first, zero-backend** Electronic Health Record (EHR) and clinic management platform built specifically for **solo physical therapists and multi-therapist rehabilitation clinics**.
 
-### Why PhysioRecord?
+Every patient chart, assessment, clinical photo, appointment, and financial invoice lives **encrypted at rest on your own device** (`IndexedDB` + WebCrypto `AES-256-GCM`)—with **zero mandatory accounts, zero subscriptions, zero vendor servers, and zero telemetry**. It runs natively in **Arabic (`ar` RTL)**, **Kurdish Sorani (`ckb` RTL)**, and **English (`en` LTR)**, and offers optional `$0` multi-device sync over your **clinic's local Wi-Fi** or **end-to-end encrypted Google Drive**.
 
-- **Local-First & Zero-Backend Sovereignty:** Works 100% offline out of the box with zero PhysioRecord backend servers, zero mandatory accounts, and zero telemetry (`Same-Origin` strict `CSP` enforced by automated offline E2E tests).
-- **Optional `$0` Multi-Device Sync (User-Controlled & Non-Destructive):** Opt in only if needed via **Local Clinic Wi-Fi (LAN Hub)** over your regular clinic router, **End-to-End Encrypted Google Drive** (`drive.file` scope — encrypted locally with `AES-256-GCM` before upload so Google never sees plaintext PHI), or manual encrypted `.ptsync.json` files. Merging is strictly additive and never deletes local therapist records.
-- **Opt-In In-App Release Notifications:** Disabled by default for strict zero-network privacy; when enabled in **Settings → Security**, checks official GitHub Releases (throttled to every 6 hours) and displays an in-app banner whenever a newer Android APK, Windows EXE, or Web release is published.
-- **Power-Cut Resilient Drafting:** Encrypted `IndexedDB` draft buffers (`Dexie v10`) auto-save clinical notes, flowsheets, invoices, and appointments every 2 seconds and flush on page hide so sudden power outages never erase active charting.
-- **Built for Real PT Clinical Flow:** Interactive front/back anatomical Body Charts, mobile-friendly bilateral `ROM`, free-text/smart `MMT`, Orthopedic Special Tests, full `ISNCSCI / ASIA` Neuro exam (10 key myotomes, 28 sensory levels, DTR & AIS), `MCID/MDC`-linked outcome calculators, immutable `SHA-256` finalized `SOAP` notes with append-only addenda, and audited deliberate deletion of mistaken finalized sessions.
-- **Tailored for Iraqi Clinic Operations:** Native **Arabic (`ar` RTL)**, **Kurdish Sorani (`ckb` RTL)**, and **English (`en` LTR)** interfaces; solo and team RBAC modes; weekly recurring appointments with manual duration entry; Iraqi home-visit addresses; multi-currency `ISO 4217` invoicing defaulting to IQD (`25,000 د.ع`); local payment channels (`نقداً`, `ZainCash`, `QiCard`, `أخرى`); installment debt aging; and A4/A6 thermal/office printouts.
+### At a Glance
+
+| Pillar | What You Get |
+| --- | --- |
+| **100% Local-First Sovereignty** | Works completely offline out of the box. Zero PhysioRecord servers, zero tracking, strict `Same-Origin` CSP verified by automated offline Playwright E2E tests. |
+| **End-to-End Encrypted Vault** | WebCrypto `AES-256-GCM` with `PBKDF2-HMAC-SHA256` (`>= 600,000` iterations in a Web Worker), `HKDF-SHA256` per-record subkeys, 32-char Recovery Key, and biometric/OS unlock. |
+| **Power-Cut Resilient Charting** | Encrypted `IndexedDB` draft buffers auto-save SOAP notes, flowsheets, invoices, and appointments every 2 seconds and flush on page hide. |
+| **Built for Physical Therapy** | Front/back Body Chart, bilateral `ROM`, `MMT`, 9-region Special Tests, `ISNCSCI / ASIA` Neuro, `MCID/MDC` Outcome Calculators, `Konva` posture/angle studio, and immutable `SHA-256` SOAP notes. |
+| **Iraqi Clinic Ready (AR / CKB / EN)** | Solo & Team RBAC modes, recurring appointments, Iraqi home-visit addresses, `ISO 4217` invoicing defaulting to IQD (`25,000 د.ع`), local payments (`نقداً`, `ZainCash`, `QiCard`, `أخرى`), installments, and `A4`/`A6` printouts. |
+| **Optional `$0` Multi-Device Sync** | Disabled by default. Opt in to **Local Clinic Wi-Fi (LAN Hub)**, **E2EE Google Drive (`drive.file`)**, or offline **`.ptsync.json`** files—strictly additive and non-destructive. |
+
+---
+
+## Install & Supported Platforms
+
+PhysioRecord uses one locked persistent identity (`org.physiorecord.app`) so upgrading never erases your encrypted clinical vault.
+
+| Platform | Recommended Installation | Data Persistence & Updates |
+| --- | --- | --- |
+| **Windows 10 / 11 (x64)** | Download **`PhysioRecord-Setup-*.exe`** (or Portable `.exe`) from [GitHub Releases](https://github.com/Hhi5/physiorecord/releases/latest). | Native Electron desktop app (`app://bundle`). Installing a newer Setup upgrades in place while preserving `%APPDATA%\PhysioRecord`. |
+| **Android (Phone & Tablet)** | Download the signed Universal **`PhysioRecord-*.apk`** from [GitHub Releases](https://github.com/Hhi5/physiorecord/releases/latest). | Native Capacitor Android shell (`org.physiorecord.app`). Supports in-place APK upgrades and Android biometric unlock. |
+| **iPhone & iPad (iOS / iPadOS)** | Open the hosted web link in **Safari** → tap **Share** → **Add to Home Screen**. | Runs as a standalone offline PWA from your Home Screen with local encrypted `IndexedDB` storage—no App Store fees. |
+| **macOS** | Open in **Safari** → **File → Add to Dock** (or Chrome/Edge → **Install App**). | Runs as a standalone installed Dock app with persistent local encrypted storage. |
+
+> **Built-In Platform Access Gate:** On production web deployments, visitors on Android or Windows browsers are automatically guided to the dedicated native installer, while iOS/macOS browser tabs are guided to install via Safari Home Screen / Dock—protecting clinic data from accidental browser-tab eviction.
 
 ---
 
@@ -62,24 +81,38 @@
 </table>
 
 <details>
-<summary><strong>View more screenshots (Dark Mode & Mobile RTL)</strong></summary>
+<summary><strong>View more screenshots (Patient Chart, Dark Mode &amp; Mobile RTL)</strong></summary>
 <br />
 <table>
   <tr>
+    <td align="center" width="50%">
+      <img src="docs/ui-redesign/desktop-chart-ar.png" alt="PhysioRecord Desktop Master Patient Chart (Arabic RTL)" />
+      <br />
+      <sub><b>Desktop — Master Patient Chart (Arabic RTL)</b></sub>
+    </td>
     <td align="center" width="50%">
       <img src="docs/ui-redesign/desktop-today-dark-ar.png" alt="PhysioRecord Desktop Dark Mode (Arabic RTL)" />
       <br />
       <sub><b>Desktop — Dark Mode (Arabic RTL)</b></sub>
     </td>
-    <td align="center" width="25%">
+  </tr>
+</table>
+<table>
+  <tr>
+    <td align="center" width="33%">
       <img src="docs/ui-redesign/mobile-today-ar.png" alt="PhysioRecord Mobile Today View" />
       <br />
       <sub><b>Mobile — Today Queue</b></sub>
     </td>
-    <td align="center" width="25%">
+    <td align="center" width="33%">
       <img src="docs/ui-redesign/mobile-patients-ar.png" alt="PhysioRecord Mobile Patient Directory" />
       <br />
-      <sub><b>Mobile — Directory</b></sub>
+      <sub><b>Mobile — Patient Directory</b></sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/ui-redesign/mobile-bottom-sheet-ar.png" alt="PhysioRecord Mobile Quick Walk-In Bottom Sheet" />
+      <br />
+      <sub><b>Mobile — Quick Walk-In Sheet</b></sub>
     </td>
   </tr>
 </table>
@@ -87,58 +120,75 @@
 
 ---
 
-## Core Capabilities
+## Complete Feature Walkthrough
 
 ### 1. Physical Therapy Clinical Documentation
-- **Interactive Body Chart & Encrypted Attachments:** Front and back anatomical SVG views with pin markers, custom pain-type labels, per-pin color legends, localized clinical photo/PDF vault with side-by-side comparison, and photo goniometric angle/plumb-line studio (`Konva`).
-- **Musculoskeletal & Neuro Assessments:** Bilateral Active/Passive/Assisted `ROM` (clean numeric inputs without distracting normative overlays), free-text or smart `MMT` (`0–5`), Orthopedic Special Tests across 9 joint regions, `ISNCSCI / ASIA` neurological exam (10 key myotomes with primary muscles, 28 sensory levels, DTR & AIS classification summary), regional Red Flags screening, and cardiopulmonary vitals (`BP`, `HR`, `SpO2`).
-- **Outcome Measures & Goals:** Score-entry calculators (`ODI`, `NDI`, `QuickDASH`, `SPADI`, `LEFS`) with `MCID/MDC` deltas, open functional tests (`NPRS`, `PSFS`, `TUG`, `30s-CST`, `5xSTS`), Custom Measure Builder, Problem Lists, and `SMART / GAS` goals.
-- **Immutable `SOAP` + Flowsheets:** Unified visit charting with `/` slash templates, 1-tap regional exam presets, exercise flowsheet progression helpers, `SHA-256` finalization seals, and append-only `clinicalAddenda`.
+- **Patient Chart & Episode Management:** Unified Master Patient Chart with Arabic/Kurdish/English normalized fuzzy search (`MiniSearch`), duplicate-patient detection & transactional merge, structured precautions/contraindications, imaging report tracking, and episode-of-care timelines.
+- **Interactive Anatomical Body Chart:** Front and back clinical body views with pin markers, custom pain-quality labels, and per-pin color legends.
+- **Musculoskeletal & Neurological Exam Battery:**
+  - **ROM (Goniometry):** Clean bilateral Active / Passive / Assisted (`AROM` / `PROM` / `AAROM`) numeric fields without distracting normative overlays.
+  - **MMT (Strength):** Free-text or quick-assist muscle strength cards (`0–5`) starting clean with `+` to add tests on demand.
+  - **Orthopedic Special Tests:** Concise provocative tests and target anatomical structures across all 9 joint regions.
+  - **ISNCSCI / ASIA Neurological Exam:** Complete 10 key myotomes, 28 sensory dermatomes, deep tendon reflexes (`DTR`), and automated `AIS` classification summary.
+  - **Screening & Vitals:** Regional Red Flags checklist and cardiopulmonary vitals (`BP`, `HR`, `SpO2`) with configurable alert thresholds.
+- **Outcome Measures, Goals & Progress Tracking:**
+  - Built-in score calculators (`ODI`, `NDI`, `QuickDASH`, `SPADI`, `LEFS`) with `MCID / MDC` progress tracking, open functional tests (`NPRS`, `PSFS`, `TUG`, `30s-CST`, `5xSTS`), and a **Custom Measure & Custom Widget Builder**.
+  - Problem Lists, `SMART / GAS` rehabilitation goals, longitudinal trajectory sparklines, and Completed Treatment discharge archives.
+- **Immutable SOAP Notes & Flowsheets:** Unified visit paper with `/` slash templates, 1-tap regional exam presets, exercise/manual therapy/physical agent flowsheets, `SHA-256` finalization seals, append-only `clinicalAddenda`, and audited confirmation for deliberate deletion of mistaken finalized sessions.
+- **Encrypted Clinical Media & Measurement Studio:** Local encrypted photo & PDF vault with side-by-side comparison and a `Konva` goniometric angle, Cobb angle, distance, and plumb-line annotation studio.
 
-### 2. Clinic Operations & Iraqi Finance
-- **Solo & Team Workflows:** Switch between fast Solo Mode (10-second walk-in registration & Today command view) and multi-therapist Team Mode (`Reception Command Center`, Staff Roster, `Admin PIN` RBAC, and privacy screen blur).
-- **Scheduling & Home Visits:** Daily/weekly manual recurring schedules with editable session durations and non-blocking overbooking warnings, Iraqi home-visit addresses (Neighborhood / Mahalla / Zukak / Landmark + travel buffer & fee), branches, closed days, and waiting-room Patient Kiosk mode.
-- **Billing, Installments & Retention:** Blank-default invoice creation (`فحص`, `جلسة مفردة`, `كورس`), Iraqi payment methods (`نقداً`, `ZainCash`, `QiCard`, `أخرى`), multi-installment plans, `30/60/90+` day debt aging, recurring clinic expenses, daily `Z-Reports`, referring physician progress letters, and patient retention queues.
+### 2. Clinic Operations, Scheduling & Iraqi Practice Workflows
+- **Solo Mode & Team Mode (RBAC):** Switch between fast Solo Mode (10-second walk-in registration & Today Command Center) and multi-therapist Team Mode (Reception Command Center, Staff Roster, `Admin PIN` role switching, and 1-click privacy blur).
+- **Appointments & Home Visits:** Daily/weekly recurring weekday schedules with interactive clock selector, manual session duration entry, non-blocking overbooking warnings, multi-branch locations, closed days/breaks, and **Iraqi home-visit addresses** (Neighborhood / Mahalla / Zukak / Landmark + travel buffer & fee).
+- **Waiting-Room Patient Kiosk & HEP:** Optional waiting-room intake kiosk mode and built-in Home Exercise Program (HEP) library (toggleable in Settings).
+- **Referring Doctors & Retention Hub:** Referring physician directory, referral source revenue analytics, customizable printable A4 **Report-Back Letters**, and 4 actionable retention queues with one-tap WhatsApp reminder links.
 
-### 3. Portability, Printing, Sync & Safe Updates
-- **Print Portal (`A4` / `A6`) & Discharge Summary:** Single-page auto-fitted invoices, receipts, referring physician reports, treatment journey & discharge summaries (with dedicated Completed Treatment archive), full patient dossiers, visit/balance cards, HEP sheets, and signed informed consents.
-- **Zero-Cost Multi-Therapist Sync (Optional, Strictly Non-Destructive):** Sync across clinic PC and therapists' phones via **Local Wi-Fi (LAN)** over the clinic's regular Wi-Fi router (no hotspot or internet needed) or **End-to-End Encrypted Google Drive (`$0`)** with offline outbox queueing and additive merging that never deletes therapist data.
-- **In-App GitHub Release Update Alerts (Opt-In):** Keep Android, Windows, and Web installations current via optional GitHub Release notifications and safe in-place upgrades (`org.physiorecord.app`) that preserve the encrypted local vault.
-- **Standards & Backups:** Encrypted `.ptbackup` `V3.0` archives (streaming `gzip` + `AES-GCM` chunks, backward compatible with `V1.1`/`V2.0`), `HL7 FHIR R4` JSON Bundles, `CSV`/`XLSX` patient onboarding with rollback, and privacy-filtered `.ics` calendar exports.
+### 3. Iraqi Financial Ledger & Billing
+- **Blank-Default Invoicing:** Invoice forms start clean/blank (never prefilled prices), supporting `فحص` (Assessment), `جلسة مفردة` (Single Session), and `كورس` (Course/Package).
+- **Multi-Currency & Local Payments:** Global `ISO 4217` currency selector defaulting to Iraqi Dinar (`25,000 د.ع` with symbol after the number) and native payment methods (`نقداً`, `ZainCash`, `QiCard`, and custom `أخرى`).
+- **Debt, Expenses & Closing:** Multi-installment payment plans, `30/60/90+` day debt aging reports, recurring clinic expenses, and daily cashbook `Z-Reports`.
+
+### 4. Printing, Backups & Clinical Interoperability
+- **Print & PDF Portal (`A4` / `A6`):** Single-page auto-fitted invoices, receipts, referring physician reports, treatment journey & discharge summaries, full patient dossiers, visit/balance cards, HEP sheets, and signed informed consents (with direct native PDF export on Desktop).
+- **Encrypted Backups & Recovery Drills:** Streaming `.ptbackup` `V3.0` archives (`gzip` + chunked `AES-GCM`, backward compatible with `V1.1`/`V2.0`), automatic desktop backup folder support, and isolated sandbox backup verification drills.
+- **Standards & Data Quality:** `HL7 FHIR R4` JSON Bundle export, `CSV`/`XLSX` patient onboarding wizard with dry-run preview & rollback, privacy-filtered `.ics` calendar export, 30-day non-clinical Recycle Bin, and Data Health orphan scanner.
 
 ---
 
-## Multi-Device Sync Setup (Optional, $0)
+## Multi-Device Sync (Optional, $0)
 
-Sync is **disabled by default**—PhysioRecord makes zero external network connections unless you explicitly enable one of the two optional sync modes in **Settings → Data & Sync**:
+Sync is **disabled by default**—PhysioRecord makes zero external network calls unless you explicitly enable a sync mode in **Settings → Data & Sync**:
 
 | Sync Mode | Best For | Internet Needed? | Clinic PC Must Stay On? | Data Privacy |
 | --- | --- | --- | --- | --- |
-| **1. Local Wi-Fi (LAN Hub)** | Devices on the same clinic Wi-Fi router | **No (100% Offline)** | Only during the moment of sync (offline outbox queues edits when PC is off) | Strictly RFC1918 local Wi-Fi + 64-bit Pairing Token + `AES-256-GCM` envelopes |
+| **1. Local Wi-Fi (LAN Hub)** | Devices on the same clinic Wi-Fi router | **No (100% Offline)** | Only at the moment of sync (offline outbox queues edits when PC is off) | Strictly RFC1918 private LAN + 64-bit Pairing Token + `AES-256-GCM` envelopes |
 | **2. Encrypted Google Drive (BYOC)** | Syncing when clinic PC is off, across branches, or from home | Only during sync (auto-queues offline) | **No** | Client-side `AES-256-GCM` + `PBKDF2` (`310,000` iters) before upload; minimal `drive.file` scope only |
-| **3. Encrypted File (`.ptsync.json`)** | Air-gapped clinics, USB sticks, WhatsApp/AirDrop transfer | **No** | **No** | Client-side `AES-256-GCM` encrypted file with non-destructive merge |
+| **3. Encrypted File (`.ptsync.json`)** | Air-gapped clinics, USB drives, or manual transfer | **No** | **No** | Client-side `AES-256-GCM` encrypted file with non-destructive merge |
 
-### How to Set Up Local Wi-Fi (LAN) Sync
-1. Connect the **Clinic Windows PC** and all **therapist phones/tablets** to the **same clinic Wi-Fi router** (no mobile hotspot is needed—just regular shared Wi-Fi).
-2. On the Clinic Windows PC (Electron Desktop app), open **Settings → Data & Sync → Clinic Multi-Device Sync**, select **Local Wi-Fi (LAN)**, and click **Start Clinic Wi-Fi Sync Hub**.
-3. Copy the displayed local address (e.g., `http://192.168.1.15:47821`) and **Pairing Token** into each therapist device, enter the same **Shared Clinic Sync Passphrase**, and click **Sync Now**.
-4. If the clinic PC is turned off, therapists keep working normally—encrypted changes queue in the **Offline Outbox** and sync cleanly once the PC is turned back on.
+> **Non-Destructive Guarantee:** All sync modes perform strictly **additive merging**—syncing never deletes existing clinical records from a therapist's device, and finalized SOAP notes remain protected.
 
-### How to Set Up Encrypted Google Drive Sync (`$0` BYOC)
+<details>
+<summary><strong>Step-by-step setup for Local Wi-Fi (LAN) &amp; Encrypted Google Drive</strong></summary>
+
+#### Local Wi-Fi (LAN) Sync
+1. Connect the **Clinic Windows PC** and all **therapist phones/tablets** to the **same clinic Wi-Fi router** (no hotspot or internet needed).
+2. On the Clinic Windows PC (Desktop app), open **Settings → Data & Sync → Clinic Multi-Device Sync**, select **Local Wi-Fi (LAN)**, and click **Start Clinic Wi-Fi Sync Hub**.
+3. Enter the displayed local URL (e.g., `http://192.168.1.15:47821`), **Pairing Token**, and your **Shared Clinic Sync Passphrase** on each therapist device, then tap **Sync Now**.
+
+#### Encrypted Google Drive Sync (`$0` BYOC)
 1. Open **Settings → Data & Sync → Clinic Multi-Device Sync** and select **Encrypted Google Drive**.
-2. Click **Sign in with Google** and grant access strictly to the app's dedicated folder (`drive.file` scope — PhysioRecord **cannot** view or modify any other files in your Drive).
-3. Enter the same **Shared Clinic Sync Passphrase** on every clinic device (stored in memory only—never uploaded to Google) and click **Sync Now**.
-4. **Self-Hosting Note:** If you deploy your own copy of PhysioRecord on a custom domain, add that domain to Firebase Authentication **Authorized Domains** (and configure your Google Cloud OAuth consent screen) so the Google Sign-In popup completes without domain restrictions.
+2. Sign in with Google and grant access strictly to the app's own folder (`drive.file` scope — PhysioRecord cannot view or touch any other Drive files).
+3. Enter the same **Shared Clinic Sync Passphrase** on each device (kept in memory only, never uploaded) and tap **Sync Now**.
 
-> **Non-Destructive Guarantee:** Both LAN and Google Drive sync use strictly **additive merging**—syncing never deletes existing records from a therapist's device, and finalized SOAP notes remain protected.
+</details>
 
 ---
 
-## Security & Local-First Architecture
+## Security & Trust Architecture
 
 ```text
-Clinician Password / WebAuthn PRF
-   └─▶ PBKDF2-HMAC-SHA256 (>= 600,000 iterations in Web Worker)
+Clinician Password / WebAuthn PRF / Windows Hello / Touch ID
+   └─▶ PBKDF2-HMAC-SHA256 (>= 600,000 iterations in dedicated Web Worker)
          └─▶ Master Key (non-extractable WebCrypto)
                ├─▶ HKDF-SHA256 Per-Record Subkeys
                └─▶ AES-256-GCM Encrypted IndexedDB (PhysioRecordDB, Dexie v1–v10)
@@ -147,24 +197,24 @@ Clinician Password / WebAuthn PRF
 | Security Control | Implementation |
 | --- | --- |
 | **Encryption at Rest** | WebCrypto `AES-256-GCM` with atomic IV reservation & automatic 70% DEK rotation ([`src/crypto/vault.ts`](src/crypto/vault.ts)) |
-| **Key Derivation & Unlock** | `PBKDF2-HMAC-SHA256` (`>= 600,000` iterations) inside a Web Worker + optional `WebAuthn PRF` passkey unlock |
-| **Account Recovery & Lock** | Verified 32-character (`8×4` Base32) Emergency Recovery Key + configurable auto-lock (`Never` supported) |
-| **Audit & Clinical Integrity** | `SHA-256` hash-chained clinic audit logs; finalized `SOAP` notes use append-only `clinicalAddenda` and require typed confirmation + audit trail for deliberate deletion |
-| **Zero-Network Default & E2EE Sync** | Self-hosted `@fontsource/*` fonts, bundled assets, local service worker, strict `CSP` verified by Playwright offline tests; optional Google Drive / LAN sync encrypts all records client-side (`AES-256-GCM`) before leaving the device |
-| **Desktop, Mobile & Parser Hardening** | Strict Electron `app://` path-boundary & IPC origin verification, RFC1918 LAN-only SSRF blocking, brute-force rate-limited LAN Hub, CSP-hardened HTML report exports, XLSX zip-bomb decompression limits, and prototype-pollution-safe JSON parsing |
+| **Key Derivation & Unlock** | `PBKDF2-HMAC-SHA256` (`>= 600,000` iterations) inside a Web Worker + optional `WebAuthn PRF`, Android Biometrics, Windows Hello (`DPAPI`), and macOS Touch ID (`Keychain`) |
+| **Recovery & Auto-Lock** | Verified 32-character (`8×4` Base32) Emergency Recovery Key + configurable inactivity auto-lock (`Never` supported) |
+| **Clinical Integrity & Audit** | `SHA-256` hash-chained clinic audit logs; finalized `SOAP` records are sealed and corrected via append-only `clinicalAddenda` |
+| **Zero-Network Default** | Self-hosted `@fontsource/*` fonts, local SVGs & Service Worker, strict `CSP` verified by Playwright offline tests; opt-in update alerts disabled by default |
+| **Desktop & Parser Hardening** | Electron `app://bundle` path-boundary & IPC origin verification, `connect-src 'none'` renderer CSP, RFC1918-only LAN SSRF guard, brute-force rate-limited LAN Hub (`429`), sanitized HTML exports, XLSX zip-bomb limits, and prototype-pollution-safe JSON parsing |
 
 > Cryptographic vault primitives honor the `GPL-3.0` attribution to [`Niema-Lab/PhysioMeter`](https://github.com/Niema-Lab/PhysioMeter) — see [`NOTICE`](NOTICE).
 
 ---
 
-## Quick Start
+## Developer Quick Start
 
 ### Prerequisites
 
 - **Node.js `>= 20`** (CI runs Node `22`) and **`npm`**
 - *(Optional, for Android APK builds)* **Java 21 JDK (`keytool`)** + **Android SDK**
 
-### Run Locally
+### Install & Run Locally
 
 ```bash
 # 1. Clone the repository
@@ -174,19 +224,18 @@ cd physiorecord
 # 2. Install dependencies
 npm ci
 
-# 3. Start the local development server on http://localhost:3000
+# 3. (Optional) Copy environment template for local overrides
+cp .env.example .env.local
+
+# 4. Start the development server at http://localhost:3000
 npm run dev
 ```
 
 ### Public Demo Mode
 
-Launch the app with `?demo=1` (e.g., `http://localhost:3000/?demo=1`) or build with `VITE_PUBLIC_DEMO=true` to reveal the demo banner for one-click seeding and purging of `CC0-1.0` fictional physical therapy cases (`src/data/syntheticPatients.ts`) — dynamically localized in **Arabic**, **Kurdish Sorani (`ckb`)**, and **English** whenever you switch interface language.
+Open `http://localhost:3000/?demo=1` (or build with `VITE_PUBLIC_DEMO=true`) to show the demo banner for one-click seeding and purging of `CC0-1.0` fictional physical therapy cases (`src/data/syntheticPatients.ts`) dynamically localized in **Arabic**, **Kurdish Sorani (`ckb`)**, and **English**.
 
----
-
-## Multi-Platform Builds
-
-PhysioRecord uses locked persistent app identifier `org.physiorecord.app` across all targets:
+### Multi-Platform Production Builds
 
 ```bash
 # 1. Web PWA production bundle (emits /sw.js & /manifest.webmanifest)
@@ -201,26 +250,26 @@ npm install --no-save electron@34.3.0 electron-builder@25.1.8
 npm run electron:start          # Launch desktop shell locally
 npm run electron:dist           # Build NSIS Setup + Portable .exe into release/
 
-# 4. Sync single-source version across package.json, in-app metadata & Android versionCode
+# 4. Sync version across package.json, in-app metadata & Android versionCode
 node scripts/sync-version.mjs --version=v1.1.0
 ```
 
-See [`docs/DESKTOP_ANDROID_RELEASE.md`](docs/DESKTOP_ANDROID_RELEASE.md) and [`docs/UPDATES_AND_SIGNING.md`](docs/UPDATES_AND_SIGNING.md) for signing secrets and in-place data-survival upgrade testing.
+See [`docs/DESKTOP_ANDROID_RELEASE.md`](docs/DESKTOP_ANDROID_RELEASE.md) and [`docs/UPDATES_AND_SIGNING.md`](docs/UPDATES_AND_SIGNING.md) for signing secrets and data-survival upgrade testing.
 
 ---
 
-## Tech Stack & Repository Structure
+## Tech Stack, Folder Structure & Architecture
 
 | Layer | Technologies |
 | --- | --- |
-| **UI & Accessibility** | React `19`, TypeScript `7`, Tailwind CSS v4 (`@tailwindcss/vite`), React Aria Components (`Apache-2.0`), Lucide Icons (`ISC`) |
+| **UI & Accessibility** | React `19`, TypeScript `7`, Tailwind CSS `4` (`@tailwindcss/vite`), React Aria Components (`Apache-2.0`), Lucide Icons (`ISC`) |
 | **Self-Hosted Typography** | `@fontsource/ibm-plex-sans-arabic`, `@fontsource/inter`, `@fontsource/jetbrains-mono` (`OFL-1.1`) |
 | **Storage & Search** | Dexie `4` (`IndexedDB` `v1`–`v10`, 28 stores), `MiniSearch` `7` (Arabic/Kurdish normalization), `Zod` `4` |
-| **Clinical Canvas** | `Konva` + `react-konva` (photo angle/posture measurement & annotations) |
+| **Clinical Canvas** | `Konva` `10` + `react-konva` `19` (photo angle/posture measurement & annotations) |
 | **Desktop & Mobile Shells** | Capacitor `8` (`@capacitor/android`), Electron `34` + `electron-builder` (`25.1.8`) |
 | **Build & QA Tooling** | Vite `8`, Vitest `5`, Playwright `1.65` + `@axe-core/playwright` |
 
-<details>
+<details open>
 <summary><strong>Explore repository directory layout</strong></summary>
 
 ```text
@@ -229,32 +278,45 @@ physiorecord/
 ├── android/                  # Capacitor Android project (Universal APK, org.physiorecord.app)
 ├── docs/                     # Documentation portal, Arabic README (README.ar.md) & legal/ notices
 ├── e2e/                      # Playwright E2E tests, zero-network checks & playwright.config.ts
-├── electron/                 # Electron Windows Desktop shell & electron-builder.yml
+├── electron/                 # Hardened Electron desktop shell (modular main process)
+│   ├── main.mjs              # App lifecycle, app://bundle protocol, window & core file/print IPC
+│   ├── preload.cjs           # Context-isolated renderer bridge (window.physioDesktop)
+│   ├── security.mjs          # CSP, MIME map, URL/LAN allowlists, safe JSON & atomic config I/O
+│   ├── lanSyncServer.mjs     # Built-in local clinic Wi-Fi E2EE sync hub & client exchange
+│   ├── googleOAuth.mjs       # Desktop PKCE loopback OAuth, Drive API proxy & sync folder exchange
+│   ├── osBiometrics.mjs      # Windows Hello / macOS Touch ID + safeStorage vault key wrapping
+│   ├── githubReleases.mjs    # Opt-in main-process GitHub Releases update checker
+│   └── electron-builder.yml  # Windows NSIS Setup + Portable packaging configuration
 ├── public/                   # Static icons & deployment security headers (_headers)
 ├── scripts/                  # Build target, PWA plugin, license/content/perf gates, keystore & SBOM
 ├── src/
 │   ├── components/
-│   │   ├── clinic/           # Today, Reception, Schedule, Finance Ledger, HEP, Modals & Panels
-│   │   ├── layout/           # AppLayout & navigation shell
+│   │   ├── auth/             # LockScreen, PrivacyCoverOverlay, PasswordReminder & PlatformAccessGate
+│   │   ├── clinic/           # Today, Reception, Schedule (schedule/), Finance, Referrals (referrals/), HEP
+│   │   ├── layout/           # AppLayout, Sidebar, MobileFloatingDock, CommandPalette & AccountMenu
 │   │   ├── organui/          # Clinical progression SVG charts & medication schedule UI
+│   │   ├── patients/         # PatientDirectory, PatientModal, QuickView, EpisodeModal & SessionModal
 │   │   ├── print/            # A4/A6 @media print portal (Invoices, Reports, Dossiers, HEP)
-│   │   ├── settings/         # Modular Settings tabs & Display/Font preferences
+│   │   ├── settings/         # SettingsModal & modular Settings tabs (Clinic, Sync, Security, Display)
 │   │   ├── toolkit/          # ASIA/ISNCSCI sensory table reference
 │   │   ├── ui/               # Project-owned accessible primitives (React Aria, Modals, Tabs)
+│   │   ├── vault/            # BackupRestore, MigrationResolution, RecoveredWork, Wizard & Demo seeder
 │   │   ├── widgets/          # BodyChart, ROM, MMT, Neuro, SpecialTests, FunctionalScales, Gait
 │   │   └── workspace/        # MasterPatientChart (chart/) & TreatmentSessionView (session/)
+│   ├── config/               # Centralized app constants (GitHub repo, sync magic/limits, LAN port)
 │   ├── context/              # Vault, Language (ar/ckb/en), Theme, Currency, Patient/Episode/Session
 │   ├── crypto/               # WebCrypto AES-GCM vault, PBKDF2 Worker, .ptbackup, WebAuthn PRF
 │   ├── data/                 # Consent templates, CC0 note snippets, terminology & clinicalToolkit/
 │   ├── db/                   # Dexie v1–v10 schema (28 stores), registry & durability helpers
-│   ├── hooks/                # Reusable hooks (useVirtualWindow)
+│   ├── hooks/                # Reusable hooks (useVirtualWindow, useDeviceFormFactor)
 │   ├── i18n/                 # Externalized ar/ckb/en dictionaries & Kurdish Sorani phrase mapper
 │   ├── platform/             # Unified Web / Capacitor Android / Electron native bridge
-│   ├── pwa/                  # Offline Service Worker registration & update client
-│   ├── services/             # Single-writer domain facade (operations/, session, soap, episode)
+│   ├── pwa/                  # Offline Service Worker client, iOS PWA detection & Platform Access Gate
+│   ├── services/             # Single-writer domain facade (operations/, session, soap, episode, sync)
 │   ├── styles/themes/        # Semantic Tailwind v4 clinical palettes
 │   ├── types/                # Clinical, toolkit, widget & clinic management TypeScript types
-│   └── utils/                # MCID/MDC, FHIR R4 export, CSV/XLSX import, Iraqi finance/schedule
+│   └── utils/                # MCID/MDC, FHIR R4 export, CSV/XLSX import, security & Iraqi clinic helpers
+├── .env.example              # Documented runtime & build-time environment variables (no secrets)
 ├── AGENTS.md                 # Architectural invariants, license rules & preserved customizations
 ├── CHANGELOG.md              # Release history & phase summary
 ├── LICENSE                   # GPL-3.0-or-later license
@@ -263,11 +325,20 @@ physiorecord/
 
 </details>
 
+### Main Architecture Decisions
+
+1. **Zero-Backend Local-First Encryption (`src/crypto/`, `src/db/`)**: All patient charts, notes, attachments, schedules, and financial ledgers are encrypted at rest inside `IndexedDB` (`Dexie`) using non-extractable WebCrypto `AES-256-GCM` keys derived in a dedicated Web Worker (`PBKDF2-HMAC-SHA256 >= 600,000` iterations) with `HKDF-SHA256` per-record subkeys and atomic IV reservation.
+2. **Append-Only Schema & Clinical Immutability**: Historical Dexie schema versions (`v1`–`v10`) are never mutated—new stores/indexes are appended as higher versions. Finalized SOAP records are sealed with `SHA-256` and cannot be silently edited; clinical corrections are recorded as append-only `clinicalAddenda`.
+3. **Single-Writer Service Layer (`src/services/`)**: Components never write encrypted tables ad-hoc; all encrypted reads/writes flow through centralized domain services (`sessionService`, `soapService`, `episodeService`, `clinicOperationsService`, `clinicSyncService`) to maintain audit logs, drafts, and referential integrity.
+4. **Hardened Multi-Platform Shell (`src/platform/nativeBridge.ts`, `electron/`)**: A single React codebase targets Web PWA, Capacitor Android, and Electron Desktop. On Desktop, the renderer runs under `app://bundle` with `connect-src 'none'`; all opt-in external actions (LAN Hub, Google Drive PKCE OAuth, GitHub update checks, OS biometrics) live in isolated main-process modules (`electron/*.mjs`) guarded by strict origin and allowlist checks.
+5. **Non-Destructive Optional Sync (`src/utils/clinicSyncEngine.ts`)**: Multi-device sync (Clinic LAN Hub, E2EE Google Drive `drive.file`, or `.ptsync.json`) is strictly opt-in, encrypts payloads client-side before leaving the device, and performs additive merging so syncing never deletes local clinical records.
+6. **Arabic RTL-First Accessibility & Zero-CDN Compliance**: Arabic (`ar` RTL) is the primary clinical UI with Kurdish Sorani (`ckb` RTL) and English (`en` LTR) parity. Fonts (`@fontsource/*`), SVGs, and icons are self-hosted and audited by `npm run check:content`, `npm run check:licenses`, and Playwright offline E2E tests.
+
 ---
 
 ## Verification & Compliance
 
-Every pull request runs automated security, licensing, asset-manifest, performance-budget, and offline E2E checks:
+Every release runs automated security, licensing, asset-manifest, performance-budget, and offline E2E checks:
 
 ```bash
 npm run check:licenses                    # Verify SPDX licenses for all runtime & dev packages

@@ -17,9 +17,10 @@ import type {
   FinancialInvoiceIQD,
 } from '../types/clinicManagement';
 
+import { SYNC_ENVELOPE_MAGIC } from '../config/appConstants';
 import { isSafeSyncDeviceId, safeJsonParse } from './securityHardening';
 
-export const SYNC_ENVELOPE_MAGIC = 'PHYSIORECORD_SYNC_V1' as const;
+export { SYNC_ENVELOPE_MAGIC };
 export const SYNC_PBKDF2_ITERATIONS = 310_000;
 export const MIN_SYNC_PBKDF2_ITERATIONS = 1_000;
 export const PRODUCTION_MIN_SYNC_PBKDF2_ITERATIONS = 100_000;

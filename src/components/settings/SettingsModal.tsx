@@ -24,54 +24,54 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { useLanguage } from '../context/LanguageContext';
-import { usePatients } from '../context/PatientContext';
-import { useDeviceFormFactor } from '../utils/deviceBiometricCopy';
-import { DemoBadge } from './ui/Primitives';
-import { ClinicOperationsService } from '../services/clinicOperationsService';
-import type { SettingsViewMode } from '../types/clinicManagement';
-import type { CustomWidgetDefinition } from '../types/clinicalWidgets';
-import { hasAnyDemoPatients } from '../utils/mrn';
+import { useLanguage } from '../../context/LanguageContext';
+import { usePatients } from '../../context/PatientContext';
+import { useDeviceFormFactor } from '../../hooks/useDeviceFormFactor';
+import { DemoBadge } from '../ui/Primitives';
+import { ClinicOperationsService } from '../../services/clinicOperationsService';
+import type { SettingsViewMode } from '../../types/clinicManagement';
+import type { CustomWidgetDefinition } from '../../types/clinicalWidgets';
+import { hasAnyDemoPatients } from '../../utils/mrn';
 import {
   APP_SEMVER_VERSION,
   filterSettingsCatalog,
-} from '../utils/settingsOnboardingPhaseF';
-import { SETTINGS_CATALOG_CKB } from './settings/settingsI18nLabels';
-import { DisplaySettingsTab } from './settings/DisplaySettingsTab';
-import { CurrencySettingsTab } from './settings/CurrencySettingsTab';
-import { ClinicProfileSettingsTab } from './settings/ClinicProfileSettingsTab';
-import { StaffRosterSettingsTab } from './settings/StaffRosterSettingsTab';
-import { SecuritySettingsTab } from './settings/SecuritySettingsTab';
-import { ModulesSettingsTab } from './settings/ModulesSettingsTab';
-import { DeveloperSettingsTab } from './settings/DeveloperSettingsTab';
+} from '../../utils/settingsOnboardingPhaseF';
+import { SETTINGS_CATALOG_CKB } from './settingsI18nLabels';
+import { DisplaySettingsTab } from './DisplaySettingsTab';
+import { CurrencySettingsTab } from './CurrencySettingsTab';
+import { ClinicProfileSettingsTab } from './ClinicProfileSettingsTab';
+import { StaffRosterSettingsTab } from './StaffRosterSettingsTab';
+import { SecuritySettingsTab } from './SecuritySettingsTab';
+import { ModulesSettingsTab } from './ModulesSettingsTab';
+import { DeveloperSettingsTab } from './DeveloperSettingsTab';
 
 const CustomWidgetStudioModal = React.lazy(() =>
-  import('./workspace/CustomWidgetStudioModal').then((m) => ({
+  import('../workspace/CustomWidgetStudioModal').then((m) => ({
     default: m.CustomWidgetStudioModal,
   }))
 );
 const CsvOnboardingModal = React.lazy(() =>
-  import('./clinic/CsvOnboardingModal').then((m) => ({
+  import('../clinic/CsvOnboardingModal').then((m) => ({
     default: m.CsvOnboardingModal,
   }))
 );
 const FullVaultExportModal = React.lazy(() =>
-  import('./clinic/FullVaultExportModal').then((m) => ({
+  import('../clinic/FullVaultExportModal').then((m) => ({
     default: m.FullVaultExportModal,
   }))
 );
 const RecoveryDrillModal = React.lazy(() =>
-  import('./clinic/RecoveryDrillModal').then((m) => ({
+  import('../clinic/RecoveryDrillModal').then((m) => ({
     default: m.RecoveryDrillModal,
   }))
 );
 const WhatsNewChangelogModal = React.lazy(() =>
-  import('./clinic/WhatsNewChangelogModal').then((m) => ({
+  import('../clinic/WhatsNewChangelogModal').then((m) => ({
     default: m.WhatsNewChangelogModal,
   }))
 );
 const ClinicSyncSettingsTab = React.lazy(() =>
-  import('./settings/ClinicSyncSettingsTab').then((m) => ({
+  import('./ClinicSyncSettingsTab').then((m) => ({
     default: m.ClinicSyncSettingsTab,
   }))
 );

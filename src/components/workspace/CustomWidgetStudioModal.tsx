@@ -19,9 +19,7 @@ import {
   Play,
   Save,
   X,
-  FileText,
   AlertCircle,
-  HelpCircle,
 } from 'lucide-react';
 
 interface CustomWidgetStudioModalProps {

@@ -313,6 +313,7 @@ export const AccountMenuPopover: React.FC<AccountMenuPopoverProps> = ({
             {canInstallPwa && onInstallPwa && (
               <button
                 type="button"
+                data-testid="account-install-pwa-btn"
                 onClick={() => runAction(onInstallPwa)}
                 className="w-full min-h-[44px] md:min-h-[36px] px-2.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/18 text-primary text-xs font-bold flex items-center gap-2.5 cursor-pointer transition-colors"
               >

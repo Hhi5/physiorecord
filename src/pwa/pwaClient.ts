@@ -14,9 +14,66 @@ interface BeforeInstallPromptEvent extends Event {
 export interface PwaClientState {
   isStandalone: boolean;
   canInstallPrompt: boolean;
+  isIosDevice: boolean;
+  isIosSafari: boolean;
+  isIosOtherBrowser: boolean;
+  isIosInstallEligible: boolean;
+  /** Backwards-compatible alias for iOS Safari/browser home-screen install eligibility */
   isIosSafariInstallEligible: boolean;
   updateReady: boolean;
   offlineReady: boolean;
+}
+
+export interface IosPwaEnvironment {
+  isIosDevice: boolean;
+  isIosSafari: boolean;
+  isIosOtherBrowser: boolean;
+  isIosInstallEligible: boolean;
+}
+
+export function detectIosPwaEnvironment(params: {
+  userAgent: string;
+  maxTouchPoints: number;
+  isStandalone: boolean;
+  isNativeShell: boolean;
+}): IosPwaEnvironment {
+  const { userAgent, maxTouchPoints, isStandalone, isNativeShell } = params;
+  if (isNativeShell) {
+    return {
+      isIosDevice: false,
+      isIosSafari: false,
+      isIosOtherBrowser: false,
+      isIosInstallEligible: false,
+    };
+  }
+  const ua = userAgent || '';
+  const isClassicIos = /\b(iPad|iPhone|iPod)\b/i.test(ua);
+  // iPadOS 13+ reports Macintosh desktop UA with touch points > 1
+  const isModernIpad = /\bMacintosh\b/i.test(ua) && maxTouchPoints > 1;
+  const isIosDevice = isClassicIos || isModernIpad;
+  if (!isIosDevice) {
+    return {
+      isIosDevice: false,
+      isIosSafari: false,
+      isIosOtherBrowser: false,
+      isIosInstallEligible: false,
+    };
+  }
+  // Only real Apple Safari on iOS/iPadOS includes both Version/X and Safari/X
+  // without third-party browser or social in-app WebView tokens.
+  const isKnownThirdPartyOrInAppIosBrowser =
+    /CriOS|FxiOS|EdgiOS|OPiOS|OPT\/|DuckDuckGo|GSA\/|FBAN|FBAV|FBIOS|Instagram|Line\/|MicroMessenger|WhatsApp|Telegram|Snapchat|Twitter|LinkedInApp|TikTok|BytedanceWebview|musical_ly|YaBrowser|UCBrowser|Vivaldi|Brave|Focus|Klar|Mercury|Puffin|Coast|Aloha|SamsungBrowser|QQBrowser|Baidu|Sogou|HuaweiBrowser|MiuiBrowser|BingWeb|Ecosia|Orion|Arc/i.test(
+      ua
+    );
+  const hasRealSafariSignature = /\bVersion\/\d/i.test(ua) && /\bSafari\/\d/i.test(ua);
+  const isIosSafari = hasRealSafariSignature && !isKnownThirdPartyOrInAppIosBrowser;
+  const isIosOtherBrowser = !isIosSafari;
+  return {
+    isIosDevice: true,
+    isIosSafari,
+    isIosOtherBrowser,
+    isIosInstallEligible: !isStandalone,
+  };
 }
 
 function detectStandalone(): boolean {
@@ -29,12 +86,21 @@ function detectStandalone(): boolean {
   );
 }
 
-function detectIosSafari(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  const ua = navigator.userAgent || '';
-  const isIos = /iPad|iPhone|iPod/.test(ua);
-  const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
-  return isIos && isSafari;
+function computeIosEnv(): IosPwaEnvironment {
+  if (typeof navigator === 'undefined') {
+    return {
+      isIosDevice: false,
+      isIosSafari: false,
+      isIosOtherBrowser: false,
+      isIosInstallEligible: false,
+    };
+  }
+  return detectIosPwaEnvironment({
+    userAgent: navigator.userAgent || '',
+    maxTouchPoints: typeof navigator.maxTouchPoints === 'number' ? navigator.maxTouchPoints : 0,
+    isStandalone: detectStandalone(),
+    isNativeShell: isNativeAppShell(),
+  });
 }
 
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
@@ -43,16 +109,34 @@ let swRegistration: ServiceWorkerRegistration | null = null;
 
 const listeners = new Set<() => void>();
 
+const initialStandalone = detectStandalone();
+const initialIos = computeIosEnv();
+
 const state: PwaClientState = {
-  isStandalone: detectStandalone(),
+  isStandalone: initialStandalone,
   canInstallPrompt: false,
-  isIosSafariInstallEligible: !detectStandalone() && detectIosSafari(),
+  isIosDevice: initialIos.isIosDevice,
+  isIosSafari: initialIos.isIosSafari,
+  isIosOtherBrowser: initialIos.isIosOtherBrowser,
+  isIosInstallEligible: initialIos.isIosInstallEligible,
+  isIosSafariInstallEligible: initialIos.isIosInstallEligible,
   updateReady: false,
   offlineReady: isNativeAppShell(),
 };
 
 function notify(): void {
   for (const fn of listeners) fn();
+}
+
+function syncRuntimeDisplayMode(): void {
+  const standaloneNow = detectStandalone();
+  const iosNow = computeIosEnv();
+  state.isStandalone = standaloneNow;
+  state.isIosDevice = iosNow.isIosDevice;
+  state.isIosSafari = iosNow.isIosSafari;
+  state.isIosOtherBrowser = iosNow.isIosOtherBrowser;
+  state.isIosInstallEligible = iosNow.isIosInstallEligible;
+  state.isIosSafariInstallEligible = iosNow.isIosInstallEligible;
 }
 
 let initialized = false;
@@ -64,10 +148,24 @@ export function initPwaClient(): void {
   if (isNativeAppShell()) {
     state.isStandalone = true;
     state.canInstallPrompt = false;
+    state.isIosDevice = false;
+    state.isIosSafari = false;
+    state.isIosOtherBrowser = false;
+    state.isIosInstallEligible = false;
     state.isIosSafariInstallEligible = false;
     state.offlineReady = true;
     notify();
     return;
+  }
+
+  syncRuntimeDisplayMode();
+
+  const standaloneMedia = window.matchMedia?.('(display-mode: standalone)');
+  if (standaloneMedia?.addEventListener) {
+    standaloneMedia.addEventListener('change', () => {
+      syncRuntimeDisplayMode();
+      notify();
+    });
   }
 
   window.addEventListener('beforeinstallprompt', (e: Event) => {
@@ -81,6 +179,7 @@ export function initPwaClient(): void {
     deferredPrompt = null;
     state.canInstallPrompt = false;
     state.isStandalone = true;
+    state.isIosInstallEligible = false;
     state.isIosSafariInstallEligible = false;
     notify();
   });

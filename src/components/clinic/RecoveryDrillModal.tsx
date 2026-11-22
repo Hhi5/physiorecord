@@ -43,7 +43,7 @@ export const RecoveryDrillModal: React.FC<RecoveryDrillModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { bi, language, isRtl } = useLanguage();
+  const { bi, language } = useLanguage();
   const { refreshRecoveryDrillStatus, lastRecoveryDrillAt } = useVault();
 
   const [meta, setMeta] = useState<VaultMetaEntity | null>(null);

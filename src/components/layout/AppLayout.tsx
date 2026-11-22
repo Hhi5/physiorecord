@@ -13,9 +13,9 @@ import { Sidebar, type ClinicNavTab } from './Sidebar';
 import { MobileFloatingDock } from './MobileFloatingDock';
 import { AccountMenuPopover } from './AccountMenuPopover';
 import { CommandPalette } from './CommandPalette';
-import { PatientDirectory } from '../PatientDirectory';
-import { PrivacyCoverOverlay } from '../PrivacyCoverOverlay';
-import { RecoveredWorkBanner } from '../RecoveredWorkBanner';
+import { PatientDirectory } from '../patients/PatientDirectory';
+import { PrivacyCoverOverlay } from '../auth/PrivacyCoverOverlay';
+import { RecoveredWorkBanner } from '../vault/RecoveredWorkBanner';
 import type { DecryptedDraftRecord } from '../../types/clinical';
 import { LocalStorageMigrationService } from '../../services/localStorageMigrationService';
 import {
@@ -62,25 +62,25 @@ const PatientWorkspace = lazy(() =>
   import('../workspace/PatientWorkspace').then((m) => ({ default: m.PatientWorkspace }))
 );
 const PatientModal = lazy(() =>
-  import('../PatientModal').then((m) => ({ default: m.PatientModal }))
+  import('../patients/PatientModal').then((m) => ({ default: m.PatientModal }))
 );
 const BackupRestoreModal = lazy(() =>
-  import('../BackupRestoreModal').then((m) => ({ default: m.BackupRestoreModal }))
+  import('../vault/BackupRestoreModal').then((m) => ({ default: m.BackupRestoreModal }))
 );
 const SyntheticDataModal = lazy(() =>
-  import('../SyntheticDataModal').then((m) => ({ default: m.SyntheticDataModal }))
+  import('../vault/SyntheticDataModal').then((m) => ({ default: m.SyntheticDataModal }))
 );
 const SettingsModal = lazy(() =>
-  import('../SettingsModal').then((m) => ({ default: m.SettingsModal }))
+  import('../settings/SettingsModal').then((m) => ({ default: m.SettingsModal }))
 );
 const RecoveryDrillModal = lazy(() =>
   import('../clinic/RecoveryDrillModal').then((m) => ({ default: m.RecoveryDrillModal }))
 );
 const PasswordReminderModal = lazy(() =>
-  import('../PasswordReminderModal').then((m) => ({ default: m.PasswordReminderModal }))
+  import('../auth/PasswordReminderModal').then((m) => ({ default: m.PasswordReminderModal }))
 );
 const MigrationResolutionModal = lazy(() =>
-  import('../MigrationResolutionModal').then((m) => ({ default: m.MigrationResolutionModal }))
+  import('../vault/MigrationResolutionModal').then((m) => ({ default: m.MigrationResolutionModal }))
 );
 const ReceptionCommandCenterView = lazy(() =>
   import('../clinic/ReceptionCommandCenterView').then((m) => ({
@@ -124,7 +124,7 @@ const WelcomeOnboardingModal = lazy(() =>
   import('../clinic/WelcomeOnboardingModal').then((m) => ({ default: m.WelcomeOnboardingModal }))
 );
 const FirstRunModeWizardModal = lazy(() =>
-  import('../FirstRunModeWizardModal').then((m) => ({ default: m.FirstRunModeWizardModal }))
+  import('../vault/FirstRunModeWizardModal').then((m) => ({ default: m.FirstRunModeWizardModal }))
 );
 const PatientMergeModal = lazy(() => import('../clinic/PatientMergeModal'));
 import {
@@ -140,7 +140,6 @@ import {
   type PageTourId,
   type PageToursState,
 } from '../../utils/pageSpotlightTours';
-import { db } from '../../db/db';
 import { SYNTHETIC_PATIENTS } from '../../data/syntheticPatients';
 import { usePatients } from '../../context/PatientContext';
 import { useVault } from '../../context/VaultContext';
@@ -166,6 +165,7 @@ import {
   Smartphone,
   RotateCcw,
 } from 'lucide-react';
+import { IosInstallGuideModal } from '../clinic/IosInstallGuideModal';
 
 export const AppLayout: React.FC = () => {
   const { patients, savePatient, deleteAllDemoPatients, refreshPatients } = usePatients();
@@ -186,7 +186,7 @@ export const AppLayout: React.FC = () => {
     lastMigrationResult,
     dismissRepairNotice,
   } = useVault();
-  const { language, isRtl, bi, t } = useLanguage();
+  const { isRtl, bi, t } = useLanguage();
 
   const [isSoloMode, setIsSoloMode] = useState<boolean>(() =>
     ClinicOperationsService.isSoloMode()
@@ -273,8 +273,9 @@ export const AppLayout: React.FC = () => {
   const [lastBackupIso, setLastBackupIso] = useState<string | null>(
     () => ClinicOperationsService.getBackupMeta().lastBackupAt ?? null
   );
-  const [backupBannerDismissed, setBackupBannerDismissed] = useState(false);
+  const [backupBannerDismissed] = useState(false);
   const [iosInstallDismissed, setIosInstallDismissed] = useState(false);
+  const [isIosGuideOpen, setIsIosGuideOpen] = useState(false);
   const [pendingGithubUpdate, setPendingGithubUpdate] = useState<SyncedGithubReleaseItem | null>(
     () =>
       getPendingUpdateNotification({
@@ -908,6 +909,7 @@ export const AppLayout: React.FC = () => {
     isWelcomeOpen ||
     isRecoveryDrillOpen ||
     isPasswordReminderOpen ||
+    isIosGuideOpen ||
     showFirstRunModeWizard ||
     (!isSoloMode && showFirstRunPinModal) ||
     (!isSoloMode && Boolean(pendingAdminRole)) ||
@@ -928,6 +930,7 @@ export const AppLayout: React.FC = () => {
     if (!shouldShowWelcomeOnboarding(pageToursState)) return;
 
     const timer = window.setTimeout(() => {
+      if (document.querySelector(ACTIVE_MODAL_DIALOG_SELECTOR)) return;
       setIsWelcomeOpen(true);
     }, 420);
     return () => window.clearTimeout(timer);
@@ -970,6 +973,7 @@ export const AppLayout: React.FC = () => {
     }
 
     const timer = window.setTimeout(() => {
+      if (document.querySelector(ACTIVE_MODAL_DIALOG_SELECTOR)) return;
       setActiveSpotlightTourId(currentPageTourId);
     }, 620);
     return () => window.clearTimeout(timer);
@@ -1295,8 +1299,14 @@ export const AppLayout: React.FC = () => {
           onLockVault={lock}
           onOpenKiosk={() => setIsKioskModalOpen(true)}
           enableKioskModule={enableKioskModule}
-          canInstallPwa={pwa.canInstallPrompt}
-          onInstallPwa={() => void triggerPwaInstallPrompt()}
+          canInstallPwa={pwa.canInstallPrompt || pwa.isIosInstallEligible}
+          onInstallPwa={() => {
+            if (pwa.canInstallPrompt) {
+              void triggerPwaInstallPrompt();
+            } else if (pwa.isIosInstallEligible) {
+              setIsIosGuideOpen(true);
+            }
+          }}
           activeRole={activeRole}
           staffRoster={staffRoster}
           onSwitchRole={handleQuickRoleSwitch}
@@ -1393,8 +1403,14 @@ export const AppLayout: React.FC = () => {
                 onOpenTour={() => setIsTourOpen(true)}
                 onOpenKiosk={() => setIsKioskModalOpen(true)}
                 enableKioskModule={enableKioskModule}
-                canInstallPwa={pwa.canInstallPrompt}
-                onInstallPwa={() => void triggerPwaInstallPrompt()}
+                canInstallPwa={pwa.canInstallPrompt || pwa.isIosInstallEligible}
+                onInstallPwa={() => {
+                  if (pwa.canInstallPrompt) {
+                    void triggerPwaInstallPrompt();
+                  } else if (pwa.isIosInstallEligible) {
+                    setIsIosGuideOpen(true);
+                  }
+                }}
                 showExerciseLibrary={showExerciseLibrary}
                 showAnalyticsModule={showAnalyticsModule}
                 onSelectSecondaryNav={(nav) => {
@@ -1609,27 +1625,46 @@ export const AppLayout: React.FC = () => {
           </div>
         )}
 
-        {/* iOS Safari Add-to-Home-Screen Installation Guidance (1.8) */}
-        {pwa.isIosSafariInstallEligible && !iosInstallDismissed && (
-          <div className="relative z-10 px-3 sm:px-5 py-1.5 bg-surface border-b border-card-divider flex items-center justify-between gap-2 text-xs text-foreground shrink-0">
-            <div className="flex items-center gap-2">
+        {/* iOS / iPadOS Add-to-Home-Screen Guided Installation Banner */}
+        {pwa.isIosInstallEligible && !iosInstallDismissed && (
+          <div
+            data-testid="ios-install-banner"
+            className="relative z-10 px-3 sm:px-5 py-2 bg-primary/10 border-b border-primary/20 flex flex-wrap items-center justify-between gap-2 text-xs text-foreground shrink-0"
+          >
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               <Smartphone className="w-4 h-4 text-primary shrink-0" />
-              <span>
-                {bi(
-                  'لتثبيت التطبيق على iPhone/iPad للعمل دون إنترنت: اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية».',
-                  'To install on iPhone/iPad for offline durability: tap Share, then "Add to Home Screen".',
-                  'بۆ دامەزراندنی بەرنامەکە لەسەر iPhone/iPad بەبێ ئینتەرنێت: دوگمەی هاوبەشکردن دابگرە پاشان «زیادکردن بۆ شاشەی سەرەکی».'
-                )}
+              <span className="font-semibold">
+                {pwa.isIosOtherBrowser
+                  ? bi(
+                      'لتثبيت التطبيق على iPhone/iPad للعمل أوفلاين: افتح الرابط في Safari وأضفه للشاشة الرئيسية.',
+                      'Install on iPhone/iPad for offline durability: open in Safari and Add to Home Screen.',
+                      'بۆ دامەزراندن لەسەر iPhone/iPad: لە Safari بیکەرەوە و بیخە سەر شاشەی سەرەکی.'
+                    )
+                  : bi(
+                      'ثبّت التطبيق على الشاشة الرئيسية في iPhone/iPad للعمل أوفلاين وحماية بياناتك.',
+                      'Install PhysioRecord on your iPhone/iPad Home Screen for full offline & storage durability.',
+                      'ئەپەکە لەسەر شاشەی سەرەکی iPhone/iPad دابمەزرێنە بۆ کارکردن بەبێ ئینتەرنێت.'
+                    )}
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => setIosInstallDismissed(true)}
-              aria-label={bi('إخفاء', 'Dismiss', 'شاردنەوە')}
-              className="size-9 rounded-lg hover:bg-layer-hover inline-flex items-center justify-center cursor-pointer shrink-0"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                data-testid="ios-install-guide-open-btn"
+                onClick={() => setIsIosGuideOpen(true)}
+                className="min-h-[36px] px-3 py-1 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold cursor-pointer"
+              >
+                {bi('طريقة التثبيت', 'Install Steps', 'شێوازی دامەزراندن')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIosInstallDismissed(true)}
+                aria-label={bi('إخفاء', 'Dismiss', 'شاردنەوە')}
+                className="size-9 rounded-lg hover:bg-layer-hover inline-flex items-center justify-center cursor-pointer shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -2050,6 +2085,13 @@ export const AppLayout: React.FC = () => {
           />
         </Suspense>
       )}
+
+      {/* Guided iPhone / iPad (iOS) Standalone Home Screen Install Modal */}
+      <IosInstallGuideModal
+        isOpen={isIosGuideOpen}
+        onOpenChange={setIsIosGuideOpen}
+        onOpenBackup={() => setIsBackupModalOpen(true)}
+      />
 
       {/* Calm Spotlight Tour Overlay (Supports Both Full-App Walkthrough & Per-Page Auto Tours) */}
       {activeSpotlightTourId && !isBlockingOverlayForTour && (

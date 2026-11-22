@@ -6,7 +6,7 @@
 import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import type { CustomWidgetDefinition } from '../../types/clinicalWidgets';
-import { Sparkles, Info, CheckCircle2 } from 'lucide-react';
+import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 interface DynamicCustomWidgetProps {
   definition: CustomWidgetDefinition;

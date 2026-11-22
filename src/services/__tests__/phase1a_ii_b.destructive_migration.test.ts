@@ -22,7 +22,6 @@ import {
 } from '../../crypto/backup';
 import {
   LocalStorageMigrationService,
-  LOCALSTORAGE_MIGRATION_STATE_ID,
 } from '../localStorageMigrationService';
 import { ClinicOperationsService } from '../clinicOperationsService';
 

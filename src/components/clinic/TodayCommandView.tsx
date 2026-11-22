@@ -49,7 +49,6 @@ import {
   CheckCircle2,
   Banknote,
   Calendar,
-  CalendarClock,
   ChevronDown,
   ChevronUp,
   Clock,
@@ -278,7 +277,7 @@ export const TodayCommandView: React.FC<TodayCommandViewProps> = ({
     const list = ClinicOperationsService.ensureRecurringAppointmentsForDate(tomorrow);
     return list
       .filter((a) => a.status !== 'cancelled')
-      .sort((a, b) => a.startTime.localeCompare(a.startTime));
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [tomorrow, opsVersion]);
 
   useEffect(() => {

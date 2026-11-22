@@ -6,7 +6,7 @@
 // Invariant: Strictly non-destructive — NEVER deletes local therapist data.
 // =======================================================================
 
-import { db } from '../db/db';
+import { db, type PhysioRecordDatabase } from '../db/db';
 import {
   CURRENT_DEK_VERSION,
   CURRENT_RECORD_CRYPTO_VERSION,
@@ -16,6 +16,7 @@ import {
 import { EpisodeService } from './episodeService';
 import { ClinicOperationsService } from './clinicOperationsService';
 import { getElectronDesktopBridge } from '../platform/nativeBridge';
+import { SYNC_ENVELOPE_MAGIC } from '../config/appConstants';
 import {
   PRODUCTION_MIN_SYNC_PBKDF2_ITERATIONS,
   decryptSyncEnvelope,
@@ -27,6 +28,7 @@ import {
 } from '../utils/clinicSyncEngine';
 import {
   isPrivateLanSyncUrl,
+  isSafeSyncDeviceId,
   randomHexCsprng,
   safeJsonParse,
 } from '../utils/securityHardening';
@@ -102,10 +104,10 @@ export function getClinicSyncConfig(): ClinicSyncConfig {
   try {
     const raw = localStorage.getItem(SYNC_CONFIG_STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as Partial<ClinicSyncConfig>;
+      const parsed = safeJsonParse<Partial<ClinicSyncConfig>>(raw);
       return {
         mode: parsed.mode === 'lan' || parsed.mode === 'google_drive' ? parsed.mode : 'off',
-        deviceId: parsed.deviceId || generateDeviceId(),
+        deviceId: isSafeSyncDeviceId(parsed.deviceId) ? parsed.deviceId : generateDeviceId(),
         deviceLabel: parsed.deviceLabel || getDefaultDeviceLabel(),
         lanServerUrl: parsed.lanServerUrl || '',
         lanPairingToken: parsed.lanPairingToken || '',
@@ -136,7 +138,7 @@ export function saveClinicSyncConfig(patch: Partial<ClinicSyncConfig>): ClinicSy
   const current = (() => {
     try {
       const raw = localStorage.getItem(SYNC_CONFIG_STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as Partial<ClinicSyncConfig>) : {};
+      return raw ? safeJsonParse<Partial<ClinicSyncConfig>>(raw) : {};
     } catch {
       return {};
     }
@@ -171,8 +173,8 @@ export function getOfflineSyncOutbox(): OfflineSyncOutboxRecord | null {
   try {
     const raw = localStorage.getItem(SYNC_OUTBOX_STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as OfflineSyncOutboxRecord;
-    return parsed?.envelope?.magic === 'PHYSIORECORD_SYNC_V1' ? parsed : null;
+    const parsed = safeJsonParse<OfflineSyncOutboxRecord>(raw);
+    return parsed?.envelope?.magic === SYNC_ENVELOPE_MAGIC ? parsed : null;
   } catch {
     return null;
   }
@@ -208,11 +210,14 @@ export function clearOfflineSyncOutbox(): void {
  * Collects all decrypted clinical records from IndexedDB & ClinicOperationsService
  * into an in-memory ClinicSyncPayload ready for client-side AES-256-GCM encryption.
  */
-export async function collectLocalClinicSyncPayload(dek: CryptoKey): Promise<ClinicSyncPayload> {
+export async function collectLocalClinicSyncPayload(
+  dek: CryptoKey,
+  database: PhysioRecordDatabase = db
+): Promise<ClinicSyncPayload> {
   const config = getClinicSyncConfig();
 
   // 1. Patients
-  const encPatients = await db.patients.toArray();
+  const encPatients = await database.patients.toArray();
   const patients: PatientRecord[] = [];
   for (const entity of encPatients) {
     try {
@@ -240,10 +245,10 @@ export async function collectLocalClinicSyncPayload(dek: CryptoKey): Promise<Cli
   }
 
   // 2. Episodes
-  const episodes = await EpisodeService.getAllEpisodes(dek, db);
+  const episodes = await EpisodeService.getAllEpisodes(dek, database);
 
   // 3. Sessions
-  const encSessions = await db.sessions.toArray();
+  const encSessions = await database.sessions.toArray();
   const sessions: SessionRecord[] = [];
   for (const entity of encSessions) {
     try {
@@ -277,7 +282,7 @@ export async function collectLocalClinicSyncPayload(dek: CryptoKey): Promise<Cli
   }
 
   // 4. SOAP Notes
-  const encSoaps = await db.soapNotes.toArray();
+  const encSoaps = await database.soapNotes.toArray();
   const soapNotes: SoapNoteRecord[] = [];
   for (const entity of encSoaps) {
     try {
@@ -307,7 +312,7 @@ export async function collectLocalClinicSyncPayload(dek: CryptoKey): Promise<Cli
   }
 
   // 5. Clinical Addenda
-  const encAddenda = await db.clinicalAddenda.toArray();
+  const encAddenda = await database.clinicalAddenda.toArray();
   const clinicalAddenda: ClinicalAddendumRecord[] = [];
   for (const entity of encAddenda) {
     try {
@@ -364,16 +369,17 @@ export async function collectLocalClinicSyncPayload(dek: CryptoKey): Promise<Cli
  */
 async function persistMergedChangesToLocalDb(
   mergeResult: ReturnType<typeof mergeClinicSyncPayloads>,
-  dek: CryptoKey
+  dek: CryptoKey,
+  database: PhysioRecordDatabase = db
 ): Promise<void> {
-  const meta = await db.vaultMeta.get('auth');
+  const meta = await database.vaultMeta.get('auth');
   const activeDekVersion = meta?.dekVersion || CURRENT_DEK_VERSION;
   const { changed, merged } = mergeResult;
 
   // 1. Patients
   for (const p of changed.patients) {
     const { iv, ciphertext, recordSalt } = await encryptRecordWithMandatoryReservation(
-      db,
+      database,
       dek,
       'patients',
       p.id,
@@ -393,13 +399,13 @@ async function persistMergedChangesToLocalDb(
       iv,
       ciphertext,
     };
-    await db.patients.put(entity);
+    await database.patients.put(entity);
   }
 
   // 2. Episodes
   for (const ep of changed.episodes) {
     const { iv, ciphertext, recordSalt } = await encryptRecordWithMandatoryReservation(
-      db,
+      database,
       dek,
       'episodes',
       ep.id,
@@ -419,13 +425,13 @@ async function persistMergedChangesToLocalDb(
       iv,
       ciphertext,
     };
-    await db.episodes.put(entity);
+    await database.episodes.put(entity);
   }
 
   // 3. Sessions
   for (const s of changed.sessions) {
     const { iv, ciphertext, recordSalt } = await encryptRecordWithMandatoryReservation(
-      db,
+      database,
       dek,
       'sessions',
       s.id,
@@ -446,13 +452,13 @@ async function persistMergedChangesToLocalDb(
       iv,
       ciphertext,
     };
-    await db.sessions.put(entity);
+    await database.sessions.put(entity);
   }
 
   // 4. SOAP Notes
   for (const note of changed.soapNotes) {
     const { iv, ciphertext, recordSalt } = await encryptRecordWithMandatoryReservation(
-      db,
+      database,
       dek,
       'soapNotes',
       note.id,
@@ -474,13 +480,13 @@ async function persistMergedChangesToLocalDb(
       iv,
       ciphertext,
     };
-    await db.soapNotes.put(entity);
+    await database.soapNotes.put(entity);
   }
 
   // 5. Clinical Addenda (append-only)
   for (const add of changed.clinicalAddenda) {
     const { iv, ciphertext, recordSalt } = await encryptRecordWithMandatoryReservation(
-      db,
+      database,
       dek,
       'clinicalAddenda',
       add.id,
@@ -501,12 +507,15 @@ async function persistMergedChangesToLocalDb(
       iv,
       ciphertext,
     };
-    await db.clinicalAddenda.put(entity);
+    await database.clinicalAddenda.put(entity);
   }
 
-  // 6. Appointments & Episode Clinical Stores & Staff Roster via ClinicOperationsService
+  // 6. Appointments, Invoices, Episode Clinical Stores & Staff Roster via ClinicOperationsService
   for (const appt of changed.appointments) {
     ClinicOperationsService.saveAppointment(appt);
+  }
+  for (const inv of changed.invoices) {
+    ClinicOperationsService.restoreInvoiceIQD(inv);
   }
   for (const store of changed.episodeClinicalStores) {
     ClinicOperationsService.saveEpisodeClinicalStore(store);
@@ -514,6 +523,7 @@ async function persistMergedChangesToLocalDb(
   if (changed.staffRosterChanged) {
     ClinicOperationsService.saveStaffRoster(merged.staffRoster);
   }
+  await ClinicOperationsService.flushPendingWrites();
 }
 
 async function decryptAndApplyPeerEnvelopes(
@@ -548,14 +558,18 @@ function summarizeStatsAr(stats: SyncMergeStats, peers: number): string {
     stats.sessionsUpdated +
     stats.soapsAdded +
     stats.soapsUpdated +
-    stats.addendaAdded;
+    stats.addendaAdded +
+    stats.appointmentsMerged +
+    stats.invoicesMerged +
+    stats.episodeStoresMerged +
+    stats.staffMerged;
   if (peers === 0) {
     return 'تم رفع نسختك المشفّرة بنجاح (لا توجد أجهزة أخرى متصلة بعد). جميع سجلاتك المحلية محفوظة بالكامل.';
   }
   if (totalIncoming === 0) {
     return `تمت المزامنة مع ${peers} جهاز بنجاح — جميع سجلاتك محدثة ولم يُحذف أي سجل محلي.`;
   }
-  return `تم دمج ${totalIncoming} سجل جديد/محدّث من ${peers} جهاز بأمان دون حذف أي سجل محلي (${stats.patientsAdded} مرضى جدد، ${stats.sessionsAdded} جلسات جديدة).`;
+  return `تم دمج ${totalIncoming} سجل جديد/محدّث من ${peers} جهاز بأمان دون حذف أي سجل محلي (${stats.patientsAdded} مرضى جدد، ${stats.sessionsAdded} جلسات جديدة، ${stats.invoicesMerged} فواتير).`;
 }
 
 function summarizeStatsEn(stats: SyncMergeStats, peers: number): string {
@@ -568,14 +582,18 @@ function summarizeStatsEn(stats: SyncMergeStats, peers: number): string {
     stats.sessionsUpdated +
     stats.soapsAdded +
     stats.soapsUpdated +
-    stats.addendaAdded;
+    stats.addendaAdded +
+    stats.appointmentsMerged +
+    stats.invoicesMerged +
+    stats.episodeStoresMerged +
+    stats.staffMerged;
   if (peers === 0) {
     return 'Encrypted sync package uploaded (no other clinic devices yet). All local records preserved.';
   }
   if (totalIncoming === 0) {
     return `Synced with ${peers} device(s) — already up to date. Zero local records deleted.`;
   }
-  return `Merged ${totalIncoming} incoming record(s) from ${peers} device(s) non-destructively (${stats.patientsAdded} new patients, ${stats.sessionsAdded} new sessions).`;
+  return `Merged ${totalIncoming} incoming record(s) from ${peers} device(s) non-destructively (${stats.patientsAdded} new patients, ${stats.sessionsAdded} new sessions, ${stats.invoicesMerged} invoices).`;
 }
 
 /**
@@ -781,7 +799,8 @@ export async function exportEncryptedSyncFileString(
 export async function importAndMergeEncryptedSyncFile(
   rawJson: string,
   dek: CryptoKey,
-  passphrase: string
+  passphrase: string,
+  database: PhysioRecordDatabase = db
 ): Promise<ClinicSyncExecutionResult> {
   if (rawJson.length > 35 * 1024 * 1024) {
     throw new Error('حجم ملف المزامنة يتجاوز الحد الأقصى المسموح به (35 MB).');
@@ -793,12 +812,12 @@ export async function importAndMergeEncryptedSyncFile(
     throw new Error('ملف المزامنة تالف أو ليس بصيغة JSON صالحة.');
   }
 
-  const localPayload = await collectLocalClinicSyncPayload(dek);
+  const localPayload = await collectLocalClinicSyncPayload(dek, database);
   const remotePayload = await decryptSyncEnvelope(envelope, passphrase, {
     minIterations: PRODUCTION_MIN_SYNC_PBKDF2_ITERATIONS,
   });
   const mergeResult = mergeClinicSyncPayloads(localPayload, [remotePayload]);
-  await persistMergedChangesToLocalDb(mergeResult, dek);
+  await persistMergedChangesToLocalDb(mergeResult, dek, database);
 
   const messageAr = summarizeStatsAr(mergeResult.stats, 1);
   const messageEn = summarizeStatsEn(mergeResult.stats, 1);

@@ -13,6 +13,7 @@ sbom.cdx.json
 *.local
 
 # Cryptographic keys, certificates & signing stores
+.keystore/
 *.keystore
 *.jks
 *.p12
@@ -21,20 +22,25 @@ sbom.cdx.json
 *.key
 *.crt
 
-# Local databases & encrypted/raw backups (never commit clinical data)
+# Local databases, sync envelopes & encrypted/raw backups (never commit clinical data)
 *.ptbackup
+*.ptsync.json
 *.db
 *.db-*
 *.sqlite
 *.sqlite3
 *.db3
 *.bak
+desktop-os-unlock.json
+desktop-bridge-config.json
 
 # Container / alternative package manager lockfiles (repo uses package-lock.json for npm ci)
 bun.lock
 
 # Logs, test, audit & temporary files
 *.log
+*.swp
+*~
 coverage/
 test-results/
 playwright-report/
@@ -50,6 +56,11 @@ public/assets/aistudio/
 tmp/
 .cache/
 
+# Editor & IDE metadata
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
 # OS metadata
 .DS_Store
 Thumbs.db
@@ -57,9 +68,11 @@ Desktop.ini
 
 # Android (Capacitor) generated build & local SDK artifacts
 android/.gradle/
+android/.cxx/
 android/captures/
 android/local.properties
 android/app/build/
+android/app/release/
 android/build/
 android/app/src/main/assets/public/
 *.apk
@@ -71,4 +84,5 @@ android/app/src/main/assets/public/
 dist-electron/
 release/
 out/
+
 

@@ -3,8 +3,8 @@
 // =======================================================================
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { usePatients } from '../context/PatientContext';
-import { useLanguage } from '../context/LanguageContext';
+import { usePatients } from '../../context/PatientContext';
+import { useLanguage } from '../../context/LanguageContext';
 import type {
   PatientClinicalData,
   PatientRecord,
@@ -12,43 +12,42 @@ import type {
   DominantHand,
   StructuredPrecautionId,
   CustomPrecautionItem,
-} from '../types/clinical';
+} from '../../types/clinical';
 import type {
   ReferralSourceType,
   ReferringDoctorEntry,
-} from '../types/clinicManagement';
+} from '../../types/clinicManagement';
 import {
   computePatientAge,
   formatIraqiPhoneDisplay,
   normalizeIraqiPhoneStorage,
-} from '../utils/date';
-import { AutoResizeTextarea, DatePickerInput, PhoneInput } from './ui/Primitives';
-import { DrawerDialog } from './ui/Dialog';
-import { RedFlagChecklistPanel } from './workspace/RedFlagChecklistPanel';
+} from '../../utils/date';
+import { AutoResizeTextarea, DatePickerInput, PhoneInput } from '../ui/Primitives';
+import { DrawerDialog } from '../ui/Dialog';
+import { RedFlagChecklistPanel } from '../workspace/RedFlagChecklistPanel';
 import {
   getPatientDisplayName,
   getPatientMrn,
   hasPatientRedFlagsOrContraindications,
-} from '../utils/mrn';
-import { ClinicOperationsService } from '../services/clinicOperationsService';
-import { STRUCTURED_PRECAUTIONS_CATALOG } from '../utils/modalitySafetyChecker';
+} from '../../utils/mrn';
+import { ClinicOperationsService } from '../../services/clinicOperationsService';
+import { STRUCTURED_PRECAUTIONS_CATALOG } from '../../utils/modalitySafetyChecker';
 import {
   detectPatientDuplicates,
   type DuplicatePatientMatch,
-} from '../utils/dataQualityPhaseD';
+} from '../../utils/dataQualityPhaseD';
 import {
   searchBilingualGlossary,
   type BilingualGlossaryEntry,
-} from '../data/terminology';
+} from '../../data/terminology';
 import {
   REFERRAL_SOURCE_LABELS,
   REFERRAL_SOURCE_TYPES,
   resolveDoctorDisplayName,
   resolveDoctorFacility,
   resolveDoctorSpecialty,
-} from '../utils/iraqReferralsRetentionC6C7';
+} from '../../utils/iraqReferralsRetentionC6C7';
 import { 
-  X, 
   Save, 
   AlertTriangle, 
   User, 
@@ -81,7 +80,6 @@ export const PatientModal: React.FC<PatientModalProps> = ({
 }) => {
   const { patients, savePatient, loadFullPatientById } = usePatients();
   const { bi, t, isRtl, language } = useLanguage();
-  const isRtlLang = language !== 'en';
   const arabicNameInputRef = useRef<HTMLInputElement | null>(null);
 
   const [referralsModuleEnabled, setReferralsModuleEnabled] = useState<boolean>(() =>

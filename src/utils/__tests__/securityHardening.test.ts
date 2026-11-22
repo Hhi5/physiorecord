@@ -21,8 +21,18 @@ import {
   encryptSyncEnvelope,
   type ClinicSyncPayload,
 } from '../clinicSyncEngine';
-import { buildShareableDocumentHtmlFile } from '../sharingInteropPhaseE';
+import {
+  buildShareableDocumentHtmlFile,
+  buildShareableDocumentHtmlString,
+  renderAnnotatedPhotoDataUrl,
+} from '../sharingInteropPhaseE';
 import { buildMinimalXlsxBuffer, parseXlsxBufferToMatrix } from '../dataQualityPhaseD';
+import { isSafeAttachmentDataUrl, processAttachmentFile } from '../attachmentMedia';
+import {
+  getNativeGoogleOAuthConfig,
+  saveNativeGoogleOAuthConfig,
+  signOutGoogleDrive,
+} from '../../services/googleDriveSync';
 
 describe('Security Hardening — SSRF & Private LAN Sync URL Validation', () => {
   it('allows valid RFC1918, loopback, and .local LAN Hub URLs', () => {
@@ -109,20 +119,142 @@ describe('Security Hardening — Exported HTML XSS Sanitization & CSP', () => {
     expect(cleaned.toLowerCase()).not.toContain('data:text/html');
   });
 
-  it('embeds strict offline CSP meta header into shareable HTML files', async () => {
-    const file = buildShareableDocumentHtmlFile({
+  it('blocks slash-separated event handlers, HTML-entity javascript URIs, SVG active tags, and CSS @import', () => {
+    const bypassPayload =
+      '<img/onerror=alert(1) src="x">' +
+      '<svg/onload="alert(2)"><animate onbegin="alert(3)" /><set attributeName="href" to="javascript:alert(4)" /><use href="#x" /></svg>' +
+      '<a href="&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&colon;alert(5)">entity-link</a>' +
+      '<a href="&#x6a;&#x61;&#x76;&#x61;&#x73;&#x63;&#x72;&#x69;&#x70;&#x74;:alert(6)">hex-link</a>' +
+      '<style>@import url("https://evil.example/leak.css"); body { color: #000; }</style>';
+
+    const cleaned = sanitizeExportedDocumentHtml(bypassPayload);
+    const lower = cleaned.toLowerCase();
+    expect(lower).not.toContain('onerror');
+    expect(lower).not.toContain('onload');
+    expect(lower).not.toContain('onbegin');
+    expect(lower).not.toContain('<animate');
+    expect(lower).not.toContain('<set');
+    expect(lower).not.toContain('<use');
+    expect(lower).not.toContain('alert(5)');
+    expect(lower).not.toContain('alert(6)');
+    expect(lower).not.toContain('@import');
+    expect(cleaned).toContain('body { color: #000; }');
+  });
+
+  it('embeds strict offline CSP meta header into shareable HTML strings and files', async () => {
+    const shareParams = {
       title: 'Clinical Report',
       docType: 'soap',
-      sheetHtml: '<p>Safe content</p><img src=x onerror=alert(1)>',
-      dir: 'rtl',
-      lang: 'ar',
+      sheetHtml: '<p>Safe content</p><img/onerror=alert(1) src=x>',
+      dir: 'rtl' as const,
+      lang: 'ar' as const,
       fileNameBase: 'report',
-    });
+    };
+    const htmlFromString = buildShareableDocumentHtmlString(shareParams);
+    const file = buildShareableDocumentHtmlFile(shareParams);
     const html = await file.text();
+    expect(htmlFromString).toBe(html);
     expect(html).toContain('http-equiv="Content-Security-Policy"');
     expect(html).toContain("default-src 'none'");
     expect(html).toContain('<p>Safe content</p>');
     expect(html.toLowerCase()).not.toContain('onerror');
+  });
+});
+
+describe('Security Hardening — Attachment Upload & Preview Hygiene', () => {
+  it('rejects active SVG uploads and non-PDF files spoofing .pdf extension', async () => {
+    const svgFile = new File(
+      ['<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"></svg>'],
+      'posture.svg',
+      { type: 'image/svg+xml' }
+    );
+    await expect(processAttachmentFile(svgFile)).rejects.toThrow();
+
+    const fakePdf = new File(['<html><script>alert(1)</script></html>'], 'report.pdf', {
+      type: 'application/pdf',
+    });
+    await expect(processAttachmentFile(fakePdf)).rejects.toThrow();
+
+    const realPdf = new File(['%PDF-1.7\n1 0 obj\n<<>>\nendobj\n'], 'valid-report.pdf', {
+      type: 'application/pdf',
+    });
+    const processed = await processAttachmentFile(realPdf);
+    expect(processed.mimeType).toBe('application/pdf');
+    expect(isSafeAttachmentDataUrl(processed.payloadDataUrl, 'pdf')).toBe(true);
+  });
+
+  it('validates stored attachment data URLs strictly by expected kind', () => {
+    expect(isSafeAttachmentDataUrl('data:application/pdf;base64,JVBERi0xLjc=', 'pdf')).toBe(true);
+    expect(isSafeAttachmentDataUrl('data:text/html;base64,PHNjcmlwdD4=', 'pdf')).toBe(false);
+    expect(isSafeAttachmentDataUrl('data:image/svg+xml;base64,PHN2Zz4=', 'pdf')).toBe(false);
+    expect(isSafeAttachmentDataUrl('javascript:alert(1)')).toBe(false);
+    expect(isSafeAttachmentDataUrl('data:image/jpeg;base64,/9j/4AAQ', 'image')).toBe(true);
+    expect(isSafeAttachmentDataUrl('data:image/svg+xml;base64,PHN2Zz4=', 'image')).toBe(false);
+  });
+
+  it('strips untrusted href injection in fallback annotated SVG compositor', async () => {
+    const res = await renderAnnotatedPhotoDataUrl({
+      sourceDataUrl: 'data:text/html," /><script>alert(1)</script><image href="',
+      widthPx: 400,
+      heightPx: 300,
+      annotations: {
+        gridMode: 'none',
+        showPlumbLine: false,
+        plumbLineXPercent: 50,
+        showHorizontalLevel: false,
+        horizontalLevelYPercent: 50,
+        angles: [],
+      },
+    });
+    const decoded = Buffer.from(
+      res.payloadDataUrl.replace(/^data:image\/svg\+xml;base64,/, ''),
+      'base64'
+    ).toString('utf8');
+    expect(decoded.toLowerCase()).not.toContain('<script');
+    expect(decoded).not.toContain('data:text/html');
+  });
+});
+
+describe('Security Hardening — OAuth Client Secret Storage Discipline', () => {
+  it('never writes native Google OAuth clientSecret to localStorage and purges legacy key', async () => {
+    const store = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+      setItem: (k: string, v: string) => {
+        store.set(k, String(v));
+      },
+      removeItem: (k: string) => {
+        store.delete(k);
+      },
+      clear: () => store.clear(),
+    };
+    const prevWindow = (globalThis as Record<string, unknown>).window;
+    (globalThis as Record<string, unknown>).window = { localStorage: fakeStorage };
+
+    try {
+      const legacyKey = 'physiorecord_android_google_oauth_client_secret_v1';
+      fakeStorage.setItem(legacyKey, 'leaked-legacy-secret');
+
+      const cfgBefore = getNativeGoogleOAuthConfig();
+      expect(cfgBefore.clientSecret).toBe('');
+      expect(fakeStorage.getItem(legacyKey)).toBeNull();
+
+      saveNativeGoogleOAuthConfig({
+        clientId: '12345.apps.googleusercontent.com',
+        clientSecret: 'ephemeral-session-secret',
+      });
+      expect(fakeStorage.getItem(legacyKey)).toBeNull();
+      expect(getNativeGoogleOAuthConfig().clientSecret).toBe('ephemeral-session-secret');
+
+      await signOutGoogleDrive();
+      expect(getNativeGoogleOAuthConfig().clientSecret).toBe('');
+    } finally {
+      if (prevWindow === undefined) {
+        delete (globalThis as Record<string, unknown>).window;
+      } else {
+        (globalThis as Record<string, unknown>).window = prevWindow;
+      }
+    }
   });
 });
 

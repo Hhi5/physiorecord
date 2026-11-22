@@ -30,6 +30,7 @@ import {
   ATTACHMENT_MAX_DIMENSION_PX,
   ATTACHMENT_THUMBNAIL_MAX_PX,
   estimateDataUrlBytes,
+  isSafeAttachmentDataUrl,
 } from './attachmentMedia';
 import { formatHomeVisitAddressDisplay } from './iraqScheduleLocationsC1C3';
 import { shareGeneratedFileOnAndroid } from '../platform/nativeBridge';
@@ -86,24 +87,18 @@ function escapeHtmlBasic(raw: string): string {
     .replace(/'/g, '&#39;');
 }
 
-export function buildShareableDocumentHtmlFile(params: {
+export function buildShareableDocumentHtmlString(params: {
   title: string;
   docType: string;
   sheetHtml: string;
   dir: 'rtl' | 'ltr';
   lang: 'ar' | 'en';
-  fileNameBase: string;
-}): File {
-  const safeBase =
-    params.fileNameBase
-      .trim()
-      .replace(/[^a-zA-Z0-9\u0600-\u06FF_-]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'physiorecord-document';
+}): string {
   const safeTitle = escapeHtmlBasic(params.title);
   // Strip active HTML vectors (scripts, iframes, inline on* handlers, javascript:/data:text/html URIs)
   const sanitizedSheet = sanitizeExportedDocumentHtml(params.sheetHtml);
 
-  const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="${params.lang}" dir="${params.dir}">
 <head>
   <meta charset="utf-8" />
@@ -153,6 +148,22 @@ export function buildShareableDocumentHtmlFile(params: {
   </div>
 </body>
 </html>`;
+}
+
+export function buildShareableDocumentHtmlFile(params: {
+  title: string;
+  docType: string;
+  sheetHtml: string;
+  dir: 'rtl' | 'ltr';
+  lang: 'ar' | 'en';
+  fileNameBase: string;
+}): File {
+  const safeBase =
+    params.fileNameBase
+      .trim()
+      .replace(/[^a-zA-Z0-9\u0600-\u06FF_-]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'physiorecord-document';
+  const html = buildShareableDocumentHtmlString(params);
 
   const fileName = `${safeBase}.html`;
   if (typeof File !== 'undefined') {
@@ -939,9 +950,16 @@ function buildFallbackAnnotatedSvgDataUrl(params: {
   annotations: PhotoAnnotationState;
 }): string {
   const { sourceDataUrl, widthPx, heightPx, annotations } = params;
+  const safeHref = isSafeAttachmentDataUrl(sourceDataUrl, 'image')
+    ? escapeHtmlBasic(sourceDataUrl.trim())
+    : '';
   const parts: string[] = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${widthPx}" height="${heightPx}" viewBox="0 0 ${widthPx} ${heightPx}">`,
-    `<image href="${sourceDataUrl}" x="0" y="0" width="${widthPx}" height="${heightPx}" preserveAspectRatio="xMidYMid meet" />`,
+    ...(safeHref
+      ? [
+          `<image href="${safeHref}" x="0" y="0" width="${widthPx}" height="${heightPx}" preserveAspectRatio="xMidYMid meet" />`,
+        ]
+      : []),
   ];
 
   const divisions = getGridDivisions(annotations.gridMode);

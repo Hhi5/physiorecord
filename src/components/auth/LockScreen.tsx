@@ -4,27 +4,25 @@
 // =======================================================================
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useVault } from '../context/VaultContext';
-import { useLanguage } from '../context/LanguageContext';
-import { useTheme } from '../context/ThemeContext';
-import { LanguageSwitcher } from './ui/LanguageSwitcher';
-import { BrandLogo } from './ui/BrandLogo';
-import { ModalDialog } from './ui/Dialog';
-import { copySecretWithAutoClear } from '../utils/securityHardening';
-import { VAULT_CREDENTIAL_USERNAME } from '../utils/passwordReminderSchedule';
-import { normalizeVaultPinInput } from '../crypto/vaultPin';
+import { useVault } from '../../context/VaultContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
+import { LanguageSwitcher } from '../ui/LanguageSwitcher';
+import { BrandLogo } from '../ui/BrandLogo';
+import { ModalDialog } from '../ui/Dialog';
+import { copySecretWithAutoClear } from '../../utils/clipboardPrivacy';
+import { VAULT_CREDENTIAL_USERNAME } from '../../utils/passwordManagerHelper';
+import { normalizeVaultPinInput } from '../../crypto/vaultPin';
 import {
   saveTextFilePortable,
   triggerPlatformPrint,
-} from '../platform/nativeBridge';
-import { useDeviceFormFactor } from '../utils/deviceBiometricCopy';
-import { getLockScreenBiometricCopy } from '../utils/deviceBiometricCopy';
+} from '../../platform/nativeBridge';
+import { useDeviceFormFactor } from '../../hooks/useDeviceFormFactor';
+import { getLockScreenBiometricCopy } from '../../utils/deviceBiometricCopy';
 import {
   Lock,
-  ShieldCheck,
   KeyRound,
   AlertCircle,
-  CheckCircle2,
   Trash2,
   Copy,
   Check,
@@ -36,7 +34,6 @@ import {
   Download,
   Printer,
   Fingerprint,
-  Globe,
   Laptop,
 } from 'lucide-react';
 

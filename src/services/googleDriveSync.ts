@@ -14,6 +14,10 @@ import {
   isNativeAndroid,
 } from '../platform/nativeBridge';
 import {
+  MAX_SYNC_ENVELOPE_BYTES,
+  SYNC_ENVELOPE_MAGIC,
+} from '../config/appConstants';
+import {
   isSafeSyncDeviceId,
   isValidGoogleDriveId,
   randomHexCsprng,
@@ -24,13 +28,26 @@ export const GOOGLE_DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.fi
 export const DRIVE_SYNC_FOLDER_NAME = 'PhysioRecord-Clinic-Sync';
 const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
 const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3';
-const MAX_DRIVE_ENVELOPE_BYTES = 35 * 1024 * 1024;
+const MAX_DRIVE_ENVELOPE_BYTES = MAX_SYNC_ENVELOPE_BYTES;
 const NATIVE_OAUTH_CLIENT_ID_KEY = 'physiorecord_android_google_oauth_client_id_v1';
-const NATIVE_OAUTH_CLIENT_SECRET_KEY = 'physiorecord_android_google_oauth_client_secret_v1';
+const LEGACY_NATIVE_OAUTH_CLIENT_SECRET_KEY = 'physiorecord_android_google_oauth_client_secret_v1';
+
+// Strictly session-only in-memory cache for optional Desktop OAuth clientSecret (NEVER stored in localStorage)
+let inMemoryNativeOAuthClientSecret = '';
 
 export interface NativeGoogleOAuthConfig {
   clientId: string;
   clientSecret: string;
+}
+
+function purgeLegacyLocalStorageSecret(): void {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.removeItem(LEGACY_NATIVE_OAUTH_CLIENT_SECRET_KEY);
+    }
+  } catch {
+    // Ignore storage access errors
+  }
 }
 
 function getBuildTimeNativeGoogleOAuthConfig(): NativeGoogleOAuthConfig {
@@ -38,7 +55,7 @@ function getBuildTimeNativeGoogleOAuthConfig(): NativeGoogleOAuthConfig {
     const env = typeof import.meta !== 'undefined' ? (import.meta.env as Record<string, string | undefined>) : undefined;
     return {
       clientId: String(env?.VITE_GOOGLE_OAUTH_CLIENT_ID || '').trim(),
-      clientSecret: String(env?.VITE_GOOGLE_OAUTH_CLIENT_SECRET || '').trim(),
+      clientSecret: '',
     };
   } catch {
     return { clientId: '', clientSecret: '' };
@@ -52,18 +69,24 @@ export function hasBuiltInNativeGoogleOAuth(): boolean {
 
 export function getNativeGoogleOAuthConfig(): NativeGoogleOAuthConfig {
   const builtIn = getBuildTimeNativeGoogleOAuthConfig();
+  purgeLegacyLocalStorageSecret();
   try {
     if (typeof window === 'undefined' || !window.localStorage) {
-      return builtIn;
+      return {
+        clientId: builtIn.clientId,
+        clientSecret: inMemoryNativeOAuthClientSecret,
+      };
     }
     const storedId = (window.localStorage.getItem(NATIVE_OAUTH_CLIENT_ID_KEY) || '').trim();
-    const storedSecret = (window.localStorage.getItem(NATIVE_OAUTH_CLIENT_SECRET_KEY) || '').trim();
     return {
       clientId: storedId || builtIn.clientId,
-      clientSecret: storedSecret || builtIn.clientSecret,
+      clientSecret: inMemoryNativeOAuthClientSecret,
     };
   } catch {
-    return builtIn;
+    return {
+      clientId: builtIn.clientId,
+      clientSecret: inMemoryNativeOAuthClientSecret,
+    };
   }
 }
 
@@ -73,17 +96,14 @@ export function saveNativeGoogleOAuthConfig(next: Partial<NativeGoogleOAuthConfi
     clientId: (next.clientId ?? current.clientId).trim(),
     clientSecret: (next.clientSecret ?? current.clientSecret).trim(),
   };
+  inMemoryNativeOAuthClientSecret = merged.clientSecret;
+  purgeLegacyLocalStorageSecret();
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
       if (merged.clientId) {
         window.localStorage.setItem(NATIVE_OAUTH_CLIENT_ID_KEY, merged.clientId);
       } else {
         window.localStorage.removeItem(NATIVE_OAUTH_CLIENT_ID_KEY);
-      }
-      if (merged.clientSecret) {
-        window.localStorage.setItem(NATIVE_OAUTH_CLIENT_SECRET_KEY, merged.clientSecret);
-      } else {
-        window.localStorage.removeItem(NATIVE_OAUTH_CLIENT_SECRET_KEY);
       }
     }
   } catch {
@@ -267,6 +287,8 @@ export async function signOutGoogleDrive(): Promise<void> {
   cachedAccessToken = null;
   cachedTokenAcquiredAt = 0;
   cachedAuthUser = null;
+  inMemoryNativeOAuthClientSecret = '';
+  purgeLegacyLocalStorageSecret();
   if (firebaseAuthInstance) {
     const { signOut } = await import('firebase/auth');
     await signOut(firebaseAuthInstance);
@@ -422,7 +444,7 @@ async function downloadDriveSyncEnvelope(fileId: string): Promise<EncryptedSyncE
   if (res.contentLength > MAX_DRIVE_ENVELOPE_BYTES) return null;
   if (res.text.length > MAX_DRIVE_ENVELOPE_BYTES) return null;
   const parsed = safeJsonParse<EncryptedSyncEnvelope>(res.text);
-  return parsed?.magic === 'PHYSIORECORD_SYNC_V1' ? parsed : null;
+  return parsed?.magic === SYNC_ENVELOPE_MAGIC ? parsed : null;
 }
 
 async function uploadOrUpdateDeviceEnvelope(

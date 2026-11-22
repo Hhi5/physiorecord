@@ -14,7 +14,6 @@ import {
 import type { PatientRecord, PatientClinicalData, EncryptedPatientEntity } from '../types/clinical';
 import {
   getPatientMrn,
-  generateNextMrn,
   ensureUniquePatientMrn,
   isDemoPatient,
 } from '../utils/mrn';

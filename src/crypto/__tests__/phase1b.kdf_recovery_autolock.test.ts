@@ -3,7 +3,7 @@
 // Passwords, KDF Upgrades, Emergency Recovery Key, and Bulletproof Auto-Lock
 // =======================================================================
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   validateBackupHeaderPreDerivation,
   BackupHeaderValidationError,
@@ -23,14 +23,12 @@ import {
   randomBytes,
   encryptRecordPayload,
   decryptRecordPayload,
-  bindDekToGeneration,
   CONSTANTS,
   CURRENT_DEK_VERSION,
   CURRENT_RECORD_CRYPTO_VERSION,
 } from '../vault';
 import { createInMemoryDatabase } from './testDbHelper';
 import type { VaultMetaEntity } from '../../types/clinical';
-import type { PhysioRecordDatabase } from '../../db/db';
 
 describe('Phase 1B: KDF Bounds, Auto-Upgrade, Emergency Recovery Key, and Auto-Lock', () => {
   let testDb: any;

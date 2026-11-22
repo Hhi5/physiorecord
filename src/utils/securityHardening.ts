@@ -9,11 +9,11 @@
 //  - Prototype-pollution-safe JSON parsing
 // =======================================================================
 
+import { DANGEROUS_OBJECT_KEYS } from '../config/appConstants';
 import { isAllowedOfficialGithubUrl } from './updateSafety';
 
 const DRIVE_ID_RE = /^[a-zA-Z0-9_-]{8,128}$/;
 const SAFE_DEVICE_ID_RE = /^[a-zA-Z0-9_-]{4,64}$/;
-const DANGEROUS_OBJECT_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 /**
  * Validates that a hostname is strictly a private RFC1918 IPv4 address,
@@ -168,10 +168,27 @@ export function safeJsonParse<T = unknown>(rawJson: string): T {
   }) as T;
 }
 
+function decodeHtmlEntitiesForUrlCheck(raw: string): string {
+  return raw
+    .replace(/&#x([0-9a-f]+);?/gi, (_m, hex: string) => {
+      const cp = Number.parseInt(hex, 16);
+      return Number.isFinite(cp) && cp >= 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : '';
+    })
+    .replace(/&#([0-9]+);?/g, (_m, dec: string) => {
+      const cp = Number.parseInt(dec, 10);
+      return Number.isFinite(cp) && cp >= 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : '';
+    })
+    .replace(/&colon;?/gi, ':')
+    .replace(/&tab;?/gi, '\t')
+    .replace(/&newline;?/gi, '\n')
+    .replace(/&amp;?/gi, '&');
+}
+
 /**
  * Strips dangerous active HTML content (scripts, iframes, embeds, objects, forms, meta/base/link,
- * inline `on*` event handler attributes, `javascript:`/`vbscript:`/`data:text/html` URIs, and
- * legacy CSS `expression(...)`) from printed document HTML before saving or sharing offline `.html`.
+ * SVG active elements, inline `on*` event handler attributes including slash-separated forms,
+ * entity-encoded `javascript:`/`vbscript:`/`data:text/html` URIs, CSS `@import`, and legacy
+ * `expression(...)`) from printed document HTML before saving or sharing offline `.html`.
  */
 export function sanitizeExportedDocumentHtml(rawHtml: string): string {
   if (!rawHtml || typeof rawHtml !== 'string') return '';
@@ -184,28 +201,29 @@ export function sanitizeExportedDocumentHtml(rawHtml: string): string {
 
     // 1. Remove paired dangerous elements with their bodies
     cleaned = cleaned.replace(
-      /<\s*(script|iframe|object|embed|applet|noscript|template|foreignobject)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi,
+      /<\s*(script|iframe|object|embed|applet|noscript|template|foreignobject|animate|set|use)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi,
       ''
     );
 
     // 2. Remove standalone / self-closing dangerous elements
     cleaned = cleaned.replace(
-      /<\s*\/?\s*(script|iframe|object|embed|applet|base|meta|link|form)\b[^>]*\/?>/gi,
+      /<\s*\/?\s*(script|iframe|object|embed|applet|base|meta|link|form|animate|set|use)\b[^>]*\/?>/gi,
       ''
     );
 
-    // 3. Strip all inline event handler attributes (on*=...) — quoted or unquoted
+    // 3. Strip all inline event handler attributes (on*=...) — whitespace or slash separated
     cleaned = cleaned.replace(
-      /\s+on[a-z0-9_-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi,
+      /(?:[\s/]+)on[a-z0-9_-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi,
       ''
     );
 
-    // 4. Neutralize javascript:, vbscript:, and data:text/html URIs in href/src/xlink:href/action/formaction
+    // 4. Neutralize javascript:, vbscript:, data:text/html, and data:image/svg+xml URIs (including entity-encoded forms)
     cleaned = cleaned.replace(
       /(\b(?:href|src|xlink:href|action|formaction)\s*=\s*)(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi,
       (_match, attrPrefix: string, dq?: string, sq?: string, bare?: string) => {
         const rawVal = (dq ?? sq ?? bare ?? '').trim();
-        const normalized = rawVal.replace(/[\u0000-\u0020]+/g, '').toLowerCase();
+        const decodedVal = decodeHtmlEntitiesForUrlCheck(rawVal);
+        const normalized = decodedVal.replace(/[\u0000-\u0020]+/g, '').toLowerCase();
         if (
           normalized.startsWith('javascript:') ||
           normalized.startsWith('vbscript:') ||
@@ -220,9 +238,10 @@ export function sanitizeExportedDocumentHtml(rawHtml: string): string {
       }
     );
 
-    // 5. Neutralize dangerous CSS expressions / javascript url() inside inline style attributes
+    // 5. Neutralize dangerous CSS expressions, @import rules, and javascript url() inside styles
     cleaned = cleaned.replace(/expression\s*\(/gi, 'blocked(');
     cleaned = cleaned.replace(/url\s*\(\s*['"]?\s*javascript:/gi, 'url(blocked:');
+    cleaned = cleaned.replace(/@import\b[^;]*(?:;|$)/gi, '');
 
     if (cleaned === prev) break;
   }

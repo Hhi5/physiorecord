@@ -4,10 +4,10 @@
 // =======================================================================
 
 import React, { useState } from 'react';
-import { db } from '../db/db';
-import { useVault } from '../context/VaultContext';
-import { usePatients } from '../context/PatientContext';
-import { useLanguage } from '../context/LanguageContext';
+import { db } from '../../db/db';
+import { useVault } from '../../context/VaultContext';
+import { usePatients } from '../../context/PatientContext';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   exportBackupPackage,
   verifyBackupPackage,
@@ -16,29 +16,28 @@ import {
   type BackupPreviewSummary,
   type BackupVerificationResult,
   type RestoredBackupSummary,
-} from '../crypto/backup';
+} from '../../crypto/backup';
 import {
   createDurablePreRestoreRecoveryBackup,
   saveExternalRecoveryBackupFile,
-} from '../crypto/recovery';
+} from '../../crypto/recovery';
 import {
   isFileSystemAccessSupported,
   pickAndPersistBackupFolder,
   getConfiguredBackupFolder,
   clearConfiguredBackupFolder,
   saveBackupPackageToDevice,
-} from '../crypto/fileSystemBackup';
-import { ClinicOperationsService } from '../services/clinicOperationsService';
-import type { BackupRestoreMode } from '../types/clinicManagement';
-import { localDate, formatClinicalDate } from '../utils/date';
+} from '../../crypto/fileSystemBackup';
+import { ClinicOperationsService } from '../../services/clinicOperationsService';
+import type { BackupRestoreMode } from '../../types/clinicManagement';
+import { localDate, formatClinicalDate } from '../../utils/date';
 import {
   isNativeAndroid,
   saveTextFilePortable,
   shareGeneratedFileOnAndroid,
-} from '../platform/nativeBridge';
-import { DrawerDialog } from './ui/Dialog';
+} from '../../platform/nativeBridge';
+import { DrawerDialog } from '../ui/Dialog';
 import {
-  X,
   Download,
   Upload,
   ShieldCheck,

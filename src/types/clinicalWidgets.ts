@@ -2,8 +2,6 @@
 // PhysioRecord — Clinical Widget Engine & AI Extensibility Types
 // =======================================================================
 
-import type { LucideIcon } from 'lucide-react';
-
 export type ExamCategory =
   | 'body_chart'
   | 'rom_mmt'

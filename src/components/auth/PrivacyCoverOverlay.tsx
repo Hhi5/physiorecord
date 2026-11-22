@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { Eye, Lock, Shield } from 'lucide-react';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface PrivacyCoverOverlayProps {
   isOpen: boolean;

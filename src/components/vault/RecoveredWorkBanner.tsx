@@ -5,9 +5,9 @@
 
 import React from 'react';
 import { History, RotateCcw, Trash2 } from 'lucide-react';
-import type { DecryptedDraftRecord, DraftRecordType } from '../types/clinical';
-import { useLanguage } from '../context/LanguageContext';
-import { Num } from './ui/Primitives';
+import type { DecryptedDraftRecord, DraftRecordType } from '../../types/clinical';
+import { useLanguage } from '../../context/LanguageContext';
+import { Num } from '../ui/Primitives';
 
 interface RecoveredWorkBannerProps {
   drafts: DecryptedDraftRecord[];

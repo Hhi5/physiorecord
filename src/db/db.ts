@@ -728,9 +728,7 @@ if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.MOD
 export async function requestPersistentStorage(): Promise<boolean> {
   if (navigator.storage && navigator.storage.persist) {
     try {
-      const isPersisted = await navigator.storage.persist();
-      console.log(`PhysioRecord storage persistence status: ${isPersisted ? 'Persistent' : 'Best-Effort'}`);
-      return isPersisted;
+      return await navigator.storage.persist();
     } catch (e) {
       console.warn('Storage persistence request failed:', e);
       return false;

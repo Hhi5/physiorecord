@@ -5,9 +5,9 @@
 // =======================================================================
 
 import React, { useState } from 'react';
-import { useLanguage } from '../context/LanguageContext';
-import { ClinicOperationsService } from '../services/clinicOperationsService';
-import { ModalDialog } from './ui/Dialog';
+import { useLanguage } from '../../context/LanguageContext';
+import { ClinicOperationsService } from '../../services/clinicOperationsService';
+import { ModalDialog } from '../ui/Dialog';
 import { UserCheck, Users, ShieldCheck, Sparkles, Check } from 'lucide-react';
 
 interface FirstRunModeWizardModalProps {

@@ -18,6 +18,7 @@ import {
   RefreshCw,
   ShieldAlert,
   ShieldCheck,
+  Smartphone,
   Tag,
   TabletSmartphone,
 } from 'lucide-react';
@@ -56,6 +57,7 @@ import {
   usePwaStatus,
 } from '../../pwa/pwaClient';
 import { ModalDialog } from '../ui/Dialog';
+import { IosInstallGuideModal } from './IosInstallGuideModal';
 
 interface PlatformUpdateCenterCardProps {
   onOpenBackupModal?: () => void;
@@ -99,6 +101,7 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
   >(null);
 
   const [pendingAction, setPendingAction] = useState<PendingUpdateAction | null>(null);
+  const [isIosGuideOpen, setIsIosGuideOpen] = useState(false);
   const [autoCheckEnabled, setAutoCheckEnabled] = useState<boolean>(() =>
     isAutoUpdateCheckEnabled()
   );
@@ -152,11 +155,15 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
         ? deviceFormFactor === 'tablet'
           ? bi('أندرويد — التابلت (Signed APK)', 'Android Tablet (Signed APK)', 'ئەندرۆید — تابلێت (APK)')
           : bi('أندرويد — الهاتف (Signed APK)', 'Android Mobile (Signed APK)', 'ئەندرۆید — مۆبایل (APK)')
-        : deviceFormFactor === 'desktop'
-          ? bi('تطبيق الويب — الحاسوب (Web / PWA)', 'Web / PWA (Desktop)', 'وێب — کۆمپیوتەر (PWA)')
-          : deviceFormFactor === 'tablet'
-            ? bi('تطبيق الويب — التابلت (Web / PWA)', 'Web / PWA (Tablet)', 'وێب — تابلێت (PWA)')
-            : bi('تطبيق الويب — الهاتف (Web / PWA)', 'Web / PWA (Mobile)', 'وێب — مۆبایل (PWA)');
+        : pwa.isIosDevice
+          ? pwa.isStandalone
+            ? bi('iPhone / iPad — تطبيق الشاشة الرئيسية (iOS PWA)', 'iPhone / iPad — Home Screen App (iOS PWA)', 'iPhone / iPad — ئەپی شاشەی سەرەکی')
+            : bi('iPhone / iPad — متصفح الويب (جاهز للتثبيت)', 'iPhone / iPad — Safari Web (Ready to Install)', 'iPhone / iPad — وێبگەڕ')
+          : deviceFormFactor === 'desktop'
+            ? bi('تطبيق الويب — الحاسوب (Web / PWA)', 'Web / PWA (Desktop)', 'وێب — کۆمپیوتەر (PWA)')
+            : deviceFormFactor === 'tablet'
+              ? bi('تطبيق الويب — التابلت (Web / PWA)', 'Web / PWA (Tablet)', 'وێب — تابلێت (PWA)')
+              : bi('تطبيق الويب — الهاتف (Web / PWA)', 'Web / PWA (Mobile)', 'وێب — مۆبایل (PWA)');
 
   const latestSyncedRelease = useMemo(() => {
     if (syncedReleases.length === 0) return null;
@@ -275,9 +282,9 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
             <TabletSmartphone className="size-4 text-primary shrink-0" />
             <span>
               {bi(
-                'التحديثات الآمنة ومزامنة مستودع GitHub (Android / Windows / Web)',
-                'Safe Updates & GitHub Repository Sync (Android / Windows / Web)',
-                'نوێکردنەوەی سەلامەت و هاوکاتکردن لەگەڵ گیتهەب'
+                'التحديثات الآمنة والمنصات (Android / iOS / Windows / Web)',
+                'Safe Updates & Platforms (Android / iOS / Windows / Web)',
+                'نوێکردنەوەی سەلامەت و پلاتفۆرمەکان (Android / iOS / Windows / Web)'
               )}
             </span>
           </div>
@@ -812,8 +819,70 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
               </div>
             </div>
           )}
+          {/* Dedicated iPhone & iPad (iOS) Long-Term Deployment & Install Section */}
+          <div
+            data-testid="ios-platform-support-card"
+            className="p-3.5 rounded-xl bg-card border border-line-2 space-y-2.5 text-xs"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 font-bold text-foreground">
+                <Smartphone className="size-4 text-primary shrink-0" />
+                <span>
+                  {bi(
+                    'دعم iPhone و iPad (iOS) — التثبيت طويل الأمد',
+                    'iPhone & iPad (iOS) — Long-Term Deployment',
+                    'پشتگیری iPhone و iPad (iOS) — دامەزراندنی درێژخایەن'
+                  )}
+                </span>
+              </div>
+              <span
+                className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                  pwa.isIosDevice && pwa.isStandalone
+                    ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-400'
+                    : 'bg-primary/10 text-primary'
+                }`}
+              >
+                {pwa.isIosDevice && pwa.isStandalone
+                  ? bi('مثبّت على الشاشة الرئيسية', 'Installed (Standalone)', 'دامەزراوە')
+                  : bi('دائم ومجاني (PWA) + جاهز لـ App Store', 'Permanent PWA + App Store Ready', 'PWAی هەمیشەیی')}
+              </span>
+            </div>
+
+            <p className="text-muted-foreground-1 leading-relaxed">
+              {bi(
+                'للاستخدام اليومي طويل الأمد على الآيفون والآيباد بدون انتهاء صلاحية كل 7 أيام: ثبّت التطبيق من Safari عبر «إضافة إلى الشاشة الرئيسية» (يعمل أوفلاين بالكامل + Face ID + مزامنة Google Drive المشفرة). كما أن المشروع مهيّأ بالكامل ببنية Capacitor iOS للنشر الرسمي على App Store عند توفر حساب مطور Apple.',
+                'For permanent, zero-expiry daily use on iPhone & iPad: install from Safari via "Add to Home Screen" (100% offline, Face ID Passkey, E2EE Google Drive sync). The codebase is also prepared for official App Store distribution via Capacitor iOS + GitHub Actions macOS builds.',
+                'بۆ بەکارهێنانی درێژخایەن لەسەر iPhone و iPad: لە Safari زیادی بکە بۆ شاشەی سەرەکی (بەبێ ئینتەرنێت + Face ID + هاوکاتکردنی کۆدکراو).'
+              )}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                data-testid="open-ios-guide-from-updates-btn"
+                onClick={() => setIsIosGuideOpen(true)}
+                className="min-h-[36px] px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/18 text-primary border border-primary/25 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <Smartphone className="size-3.5 shrink-0" />
+                <span>
+                  {bi(
+                    'دليل التثبيت على iPhone / iPad (3 خطوات)',
+                    'iPhone / iPad Install Guide (3 Steps)',
+                    'ڕێبەری دامەزراندن لەسەر iPhone / iPad'
+                  )}
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Guided iPhone / iPad Install Modal */}
+      <IosInstallGuideModal
+        isOpen={isIosGuideOpen}
+        onOpenChange={setIsIosGuideOpen}
+        onOpenBackup={onOpenBackupModal}
+      />
 
       {/* Pre-Update Encrypted Backup Shield Modal */}
       <ModalDialog

@@ -13,7 +13,6 @@ import {
 import {
   X,
   Printer,
-  Languages,
   ShieldAlert,
   CheckCircle2,
   Share2,
@@ -34,10 +33,6 @@ import { GeometricHeaderBackdrop } from '../ui/Dialog';
 import { FloatingA4PreviewStage } from './FloatingA4PreviewStage';
 import type { PrintPreviewZoomMode } from '../../utils/printLayoutFit';
 import {
-  getPrintDocumentGlossaryLabels,
-  type PrintDocumentGlossaryLabels,
-} from '../../data/terminology';
-import {
   addDaysToDateStr,
   formatClinicalDate,
   formatDateDDMMYYYY,
@@ -55,6 +50,7 @@ import {
   buildDocumentShareSummaryText,
   buildDocumentWhatsAppFallbackUrl,
   buildShareableDocumentHtmlFile,
+  buildShareableDocumentHtmlString,
   computePatientVisitCardSummary,
   formatNextVisitBriefText,
   shareDocumentViaWebShareOrFallback,
@@ -386,13 +382,6 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
   const stampSafe = isValidEncryptedImageDataUrl(clinicProfile.stampSignatureDataUrl)
     ? clinicProfile.stampSignatureDataUrl
     : undefined;
-  const glossaryEnabled = ClinicOperationsService.isBilingualTerminologyGlossaryEnabled();
-  const glossaryLabels: PrintDocumentGlossaryLabels | null = glossaryEnabled
-    ? getPrintDocumentGlossaryLabels(docLang)
-    : null;
-  const glossaryCounterpartLabels: PrintDocumentGlossaryLabels | null = glossaryEnabled
-    ? getPrintDocumentGlossaryLabels(docLang === 'ar' ? 'en' : 'ar')
-    : null;
   const webShareEnabled = ClinicOperationsService.isWebShareInteropEnabled();
   const hijriDisplayEnabled = ClinicOperationsService.isHijriDateDisplayEnabled();
   const practiceLocations = ClinicOperationsService.getPracticeLocations();
@@ -560,18 +549,16 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
   };
 
   const handleDownloadShareFile = async () => {
-    const file = buildShareableDocumentHtmlFile({
+    const shareParams = {
       title: docTitle,
       docType: documentType,
       sheetHtml: sheetRef.current?.innerHTML || '',
-      dir: docDir,
+      dir: (docDir === 'ltr' ? 'ltr' : 'rtl') as 'rtl' | 'ltr',
       lang: docLang,
       fileNameBase: shareFileNameBase,
-    });
-    const htmlText =
-      typeof file.text === 'function'
-        ? await file.text()
-        : sheetRef.current?.innerHTML || '';
+    };
+    const file = buildShareableDocumentHtmlFile(shareParams);
+    const htmlText = buildShareableDocumentHtmlString(shareParams);
     try {
       await saveTextFilePortable({
         filename: file.name,

@@ -275,11 +275,6 @@ function resolveSessionStatus(s: SessionLike): string {
   return s.data?.status ?? s.status ?? 'draft';
 }
 
-function resolveSessionNumber(s: SessionLike, fallbackIdx: number): number {
-  const n = s.data?.sessionNumber ?? s.sessionNumber;
-  return typeof n === 'number' && Number.isFinite(n) ? n : fallbackIdx + 1;
-}
-
 // -----------------------------------------------------------------------
 // C6: Referral Source Statistics
 // -----------------------------------------------------------------------

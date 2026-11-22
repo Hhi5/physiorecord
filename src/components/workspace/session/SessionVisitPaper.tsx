@@ -31,7 +31,6 @@ import {
 } from '../../../services/clinicOperationsService';
 import type {
   FlowsheetExerciseEntry,
-  ManualTherapyFlowsheetEntry,
   ManualTherapyGradeOrIntensity,
   PatientRecord,
   PhysicalAgentFlowsheetEntry,

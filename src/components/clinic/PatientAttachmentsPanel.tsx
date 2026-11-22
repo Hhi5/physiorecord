@@ -14,7 +14,6 @@ import {
   Download,
   AlertTriangle,
   Columns2,
-  Grid3x3,
   Plus,
   Ruler,
   Paperclip,
@@ -25,6 +24,7 @@ import { ClinicOperationsService } from '../../services/clinicOperationsService'
 import {
   ATTACHMENT_TOTAL_WARNING_BYTES,
   formatReadableBytes,
+  isSafeAttachmentDataUrl,
   processAttachmentFile,
 } from '../../utils/attachmentMedia';
 import { localDate } from '../../utils/date';
@@ -274,6 +274,16 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
   };
 
   const handleDownloadAttachment = (att: EncryptedAttachmentRecord) => {
+    if (!isSafeAttachmentDataUrl(att.payloadDataUrl)) {
+      setErrorMsg(
+        bi(
+          'تم حظر تنزيل هذا المرفق لأن صيغة البيانات المخزنة غير صالحة أمنياً.',
+          'Download blocked because the stored attachment data URL is invalid.',
+          'داگرتنی ئەم هاوپێچە ڕاگیرا چونکە فۆرماتی داتاکە پارێزراو نییە.'
+        )
+      );
+      return;
+    }
     const link = document.createElement('a');
     link.href = att.payloadDataUrl;
     link.download = att.fileName || `${att.title}.bin`;
@@ -428,7 +438,7 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*,.pdf,application/pdf"
+                accept="image/jpeg,image/png,image/webp,image/bmp,image/gif,.pdf,application/pdf"
                 onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                 className="sr-only"
                 aria-label={bi(
@@ -744,18 +754,37 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
         {previewAttachment && (
           <div className="space-y-3">
             {previewAttachment.mimeType === 'application/pdf' ? (
-              <iframe
-                title={previewAttachment.title}
-                src={previewAttachment.payloadDataUrl}
-                className="w-full h-[70vh] rounded-xl border border-card-stroke bg-white"
-              />
-            ) : (
+              isSafeAttachmentDataUrl(previewAttachment.payloadDataUrl, 'pdf') ? (
+                <iframe
+                  title={previewAttachment.title}
+                  src={previewAttachment.payloadDataUrl}
+                  className="w-full h-[70vh] rounded-xl border border-card-stroke bg-white"
+                />
+              ) : (
+                <div className="p-6 rounded-xl border border-rose-500/30 bg-rose-500/10 text-xs text-rose-700 dark:text-rose-300 text-center">
+                  {bi(
+                    'تم حظر معاينة ملف PDF لأن محتواه لا يطابق صيغة PDF الآمنة.',
+                    'PDF preview blocked because the stored data URL is not a valid PDF payload.',
+                    'پێشبینینی PDF ڕاگیرا چونکە داتاکە فۆرماتی PDF ی دروست نییە.'
+                  )}
+                </div>
+              )
+            ) : isSafeAttachmentDataUrl(previewAttachment.payloadDataUrl, 'image') ||
+              /^data:image\/svg\+xml;base64,/i.test(previewAttachment.payloadDataUrl) ? (
               <div className="flex justify-center bg-surface rounded-xl p-2">
                 <img
                   src={previewAttachment.payloadDataUrl}
                   alt={previewAttachment.title}
                   className="max-h-[70vh] w-auto object-contain rounded-lg"
                 />
+              </div>
+            ) : (
+              <div className="p-6 rounded-xl border border-rose-500/30 bg-rose-500/10 text-xs text-rose-700 dark:text-rose-300 text-center">
+                {bi(
+                  'تم حظر معاينة الصورة لأن صيغة البيانات المخزنة غير صالحة.',
+                  'Image preview blocked because the stored data URL is invalid.',
+                  'پێشبینینی وێنەکە ڕاگیرا چونکە فۆرماتی داتاکە دروست نییە.'
+                )}
               </div>
             )}
             {previewAttachment.notes && (

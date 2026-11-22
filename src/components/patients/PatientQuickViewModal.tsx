@@ -26,27 +26,27 @@ import type {
   PatientRecord,
   SessionRecord,
   SoapNoteRecord,
-} from '../types/clinical';
-import type { EpisodeScopedClinicalStore } from '../types/clinicManagement';
-import { useLanguage } from '../context/LanguageContext';
-import { useVault } from '../context/VaultContext';
-import { usePatients } from '../context/PatientContext';
-import { useCurrency } from '../context/CurrencyContext';
-import { EpisodeService } from '../services/episodeService';
-import { SessionService } from '../services/sessionService';
-import { SoapService } from '../services/soapService';
+} from '../../types/clinical';
+import type { EpisodeScopedClinicalStore } from '../../types/clinicManagement';
+import { useLanguage } from '../../context/LanguageContext';
+import { useVault } from '../../context/VaultContext';
+import { usePatients } from '../../context/PatientContext';
+import { useCurrency } from '../../context/CurrencyContext';
+import { EpisodeService } from '../../services/episodeService';
+import { SessionService } from '../../services/sessionService';
+import { SoapService } from '../../services/soapService';
 import {
   ClinicOperationsService,
   ROLE_PERMISSIONS,
-} from '../services/clinicOperationsService';
+} from '../../services/clinicOperationsService';
 import {
   buildPatientQuickSummary,
   renderPatientSummaryText,
-} from '../utils/patientSummary';
-import { ModalDialog } from './ui/Dialog';
+} from '../../utils/patientSummary';
+import { ModalDialog } from '../ui/Dialog';
 
 const PrintDocumentModal = lazy(() =>
-  import('./print/PrintDocumentModal').then((m) => ({ default: m.PrintDocumentModal }))
+  import('../print/PrintDocumentModal').then((m) => ({ default: m.PrintDocumentModal }))
 );
 
 interface PatientQuickViewModalProps {

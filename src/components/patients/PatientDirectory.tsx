@@ -5,31 +5,31 @@
 // =======================================================================
 
 import React, { useState, useMemo, useEffect, useRef, Suspense, lazy } from 'react';
-import { usePatients } from '../context/PatientContext';
-import { useVault } from '../context/VaultContext';
-import { useLanguage } from '../context/LanguageContext';
-import { ClinicOperationsService } from '../services/clinicOperationsService';
-import { EpisodeService } from '../services/episodeService';
-import type { EpisodeRecord, PatientRecord } from '../types/clinical';
-import { computePatientAge, formatDateDDMMYYYY, formatIraqiPhoneDisplay } from '../utils/date';
+import { usePatients } from '../../context/PatientContext';
+import { useVault } from '../../context/VaultContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { ClinicOperationsService } from '../../services/clinicOperationsService';
+import { EpisodeService } from '../../services/episodeService';
+import type { EpisodeRecord, PatientRecord } from '../../types/clinical';
+import { computePatientAge, formatDateDDMMYYYY, formatIraqiPhoneDisplay } from '../../utils/date';
 import {
   getPatientMrn,
   isDemoPatient,
   hasPatientRedFlagsOrContraindications,
   getPatientDisplayName,
-} from '../utils/mrn';
-import { localizeDemoText } from '../utils/demoLocalization';
-import { findAllDirectoryDuplicatePairs } from '../utils/dataQualityPhaseD';
+} from '../../utils/mrn';
+import { localizeDemoText } from '../../utils/demoLocalization';
+import { findAllDirectoryDuplicatePairs } from '../../utils/dataQualityPhaseD';
 import {
   computeTherapistCaseloadSummary,
   getPatientCompletionMeta,
   type PatientCompletionMeta,
-} from '../utils/treatmentJourneySummary';
-import { Num, DemoBadge, Money } from './ui/Primitives';
-import { ClampedMenuPanel } from './ui/Primitives';
-import { useViewportClampedMenu } from '../utils/menuViewportClamp';
-import { PatientSearchEngine } from '../utils/arabicSearch';
-import { useVirtualWindow } from '../hooks/useVirtualWindow';
+} from '../../utils/treatmentJourneySummary';
+import { Num, DemoBadge, Money } from '../ui/Primitives';
+import { ClampedMenuPanel } from '../ui/ClampedMenuPanel';
+import { useViewportClampedMenu } from '../../utils/menuViewportClamp';
+import { PatientSearchEngine } from '../../utils/arabicSearch';
+import { useVirtualWindow } from '../../hooks/useVirtualWindow';
 import {
   Search,
   UserPlus,
@@ -51,9 +51,9 @@ import {
   Users,
 } from 'lucide-react';
 
-const PatientMergeModal = lazy(() => import('./clinic/PatientMergeModal'));
+const PatientMergeModal = lazy(() => import('../clinic/PatientMergeModal'));
 const CsvOnboardingModal = lazy(() =>
-  import('./clinic/CsvOnboardingModal').then((m) => ({ default: m.CsvOnboardingModal }))
+  import('../clinic/CsvOnboardingModal').then((m) => ({ default: m.CsvOnboardingModal }))
 );
 const PatientQuickViewModal = lazy(() =>
   import('./PatientQuickViewModal').then((m) => ({ default: m.PatientQuickViewModal }))

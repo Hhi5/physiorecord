@@ -32,7 +32,6 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
-import { estimateDataUrlBytes } from '../../utils/attachmentMedia';
 import { ModalDialog } from '../ui/Dialog';
 import {
   computeFourPointCobbAngleDegrees,
@@ -43,9 +42,7 @@ import {
   createDefaultPhotoArrowAnnotation,
   createDefaultPhotoCobbMeasurement,
   createDefaultPhotoDistanceMeasurement,
-  createThumbnailFromDataUrl,
   formatPhotoDistanceBadgeText,
-  renderAnnotatedPhotoDataUrl,
 } from '../../utils/sharingInteropPhaseE';
 import KonvaMeasurementCanvas, {
   type KonvaMeasurementCanvasHandle,

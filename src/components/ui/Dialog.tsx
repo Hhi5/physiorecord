@@ -108,7 +108,7 @@ export const ModalDialog: React.FC<ModalDialogProps> = ({
       onOpenChange={onOpenChange}
       isDismissable={isDismissable}
       isKeyboardDismissDisabled={isKeyboardDismissDisabled ?? !isDismissable}
-      className={`fixed inset-0 z-50 flex ${overlayClassName || 'items-end sm:items-center justify-center p-0 sm:p-6'} bg-slate-950/60 backdrop-blur-xs entering:animate-in entering:fade-in exiting:animate-out exiting:fade-out`.trim()}
+      className={`fixed inset-0 z-50 flex ${overlayClassName || 'items-end sm:items-center justify-center p-0 sm:p-6'} bg-slate-950/60 backdrop-blur-xs`.trim()}
     >
       <Modal
         dir={dir}
@@ -165,10 +165,20 @@ export const ModalDialog: React.FC<ModalDialogProps> = ({
                   </div>
                 )}
 
-              <div tabIndex={0} className={bodyClassName ?? 'flex-1 overflow-y-auto min-h-0 p-4 sm:p-6'}>{children}</div>
+              <div
+                tabIndex={0}
+                className={
+                  bodyClassName ??
+                  `flex-1 overflow-y-auto min-h-0 p-4 sm:p-6 ${
+                    footer ? '' : 'pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:pb-6'
+                  }`.trim()
+                }
+              >
+                {children}
+              </div>
 
               {footer && (
-                <div className="px-4 sm:px-5 py-3 border-t border-card-divider bg-muted/40 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                <div className="px-4 sm:px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:py-3 border-t border-card-divider bg-muted/40 flex flex-wrap items-center justify-between gap-3 shrink-0">
                   {footer}
                 </div>
               )}
@@ -273,12 +283,20 @@ export const DrawerDialog: React.FC<DrawerDialogProps> = ({
                   </div>
                 )}
 
-                <div tabIndex={0} className={bodyClassName ?? 'flex-1 min-h-0 overflow-y-auto p-5 focus:outline-none'}>
+                <div
+                  tabIndex={0}
+                  className={
+                    bodyClassName ??
+                    `flex-1 min-h-0 overflow-y-auto p-5 focus:outline-none ${
+                      footer ? '' : 'pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] sm:pb-5'
+                    }`.trim()
+                  }
+                >
                   {children}
                 </div>
 
                 {footer && (
-                  <div className="px-5 py-3.5 border-t border-card-divider bg-muted/40 flex items-center justify-end gap-2.5 flex-shrink-0">
+                  <div className="px-5 pt-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] sm:py-3.5 border-t border-card-divider bg-muted/40 flex items-center justify-end gap-2.5 flex-shrink-0">
                     {footer}
                   </div>
                 )}

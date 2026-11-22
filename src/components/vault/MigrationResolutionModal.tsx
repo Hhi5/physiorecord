@@ -5,15 +5,15 @@
 // =======================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { ModalDialog } from './ui/Dialog';
-import { useVault } from '../context/VaultContext';
-import { useLanguage } from '../context/LanguageContext';
-import { db } from '../db/db';
+import { ModalDialog } from '../ui/Dialog';
+import { useVault } from '../../context/VaultContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { db } from '../../db/db';
 import {
   LocalStorageMigrationService,
   type UnmigratedResolutionItem,
-} from '../services/localStorageMigrationService';
-import { saveTextFilePortable } from '../platform/nativeBridge';
+} from '../../services/localStorageMigrationService';
+import { saveTextFilePortable } from '../../platform/nativeBridge';
 import {
   AlertTriangle,
   RotateCcw,

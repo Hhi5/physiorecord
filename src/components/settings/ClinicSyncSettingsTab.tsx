@@ -30,6 +30,7 @@ import {
   WifiOff,
   AlertTriangle,
 } from 'lucide-react';
+import { DEFAULT_LAN_SYNC_PORT } from '../../config/appConstants';
 import { useLanguage } from '../../context/LanguageContext';
 import { useVault } from '../../context/VaultContext';
 import { usePatients } from '../../context/PatientContext';
@@ -193,7 +194,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
         const st = await electronBridge.getLanSyncHubStatus?.();
         if (st) setHubStatus(st);
       } else {
-        const st = await electronBridge.startLanSyncHub({ port: 47821 });
+        const st = await electronBridge.startLanSyncHub({ port: DEFAULT_LAN_SYNC_PORT });
         setHubStatus(st);
         if (st.error) {
           setFeedback({ kind: 'error', text: st.error });

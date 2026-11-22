@@ -13,8 +13,8 @@ import type { PatientRecord, EpisodeRecord, SessionRecord } from '../../types/cl
 import { PatientBanner } from './PatientBanner';
 import { MasterPatientChart } from './MasterPatientChart';
 import { TreatmentSessionView } from './TreatmentSessionView';
-import { EpisodeModal } from '../EpisodeModal';
-import { SessionModal } from '../SessionModal';
+import { EpisodeModal } from '../patients/EpisodeModal';
+import { SessionModal } from '../patients/SessionModal';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
 import type { FinishUndoSnapshot } from '../../types/clinicManagement';
 

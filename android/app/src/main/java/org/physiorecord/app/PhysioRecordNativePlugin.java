@@ -600,9 +600,12 @@ public class PhysioRecordNativePlugin extends Plugin {
                             headerCount++;
                         }
                         String[] parts = requestLine.split(" ");
+                        String method = parts.length >= 1 ? parts[0] : "";
                         String rawPath = parts.length >= 2 ? parts[1] : "/";
-                        if (!rawPath.startsWith("/oauth2callback")) {
-                            String notFound = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+                        boolean isExactCallbackPath =
+                                rawPath.equals("/oauth2callback") || rawPath.startsWith("/oauth2callback?");
+                        if (!"GET".equals(method) || !isExactCallbackPath) {
+                            String notFound = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n";
                             client.getOutputStream().write(notFound.getBytes(StandardCharsets.UTF_8));
                             continue;
                         }
@@ -623,7 +626,7 @@ public class PhysioRecordNativePlugin extends Plugin {
                                 : "<!doctype html><html dir=\"rtl\" lang=\"ar\"><head><meta charset=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/><title>PhysioRecord</title><style>body{font-family:sans-serif;text-align:center;padding:48px 20px;background:#fef2f2;color:#991b1b;}</style></head><body><h2>تعذّر إكمال تسجيل الدخول</h2><p>يرجى العودة إلى تطبيق PhysioRecord والمحاولة مجدداً.</p></body></html>";
 
                         byte[] bodyBytes = htmlBody.getBytes(StandardCharsets.UTF_8);
-                        String httpResp = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: "
+                        String httpResp = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nContent-Security-Policy: default-src 'none'; style-src 'unsafe-inline'\r\nContent-Length: "
                                 + bodyBytes.length + "\r\nConnection: close\r\n\r\n";
                         OutputStream out = client.getOutputStream();
                         out.write(httpResp.getBytes(StandardCharsets.UTF_8));
@@ -679,7 +682,10 @@ public class PhysioRecordNativePlugin extends Plugin {
                 tokenConn.disconnect();
 
                 if (tokenStatus < 200 || tokenStatus >= 300) {
-                    call.reject("Google token exchange failed (HTTP " + tokenStatus + "): " + tokenRespStr);
+                    String safeErr = tokenRespStr != null && tokenRespStr.length() > 200
+                            ? tokenRespStr.substring(0, 200)
+                            : String.valueOf(tokenRespStr);
+                    call.reject("Google token exchange failed (HTTP " + tokenStatus + "): " + safeErr);
                     return;
                 }
 

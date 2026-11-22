@@ -59,6 +59,7 @@ import { ClinicOperationsService } from '../services/clinicOperationsService';
 import { DraftRecoveryService } from '../services/draftRecoveryService';
 import { LocalStorageMigrationService, type LocalStorageMigrationResult } from '../services/localStorageMigrationService';
 import {
+  clearDesktopOsBiometricDek,
   clearNativeAndroidBiometricDek,
   detectDexieSchemaDowngradeError,
   isNativeAppShell,
@@ -1012,6 +1013,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const wipeDatabase = useCallback(async () => {
     lock(true);
     await clearNativeAndroidBiometricDek();
+    await clearDesktopOsBiometricDek();
     await db.delete();
     await db.open();
 

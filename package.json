@@ -19,6 +19,7 @@
     "build": "vite build",
     "build:web": "node scripts/build-target.mjs web",
     "build:android:web": "node scripts/build-target.mjs android",
+    "build:ios:web": "node scripts/build-target.mjs ios",
     "build:desktop:web": "node scripts/build-target.mjs desktop",
     "sync:version": "node scripts/sync-version.mjs",
     "android:keystore:init": "node scripts/setup-android-keystore.mjs",
