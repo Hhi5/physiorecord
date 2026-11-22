@@ -711,7 +711,7 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
           data-testid="settings-biometric-section"
           className="pt-3.5 border-t border-card-divider space-y-2.5"
         >
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-foreground">
                 {deviceFormFactor === 'desktop' ? (
@@ -839,7 +839,7 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
           data-testid="settings-quick-pin-section"
           className="pt-3 space-y-2.5"
         >
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-foreground">
                 <KeyRound className="size-4 text-primary shrink-0" />
@@ -1028,7 +1028,7 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
 
         {/* Password Change / Anti-Lockout Protection (Signal Reminders + OS Password Manager + Passkey Reset) */}
         <div className="pt-3.5 border-t border-card-divider space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2.5">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 text-xs font-bold text-foreground">
                 <ShieldCheck className="size-4 text-primary shrink-0" />
@@ -1055,7 +1055,7 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
                 setPwChangeError(null);
                 setShowPasswordChangeForm((prev) => !prev);
               }}
-              className="min-h-[36px] px-3 py-1.5 rounded-xl bg-surface hover:bg-layer-hover border border-line-2 text-xs font-bold text-foreground cursor-pointer shrink-0"
+              className="min-h-[36px] px-3 py-1.5 rounded-xl bg-surface hover:bg-layer-hover border border-line-2 text-xs font-bold text-foreground cursor-pointer shrink-0 self-start"
             >
               {showPasswordChangeForm
                 ? bi('إغلاق', 'Close', 'داخستن')

@@ -30,6 +30,7 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { BrandLogo } from '../ui/BrandLogo';
+import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 import { OFFICIAL_LATEST_RELEASE_URL } from '../../utils/updateSafety';
 import type { PlatformGateMode } from '../../pwa/platformAccessGate';
 
@@ -52,7 +53,7 @@ export const PlatformAccessGateScreen: React.FC<PlatformAccessGateScreenProps> =
   hasExistingVault,
   onAllowExistingVaultBackup,
 }) => {
-  const { language, setLanguage, isRtl, bi } = useLanguage();
+  const { isRtl, bi } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const [copiedUrl, setCopiedUrl] = useState(false);
 
@@ -84,10 +85,6 @@ export const PlatformAccessGateScreen: React.FC<PlatformAccessGateScreenProps> =
     }
   };
 
-  const toggleLanguage = () => {
-    setLanguage(language === 'ar' ? 'en' : 'ar');
-  };
-
   return (
     <div
       dir={isRtl ? 'rtl' : 'ltr'}
@@ -116,13 +113,7 @@ export const PlatformAccessGateScreen: React.FC<PlatformAccessGateScreenProps> =
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={toggleLanguage}
-            className="h-9 px-3 rounded-xl bg-layer border border-card-line hover:bg-layer-hover text-xs font-bold text-foreground cursor-pointer transition-colors"
-          >
-            {language === 'ar' ? 'EN' : 'عربي'}
-          </button>
+          <LanguageSwitcher compact />
           <button
             type="button"
             onClick={toggleTheme}
@@ -549,12 +540,17 @@ export const PlatformAccessGateScreen: React.FC<PlatformAccessGateScreenProps> =
                     <HardDrive className="size-4 text-primary shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
                       <p className="font-bold text-foreground">
-                        {bi('بياناتك تبقى على جهازك 100%', '100% Local on Your Device')}
+                        {bi(
+                          'بياناتك تبقى على جهازك 100%',
+                          '100% Local on Your Device',
+                          'زانیارییەکانت ١٠٠٪ لەسەر ئامێرەکەت دەمێننەوە'
+                        )}
                       </p>
                       <p className="text-muted-foreground-1 leading-relaxed">
                         {bi(
                           'تشفير AES-256 محلي بدون سيرفر وبدون أي اشتراك شهري.',
-                          'Local AES-256 vault with zero servers and zero subscriptions.'
+                          'Local AES-256 vault with zero servers and zero subscriptions.',
+                          'نهێنیکردنی ناوخۆیی AES-256 بەبێ سێرڤەر و بەبێ هیچ بەشدارییەکی مانگانە.'
                         )}
                       </p>
                     </div>
@@ -564,12 +560,17 @@ export const PlatformAccessGateScreen: React.FC<PlatformAccessGateScreenProps> =
                     <WifiOff className="size-4 text-primary shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
                       <p className="font-bold text-foreground">
-                        {bi('عمل أوفلاين كامل ومستقر', 'Full Offline Reliability')}
+                        {bi(
+                          'عمل أوفلاين كامل ومستقر',
+                          'Full Offline Reliability',
+                          'کارکردنی تەواو و جێگیر بەبێ ئینتەرنێت'
+                        )}
                       </p>
                       <p className="text-muted-foreground-1 leading-relaxed">
                         {bi(
                           'لا يتأثر بمسح ذاكرة المتصفح ويحافظ على ملفات المرضى بأمان.',
-                          'Immune to browser cache clears and tab storage limits.'
+                          'Immune to browser cache clears and tab storage limits.',
+                          'کاریگەر نابێت بە سڕینەوەی بیرگەی وێبگەڕ و فایلەکانی نەخۆش بە سەلامەتی دەپارێزێت.'
                         )}
                       </p>
                     </div>
@@ -582,19 +583,19 @@ export const PlatformAccessGateScreen: React.FC<PlatformAccessGateScreenProps> =
             <div className="pt-2 border-t border-card-divider flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground-1">
               <span className="inline-flex items-center gap-1.5 font-semibold">
                 <Lock className="size-3.5 text-primary" />
-                {bi('تشفير AES-256 محلي', 'Local AES-256 Vault')}
+                {bi('تشفير AES-256 محلي', 'Local AES-256 Vault', 'نهێنیکردنی ناوخۆیی AES-256')}
               </span>
               <span className="inline-flex items-center gap-1.5 font-semibold">
                 <WifiOff className="size-3.5 text-primary" />
-                {bi('أوفلاين 100%', '100% Offline')}
+                {bi('أوفلاين 100%', '100% Offline', '١٠٠٪ ئۆفلاین')}
               </span>
               <span className="inline-flex items-center gap-1.5 font-semibold">
                 <RefreshCw className="size-3.5 text-primary" />
-                {bi('تحديثات تلقائية مجانية', 'Free Auto Updates')}
+                {bi('تحديثات تلقائية مجانية', 'Free Auto Updates', 'نوێکردنەوەی خۆکاری بێبەرامبەر')}
               </span>
               <span className="inline-flex items-center gap-1.5 font-semibold">
                 <ShieldCheck className="size-3.5 text-primary" />
-                {bi('مجاني ومفتوح المصدر', 'Free & Open Source')}
+                {bi('مجاني ومفتوح المصدر', 'Free & Open Source', 'بێبەرامبەر و سەرچاوەکراوە')}
               </span>
             </div>
 
@@ -622,7 +623,8 @@ export const PlatformAccessGateScreen: React.FC<PlatformAccessGateScreenProps> =
       <footer className="w-full max-w-xl mx-auto text-center text-xs text-muted-foreground-1">
         {bi(
           'PhysioRecord — كل بيانات المرضى تبقى محلية ومشفرة داخل جهاز العيادة فقط.',
-          'PhysioRecord — All clinical records stay encrypted locally on your clinic device.'
+          'PhysioRecord — All clinical records stay encrypted locally on your clinic device.',
+          'PhysioRecord — هەموو زانیارییەکانی نەخۆش بە نهێنیکراوی و ناوخۆیی لەناو ئامێری کلینیکەکەت دەمێننەوە.'
         )}
       </footer>
     </div>

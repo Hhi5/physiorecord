@@ -18,7 +18,6 @@ import {
   RefreshCw,
   ShieldAlert,
   ShieldCheck,
-  Smartphone,
   Tag,
   TabletSmartphone,
 } from 'lucide-react';
@@ -57,7 +56,6 @@ import {
   usePwaStatus,
 } from '../../pwa/pwaClient';
 import { ModalDialog } from '../ui/Dialog';
-import { IosInstallGuideModal } from './IosInstallGuideModal';
 
 interface PlatformUpdateCenterCardProps {
   onOpenBackupModal?: () => void;
@@ -101,7 +99,6 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
   >(null);
 
   const [pendingAction, setPendingAction] = useState<PendingUpdateAction | null>(null);
-  const [isIosGuideOpen, setIsIosGuideOpen] = useState(false);
   const [autoCheckEnabled, setAutoCheckEnabled] = useState<boolean>(() =>
     isAutoUpdateCheckEnabled()
   );
@@ -305,9 +302,9 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
         {/* Opt-In In-App GitHub Release Update Notification Toggle (Top of Card for Easy Discovery) */}
         <div
           data-testid="auto-update-notification-row"
-          className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-card border border-primary/25 text-xs"
+          className="flex items-start justify-between gap-3 px-3 py-2.5 rounded-xl bg-card border border-primary/25 text-xs"
         >
-          <div className="flex items-start gap-2.5 min-w-0">
+          <div className="flex items-start gap-2.5 min-w-0 flex-1">
             <Bell className="size-4 text-primary shrink-0 mt-0.5" />
             <div className="space-y-0.5 min-w-0">
               <div className="flex flex-wrap items-center gap-1.5 font-bold text-foreground">
@@ -354,9 +351,7 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
                 void handleSyncGitHubReleases();
               }
             }}
-            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors cursor-pointer ${
-              autoCheckEnabled ? 'bg-primary' : 'bg-muted-foreground-2/40'
-            }`}
+            className="compact-btn inline-flex items-center shrink-0 pt-0.5 cursor-pointer bg-transparent border-0 p-0 focus:outline-none"
             aria-label={bi(
               'تفعيل إشعار التحديث التلقائي من GitHub',
               'Toggle automatic GitHub release notifications',
@@ -364,25 +359,27 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
             )}
           >
             <span
-              className={`inline-block size-4 rounded-full bg-white shadow-xs transition-transform ${
-                autoCheckEnabled
-                  ? isRtl
-                    ? '-translate-x-6'
-                    : 'translate-x-6'
-                  : isRtl
-                    ? '-translate-x-1'
-                    : 'translate-x-1'
+              className={`relative inline-flex h-[24px] w-[42px] shrink-0 items-center rounded-full p-[3px] transition-colors ${
+                autoCheckEnabled ? 'bg-primary' : 'bg-muted-foreground-2/40'
               }`}
-            />
+            >
+              <span
+                className={`inline-block size-[18px] rounded-full bg-white shadow-xs transition-transform ${
+                  autoCheckEnabled
+                    ? 'translate-x-[18px] rtl:-translate-x-[18px]'
+                    : 'translate-x-0'
+                }`}
+              />
+            </span>
           </button>
         </div>
 
         {/* Official GitHub Repository Banner */}
         <div
           data-testid="official-repo-link-bar"
-          className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg bg-card border border-line-2 text-xs"
+          className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 rounded-lg bg-card border border-line-2 text-xs"
         >
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
             <GitBranch className="size-3.5 text-primary shrink-0" />
             <span className="text-muted-foreground-1">
               {bi('المستودع الرسمي:', 'Official Repository:', 'کۆگای فەرمی:')}
@@ -391,7 +388,7 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
               type="button"
               data-testid="open-official-repo-btn"
               onClick={() => void openSafeExternalUrl(OFFICIAL_GITHUB_REPO_URL)}
-              className="font-mono font-bold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer truncate"
+              className="compact-btn font-mono font-bold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer break-all text-start"
               dir="ltr"
             >
               <span>github.com/{OFFICIAL_GITHUB_REPO}</span>
@@ -765,9 +762,9 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
                           {notesLines.length > 0 ? (
                             <ul className="space-y-1 text-muted-foreground-1 leading-relaxed">
                               {notesLines.map((line, lineIdx) => (
-                                <li key={lineIdx} className="flex items-start gap-1.5">
+                                <li key={lineIdx} className="flex items-start gap-1.5 min-w-0">
                                   <CheckCircle2 className="size-3.5 text-primary shrink-0 mt-0.5" />
-                                  <span className="break-words">{line}</span>
+                                  <span className="break-words [overflow-wrap:anywhere] min-w-0">{line}</span>
                                 </li>
                               ))}
                             </ul>
@@ -793,10 +790,10 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
                                     labelEn: `Download ${platformAsset.fileName}`,
                                   })
                                 }
-                                className="px-2.5 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                                className="px-2.5 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 font-bold inline-flex items-center gap-1.5 cursor-pointer max-w-full"
                               >
-                                <Download className="size-3.5" />
-                                <span dir="ltr">{platformAsset.fileName}</span>
+                                <Download className="size-3.5 shrink-0" />
+                                <span dir="ltr" className="break-all text-start">{platformAsset.fileName}</span>
                               </button>
                             ) : (
                               <span />
@@ -819,70 +816,8 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
               </div>
             </div>
           )}
-          {/* Dedicated iPhone & iPad (iOS) Long-Term Deployment & Install Section */}
-          <div
-            data-testid="ios-platform-support-card"
-            className="p-3.5 rounded-xl bg-card border border-line-2 space-y-2.5 text-xs"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2 font-bold text-foreground">
-                <Smartphone className="size-4 text-primary shrink-0" />
-                <span>
-                  {bi(
-                    'دعم iPhone و iPad (iOS) — التثبيت طويل الأمد',
-                    'iPhone & iPad (iOS) — Long-Term Deployment',
-                    'پشتگیری iPhone و iPad (iOS) — دامەزراندنی درێژخایەن'
-                  )}
-                </span>
-              </div>
-              <span
-                className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                  pwa.isIosDevice && pwa.isStandalone
-                    ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-400'
-                    : 'bg-primary/10 text-primary'
-                }`}
-              >
-                {pwa.isIosDevice && pwa.isStandalone
-                  ? bi('مثبّت على الشاشة الرئيسية', 'Installed (Standalone)', 'دامەزراوە')
-                  : bi('دائم ومجاني (PWA) + جاهز لـ App Store', 'Permanent PWA + App Store Ready', 'PWAی هەمیشەیی')}
-              </span>
-            </div>
-
-            <p className="text-muted-foreground-1 leading-relaxed">
-              {bi(
-                'للاستخدام اليومي طويل الأمد على الآيفون والآيباد بدون انتهاء صلاحية كل 7 أيام: ثبّت التطبيق من Safari عبر «إضافة إلى الشاشة الرئيسية» (يعمل أوفلاين بالكامل + Face ID + مزامنة Google Drive المشفرة). كما أن المشروع مهيّأ بالكامل ببنية Capacitor iOS للنشر الرسمي على App Store عند توفر حساب مطور Apple.',
-                'For permanent, zero-expiry daily use on iPhone & iPad: install from Safari via "Add to Home Screen" (100% offline, Face ID Passkey, E2EE Google Drive sync). The codebase is also prepared for official App Store distribution via Capacitor iOS + GitHub Actions macOS builds.',
-                'بۆ بەکارهێنانی درێژخایەن لەسەر iPhone و iPad: لە Safari زیادی بکە بۆ شاشەی سەرەکی (بەبێ ئینتەرنێت + Face ID + هاوکاتکردنی کۆدکراو).'
-              )}
-            </p>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                data-testid="open-ios-guide-from-updates-btn"
-                onClick={() => setIsIosGuideOpen(true)}
-                className="min-h-[36px] px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/18 text-primary border border-primary/25 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                <Smartphone className="size-3.5 shrink-0" />
-                <span>
-                  {bi(
-                    'دليل التثبيت على iPhone / iPad (3 خطوات)',
-                    'iPhone / iPad Install Guide (3 Steps)',
-                    'ڕێبەری دامەزراندن لەسەر iPhone / iPad'
-                  )}
-                </span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
-
-      {/* Guided iPhone / iPad Install Modal */}
-      <IosInstallGuideModal
-        isOpen={isIosGuideOpen}
-        onOpenChange={setIsIosGuideOpen}
-        onOpenBackup={onOpenBackupModal}
-      />
 
       {/* Pre-Update Encrypted Backup Shield Modal */}
       <ModalDialog
