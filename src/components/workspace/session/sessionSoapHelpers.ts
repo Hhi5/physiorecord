@@ -11,6 +11,7 @@ import {
   type SoapNoteData,
   type SoapNoteRecord,
 } from '../../../types/clinical';
+import type { QuickSoapChip } from '../../../types/clinicManagement';
 
 export type ProgressStatusOption = '' | 'improved' | 'unchanged' | 'regressed' | 'plateau';
 export type PatientToleranceOption =
@@ -84,6 +85,81 @@ export function createUntouchedDraftFormState(): UntouchedDraftFormState {
 }
 
 /**
+ * Resolves the human-readable display label for a physical/electrical modality entry.
+ * Custom ('Other') modalities display their clinician-entered name in ALL languages
+ * instead of falling back to the raw enum key 'Other' in English mode.
+ */
+export function getPhysicalAgentDisplayLabel(
+  entry: Pick<PhysicalAgentFlowsheetEntry, 'modality' | 'modalityAr'>,
+  language: 'ar' | 'en' | 'ckb'
+): string {
+  const customName = (entry.modalityAr || '').trim();
+  if (entry.modality === 'Other') {
+    if (customName) return customName;
+    if (language === 'en') return 'Custom Modality';
+    if (language === 'ckb') return 'ئامێری تایبەت';
+    return 'جهاز مخصص';
+  }
+  return language === 'en' ? entry.modality : customName || entry.modality;
+}
+
+export interface CustomPhysicalAgentInput {
+  name: string;
+  site?: string;
+  parameters?: string;
+  durationMinutes?: number;
+  fallbackSite?: string;
+  id?: string;
+}
+
+/**
+ * Pure builder for a custom electrical/physical modality flowsheet entry.
+ * Returns null if the name is blank or duration is outside the valid 1..120 min range.
+ */
+export function buildCustomPhysicalAgentEntry(
+  input: CustomPhysicalAgentInput
+): PhysicalAgentFlowsheetEntry | null {
+  const trimmedName = (input.name || '').trim();
+  if (!trimmedName) return null;
+  const duration = input.durationMinutes ?? 15;
+  if (!Number.isInteger(duration) || duration < 1 || duration > 120) return null;
+  const site = (input.site ?? input.fallbackSite ?? '').trim();
+  const parameters = (input.parameters || '').trim();
+  return {
+    id: input.id || crypto.randomUUID(),
+    modality: 'Other',
+    modalityAr: trimmedName,
+    site,
+    parameters,
+    durationMinutes: duration,
+  };
+}
+
+/**
+ * Pure builder for saving a reusable custom electrical/physical modality quick chip.
+ */
+export function buildCustomModalityChip(input: {
+  name: string;
+  parameters?: string;
+  durationMinutes?: number;
+  id?: string;
+}): QuickSoapChip | null {
+  const trimmedName = (input.name || '').trim();
+  if (!trimmedName) return null;
+  const duration = input.durationMinutes ?? 15;
+  if (!Number.isInteger(duration) || duration < 1 || duration > 120) return null;
+  return {
+    id: input.id || `chip_mod_custom_${crypto.randomUUID()}`,
+    category: 'modality',
+    labelAr: trimmedName,
+    labelEn: trimmedName,
+    modalityType: 'Other',
+    modalityParams: (input.parameters || '').trim(),
+    durationMinutes: duration,
+  };
+}
+
+/**
  * Pure render/export helper: derives human-readable summary string from structured flowsheet items.
  * NEVER includes therapist free-text `interventionsSummary` and is NEVER stored in `dailyInterventionsSummary`.
  */
@@ -106,9 +182,9 @@ export function compileFlowsheetSummaryText(
   );
   const paLines = (flowsheet.physicalAgents || []).map(
     (p) =>
-      `${isAr ? p.modalityAr || p.modality : p.modality} (${
+      `${getPhysicalAgentDisplayLabel(p, isAr ? 'ar' : 'en')} (${
         p.site ? `${p.site}, ` : ''
-      }${p.parameters}, ${p.durationMinutes}m)`
+      }${p.parameters ? `${p.parameters}, ` : ''}${p.durationMinutes}m)`
   );
   return [...exLines, ...mtLines, ...paLines].filter(Boolean).join(' • ');
 }

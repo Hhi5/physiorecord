@@ -948,7 +948,7 @@ export interface QuickSoapChip {
   manualTechniqueEn?: string;
   manualTarget?: string;
   manualGrade?: 'Grade I' | 'Grade II' | 'Grade III' | 'Grade IV' | 'MWM' | 'Soft Tissue';
-  modalityType?: 'TENS' | 'Ultrasound' | 'NMES' | 'HotPack' | 'Cryotherapy' | 'DryNeedling' | 'Laser' | 'Shockwave';
+  modalityType?: PhysicalAgentFlowsheetEntry['modality'];
   modalityParams?: string;
   durationMinutes?: number;
 }

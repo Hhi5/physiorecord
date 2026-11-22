@@ -58,6 +58,8 @@ import {
   type PatientToleranceOption,
   type ProgressStatusOption,
   type UntouchedDraftFormState,
+  buildCustomModalityChip,
+  buildCustomPhysicalAgentEntry,
   buildSoapPayloadFromFormState,
   compileFlowsheetSummaryText,
   createUntouchedDraftFormState,
@@ -475,9 +477,16 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
       return;
     }
     const id = crypto.randomUUID();
-    const modType = chip.modalityType || 'TENS';
+    const modType = chip.modalityType || 'Other';
     const params = chip.modalityParams || '';
-    handleAddPhysicalAgent(modType, chip.labelAr, params, chip.durationMinutes ?? 15, id);
+    handleAddPhysicalAgent(
+      modType,
+      chip.labelAr || chip.labelEn,
+      params,
+      chip.durationMinutes ?? 15,
+      id,
+      modType !== 'Other' && Boolean(params)
+    );
   };
 
   const handleAddCustomChip = async (e: React.FormEvent) => {
@@ -502,8 +511,8 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
               manualTarget: detail || episodeTitle,
             }
           : {
-              modalityType: 'TENS',
-              modalityParams: detail || '100Hz',
+              modalityType: 'Other',
+              modalityParams: detail,
               durationMinutes: 15,
             }),
     };
@@ -1156,18 +1165,22 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
     modalityAr: string,
     defaultParams: string,
     durationMinutes = 15,
-    customId?: string
+    customId?: string,
+    markAsPrefill = Boolean(defaultParams),
+    customSite?: string
   ) => {
     const id = customId || crypto.randomUUID();
     const entry: PhysicalAgentFlowsheetEntry = {
       id,
       modality,
       modalityAr,
-      site: episodeTitle,
+      site: customSite !== undefined ? customSite : episodeTitle,
       parameters: defaultParams,
       durationMinutes,
     };
-    setPrefillParameterIds((prev) => ({ ...prev, [id]: true }));
+    if (markAsPrefill) {
+      setPrefillParameterIds((prev) => ({ ...prev, [id]: true }));
+    }
     updateField('physicalAgents', [...formState.physicalAgents, entry]);
   };
 
@@ -1176,7 +1189,8 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
     modalityAr: string,
     defaultParams: string,
     durationMinutes = 15,
-    customId?: string
+    customId?: string,
+    markAsPrefill = Boolean(defaultParams)
   ) => {
     if (isLocked) return;
     if (enableModalitySafetyCheck) {
@@ -1202,12 +1216,62 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
         return;
       }
     }
-    appendPhysicalAgentDirectly(modality, modalityAr, defaultParams, durationMinutes, customId);
+    appendPhysicalAgentDirectly(
+      modality,
+      modalityAr,
+      defaultParams,
+      durationMinutes,
+      customId,
+      markAsPrefill
+    );
   };
 
   const handleAddManualPhysicalAgent = () => {
     if (isLocked) return;
-    appendPhysicalAgentDirectly('Other', '', '', 15);
+    appendPhysicalAgentDirectly('Other', '', '', 15, undefined, false);
+  };
+
+  const handleAddCustomPhysicalAgent = async (input: {
+    name: string;
+    site?: string;
+    parameters?: string;
+    durationMinutes?: number;
+    saveAsQuickButton?: boolean;
+  }): Promise<boolean> => {
+    if (isLocked) return false;
+    const entry = buildCustomPhysicalAgentEntry({
+      name: input.name,
+      site: input.site,
+      parameters: input.parameters,
+      durationMinutes: input.durationMinutes,
+      fallbackSite: episodeTitle,
+    });
+    if (!entry) return false;
+    updateField('physicalAgents', [...formState.physicalAgents, entry]);
+
+    if (input.saveAsQuickButton) {
+      const normalizedName = entry.modalityAr.trim().toLowerCase();
+      const alreadySaved = favoriteChips.some(
+        (c) =>
+          c.category === 'modality' &&
+          c.modalityType === 'Other' &&
+          (c.labelAr.trim().toLowerCase() === normalizedName ||
+            c.labelEn.trim().toLowerCase() === normalizedName)
+      );
+      if (!alreadySaved) {
+        const chip = buildCustomModalityChip({
+          name: entry.modalityAr,
+          parameters: entry.parameters,
+          durationMinutes: entry.durationMinutes,
+        });
+        if (chip) {
+          const next = [...favoriteChips, chip];
+          setFavoriteChips(next);
+          await ClinicOperationsService.saveQuickSoapChipsAsync(next);
+        }
+      }
+    }
+    return true;
   };
 
   const handleConfirmModalityOverride = () => {
@@ -1737,8 +1801,11 @@ export const TreatmentSessionView: React.FC<TreatmentSessionViewProps> = ({
           onAddExerciseFromCatalog={handleAddExerciseFromCatalog}
           onAddManualExercise={handleAddManualExercise}
           onAddManualTherapy={handleAddManualTherapy}
+          episodeTitle={episodeTitle}
           onAddPhysicalAgent={handleAddPhysicalAgent}
           onAddManualPhysicalAgent={handleAddManualPhysicalAgent}
+          onAddCustomPhysicalAgent={handleAddCustomPhysicalAgent}
+          onDeleteFavoriteChip={(chipId) => void handleDeleteFavoriteChip(chipId)}
           getCopiedFieldStatus={getCopiedFieldStatus}
           renderCopiedFieldBadge={renderCopiedFieldBadge}
         />

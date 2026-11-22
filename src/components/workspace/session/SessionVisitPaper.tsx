@@ -64,11 +64,12 @@ import {
   buildClinicalExamSummary,
   nprsTextColor,
 } from '../chart/examSummaryHelpers';
-import type {
-  CopiedSoapTextField,
-  PatientToleranceOption,
-  ProgressStatusOption,
-  UntouchedDraftFormState,
+import {
+  getPhysicalAgentDisplayLabel,
+  type CopiedSoapTextField,
+  type PatientToleranceOption,
+  type ProgressStatusOption,
+  type UntouchedDraftFormState,
 } from './sessionSoapHelpers';
 
 const ActiveExamCanvas = lazy(() =>
@@ -104,12 +105,15 @@ const QUICK_MODALITY_BUTTONS: ReadonlyArray<{
   params: string;
 }> = [
   { mod: 'TENS', ar: 'تحفيز كهربائي TENS', ckb: 'TENS', params: '100Hz, 150µs' },
-  { mod: 'Ultrasound', ar: 'أمواج فوق صوتية', ckb: 'شەپۆلی سەروودەنگ', params: '1MHz, 1.2 W/cm²' },
+  { mod: 'IFC', ar: 'تيار متداخل (IFC)', ckb: 'IFC', params: '4000Hz, AMF 80–100Hz' },
   { mod: 'NMES', ar: 'تحفيز عضلي NMES', ckb: 'NMES', params: '50Hz, 10s/30s' },
-  { mod: 'HotPack', ar: 'كمادات ساخنة', ckb: 'گەرمی', params: 'Hydrocollator 15m' },
+  { mod: 'Ultrasound', ar: 'أمواج فوق صوتية', ckb: 'شەپۆلی سەروودەنگ', params: '1MHz, 1.2 W/cm²' },
+  { mod: 'Laser', ar: 'ليزر علاجي (Laser)', ckb: 'لەیزەر', params: '810nm, 4 J/cm²' },
+  { mod: 'Shockwave', ar: 'موجات تصادمية (Shockwave)', ckb: 'شۆکوەیڤ', params: '2000 pulses, 2.0 bar' },
   { mod: 'Shortwave', ar: 'موجات قصيرة (SWD)', ckb: 'SWD', params: 'Pulsed / Continuous' },
-  { mod: 'DryNeedling', ar: 'إبر جافة', ckb: 'دەرزی وشک', params: 'Trigger Points' },
+  { mod: 'HotPack', ar: 'كمادات ساخنة', ckb: 'گەرمی', params: 'Hydrocollator 15m' },
   { mod: 'Cryotherapy', ar: 'كمادات باردة', ckb: 'ساردی', params: 'Cold pack' },
+  { mod: 'DryNeedling', ar: 'إبر جافة', ckb: 'دەرزی وشک', params: 'Trigger Points' },
   { mod: 'Traction', ar: 'شد فقري', ckb: 'کێشانی بڕبڕە', params: 'Intermittent traction' },
 ];
 
@@ -168,6 +172,7 @@ export interface SessionVisitPaperProps {
   onAddExerciseFromCatalog: () => void;
   onAddManualExercise: () => void;
   onAddManualTherapy: (preset?: ManualTherapyTechniquePreset) => void;
+  episodeTitle?: string;
   onAddPhysicalAgent: (
     modality: PhysicalAgentFlowsheetEntry['modality'],
     modalityAr: string,
@@ -176,6 +181,14 @@ export interface SessionVisitPaperProps {
     customId?: string
   ) => void;
   onAddManualPhysicalAgent: () => void;
+  onAddCustomPhysicalAgent?: (input: {
+    name: string;
+    site?: string;
+    parameters?: string;
+    durationMinutes?: number;
+    saveAsQuickButton?: boolean;
+  }) => Promise<boolean> | boolean;
+  onDeleteFavoriteChip?: (chipId: string) => void;
   getCopiedFieldStatus: (field: CopiedSoapTextField) => 'copied' | 'edited' | null;
   renderCopiedFieldBadge: (field: CopiedSoapTextField) => React.ReactNode;
 }
@@ -217,14 +230,94 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
   onAddExerciseFromCatalog,
   onAddManualExercise,
   onAddManualTherapy,
+  episodeTitle = '',
   onAddPhysicalAgent,
   onAddManualPhysicalAgent,
+  onAddCustomPhysicalAgent,
+  onDeleteFavoriteChip,
   getCopiedFieldStatus,
   renderCopiedFieldBadge,
 }) => {
   const { language, isRtl, bi } = useLanguage();
   const [activeSheet, setActiveSheet] = useState<VisitSheetKey | null>(null);
   const [showFreeTextExtras, setShowFreeTextExtras] = useState(false);
+
+  // Inline custom electrical/physical modality form state
+  const [showCustomModalityForm, setShowCustomModalityForm] = useState(false);
+  const [customModalityName, setCustomModalityName] = useState('');
+  const [customModalitySite, setCustomModalitySite] = useState('');
+  const [customModalityParams, setCustomModalityParams] = useState('');
+  const [customModalityDuration, setCustomModalityDuration] = useState('15');
+  const [customModalitySaveChip, setCustomModalitySaveChip] = useState(true);
+  const [customModalityError, setCustomModalityError] = useState<string | null>(null);
+
+  const savedCustomModalityChips = useMemo(
+    () =>
+      favoriteChips.filter(
+        (c) => c.category === 'modality' && c.modalityType === 'Other'
+      ),
+    [favoriteChips]
+  );
+
+  const openCustomModalityForm = () => {
+    setCustomModalityName('');
+    setCustomModalitySite(episodeTitle);
+    setCustomModalityParams('');
+    setCustomModalityDuration('15');
+    setCustomModalitySaveChip(true);
+    setCustomModalityError(null);
+    setShowCustomModalityForm(true);
+  };
+
+  const handleSubmitCustomModality = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedName = customModalityName.trim();
+    if (!trimmedName) {
+      setCustomModalityError(
+        bi(
+          'يرجى إدخال اسم الجهاز أو الوسيلة العلاجية.',
+          'Please enter a modality name.',
+          'تکایە ناوی ئامێرەکە بنووسە.'
+        )
+      );
+      return;
+    }
+    const parsedDuration = Number(customModalityDuration.trim());
+    if (
+      customModalityDuration.trim() === '' ||
+      !Number.isInteger(parsedDuration) ||
+      parsedDuration < 1 ||
+      parsedDuration > 120
+    ) {
+      setCustomModalityError(
+        bi(
+          'يرجى إدخال مدة صحيحة بين 1 و120 دقيقة.',
+          'Please enter a valid duration between 1 and 120 minutes.',
+          'تکایە ماوەیەکی دروست لە نێوان ١ بۆ ١٢٠ خولەک بنووسە.'
+        )
+      );
+      return;
+    }
+    setCustomModalityError(null);
+    if (onAddCustomPhysicalAgent) {
+      const ok = await onAddCustomPhysicalAgent({
+        name: trimmedName,
+        site: customModalitySite.trim() || episodeTitle,
+        parameters: customModalityParams.trim(),
+        durationMinutes: parsedDuration,
+        saveAsQuickButton: customModalitySaveChip,
+      });
+      if (ok) {
+        setShowCustomModalityForm(false);
+        setCustomModalityName('');
+        setCustomModalityParams('');
+        setCustomModalityDuration('15');
+      }
+    } else {
+      onAddManualPhysicalAgent();
+      setShowCustomModalityForm(false);
+    }
+  };
 
   const [customDefinitions, setCustomDefinitions] = useState<CustomWidgetDefinition[]>(() =>
     ClinicOperationsService.getCustomWidgets()
@@ -641,7 +734,7 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
                     .slice(0, 3)
                     .map(
                       (pa) =>
-                        `${bi(pa.modalityAr || pa.modality, pa.modality)} (${pa.durationMinutes} ${bi('د', 'm', 'خ')})`
+                        `${getPhysicalAgentDisplayLabel(pa, language)} (${pa.durationMinutes} ${bi('د', 'm', 'خ')})`
                     )
                     .join(' · ')}
                   {formState.physicalAgents.length > 3
@@ -1721,25 +1814,250 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
         {activeSheet === 'modalities' && (
           <div className="space-y-3.5">
             {!isLocked && (
-              <div className="flex flex-wrap items-center gap-1.5">
-                {QUICK_MODALITY_BUTTONS.map((btn) => (
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-muted-foreground-1">
+                    {bi(
+                      'إضافة سريعة للأجهزة الكهربائية والفيزيائية:',
+                      'Quick-Add Electrical & Physical Modalities:',
+                      'زیادکردنی خێرای ئامێرە کارەبایی و فیزیاییەکان:'
+                    )}
+                  </span>
                   <button
-                    key={btn.mod}
                     type="button"
-                    data-testid={`add-modality-${btn.mod}`}
-                    onClick={() => onAddPhysicalAgent(btn.mod, btn.ar, btn.params)}
-                    className="compact-btn h-8 px-2.5 rounded-xl bg-surface/80 hover:bg-primary/10 hover:text-primary text-xs font-semibold text-foreground transition-colors cursor-pointer whitespace-nowrap"
+                    data-testid="toggle-custom-modality-btn"
+                    onClick={() =>
+                      showCustomModalityForm
+                        ? setShowCustomModalityForm(false)
+                        : openCustomModalityForm()
+                    }
+                    className="compact-btn h-8 px-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors"
                   >
-                    + {bi(btn.ar, btn.mod, btn.ckb)}
+                    <Plus className="size-3.5 shrink-0" />
+                    <span>{bi('جهاز مخصص', 'Custom Modality', 'ئامێری تایبەت')}</span>
                   </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={onAddManualPhysicalAgent}
-                  className="compact-btn h-8 px-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap"
-                >
-                  + {bi('إضافة يدوي', 'Manual Entry', 'زیادکردنی دەستی')}
-                </button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {QUICK_MODALITY_BUTTONS.map((btn) => (
+                    <button
+                      key={btn.mod}
+                      type="button"
+                      data-testid={`add-modality-${btn.mod}`}
+                      onClick={() => onAddPhysicalAgent(btn.mod, btn.ar, btn.params)}
+                      className="compact-btn h-8 px-2.5 rounded-xl bg-surface/80 hover:bg-primary/10 hover:text-primary text-xs font-semibold text-foreground transition-colors cursor-pointer whitespace-nowrap"
+                    >
+                      + {bi(btn.ar, btn.mod, btn.ckb)}
+                    </button>
+                  ))}
+                </div>
+
+                {savedCustomModalityChips.length > 0 && (
+                  <div
+                    data-testid="saved-custom-modalities-bar"
+                    className="pt-2 border-t border-black/[0.045] dark:border-white/[0.06] space-y-1.5"
+                  >
+                    <span className="text-xs font-semibold text-muted-foreground-1 block">
+                      {bi(
+                        'أجهزتك المخصصة المحفوظة:',
+                        'Your Saved Custom Modalities:',
+                        'ئامێرە تایبەتە پاشەکەوتکراوەکانت:'
+                      )}
+                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {savedCustomModalityChips.map((chip) => (
+                        <div
+                          key={chip.id}
+                          className="inline-flex items-center rounded-xl bg-primary/10 text-primary overflow-hidden"
+                        >
+                          <button
+                            type="button"
+                            data-testid={`saved-custom-modality-${chip.id}`}
+                            onClick={() => onApplyFavoriteChip(chip)}
+                            className="compact-btn h-8 ps-2.5 pe-2 hover:bg-primary/15 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap"
+                          >
+                            + {bi(chip.labelAr, chip.labelEn)}
+                          </button>
+                          {onDeleteFavoriteChip && (
+                            <button
+                              type="button"
+                              aria-label={`${bi('حذف الجهاز المخصص المحفوظ', 'Remove saved custom modality')}: ${bi(chip.labelAr, chip.labelEn)}`}
+                              onClick={() => onDeleteFavoriteChip(chip.id)}
+                              className="compact-btn h-8 px-1.5 hover:bg-rose-500/15 hover:text-rose-600 transition-colors cursor-pointer inline-flex items-center justify-center"
+                            >
+                              <X className="size-3" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {showCustomModalityForm && (
+                  <form
+                    onSubmit={(e) => void handleSubmitCustomModality(e)}
+                    data-testid="custom-modality-form"
+                    className="p-3.5 rounded-2xl bg-surface/85 border border-primary/25 space-y-3 text-xs"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-primary flex items-center gap-1.5">
+                        <Zap className="size-3.5 shrink-0" />
+                        <span>
+                          {bi(
+                            'إضافة جهاز كهربائي / وسيلة مخصصة',
+                            'Add Custom Electrical / Physical Modality',
+                            'زیادکردنی ئامێری کارەبایی / فیزیایی تایبەت'
+                          )}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={bi('إغلاق نموذج الجهاز المخصص', 'Close custom modality form')}
+                        onClick={() => setShowCustomModalityForm(false)}
+                        className="compact-btn size-6 inline-flex items-center justify-center rounded-lg text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div>
+                        <label
+                          htmlFor="custom-modality-name"
+                          className="text-xs font-semibold text-foreground block mb-1"
+                        >
+                          {bi('اسم الجهاز / الوسيلة *', 'Modality Name *', 'ناوی ئامێر *')}
+                        </label>
+                        <input
+                          id="custom-modality-name"
+                          data-testid="custom-modality-name-input"
+                          type="text"
+                          autoFocus
+                          value={customModalityName}
+                          onChange={(e) => {
+                            setCustomModalityName(e.target.value);
+                            if (customModalityError) setCustomModalityError(null);
+                          }}
+                          placeholder={bi(
+                            'مثال: Tecar Therapy، جهاز مغناطيسي، Vacuum...',
+                            'e.g. Tecar Therapy, Magnetotherapy, Vacuum...',
+                            'نموونە: Tecar Therapy، لێزەری سارد...'
+                          )}
+                          className="w-full px-2.5 py-2 rounded-xl bg-card border border-line-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="custom-modality-site"
+                          className="text-xs font-semibold text-foreground block mb-1"
+                        >
+                          {bi('المنطقة المستهدفة', 'Target Site', 'شوێنی مەبەست')}
+                        </label>
+                        <input
+                          id="custom-modality-site"
+                          data-testid="custom-modality-site-input"
+                          type="text"
+                          value={customModalitySite}
+                          onChange={(e) => setCustomModalitySite(e.target.value)}
+                          placeholder={bi('مثال: أسفل الظهر / الكتف الأيمن', 'e.g. Lumbar / Right shoulder')}
+                          className="w-full px-2.5 py-2 rounded-xl bg-card border border-line-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="custom-modality-params"
+                          className="text-xs font-semibold text-foreground block mb-1"
+                        >
+                          {bi('المعاملات / الإعدادات', 'Parameters', 'ڕێکخستنەکان')}
+                        </label>
+                        <input
+                          id="custom-modality-params"
+                          data-testid="custom-modality-params-input"
+                          type="text"
+                          value={customModalityParams}
+                          onChange={(e) => setCustomModalityParams(e.target.value)}
+                          placeholder={bi('مثال: 448kHz Capacitive / 60%', 'e.g. 448kHz Capacitive / 60%')}
+                          className="w-full px-2.5 py-2 rounded-xl bg-card border border-line-2 font-mono text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="custom-modality-duration"
+                          className="text-xs font-semibold text-foreground block mb-1"
+                        >
+                          {bi('المدة (دقيقة)', 'Duration (m)', 'ماوە (خولەک)')}
+                        </label>
+                        <input
+                          id="custom-modality-duration"
+                          data-testid="custom-modality-duration-input"
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          dir="ltr"
+                          lang="en"
+                          autoComplete="off"
+                          value={customModalityDuration}
+                          onChange={(e) => {
+                            setCustomModalityDuration(sanitizeDurationDraft(e.target.value, 3));
+                            if (customModalityError) setCustomModalityError(null);
+                          }}
+                          className="w-full px-2.5 py-2 rounded-xl bg-card border border-line-2 font-mono tabular-nums text-center text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+                      <label className="inline-flex items-center gap-2 text-xs text-foreground cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          data-testid="custom-modality-save-checkbox"
+                          checked={customModalitySaveChip}
+                          onChange={(e) => setCustomModalitySaveChip(e.target.checked)}
+                          className="size-4 rounded border-line-2 accent-primary cursor-pointer"
+                        />
+                        <span>
+                          {bi(
+                            'حفظ كزر سريع للجلسات القادمة',
+                            'Save as quick button for future sessions',
+                            'پاشەکەوتکردن وەک دوگمەی خێرا بۆ دانیشتنەکانی داهاتوو'
+                          )}
+                        </span>
+                      </label>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowCustomModalityForm(false)}
+                          className="compact-btn h-8 px-3 rounded-xl bg-card border border-line-2 text-xs font-semibold text-muted-foreground-1 hover:text-foreground cursor-pointer"
+                        >
+                          {bi('إلغاء', 'Cancel', 'هەڵوەشاندنەوە')}
+                        </button>
+                        <button
+                          type="submit"
+                          data-testid="submit-custom-modality-btn"
+                          className="compact-btn h-8 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <Plus className="size-3.5 shrink-0" />
+                          <span>{bi('إضافة للجلسة', 'Add to Session', 'زیادکردن بۆ دانیشتن')}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {customModalityError && (
+                      <p
+                        role="alert"
+                        data-testid="custom-modality-error"
+                        className="text-xs font-semibold text-rose-600 dark:text-rose-400"
+                      >
+                        {customModalityError}
+                      </p>
+                    )}
+                  </form>
+                )}
               </div>
             )}
 
@@ -1770,8 +2088,8 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
             {formState.physicalAgents.length === 0 ? (
               <p className="text-xs text-muted-foreground-1 text-center py-4">
                 {bi(
-                  'اضغط على أي جهاز أعلاه لإضافته إلى هذه الجلسة.',
-                  'Tap any modality above to add it to this session.'
+                  'اضغط على أي جهاز أعلاه أو استخدم «جهاز مخصص» لإضافته إلى هذه الجلسة.',
+                  'Tap any modality above or use "Custom Modality" to add it to this session.'
                 )}
               </p>
             ) : (
@@ -1779,6 +2097,7 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
                 {formState.physicalAgents.map((pa, idx) => {
                   const durKey = `${pa.id}_duration`;
                   const isDefaultPrefill = Boolean(prefillParameterIds[pa.id]);
+                  const displayLabel = getPhysicalAgentDisplayLabel(pa, language);
                   return (
                     <div key={pa.id} className="p-3 rounded-2xl bg-surface/65 space-y-2 text-xs">
                       <div className="flex items-center justify-between gap-2">
@@ -1786,6 +2105,7 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
                           {pa.modality === 'Other' && !isLocked ? (
                             <input
                               type="text"
+                              aria-label={bi('اسم الجهاز المخصص', 'Custom modality name')}
                               value={pa.modalityAr}
                               onChange={(e) => {
                                 const updated = formState.physicalAgents.map((p) =>
@@ -1797,7 +2117,7 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
                               className="w-full px-2 py-1 rounded-lg bg-card text-xs font-bold text-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             />
                           ) : (
-                            bi(pa.modalityAr || pa.modality, pa.modality)
+                            displayLabel
                           )}
                         </span>
                         <div className="flex items-center gap-2 shrink-0">
@@ -1809,7 +2129,7 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
                           {!isLocked && (
                             <button
                               type="button"
-                              aria-label={`${bi('حذف الجهاز', 'Remove modality')}: ${bi(pa.modalityAr, pa.modality)}`}
+                              aria-label={`${bi('حذف الجهاز', 'Remove modality')}: ${displayLabel}`}
                               onClick={() =>
                                 updateField(
                                   'physicalAgents',
