@@ -26,8 +26,12 @@ import {
   type EpisodeRecord 
 } from '../../types/clinical';
 import { useLanguage } from '../../context/LanguageContext';
-import { localDate, formatDateDDMMYYYY } from '../../utils/date';
-import { commitDurationDraft, sanitizeDurationDraft } from '../../utils/durationInput';
+import {
+  localDate,
+  formatDateDDMMYYYY,
+  commitDurationDraft,
+  sanitizeDurationDraft,
+} from '../../utils/date';
 import { AutoResizeTextarea, DatePickerInput, TimePickerInput } from '../ui/Primitives';
 
 interface SessionModalProps {

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { usePatients } from '../../context/PatientContext';
-import { useDeviceFormFactor } from '../../hooks/useDeviceFormFactor';
+import { useDeviceFormFactor } from '../../utils/deviceBiometricCopy';
 import { DemoBadge } from '../ui/Primitives';
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
 import type { SettingsViewMode } from '../../types/clinicManagement';

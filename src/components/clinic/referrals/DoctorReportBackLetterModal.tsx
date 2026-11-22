@@ -41,7 +41,7 @@ import type {
 } from '../../../types/clinicManagement';
 import { GeometricHeaderBackdrop } from '../../ui/Dialog';
 import { FloatingA4PreviewStage } from '../../print/FloatingA4PreviewStage';
-import type { PrintPreviewZoomMode } from '../../../utils/printPreviewScale';
+import type { PrintPreviewZoomMode } from '../../../utils/printLayoutFit';
 import { AutoResizeTextarea } from '../../ui/Primitives';
 import {
   Check,

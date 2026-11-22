@@ -10,15 +10,17 @@ import { useTheme } from '../../context/ThemeContext';
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 import { BrandLogo } from '../ui/BrandLogo';
 import { ModalDialog } from '../ui/Dialog';
-import { copySecretWithAutoClear } from '../../utils/clipboardPrivacy';
-import { VAULT_CREDENTIAL_USERNAME } from '../../utils/passwordManagerHelper';
+import { copySecretWithAutoClear } from '../../utils/securityHardening';
+import { VAULT_CREDENTIAL_USERNAME } from '../../utils/passwordReminderSchedule';
 import { normalizeVaultPinInput } from '../../crypto/vaultPin';
 import {
   saveTextFilePortable,
   triggerPlatformPrint,
 } from '../../platform/nativeBridge';
-import { useDeviceFormFactor } from '../../hooks/useDeviceFormFactor';
-import { getLockScreenBiometricCopy } from '../../utils/deviceBiometricCopy';
+import {
+  getLockScreenBiometricCopy,
+  useDeviceFormFactor,
+} from '../../utils/deviceBiometricCopy';
 import {
   Lock,
   KeyRound,

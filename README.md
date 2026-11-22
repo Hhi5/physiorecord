@@ -308,7 +308,7 @@ physiorecord/
 │   ├── crypto/               # WebCrypto AES-GCM vault, PBKDF2 Worker, .ptbackup, WebAuthn PRF
 │   ├── data/                 # Consent templates, CC0 note snippets, terminology & clinicalToolkit/
 │   ├── db/                   # Dexie v1–v10 schema (28 stores), registry & durability helpers
-│   ├── hooks/                # Reusable hooks (useVirtualWindow, useDeviceFormFactor)
+│   ├── hooks/                # Reusable hooks (useVirtualWindow)
 │   ├── i18n/                 # Externalized ar/ckb/en dictionaries & Kurdish Sorani phrase mapper
 │   ├── platform/             # Unified Web / Capacitor Android / Electron native bridge
 │   ├── pwa/                  # Offline Service Worker client, iOS PWA detection & Platform Access Gate
