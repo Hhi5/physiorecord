@@ -292,20 +292,14 @@ export function getElectronDesktopBridge(): ElectronDesktopBridge | null {
 export function isElectronDesktop(): boolean {
   const w = getGlobalWindow();
   if (w?.electronAPI?.isElectron) return true;
-  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_TARGET === 'desktop') {
-    return true;
-  }
-  return false;
+  return typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_TARGET === 'desktop';
 }
 
 export function isNativeAndroid(): boolean {
   const w = getGlobalWindow();
   if (w?.Capacitor?.getPlatform?.() === 'android') return true;
   if (w?.Capacitor?.isNativePlatform?.() === true && !isElectronDesktop()) return true;
-  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_TARGET === 'android') {
-    return true;
-  }
-  return false;
+  return typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_TARGET === 'android';
 }
 
 export function isNativeAppShell(): boolean {
@@ -670,11 +664,11 @@ export function detectDexieSchemaDowngradeError(
       message:
         combinedMsg ||
         'Database schema version on disk is newer than this application version.',
-      ...(Number.isFinite(onDiskRaw)
-        ? { onDiskVersion: onDiskRaw! >= 20 ? Math.round(onDiskRaw! / 10) : onDiskRaw }
+      ...(typeof onDiskRaw === 'number' && Number.isFinite(onDiskRaw)
+        ? { onDiskVersion: onDiskRaw >= 20 ? Math.round(onDiskRaw / 10) : onDiskRaw }
         : {}),
-      ...(Number.isFinite(supportedRaw)
-        ? { supportedVersion: supportedRaw! >= 20 ? Math.round(supportedRaw! / 10) : supportedRaw }
+      ...(typeof supportedRaw === 'number' && Number.isFinite(supportedRaw)
+        ? { supportedVersion: supportedRaw >= 20 ? Math.round(supportedRaw / 10) : supportedRaw }
         : {}),
       detectionSource: 'thrown_version_error',
     };

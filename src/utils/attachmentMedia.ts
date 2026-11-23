@@ -71,8 +71,8 @@ async function readBlobAsDataUrl(blob: Blob): Promise<string> {
     const buf = await blob.arrayBuffer();
     const bytes = new Uint8Array(buf);
     let binary = '';
-    for (let i = 0; i < bytes.length; i += 1) {
-      binary += String.fromCharCode(bytes[i]);
+    for (const byte of bytes) {
+      binary += String.fromCharCode(byte);
     }
     const base64 =
       typeof btoa === 'function' ? btoa(binary) : Buffer.from(bytes).toString('base64');

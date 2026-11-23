@@ -89,19 +89,21 @@ function mergeSectionWithClear<T extends object>(
   base: T | undefined,
   patch: Record<string, unknown> | undefined
 ): T {
-  const result: Record<string, unknown> = { ...(base ? (base as Record<string, unknown>) : {}) };
+  const entries = new Map<string, unknown>(
+    Object.entries(base ? (base as Record<string, unknown>) : {})
+  );
   if (!patch) {
-    return result as T;
+    return Object.fromEntries(entries) as T;
   }
   for (const key of Object.keys(patch)) {
     const val = patch[key];
     if (val === null || val === undefined) {
-      delete result[key];
+      entries.delete(key);
     } else {
-      result[key] = val;
+      entries.set(key, val);
     }
   }
-  return result as T;
+  return Object.fromEntries(entries) as T;
 }
 
 /**
@@ -293,14 +295,11 @@ export class SoapService {
     const candidateSessions = decryptedSessions.filter((s) => {
       if (resolvedCurrentNumber !== undefined) {
         if (s.sessionNumber < resolvedCurrentNumber) return true;
-        if (
+        return Boolean(
           s.sessionNumber === resolvedCurrentNumber &&
-          resolvedCurrentDate &&
-          s.sessionDate < resolvedCurrentDate
-        ) {
-          return true;
-        }
-        return false;
+            resolvedCurrentDate &&
+            s.sessionDate < resolvedCurrentDate
+        );
       }
       return true;
     });
@@ -412,14 +411,11 @@ export class SoapService {
     const candidateSessions = decryptedSessions.filter((s) => {
       if (resolvedCurrentNumber !== undefined) {
         if (s.sessionNumber < resolvedCurrentNumber) return true;
-        if (
+        return Boolean(
           s.sessionNumber === resolvedCurrentNumber &&
-          resolvedCurrentDate &&
-          s.sessionDate < resolvedCurrentDate
-        ) {
-          return true;
-        }
-        return false;
+            resolvedCurrentDate &&
+            s.sessionDate < resolvedCurrentDate
+        );
       }
       return true;
     });
@@ -1217,18 +1213,22 @@ export class SoapService {
   /**
    * Append-only enforcement: Modifying an existing Clinical Addendum is strictly forbidden.
    */
-  static async updateClinicalAddendum(): Promise<never> {
-    throw new Error(
-      'محظور: الملاحق السريرية (Clinical Addenda) هي سجل تراكمي غير قابل للتعديل (Append-only Ledger).'
+  static updateClinicalAddendum(): Promise<never> {
+    return Promise.reject(
+      new Error(
+        'محظور: الملاحق السريرية (Clinical Addenda) هي سجل تراكمي غير قابل للتعديل (Append-only Ledger).'
+      )
     );
   }
 
   /**
    * Append-only enforcement: Deleting an existing Clinical Addendum is strictly forbidden.
    */
-  static async deleteClinicalAddendum(): Promise<never> {
-    throw new Error(
-      'محظور: الملاحق السريرية (Clinical Addenda) هي سجل تراكمي غير قابل للحذف (Append-only Ledger).'
+  static deleteClinicalAddendum(): Promise<never> {
+    return Promise.reject(
+      new Error(
+        'محظور: الملاحق السريرية (Clinical Addenda) هي سجل تراكمي غير قابل للحذف (Append-only Ledger).'
+      )
     );
   }
 }

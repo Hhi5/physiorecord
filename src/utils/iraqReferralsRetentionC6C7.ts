@@ -399,8 +399,8 @@ export function computeReferralStatistics(params: {
         doctorNameLookup.get(clinical.referringPhysician.trim().toLowerCase()) || '';
     }
 
-    if (matchedDoctorId && doctorBuckets.has(matchedDoctorId)) {
-      const docBucket = doctorBuckets.get(matchedDoctorId)!;
+    const docBucket = matchedDoctorId ? doctorBuckets.get(matchedDoctorId) : undefined;
+    if (docBucket) {
       docBucket.patientCount += 1;
       docBucket.billedRevenueIQD += rev.billed;
       docBucket.collectedRevenueIQD += rev.collected;
@@ -646,11 +646,13 @@ export function buildDoctorReportBackLetter(
     functionalProgressLine = isAr
       ? `${scaleName}: ${onlyScale.scorePercentage}% (${onlyScale.severityLabelAr})`
       : `${scaleName}: ${onlyScale.scorePercentage}% (${onlyScale.severityLabelEn})`;
-  } else if (snapshots.length > 0 && snapshots[snapshots.length - 1].outcomeScale) {
-    const os = snapshots[snapshots.length - 1].outcomeScale!;
-    functionalProgressLine = isAr
-      ? `${os.scaleNameAr}: ${os.scorePercentage}% (${os.severityLabelAr})`
-      : `${os.scaleNameEn}: ${os.scorePercentage}% (${os.severityLabelEn})`;
+  } else {
+    const latestOutcomeScale = snapshots[snapshots.length - 1]?.outcomeScale;
+    if (latestOutcomeScale) {
+      functionalProgressLine = isAr
+        ? `${latestOutcomeScale.scaleNameAr}: ${latestOutcomeScale.scorePercentage}% (${latestOutcomeScale.severityLabelAr})`
+        : `${latestOutcomeScale.scaleNameEn}: ${latestOutcomeScale.scorePercentage}% (${latestOutcomeScale.severityLabelEn})`;
+    }
   }
 
   const sortedSoaps = [...soaps].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
@@ -700,7 +702,7 @@ export function buildDoctorReportBackLetter(
     );
     lines.push('');
     lines.push(
-      `نود إعلامكم بملخص التقييم والتقدم التأهيلي للمريض/ة المحال من قبلكم:`
+      'نود إعلامكم بملخص التقييم والتقدم التأهيلي للمريض/ة المحال من قبلكم:'
     );
     lines.push(
       `• الاسم: ${patientName}${mrn ? ` | رقم الملف: ${mrn}` : ''}${
@@ -736,7 +738,7 @@ export function buildDoctorReportBackLetter(
     lines.push(`• الخطة والتوصية الحالية: ${planLine}`);
     lines.push('');
     lines.push('شاكرين تعاونكم الكريم ويسعدنا تواصلكم لأي استفسار طبي.');
-    lines.push(`مع التقدير،`);
+    lines.push('مع التقدير،');
     lines.push(`${resolvedTherapist}`);
     lines.push(`${resolvedClinic}`);
   } else {
@@ -750,7 +752,7 @@ export function buildDoctorReportBackLetter(
     );
     lines.push('');
     lines.push(
-      `Thank you for referring the patient below. Here is a summary of their physiotherapy progress:`
+      'Thank you for referring the patient below. Here is a summary of their physiotherapy progress:'
     );
     lines.push(
       `• Patient: ${patientName}${mrn ? ` | MRN: ${mrn}` : ''}${
@@ -1140,6 +1142,10 @@ export function buildRetentionWhatsAppMessage(params: {
       return isAr
         ? `السلام عليكم ${name}، تذكير مالي لطيف من ${clinic} بخصوص الرصيد المتبقي${detailSuffix}. نشكركم على ثقتكم وتعاونكم.`
         : `Hello ${name}, friendly billing reminder from ${clinic} regarding your outstanding balance${detailSuffix}. Thank you for your cooperation.`;
+    default: {
+      const exhaustiveCheck: never = bucket;
+      return String(exhaustiveCheck);
+    }
   }
 }
 

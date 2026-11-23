@@ -640,16 +640,20 @@ export async function resetVaultPasswordWithPrf(
     } else if (useDesktopOs) {
       rawDek = await unlockDesktopOsBiometricDek();
     } else {
-      prfOutput = await requestPrfAssertionOutput(meta.prfCredentialId!, meta.prfSalt!);
-      const wrappingKey = await deriveWrappingKeyFromPrfOutput(prfOutput, meta.prfSalt!);
+      const { prfCredentialId, prfSalt, prfWrappedDek, prfWrappedDekIv } = meta;
+      if (!prfCredentialId || !prfSalt || !prfWrappedDek || !prfWrappedDekIv) {
+        throw new Error('لم يتم تفعيل قفل الجهاز أو مفتاح المرور الحيوي لهذه الخزينة.');
+      }
+      prfOutput = await requestPrfAssertionOutput(prfCredentialId, prfSalt);
+      const wrappingKey = await deriveWrappingKeyFromPrfOutput(prfOutput, prfSalt);
       const rawBuf = await crypto.subtle.decrypt(
         {
           name: 'AES-GCM',
-          iv: toArrayBuffer(meta.prfWrappedDekIv!),
+          iv: toArrayBuffer(prfWrappedDekIv),
           additionalData: PRF_WRAP_AAD,
         },
         wrappingKey,
-        toArrayBuffer(meta.prfWrappedDek!)
+        toArrayBuffer(prfWrappedDek)
       );
       rawDek = new Uint8Array(rawBuf);
     }

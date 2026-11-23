@@ -575,9 +575,13 @@ export const CsvOnboardingModal: React.FC<CsvOnboardingModalProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-              {headers.map((header, colIndex) => (
+              {headers.map((header, colIndex) => {
+                const headerOccurrence = headers
+                  .slice(0, colIndex)
+                  .filter((h) => h === header).length;
+                return (
                 <div
-                  key={`${colIndex}-${header}`}
+                  key={`${header}-${headerOccurrence}`}
                   className="p-2.5 rounded-xl bg-layer border border-card-stroke space-y-1"
                 >
                   <label
@@ -615,7 +619,8 @@ export const CsvOnboardingModal: React.FC<CsvOnboardingModalProps> = ({
                     ))}
                   </select>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

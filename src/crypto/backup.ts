@@ -1083,10 +1083,12 @@ export const restoreBackupPackage = async (
 
         const sessionNum = clinicalData?.sessionNumber;
         if (storeName === 'sessions' && r.episodeId && sessionNum !== undefined) {
-          if (!restoredSessionsByEpisode.has(r.episodeId)) {
-            restoredSessionsByEpisode.set(r.episodeId, []);
+          let episodeSessions = restoredSessionsByEpisode.get(r.episodeId);
+          if (!episodeSessions) {
+            episodeSessions = [];
+            restoredSessionsByEpisode.set(r.episodeId, episodeSessions);
           }
-          restoredSessionsByEpisode.get(r.episodeId)!.push(Number(sessionNum));
+          episodeSessions.push(Number(sessionNum));
         }
 
         if (stagingInvocationCount + 1 > MAX_GCM_INVOCATIONS_PER_DEK) {

@@ -1136,7 +1136,7 @@ export const validateBackupHeaderPreDerivation = (
     throw new BackupHeaderValidationError(`معرف hkdfInfoPayloadEnc غير مطابق: ${String(header.hkdfInfoPayloadEnc)}`);
   }
   if (header.derivedKeyLengthBits !== 256) {
-    throw new BackupHeaderValidationError(`طول المفتاح المشتق derivedKeyLengthBits يجب أن يكون 256.`);
+    throw new BackupHeaderValidationError('طول المفتاح المشتق derivedKeyLengthBits يجب أن يكون 256.');
   }
 
   // Strictly validate byte arrays: length and byte-range [0..255]
@@ -1179,7 +1179,7 @@ export const validateBackupHeaderPreDerivation = (
     header.encryptionInvocationCount < 0 ||
     header.encryptionInvocationCount > MAX_GCM_INVOCATIONS_PER_DEK
   ) {
-    throw new BackupHeaderValidationError(`عداد استدعاءات التشفير encryptionInvocationCount خارج النطاق المسموح.`);
+    throw new BackupHeaderValidationError('عداد استدعاءات التشفير encryptionInvocationCount خارج النطاق المسموح.');
   }
   const effectiveMaxPayload = isV3 ? 256 * 1024 * 1024 : maxPayloadSizeBytes;
   if (

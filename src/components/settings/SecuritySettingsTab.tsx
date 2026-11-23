@@ -1447,14 +1447,17 @@ export const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
                 dir="ltr"
                 className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-2 rounded-lg bg-card border border-card-line select-all"
               >
-                {rotatedRecoveryKey.split('-').map((chunk, idx) => (
-                  <code
-                    key={idx}
-                    className="px-2 py-1 rounded bg-surface border border-line-2 font-mono text-xs font-bold text-foreground text-center whitespace-nowrap"
-                  >
-                    {chunk}
-                  </code>
-                ))}
+                {rotatedRecoveryKey
+                  .split('-')
+                  .map((chunk, pos) => ({ slotKey: `chunk-${pos + 1}-${chunk}`, chunk }))
+                  .map(({ slotKey, chunk }) => (
+                    <code
+                      key={slotKey}
+                      className="px-2 py-1 rounded bg-surface border border-line-2 font-mono text-xs font-bold text-foreground text-center whitespace-nowrap"
+                    >
+                      {chunk}
+                    </code>
+                  ))}
               </div>
             </div>
           )}

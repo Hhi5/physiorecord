@@ -152,7 +152,7 @@ export function reconcileInstallmentsWithPaidTotal(
       paidAt: status === 'paid' ? item.paidAt || paidAtDate : undefined,
     });
   }
-  return plan.map((_, idx) => updatedByIdx.get(idx)!);
+  return plan.map((item, idx) => updatedByIdx.get(idx) ?? item);
 }
 
 export function areUint8ArraysEqual(a: Uint8Array, b: Uint8Array): boolean {

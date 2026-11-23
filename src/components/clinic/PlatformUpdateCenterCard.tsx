@@ -761,8 +761,8 @@ export const PlatformUpdateCenterCard: React.FC<PlatformUpdateCenterCardProps> =
                         <div className="space-y-2 pt-1 border-t border-line-2/70">
                           {notesLines.length > 0 ? (
                             <ul className="space-y-1 text-muted-foreground-1 leading-relaxed">
-                              {notesLines.map((line, lineIdx) => (
-                                <li key={lineIdx} className="flex items-start gap-1.5 min-w-0">
+                              {notesLines.map((line) => (
+                                <li key={line} className="flex items-start gap-1.5 min-w-0">
                                   <CheckCircle2 className="size-3.5 text-primary shrink-0 mt-0.5" />
                                   <span className="break-words [overflow-wrap:anywhere] min-w-0">{line}</span>
                                 </li>

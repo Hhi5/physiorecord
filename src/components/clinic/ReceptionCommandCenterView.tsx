@@ -217,6 +217,7 @@ export const ReceptionCommandCenterView: React.FC<ReceptionCommandCenterViewProp
           dot: 'bg-rose-500',
         };
       case 'cancelled':
+      default:
         return {
           ar: 'ملغى',
           en: 'Cancelled',

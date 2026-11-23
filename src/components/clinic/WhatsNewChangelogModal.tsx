@@ -413,9 +413,9 @@ export const WhatsNewChangelogModal: React.FC<WhatsNewChangelogModalProps> = ({
 
                         {lines.length > 0 ? (
                           <ul className="space-y-1.5">
-                            {lines.map((line, lineIdx) => (
+                            {lines.map((line) => (
                               <li
-                                key={lineIdx}
+                                key={line}
                                 className="flex items-start gap-2 text-xs text-muted-foreground-1 leading-relaxed"
                               >
                                 <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
@@ -476,7 +476,7 @@ export const WhatsNewChangelogModal: React.FC<WhatsNewChangelogModalProps> = ({
                     <ul className="space-y-2">
                       {rel.highlightsAr.map((itemAr, idx) => (
                         <li
-                          key={idx}
+                          key={itemAr}
                           className="flex items-start gap-2 text-xs text-muted-foreground-1 leading-relaxed"
                         >
                           <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />

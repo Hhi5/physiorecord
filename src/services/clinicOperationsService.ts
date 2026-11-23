@@ -515,7 +515,7 @@ export class ClinicOperationsService {
     }
   }
 
-  static async hydrateEncryptedCache(
+  static hydrateEncryptedCache(
     dek: CryptoKey,
     database: PhysioRecordDatabase = defaultDb,
     options?: { lazyHeavyStores?: boolean }
@@ -523,11 +523,11 @@ export class ClinicOperationsService {
     return hydrateEncryptedCacheOps(this.runtime, dek, database, options);
   }
 
-  static async ensureColdStoreLoadedAsync(storeName: ColdStoreName): Promise<void> {
+  static ensureColdStoreLoadedAsync(storeName: ColdStoreName): Promise<void> {
     return ensureColdStoreLoadedOps(this.runtime, storeName);
   }
 
-  static async ensurePatientColdStoresLoadedAsync(
+  static ensurePatientColdStoresLoadedAsync(
     patientId: string,
     episodeIds: string[] = []
   ): Promise<void> {
@@ -570,7 +570,7 @@ export class ClinicOperationsService {
     return run;
   }
 
-  private static async putRecordEncrypted(
+  private static putRecordEncrypted(
     tableName: OperationsTableName,
     id: string,
     parentIds: string[],
@@ -709,7 +709,7 @@ export class ClinicOperationsService {
     broadcastVaultEvent({ type: 'OPERATIONS_UPDATED' });
   }
 
-  private static async deleteRecordEncrypted(
+  private static deleteRecordEncrypted(
     tableName: OperationsTableName,
     id: string
   ): Promise<void> {
@@ -746,11 +746,11 @@ export class ClinicOperationsService {
     return getAdminPinStatusOps(this.runtime);
   }
 
-  static async setAdminPinAsync(pin: string): Promise<void> {
+  static setAdminPinAsync(pin: string): Promise<void> {
     return setAdminPinOps(this.runtime, pin);
   }
 
-  static async verifyAdminPinAsync(pinAttempt: string): Promise<{
+  static verifyAdminPinAsync(pinAttempt: string): Promise<{
     ok: boolean;
     rateLimited: boolean;
     remainingSeconds: number;
@@ -774,7 +774,7 @@ export class ClinicOperationsService {
     return getModuleFlagsOps(this.runtime);
   }
 
-  static async setModuleFlagsAsync(partial: Partial<ModuleFlagsSettings>): Promise<ModuleFlagsSettings> {
+  static setModuleFlagsAsync(partial: Partial<ModuleFlagsSettings>): Promise<ModuleFlagsSettings> {
     return setModuleFlagsAsyncOps(this.runtime, partial);
   }
 
@@ -1123,7 +1123,7 @@ export class ClinicOperationsService {
     return Boolean(this.cache.onboardingState.checklistDismissed);
   }
 
-  static async setOnboardingChecklistDismissedAsync(
+  static setOnboardingChecklistDismissedAsync(
     dismissed: boolean
   ): Promise<OnboardingStateSettings> {
     return updateOnboardingStateAsyncOps(this.runtime, { checklistDismissed: dismissed });
@@ -1133,7 +1133,7 @@ export class ClinicOperationsService {
     return this.cache.onboardingState.lastSeenChangelogVersion;
   }
 
-  static async setLastSeenChangelogVersionAsync(
+  static setLastSeenChangelogVersionAsync(
     version: string
   ): Promise<OnboardingStateSettings> {
     return updateOnboardingStateAsyncOps(this.runtime, { lastSeenChangelogVersion: version });
@@ -1258,7 +1258,7 @@ export class ClinicOperationsService {
     return getTotalAttachmentsBytesOps(this.runtime);
   }
 
-  static async saveAttachmentAsync(
+  static saveAttachmentAsync(
     input: Omit<EncryptedAttachmentRecord, 'id' | 'createdAt' | 'updatedAt' | 'version'> & {
       id?: string;
     }
@@ -1266,7 +1266,7 @@ export class ClinicOperationsService {
     return saveAttachmentAsyncOps(this.runtime, input);
   }
 
-  static async deleteAttachmentAsync(
+  static deleteAttachmentAsync(
     patientId: string,
     attachmentId: string
   ): Promise<EncryptedAttachmentRecord[]> {
@@ -1281,17 +1281,17 @@ export class ClinicOperationsService {
     return getCustomNoteTemplatesOps(this.runtime);
   }
 
-  static async saveNoteTemplateAsync(
+  static saveNoteTemplateAsync(
     snippet: Omit<NoteTemplateSnippet, 'id' | 'updatedAt' | 'version'> & { id?: string }
   ): Promise<NoteTemplateSnippet> {
     return saveNoteTemplateAsyncOps(this.runtime, snippet);
   }
 
-  static async deleteNoteTemplateAsync(id: string): Promise<void> {
+  static deleteNoteTemplateAsync(id: string): Promise<void> {
     return deleteNoteTemplateAsyncOps(this.runtime, id);
   }
 
-  static async importContentPackAsync(rawJson: string): Promise<{
+  static importContentPackAsync(rawJson: string): Promise<{
     pack: ContentPackDefinition;
     importedCount: number;
   }> {
@@ -1309,13 +1309,13 @@ export class ClinicOperationsService {
     return getWhatsAppTemplatesOps(this.runtime);
   }
 
-  static async saveWhatsAppTemplatesAsync(
+  static saveWhatsAppTemplatesAsync(
     partial: Partial<Omit<WhatsAppTemplatesConfig, 'id' | 'updatedAt' | 'version'>>
   ): Promise<WhatsAppTemplatesConfig> {
     return saveWhatsAppTemplatesAsyncOps(this.runtime, partial);
   }
 
-  static async resetWhatsAppTemplatesAsync(): Promise<WhatsAppTemplatesConfig> {
+  static resetWhatsAppTemplatesAsync(): Promise<WhatsAppTemplatesConfig> {
     return resetWhatsAppTemplatesAsyncOps(this.runtime);
   }
 
@@ -1323,7 +1323,7 @@ export class ClinicOperationsService {
     return getClinicProfileOps(this.runtime);
   }
 
-  static async saveClinicProfileAsync(
+  static saveClinicProfileAsync(
     partial: Partial<Omit<ClinicProfileData, 'id' | 'updatedAt' | 'version'>>
   ): Promise<ClinicProfileData> {
     return saveClinicProfileAsyncOps(this.runtime, partial);
@@ -1333,7 +1333,7 @@ export class ClinicOperationsService {
     return getSecurityConfigOps(this.runtime);
   }
 
-  static async saveSecurityConfigAsync(
+  static saveSecurityConfigAsync(
     partial: Partial<Omit<SecurityConfigSettings, 'id' | 'updatedAt' | 'version'>>
   ): Promise<SecurityConfigSettings> {
     return saveSecurityConfigAsyncOps(this.runtime, partial);
@@ -1343,7 +1343,7 @@ export class ClinicOperationsService {
     return getMrnRegistryOps(this.runtime);
   }
 
-  static async saveMrnRegistryAsync(reg: MrnRegistryData): Promise<void> {
+  static saveMrnRegistryAsync(reg: MrnRegistryData): Promise<void> {
     return saveMrnRegistryAsyncOps(this.runtime, reg);
   }
 
@@ -1355,7 +1355,7 @@ export class ClinicOperationsService {
     return getBackupMetaOps(this.runtime);
   }
 
-  static async updateBackupMetaAsync(
+  static updateBackupMetaAsync(
     partial: Partial<Omit<BackupStateMetadata, 'id' | 'updatedAt' | 'version'>>
   ): Promise<BackupStateMetadata> {
     return updateBackupMetaAsyncOps(this.runtime, partial);
@@ -1380,7 +1380,7 @@ export class ClinicOperationsService {
     return !this.cache.workspaceMode.wizardCompleted;
   }
 
-  static async configureSoloModeAsync(params?: {
+  static configureSoloModeAsync(params?: {
     therapistNameAr?: string;
     therapistNameEn?: string;
     clinicNameAr?: string;
@@ -1389,11 +1389,11 @@ export class ClinicOperationsService {
     return configureSoloModeAsyncOps(this.runtime, params);
   }
 
-  static async configureTeamModeAsync(): Promise<WorkspaceModeSettings> {
+  static configureTeamModeAsync(): Promise<WorkspaceModeSettings> {
     return configureTeamModeAsyncOps(this.runtime);
   }
 
-  static async switchWorkspaceModeAsync(mode: ClinicWorkspaceMode): Promise<WorkspaceModeSettings> {
+  static switchWorkspaceModeAsync(mode: ClinicWorkspaceMode): Promise<WorkspaceModeSettings> {
     return switchWorkspaceModeAsyncOps(this.runtime, mode);
   }
 
@@ -1401,7 +1401,7 @@ export class ClinicOperationsService {
     return getSmartMemoryOps(this.runtime);
   }
 
-  static async updateSmartMemoryAsync(
+  static updateSmartMemoryAsync(
     partial: Partial<Omit<SmartMemorySettings, 'id' | 'updatedAt' | 'version'>>
   ): Promise<SmartMemorySettings> {
     return updateSmartMemoryAsyncOps(this.runtime, partial);
@@ -1443,7 +1443,7 @@ export class ClinicOperationsService {
     return [...this.cache.smartMemory.services];
   }
 
-  static async saveClinicServicesAsync(services: ClinicServiceItem[]): Promise<ClinicServiceItem[]> {
+  static saveClinicServicesAsync(services: ClinicServiceItem[]): Promise<ClinicServiceItem[]> {
     return saveClinicServicesAsyncOps(this.runtime, services);
   }
 
@@ -1451,7 +1451,7 @@ export class ClinicOperationsService {
     return getQuickSoapChipsOps(this.runtime);
   }
 
-  static async saveQuickSoapChipsAsync(chips: QuickSoapChip[]): Promise<QuickSoapChip[]> {
+  static saveQuickSoapChipsAsync(chips: QuickSoapChip[]): Promise<QuickSoapChip[]> {
     return saveQuickSoapChipsAsyncOps(this.runtime, chips);
   }
 
@@ -1459,21 +1459,21 @@ export class ClinicOperationsService {
     return getOnboardingStateOps(this.runtime);
   }
 
-  static async dismissTipAsync(tipId: string): Promise<OnboardingStateSettings> {
+  static dismissTipAsync(tipId: string): Promise<OnboardingStateSettings> {
     const existing = this.cache.onboardingState.dismissedTipIds;
     const nextIds = existing.includes(tipId) ? existing : [...existing, tipId];
     return updateOnboardingStateAsyncOps(this.runtime, { dismissedTipIds: nextIds });
   }
 
-  static async setTourCompletedAsync(tourCompleted: boolean): Promise<OnboardingStateSettings> {
+  static setTourCompletedAsync(tourCompleted: boolean): Promise<OnboardingStateSettings> {
     return updateOnboardingStateAsyncOps(this.runtime, { tourCompleted });
   }
 
-  static async setTipsEnabledAsync(tipsEnabled: boolean): Promise<OnboardingStateSettings> {
+  static setTipsEnabledAsync(tipsEnabled: boolean): Promise<OnboardingStateSettings> {
     return updateOnboardingStateAsyncOps(this.runtime, { tipsEnabled });
   }
 
-  static async resetOnboardingAsync(): Promise<OnboardingStateSettings> {
+  static resetOnboardingAsync(): Promise<OnboardingStateSettings> {
     return updateOnboardingStateAsyncOps(this.runtime, {
       tourCompleted: false,
       tipsEnabled: true,
@@ -1508,7 +1508,7 @@ export class ClinicOperationsService {
     );
   }
 
-  static async closeDailyCashZReportAsync(params: {
+  static closeDailyCashZReportAsync(params: {
     dateKey: string;
     primaryCurrencyCode?: string;
     countedCashActual?: number;
@@ -1539,14 +1539,14 @@ export class ClinicOperationsService {
     return getCustomWidgetsOps(this.runtime);
   }
 
-  static async saveCustomWidgetAsync(
+  static saveCustomWidgetAsync(
     candidate: unknown,
     rawJsonLength?: number
   ): Promise<CustomWidgetDefinition> {
     return saveCustomWidgetAsyncOps(this.runtime, candidate, rawJsonLength);
   }
 
-  static async deleteCustomWidgetAsync(widgetId: string): Promise<void> {
+  static deleteCustomWidgetAsync(widgetId: string): Promise<void> {
     return deleteCustomWidgetAsyncOps(this.runtime, widgetId);
   }
 
@@ -1582,7 +1582,7 @@ export class ClinicOperationsService {
     return appendAuditLogOps(this.runtime, params);
   }
 
-  static async appendAuditLogAsync(params: {
+  static appendAuditLogAsync(params: {
     actionType: AuditLogEntry['actionType'];
     entityType: AuditLogEntry['entityType'];
     entityId: string;
@@ -1594,14 +1594,14 @@ export class ClinicOperationsService {
     return appendAuditLogAsyncOps(this.runtime, params);
   }
 
-  static async verifyAuditChain(
+  static verifyAuditChain(
     database?: PhysioRecordDatabase,
     dek?: CryptoKey
   ): Promise<AuditChainVerificationResult> {
     return verifyAuditChainOps(this.runtime, database, dek);
   }
 
-  static async buildDailyAuditDigestAsync(dateKey: string): Promise<DailyAuditDigest> {
+  static buildDailyAuditDigestAsync(dateKey: string): Promise<DailyAuditDigest> {
     return buildDailyAuditDigestOps(this.runtime, dateKey);
   }
 
@@ -1616,7 +1616,7 @@ export class ClinicOperationsService {
     saveEpisodeClinicalStoreOps(this.runtime, store);
   }
 
-  static async getEpisodeClinicalStoreEncrypted(
+  static getEpisodeClinicalStoreEncrypted(
     episodeId: string,
     patientId: string,
     dek: CryptoKey,
@@ -1625,7 +1625,7 @@ export class ClinicOperationsService {
     return getEpisodeClinicalStoreEncryptedOps(this.runtime, episodeId, patientId, dek, database);
   }
 
-  static async saveEpisodeClinicalStoreEncrypted(
+  static saveEpisodeClinicalStoreEncrypted(
     store: EpisodeScopedClinicalStore,
     dek: CryptoKey,
     database: PhysioRecordDatabase = defaultDb,
@@ -1896,7 +1896,7 @@ export class ClinicOperationsService {
     return getConsentsForPatientOps(this.runtime, patientId);
   }
 
-  static async savePatientConsentAsync(input: {
+  static savePatientConsentAsync(input: {
     patientId: string;
     episodeId?: string;
     templateId: ConsentTemplateId;
@@ -1913,7 +1913,7 @@ export class ClinicOperationsService {
     return savePatientConsentAsyncOps(this.runtime, input);
   }
 
-  static async revokePatientConsentAsync(
+  static revokePatientConsentAsync(
     patientId: string,
     consentId: string,
     reason: string

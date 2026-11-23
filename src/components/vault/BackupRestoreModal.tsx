@@ -946,9 +946,9 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                               `ناکۆکییە چارەسەرکراوەکان (${restoredSummary.conflicts.length}):`
                             )}
                           </p>
-                          {restoredSummary.conflicts.map((conflict, idx) => (
+                          {restoredSummary.conflicts.map((conflict) => (
                             <div
-                              key={`${conflict.storeName}-${conflict.recordId}-${idx}`}
+                              key={`${conflict.storeName}-${conflict.recordId}-${conflict.resolution}`}
                               className="p-2 rounded-lg bg-muted/40 border border-card-line text-xs"
                             >
                               <div className="flex items-center justify-between gap-2 font-mono font-bold text-foreground">

@@ -160,7 +160,7 @@ export async function hydrateEncryptedCacheOps(
 
   for (const row of apptEntities) {
     const dec = await decryptSafe<ClinicAppointment>('appointments', row.id, [], row);
-    if (dec && dec.patientId) {
+    if (dec?.patientId) {
       const isDemoAppt = Boolean(
         dec.isDemo || dec.id.startsWith('demo_appt_') || dec.patientId.startsWith('syn-patient-')
       );
@@ -175,7 +175,7 @@ export async function hydrateEncryptedCacheOps(
 
   for (const row of waitEntities) {
     const dec = await decryptSafe<WaitingListEntry>('waitingList', row.id, [], row);
-    if (dec && dec.patientId) {
+    if (dec?.patientId) {
       const isDemoWait = Boolean(
         dec.isDemo || dec.id.startsWith('demo_wait_') || dec.patientId.startsWith('syn-patient-')
       );
@@ -205,7 +205,7 @@ export async function hydrateEncryptedCacheOps(
 
   for (const row of invEntities) {
     const dec = await decryptSafe<FinancialInvoiceIQD>('invoices', row.id, [], row);
-    if (dec && dec.patientId) {
+    if (dec?.patientId) {
       const mergedPayments = new Map<string, PaymentTransactionIQD>();
       for (const p of dec.payments || []) mergedPayments.set(p.id, p);
       for (const p of paymentsByInvoice.get(dec.id) || []) mergedPayments.set(p.id, p);
@@ -266,14 +266,14 @@ export async function hydrateEncryptedCacheOps(
       [row.episodeId],
       row
     );
-    if (dec && dec.episodeId) {
+    if (dec?.episodeId) {
       nextCache.episodeClinicalByEpisodeId.set(dec.episodeId, dec);
     }
   }
 
   for (const row of widgetEntities) {
     const dec = await decryptSafe<CustomWidgetDefinition>('customWidgets', row.id, [], row);
-    if (dec && dec.id) {
+    if (dec?.id) {
       const validated = validateCustomWidgetDefinition(dec);
       if (validated.ok) nextCache.customWidgets.push(validated.data);
     }
@@ -286,7 +286,7 @@ export async function hydrateEncryptedCacheOps(
       [],
       row
     );
-    if (dec && dec.patientId && Array.isArray(dec.weekdays) && dec.weekdays.length > 0) {
+    if (dec?.patientId && Array.isArray(dec.weekdays) && dec.weekdays.length > 0) {
       nextCache.recurringSchedules.push({ ...dec, version: row.version ?? dec.version ?? 1 });
     }
   }
@@ -298,7 +298,7 @@ export async function hydrateEncryptedCacheOps(
       [],
       row
     );
-    if (dec && dec.scheduleId && dec.date) {
+    if (dec?.scheduleId && dec.date) {
       nextCache.recurringSkippedDates.set(row.id, {
         scheduleId: dec.scheduleId,
         date: dec.date,
@@ -315,7 +315,7 @@ export async function hydrateEncryptedCacheOps(
       [row.patientId],
       row
     );
-    if (dec && dec.patientId) {
+    if (dec?.patientId) {
       nextCache.patientMedicationsByPatientId.set(dec.patientId, {
         ...dec,
         version: row.version ?? dec.version ?? 1,
@@ -330,7 +330,7 @@ export async function hydrateEncryptedCacheOps(
       [row.patientId],
       row
     );
-    if (dec && dec.patientId) {
+    if (dec?.patientId) {
       const list = nextCache.consentsByPatientId.get(dec.patientId) || [];
       list.push({ ...dec, version: row.version ?? dec.version ?? 1 });
       nextCache.consentsByPatientId.set(dec.patientId, list);
@@ -339,7 +339,7 @@ export async function hydrateEncryptedCacheOps(
 
   for (const row of cashCloseEntities as EncryptedCashCloseEntity[]) {
     const dec = await decryptSafe<CashCloseZReportRecord>('cashCloses', row.id, [], row);
-    if (dec && dec.dateKey) {
+    if (dec?.dateKey) {
       nextCache.cashCloses.push({ ...dec, version: row.version ?? dec.version ?? 1 });
     }
   }
@@ -352,7 +352,7 @@ export async function hydrateEncryptedCacheOps(
       [row.patientId],
       row
     );
-    if (dec && dec.patientId) {
+    if (dec?.patientId) {
       const list = nextCache.attachmentsByPatientId.get(dec.patientId) || [];
       list.push({ ...dec, version: row.version ?? dec.version ?? 1 });
       nextCache.attachmentsByPatientId.set(dec.patientId, list);
@@ -361,7 +361,7 @@ export async function hydrateEncryptedCacheOps(
 
   for (const row of noteTemplateEntities as EncryptedNoteTemplateEntity[]) {
     const dec = await decryptSafe<NoteTemplateSnippet>('noteTemplates', row.id, [], row);
-    if (dec && dec.slashTrigger) {
+    if (dec?.slashTrigger) {
       nextCache.noteTemplates.push({ ...dec, version: row.version ?? dec.version ?? 1 });
     }
   }
@@ -719,7 +719,7 @@ export async function ensureColdStoreLoadedOps(
             [],
             row
           );
-          if (dec && dec.id) {
+          if (dec?.id) {
             const validated = validateCustomWidgetDefinition(dec);
             if (validated.ok) loaded.push(validated.data);
           }
@@ -739,7 +739,7 @@ export async function ensureColdStoreLoadedOps(
             [],
             row
           );
-          if (dec && dec.slashTrigger) {
+          if (dec?.slashTrigger) {
             loaded.push({ ...dec, version: row.version ?? dec.version ?? 1 });
           }
         }
@@ -758,7 +758,7 @@ export async function ensureColdStoreLoadedOps(
             [row.patientId],
             row
           );
-          if (dec && dec.patientId) {
+          if (dec?.patientId) {
             const bucket = byPatient.get(dec.patientId) || [];
             bucket.push({ ...dec, version: row.version ?? dec.version ?? 1 });
             byPatient.set(dec.patientId, bucket);
@@ -781,7 +781,7 @@ export async function ensureColdStoreLoadedOps(
             [row.patientId],
             row
           );
-          if (dec && dec.patientId) {
+          if (dec?.patientId) {
             const bucket = byPatient.get(dec.patientId) || [];
             bucket.push({ ...dec, version: row.version ?? dec.version ?? 1 });
             byPatient.set(dec.patientId, bucket);
@@ -803,7 +803,7 @@ export async function ensureColdStoreLoadedOps(
             [row.episodeId],
             row
           );
-          if (dec && dec.episodeId) loaded.push(dec);
+          if (dec?.episodeId) loaded.push(dec);
         }
         if (rt.getActiveDek() !== dek) return;
         const loadedColdEp = rt.getLoadedColdEpisodeIds();
@@ -825,7 +825,7 @@ export async function ensureColdStoreLoadedOps(
             [row.patientId],
             row
           );
-          if (dec && dec.patientId) {
+          if (dec?.patientId) {
             loaded.push({ ...dec, version: row.version ?? dec.version ?? 1 });
           }
         }
@@ -914,7 +914,7 @@ export async function ensurePatientColdStoresLoadedOps(
         [row.patientId],
         row
       );
-      if (dec && dec.patientId) {
+      if (dec?.patientId) {
         attachmentsLoaded.push({ ...dec, version: row.version ?? dec.version ?? 1 });
       }
     }
@@ -929,7 +929,7 @@ export async function ensurePatientColdStoresLoadedOps(
         [row.patientId],
         row
       );
-      if (dec && dec.patientId) {
+      if (dec?.patientId) {
         consentsLoaded.push({ ...dec, version: row.version ?? dec.version ?? 1 });
       }
     }
@@ -944,7 +944,7 @@ export async function ensurePatientColdStoresLoadedOps(
         [row.patientId],
         row
       );
-      if (dec && dec.patientId) {
+      if (dec?.patientId) {
         medLoaded = { ...dec, version: row.version ?? dec.version ?? 1 };
       }
     }
@@ -963,7 +963,7 @@ export async function ensurePatientColdStoresLoadedOps(
         [row.episodeId],
         row
       );
-      if (dec && dec.episodeId) epLoaded.push(dec);
+      if (dec?.episodeId) epLoaded.push(dec);
     }
 
     if (rt.getActiveDek() !== dek) return;

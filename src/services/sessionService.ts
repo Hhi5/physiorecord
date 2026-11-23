@@ -188,7 +188,7 @@ class AsyncKeyedMutex {
   async runExclusive<T>(key: string, fn: () => Promise<T>): Promise<T> {
     const currentQueue = this.queues.get(key) || Promise.resolve();
 
-    let release: () => void;
+    let release: (() => void) | undefined;
     const nextInQueue = new Promise<void>((resolve) => {
       release = resolve;
     });
@@ -203,7 +203,7 @@ class AsyncKeyedMutex {
       if (this.queues.get(key) === tail) {
         this.queues.delete(key);
       }
-      release!();
+      release?.();
     }
   }
 }

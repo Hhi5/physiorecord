@@ -58,7 +58,11 @@ export function broadcastVaultEvent(event: Omit<VaultSyncEvent, 'senderId' | 'ti
  */
 export function subscribeToVaultEvents(onEvent: (event: VaultSyncEvent) => void): () => void {
   const ch = getChannel();
-  if (!ch) return () => {};
+  if (!ch) {
+    return () => {
+      /* BroadcastChannel unavailable in this environment */
+    };
+  }
 
   const listener = (msg: MessageEvent<VaultSyncEvent>) => {
     if (msg.data && msg.data.senderId !== TAB_ID) {

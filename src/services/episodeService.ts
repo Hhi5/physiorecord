@@ -541,7 +541,7 @@ export class EpisodeService {
   /**
    * Soft-archive episode (Default safe clinical action).
    */
-  static async archiveEpisode(
+  static archiveEpisode(
     episodeId: string,
     dek: CryptoKey,
     database: PhysioRecordDatabase = defaultDb
@@ -552,7 +552,7 @@ export class EpisodeService {
   /**
    * Unarchive episode back to active state.
    */
-  static async unarchiveEpisode(
+  static unarchiveEpisode(
     episodeId: string,
     dek: CryptoKey,
     database: PhysioRecordDatabase = defaultDb

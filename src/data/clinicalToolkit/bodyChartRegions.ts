@@ -309,9 +309,5 @@ export function validatePatientBodyChartData(chart?: PatientBodyChartData): bool
   if (chart.clinicianSummaryNotes !== undefined && typeof chart.clinicianSummaryNotes !== 'string') {
     return false;
   }
-  if (typeof chart.lastUpdatedAt !== 'string' || !chart.lastUpdatedAt.trim()) {
-    return false;
-  }
-
-  return true;
+  return typeof chart.lastUpdatedAt === 'string' && chart.lastUpdatedAt.trim().length > 0;
 }

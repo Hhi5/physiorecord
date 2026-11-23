@@ -695,8 +695,8 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
                   onChange: setAfterId,
                   item: resolvedAfter,
                 },
-              ].map((slot, idx) => (
-                <div key={idx} className="space-y-2 flex flex-col">
+              ].map((slot) => (
+                <div key={slot.label} className="space-y-2 flex flex-col">
                   <label className="block text-xs font-semibold text-foreground">
                     {slot.label}
                   </label>

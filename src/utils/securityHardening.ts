@@ -56,11 +56,8 @@ export function isPrivateLanHostname(hostname: string): boolean {
   if (a === 172 && b >= 16 && b <= 31) return true;
   // 192.168.0.0/16 (RFC 1918)
   if (a === 192 && b === 168) return true;
-  // 127.0.0.0/8 loopback
-  if (a === 127) return true;
-
-  // Explicitly rejects 169.254.0.0/16 (cloud metadata / APIPA), 0.0.0.0, and all public IPs
-  return false;
+  // 127.0.0.0/8 loopback; explicitly rejects 169.254.0.0/16 (APIPA), 0.0.0.0, and public IPs
+  return a === 127;
 }
 
 /**

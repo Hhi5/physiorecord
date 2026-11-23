@@ -428,28 +428,19 @@ test.describe('Phase A — Crash Resilience, Auto-Lock Warning, Sandbox Drill, L
         .first()
         .click();
 
-      // Switch to Clinical Table view to assert exact <tr> row virtualization bound
-      await page
-        .locator('button')
-        .filter({ hasText: /جدول سريري|Clinical Table/i })
-        .first()
-        .click();
+      // Unified Calm 2-Line Roster is automatically virtualized for >100 rows
       const directoryContainer = page.getByTestId('patient-directory-list');
       await expect(directoryContainer).toBeVisible({ timeout: 10_000 });
 
-      const renderedTableRows = await directoryContainer.locator('tbody tr').count();
+      const renderedTableRows = await directoryContainer
+        .locator('[data-testid^="patient-row-"]')
+        .count();
       expect(renderedTableRows).toBeGreaterThan(0);
       expect(renderedTableRows).toBeLessThan(45); // Virtualized window out of 125 patients
 
-      // Switch back to Grid cards and measure search query response under 6x CPU throttle
-      await page
-        .locator('button')
-        .filter({ hasText: /بطاقات|Cards/i })
-        .first()
-        .click();
-
+      // Measure search query response under 6x CPU throttle
       const searchInput = page
-        .locator('input[placeholder*="بحث فوري"], input[placeholder*="Instant search"]')
+        .getByRole('textbox', { name: /بحث في سجل المرضى|Search patient directory/i })
         .first();
       const searchStart = Date.now();
       await searchInput.fill('Patient-085');
@@ -460,8 +451,8 @@ test.describe('Phase A — Crash Resilience, Auto-Lock Warning, Sandbox Drill, L
       // Open PatientWorkspace under 6x CPU throttle and measure transition time
       const openChartStart = Date.now();
       await directoryContainer
-        .locator('button')
-        .filter({ hasText: /فتح الملف السريري|Open Patient Chart/i })
+        .locator('[data-testid^="patient-row-"] button')
+        .filter({ hasText: /Patient-085/i })
         .first()
         .click();
       await expect(

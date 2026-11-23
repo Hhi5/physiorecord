@@ -618,9 +618,9 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
             <div className="mt-0.5 shrink-0">{sec.icon}</div>
             <div className="min-w-0 flex-1 space-y-1">
               <h3 className="text-xs sm:text-sm font-bold text-foreground truncate">{sec.title}</h3>
-              {sec.lines.map((line, idx) => (
+              {sec.lines.map((line) => (
                 <p
-                  key={idx}
+                  key={`${line.label ?? ''}:${line.text}`}
                   className={`text-xs leading-relaxed line-clamp-2 ${TONE_CLASS_MAP[line.tone || 'default']}`}
                 >
                   {line.label && (
@@ -2750,7 +2750,9 @@ export const SessionVisitPaper: React.FC<SessionVisitPaperProps> = ({
               activeWidgetIds={episodeStore.activeWidgetIds}
               onRemoveWidget={onRemoveExamWidget}
               onAddWidget={onAddExamWidget}
-              onOpenExamShelf={() => {}}
+              onOpenExamShelf={() => {
+                /* Exam shelf is managed inline on the visit paper */
+              }}
               bodyChart={episodeStore.bodyChart}
               onBodyChartChange={(val) => updateEpisodeField('bodyChart', val)}
               objective={episodeStore.objective}

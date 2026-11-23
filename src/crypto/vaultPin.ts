@@ -229,21 +229,26 @@ export async function unlockOperationalDekWithPin(
     };
   }
 
+  const { pinSalt, pinWrappedDek, pinWrappedDekIv } = meta;
+  if (!pinSalt || !pinWrappedDek || !pinWrappedDekIv) {
+    throw new Error('الفتح السريع برمز PIN غير مفعّل لهذه الخزينة.');
+  }
+
   const iterations = meta.pinKdfIterations || CONSTANTS.DEFAULT_PBKDF2_ITERATIONS;
   const candidateKek = deriveKekFn
-    ? await deriveKekFn(normalized, new Uint8Array(meta.pinSalt!), iterations, onProgress)
-    : await deriveKEK(normalized, new Uint8Array(meta.pinSalt!), iterations);
+    ? await deriveKekFn(normalized, new Uint8Array(pinSalt), iterations, onProgress)
+    : await deriveKEK(normalized, new Uint8Array(pinSalt), iterations);
 
   let rawDek: Uint8Array | null = null;
   try {
     const rawBuf = await crypto.subtle.decrypt(
       {
         name: 'AES-GCM',
-        iv: toArrayBuffer(new Uint8Array(meta.pinWrappedDekIv!)),
+        iv: toArrayBuffer(new Uint8Array(pinWrappedDekIv)),
         additionalData: PIN_WRAP_AAD,
       },
       candidateKek,
-      toArrayBuffer(new Uint8Array(meta.pinWrappedDek!))
+      toArrayBuffer(new Uint8Array(pinWrappedDek))
     );
     rawDek = new Uint8Array(rawBuf);
     const generation = meta.vaultGeneration ?? 1;

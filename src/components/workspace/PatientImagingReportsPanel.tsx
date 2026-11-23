@@ -111,9 +111,10 @@ export const PatientImagingReportsPanel: React.FC<PatientImagingReportsPanelProp
           ? check.reasonCkb || check.reasonAr || ''
           : check.reasonAr || 'يرجى إكمال الحقول المطلوبة.';
       setValidationError(msg);
-      if (check.firstInvalidDraftId) {
+      const invalidDraftId = check.firstInvalidDraftId;
+      if (invalidDraftId) {
         requestAnimationFrame(() => {
-          titleInputRefs.current[check.firstInvalidDraftId!]?.focus();
+          titleInputRefs.current[invalidDraftId]?.focus();
         });
       }
       return;

@@ -200,8 +200,8 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
     onExpensesUpdated(updatedExpenses);
     setTemplates(ClinicOperationsService.getRecurringExpenseTemplates());
     setDrafts((prev) => {
-      const next = { ...prev };
-      delete next[tplId];
+      const { [tplId]: _removed, ...next } = prev;
+      void _removed;
       return next;
     });
     setFormNotice(null);

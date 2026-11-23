@@ -81,17 +81,18 @@ export async function detectSpeechDictationSupport(
   // `webkitSpeechRecognition.available()` segfaults the renderer process (SIGSEGV) when SODA Mojo is unbound.
   // Only invoke `ctor.available` when it is a non-native JS implementation/mock or explicitly safe.
   let onDeviceState: 'available' | 'downloading' | 'downloadable' | 'unavailable' = 'unavailable';
-  const hasAvailableFn = typeof ctor.available === 'function';
+  const availableFn = typeof ctor.available === 'function' ? ctor.available : null;
+  const hasAvailableFn = availableFn !== null;
   const isNativeBlinkStub =
     hasAvailableFn &&
-    Function.prototype.toString.call(ctor.available).includes('[native code]');
+    Function.prototype.toString.call(availableFn).includes('[native code]');
   const hasProcessLocallyProp =
     'processLocally' in (ctor.prototype || {}) ||
     (hasAvailableFn && !isNativeBlinkStub);
 
-  if (hasAvailableFn && !isNativeBlinkStub) {
+  if (availableFn && !isNativeBlinkStub) {
     try {
-      onDeviceState = await ctor.available!({
+      onDeviceState = await availableFn.call(ctor, {
         langs: [langTag],
         processLocally: true,
       });

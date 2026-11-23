@@ -195,7 +195,7 @@ async function withMigrationLock<T>(fn: () => Promise<T>): Promise<T> {
   return await runInProcess();
 }
 
-async function yieldToMainThread(): Promise<void> {
+function yieldToMainThread(): Promise<void> {
   if (typeof globalThis !== 'undefined' && typeof (globalThis as unknown as { requestIdleCallback?: unknown }).requestIdleCallback === 'function') {
     return new Promise((resolve) => {
       (globalThis as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback(
@@ -219,7 +219,8 @@ function resolveDefaultStorage(explicitStorage?: StorageLike): StorageLike | nul
   if (explicitStorage) return explicitStorage;
   if (typeof globalThis !== 'undefined' && 'localStorage' in globalThis && globalThis.localStorage) {
     const ls = globalThis.localStorage as Partial<StorageLike> & Record<string, unknown>;
-    if (typeof ls.getItem === 'function') {
+    const getItemFn = ls.getItem;
+    if (typeof getItemFn === 'function') {
       if (typeof ls.length === 'number' && typeof ls.key === 'function') {
         return ls as StorageLike;
       }
@@ -235,7 +236,7 @@ function resolveDefaultStorage(explicitStorage?: StorageLike): StorageLike | nul
           return ownKeys[index] ?? null;
         },
         getItem(k: string) {
-          return ls.getItem!(k);
+          return getItemFn.call(ls, k);
         },
       };
     }
@@ -248,7 +249,7 @@ function collectPhysioRecordKeys(storage: StorageLike): Array<{ key: string; raw
   if (typeof storage.length === 'number' && typeof storage.key === 'function') {
     for (let i = 0; i < storage.length; i++) {
       const k = storage.key(i);
-      if (k && k.startsWith('physiorecord_')) {
+      if (k?.startsWith('physiorecord_')) {
         keys.add(k);
       }
     }

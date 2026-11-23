@@ -668,10 +668,7 @@ export function removeExamPresetFromEpisodeStore(
       !e.endFeel &&
       !e.reasonNotTested &&
       !(e.clinicalNotes && e.clinicalNotes.trim().length > 0);
-    if (isUntouched && presetRomKeys.has(k) && !remainingRomKeys.has(k)) {
-      return false;
-    }
-    return true;
+    return !(isUntouched && presetRomKeys.has(k) && !remainingRomKeys.has(k));
   });
 
   const nextMmtEntries = (store.objective?.mmtBattery?.entries || []).filter((e) => {
@@ -683,19 +680,13 @@ export function removeExamPresetFromEpisodeStore(
       !e.substitutionObserved &&
       !e.reasonNotTested &&
       !(e.clinicalNotes && e.clinicalNotes.trim().length > 0);
-    if (isUntouched && presetMmtKeys.has(k) && !remainingMmtKeys.has(k)) {
-      return false;
-    }
-    return true;
+    return !(isUntouched && presetMmtKeys.has(k) && !remainingMmtKeys.has(k));
   });
 
   const nextSpecialTests = (store.specialTests || []).filter((t) => {
     const isUntouched =
       t.outcome === 'not_tested' && !(t.notes && t.notes.trim().length > 0);
-    if (isUntouched && presetTestIds.has(t.id) && !remainingTestIds.has(t.id)) {
-      return false;
-    }
-    return true;
+    return !(isUntouched && presetTestIds.has(t.id) && !remainingTestIds.has(t.id));
   });
 
   const isScaleUntouched =

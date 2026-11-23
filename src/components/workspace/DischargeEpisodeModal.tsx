@@ -335,9 +335,9 @@ export const DischargeEpisodeModal: React.FC<DischargeEpisodeModalProps> = ({
               journey.romHighlights.length > 0 ||
               journey.totalGoalsCount > 0) && (
               <div className="pt-2 border-t border-emerald-500/15 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                {journey.outcomeScales.map((sc, i) => (
+                {journey.outcomeScales.map((sc) => (
                   <div
-                    key={i}
+                    key={sc.scaleName}
                     className="px-2.5 py-2 rounded-xl bg-card/90 border border-card-line flex items-center justify-between gap-2"
                   >
                     <span className="font-bold text-foreground truncate">{sc.scaleName}</span>
@@ -348,9 +348,9 @@ export const DischargeEpisodeModal: React.FC<DischargeEpisodeModalProps> = ({
                     </span>
                   </div>
                 ))}
-                {journey.romHighlights.slice(0, 2).map((rom, i) => (
+                {journey.romHighlights.slice(0, 2).map((rom) => (
                   <div
-                    key={`rom-${i}`}
+                    key={`rom-${rom.label}`}
                     className="px-2.5 py-2 rounded-xl bg-card/90 border border-card-line flex items-center justify-between gap-2"
                   >
                     <span className="font-semibold text-foreground truncate flex items-center gap-1">

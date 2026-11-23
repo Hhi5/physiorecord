@@ -125,7 +125,7 @@ const InlineSparkline: React.FC<{
         const isLast = i === coords.length - 1;
         return (
           <circle
-            key={i}
+            key={`${c.x}-${c.y}`}
             cx={c.x}
             cy={c.y}
             r={isLast ? 2.6 : 1.5}
@@ -1502,7 +1502,7 @@ export const LongitudinalComparisonView: React.FC<LongitudinalComparisonViewProp
                                 <div className="flex flex-wrap items-center gap-3 text-xs tabular-nums">
                                   {row.milestoneValues.map((mv, mIdx) => (
                                     <div
-                                      key={mIdx}
+                                      key={`${row.id}-${mv.label}-${mv.date ?? ''}`}
                                       className="flex items-center gap-1.5 text-muted-foreground-2"
                                     >
                                       <span className="font-medium">{mv.label}</span>
@@ -1628,9 +1628,9 @@ export const LongitudinalComparisonView: React.FC<LongitudinalComparisonViewProp
                                   </div>
                                 )}
                               </td>
-                              {row.milestoneValues.slice(0, snapshots.length).map((mv, idx) => (
+                              {row.milestoneValues.slice(0, snapshots.length).map((mv) => (
                                 <td
-                                  key={idx}
+                                  key={`${row.id}-${mv.label}-${mv.date ?? ''}`}
                                   className="py-3 px-4 font-mono text-muted-foreground-2"
                                 >
                                   {mv.valueDisplay}

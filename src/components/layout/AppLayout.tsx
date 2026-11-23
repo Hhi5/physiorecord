@@ -666,8 +666,8 @@ export const AppLayout: React.FC = () => {
   };
 
   const handleLoadTourDemoData = async () => {
-    for (let i = 0; i < SYNTHETIC_PATIENTS.length; i++) {
-      const { id: fixedId, ...patientData } = SYNTHETIC_PATIENTS[i];
+    for (const syntheticPatient of SYNTHETIC_PATIENTS) {
+      const { id: fixedId, ...patientData } = syntheticPatient;
       if (!fixedId) continue;
       await savePatient(patientData, fixedId);
     }
@@ -855,6 +855,8 @@ export const AppLayout: React.FC = () => {
         return t('analytics.nav');
       case 'activity_log':
         return bi('سجل النشاط', 'Activity', t('navAudit'));
+      default:
+        return bi('اليوم', 'Today', t('navToday'));
     }
   })();
 
@@ -2194,7 +2196,9 @@ export const AppLayout: React.FC = () => {
       {/* First-Run Mandatory Custom Admin PIN Setup Modal (Team Mode only per 1.1 / 2.1) */}
       <ModalDialog
         isOpen={!isSoloMode && !showFirstRunModeWizard && showFirstRunPinModal}
-        onOpenChange={() => {}}
+        onOpenChange={() => {
+          /* Blocking alert dialog is non-dismissable */
+        }}
         isDismissable={false}
         isKeyboardDismissDisabled
         hideCloseButton

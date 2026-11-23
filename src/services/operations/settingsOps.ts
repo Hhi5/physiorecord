@@ -637,7 +637,7 @@ export async function saveWhatsAppTemplatesAsyncOps(
   return getWhatsAppTemplatesOps(rt);
 }
 
-export async function resetWhatsAppTemplatesAsyncOps(
+export function resetWhatsAppTemplatesAsyncOps(
   rt: OperationsRuntime
 ): Promise<WhatsAppTemplatesConfig> {
   return saveWhatsAppTemplatesAsyncOps(rt, {
@@ -899,7 +899,7 @@ export async function configureTeamModeAsyncOps(
   return nextMode;
 }
 
-export async function switchWorkspaceModeAsyncOps(
+export function switchWorkspaceModeAsyncOps(
   rt: OperationsRuntime,
   mode: ClinicWorkspaceMode
 ): Promise<WorkspaceModeSettings> {

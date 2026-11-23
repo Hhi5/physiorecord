@@ -247,11 +247,11 @@ export function maskIraqiPhoneInput(raw: string | undefined | null): string {
   if (!raw) return '';
   let digits = raw.replace(/\D/g, '');
   if (digits.startsWith('00964')) {
-    digits = '0' + digits.slice(5);
+    digits = `0${digits.slice(5)}`;
   } else if (digits.startsWith('964')) {
-    digits = '0' + digits.slice(3);
+    digits = `0${digits.slice(3)}`;
   } else if (digits.startsWith('7')) {
-    digits = '0' + digits;
+    digits = `0${digits}`;
   }
   digits = digits.slice(0, 11);
   if (digits.length <= 4) return digits;

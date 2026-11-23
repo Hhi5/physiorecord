@@ -27,8 +27,8 @@ const textEncoder = new TextEncoder();
 
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = '';
-  for (let i = 0; i < bytes.length; i += 1) {
-    binary += String.fromCharCode(bytes[i]);
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
   }
   return btoa(binary);
 }
@@ -53,8 +53,8 @@ function constantTimeBytesEqual(a: Uint8Array, b: Uint8Array): boolean {
 
 function bytesToHex(bytes: Uint8Array): string {
   let hex = '';
-  for (let i = 0; i < bytes.length; i += 1) {
-    hex += bytes[i].toString(16).padStart(2, '0');
+  for (const byte of bytes) {
+    hex += byte.toString(16).padStart(2, '0');
   }
   return hex;
 }
@@ -182,7 +182,7 @@ export function canonicalAuditPayloadString(entry: Omit<AuditLogEntry, 'entryHas
 /**
  * Computes the SHA-256 `entryHash` for an audit log entry linked to `prevHash`.
  */
-export async function computeAuditEntryHash(
+export function computeAuditEntryHash(
   entry: Omit<AuditLogEntry, 'entryHash'>
 ): Promise<string> {
   return computeSha256Hex(canonicalAuditPayloadString(entry));

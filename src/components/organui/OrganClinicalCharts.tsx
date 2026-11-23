@@ -212,15 +212,17 @@ export const OrganClinicalCharts: React.FC<OrganClinicalChartsProps> = ({
       for (const r of snap.romSummary || []) {
         if (r.aromDegrees === null || r.aromDegrees === undefined) continue;
         const key = resolveLongitudinalRomGroupKey(r);
-        if (!map.has(key)) {
-          map.set(key, {
+        let series = map.get(key);
+        if (!series) {
+          series = {
             key,
             labelAr: r.labelAr || key,
             labelEn: r.labelEn || key,
             points: [],
-          });
+          };
+          map.set(key, series);
         }
-        map.get(key)!.points.push({
+        series.points.push({
           label: idx === 0 ? 'B' : `S${idx + 1}`,
           date: snap.recordedDate,
           degrees: r.aromDegrees,
@@ -235,15 +237,16 @@ export const OrganClinicalCharts: React.FC<OrganClinicalChartsProps> = ({
         jointMovementKey: `${r.jointId}_${r.movementId}_${r.laterality}`,
         laterality: r.laterality,
       });
-      if (!map.has(key)) {
-        map.set(key, {
+      let series = map.get(key);
+      if (!series) {
+        series = {
           key,
           labelAr: `${r.jointNameAr} - ${r.movementNameAr} (${r.laterality === 'right' ? 'يمين' : r.laterality === 'left' ? 'يسار' : 'ثنائي'})`,
           labelEn: `${r.jointNameEn} ${r.movementNameEn} (${r.laterality})`,
           points: [],
-        });
+        };
+        map.set(key, series);
       }
-      const series = map.get(key)!;
       if (r.referenceUninvolvedAngleDegrees && r.referenceUninvolvedAngleDegrees > 0) {
         series.uninvolvedRef = r.referenceUninvolvedAngleDegrees;
       }
@@ -454,7 +457,7 @@ export const OrganClinicalCharts: React.FC<OrganClinicalChartsProps> = ({
                   const isSelected = selectedPainIdx === i;
                   return (
                     <g
-                      key={i}
+                      key={`${pt.label}-${pt.date ?? ''}-${pt.pain}`}
                       role="button"
                       tabIndex={0}
                       aria-label={`${pt.label}: ${pt.pain}/10`}
@@ -596,7 +599,7 @@ export const OrganClinicalCharts: React.FC<OrganClinicalChartsProps> = ({
                   const isSelected = selectedOutcomeIdx === i;
                   return (
                     <g
-                      key={i}
+                      key={`${pt.label}-${pt.date ?? ''}-${pt.scorePercentage}`}
                       role="button"
                       tabIndex={0}
                       aria-label={`${pt.label}: ${pt.scorePercentage}%`}
@@ -806,7 +809,7 @@ export const OrganClinicalCharts: React.FC<OrganClinicalChartsProps> = ({
                 const isSelected = selectedRomPointIdx === i;
                 return (
                   <g
-                    key={i}
+                    key={`${pt.label}-${pt.date ?? ''}-${pt.degrees}`}
                     role="button"
                     tabIndex={0}
                     aria-label={`${pt.label}: ${pt.degrees}°`}

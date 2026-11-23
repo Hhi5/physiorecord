@@ -320,8 +320,8 @@ export function buildClinicalJourneySummary(params: {
   if (episodeStore?.objective?.romBattery?.entries?.length) {
     collectRom(episodeStore.objective.romBattery.entries, true);
   }
-  for (let i = 0; i < orderedSessions.length; i++) {
-    const soap = soapBySessionId.get(orderedSessions[i].id);
+  for (const session of orderedSessions) {
+    const soap = soapBySessionId.get(session.id);
     const entries = soap?.data?.objective?.romBattery?.entries;
     if (entries?.length) {
       collectRom(entries, firstRomMap.size === 0);

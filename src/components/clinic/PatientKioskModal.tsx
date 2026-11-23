@@ -48,10 +48,10 @@ export const PatientKioskModal: React.FC<PatientKioskModalProps> = ({
   const [age, setAge] = useState('');
   const [chiefComplaint, setChiefComplaint] = useState('');
   const [painNrs, setPainNrs] = useState(5);
-  const [psfsItems, setPsfsItems] = useState<Array<{ activity: string; score: number }>>([
-    { activity: '', score: 4 },
-    { activity: '', score: 4 },
-    { activity: '', score: 4 },
+  const [psfsItems, setPsfsItems] = useState<Array<{ id: string; activity: string; score: number }>>([
+    { id: 'psfs-1', activity: '', score: 4 },
+    { id: 'psfs-2', activity: '', score: 4 },
+    { id: 'psfs-3', activity: '', score: 4 },
   ]);
   const [consentAccepted, setConsentAccepted] = useState(false);
   const [hasStroke, setHasStroke] = useState(false);
@@ -96,9 +96,9 @@ export const PatientKioskModal: React.FC<PatientKioskModalProps> = ({
     setChiefComplaint('');
     setPainNrs(5);
     setPsfsItems([
-      { activity: '', score: 4 },
-      { activity: '', score: 4 },
-      { activity: '', score: 4 },
+      { id: 'psfs-1', activity: '', score: 4 },
+      { id: 'psfs-2', activity: '', score: 4 },
+      { id: 'psfs-3', activity: '', score: 4 },
     ]);
     setConsentAccepted(false);
     setErrorMsg(null);
@@ -519,14 +519,14 @@ export const PatientKioskModal: React.FC<PatientKioskModalProps> = ({
                 </div>
                 <div className="space-y-2">
                   {psfsItems.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
+                    <div key={item.id} className="flex items-center gap-2">
                       <input
                         type="text"
                         value={item.activity}
                         onChange={(e) => {
                           const val = e.target.value;
                           setPsfsItems((prev) =>
-                            prev.map((row, i) => (i === idx ? { ...row, activity: val } : row))
+                            prev.map((row) => (row.id === item.id ? { ...row, activity: val } : row))
                           );
                         }}
                         placeholder={
@@ -542,12 +542,12 @@ export const PatientKioskModal: React.FC<PatientKioskModalProps> = ({
                         onChange={(e) => {
                           const score = Number(e.target.value);
                           setPsfsItems((prev) =>
-                            prev.map((row, i) => (i === idx ? { ...row, score } : row))
+                            prev.map((row) => (row.id === item.id ? { ...row, score } : row))
                           );
                         }}
                         className="w-24 px-2 py-2 rounded-xl border border-card-stroke bg-layer text-xs font-bold text-foreground"
                       >
-                        {Array.from({ length: 11 }).map((_, scoreVal) => (
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((scoreVal) => (
                           <option key={scoreVal} value={scoreVal}>
                             {'\u2066'}{scoreVal} / 10{'\u2069'}
                           </option>

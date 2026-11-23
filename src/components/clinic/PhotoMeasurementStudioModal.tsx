@@ -178,14 +178,13 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
   const starterLang: 'ar' | 'en' | 'ckb' =
     language === 'en' ? 'en' : language === 'ckb' ? 'ckb' : 'ar';
 
-  const hasNaturalDims = Boolean(
-    attachment?.widthPx &&
-      attachment.widthPx > 16 &&
-      attachment?.heightPx &&
-      attachment.heightPx > 16
-  );
-  const aspectWidth = hasNaturalDims ? attachment!.widthPx! : 800;
-  const aspectHeight = hasNaturalDims ? attachment!.heightPx! : 600;
+  const naturalWidth =
+    attachment?.widthPx && attachment.widthPx > 16 ? attachment.widthPx : null;
+  const naturalHeight =
+    attachment?.heightPx && attachment.heightPx > 16 ? attachment.heightPx : null;
+  const hasNaturalDims = naturalWidth !== null && naturalHeight !== null;
+  const aspectWidth = hasNaturalDims ? naturalWidth : 800;
+  const aspectHeight = hasNaturalDims ? naturalHeight : 600;
 
   const [currentAttachment, setCurrentAttachment] = useState<EncryptedAttachmentRecord | null>(attachment);
   const [savedAnnotations, setSavedAnnotations] = useState<PhotoAnnotationState | null>(
@@ -244,11 +243,8 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
   useEffect(() => {
     if (!isOpen || !attachment) return;
     setCurrentAttachment(attachment);
-    const natOk = Boolean(
-      attachment.widthPx && attachment.widthPx > 16 && attachment.heightPx && attachment.heightPx > 16
-    );
-    const w = natOk ? attachment.widthPx! : 800;
-    const h = natOk ? attachment.heightPx! : 600;
+    const w = attachment.widthPx && attachment.widthPx > 16 ? attachment.widthPx : 800;
+    const h = attachment.heightPx && attachment.heightPx > 16 ? attachment.heightPx : 600;
 
     if (attachment.annotations) {
       setState(attachment.annotations);

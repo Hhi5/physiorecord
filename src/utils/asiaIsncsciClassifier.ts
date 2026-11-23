@@ -111,7 +111,7 @@ const ALL_KEY_INDICES = [...UPPER_KEY_INDICES, ...LOWER_KEY_INDICES] as const;
 
 type KeyMuscleRoot = (typeof ASIA_ISNCSCI_KEY_MUSCLES)[number]['rootLevel'];
 
-const IDX_TO_KEY_ROOT: Partial<Record<number, KeyMuscleRoot>> = {
+const IDX_TO_KEY_ROOT: Record<(typeof ALL_KEY_INDICES)[number], KeyMuscleRoot> = {
   3: 'C5',
   4: 'C6',
   5: 'C7',
@@ -313,7 +313,7 @@ function resolveMotorLevel(
   // Evaluate Upper Extremity key muscles C5 (3) .. T1 (7)
   let confirmedIntactThroughIdx = 2; // C4
   for (const k of UPPER_KEY_INDICES) {
-    const root = IDX_TO_KEY_ROOT[k]!;
+    const root = IDX_TO_KEY_ROOT[k];
     const g = keyMuscles[root];
     if (g === 5) {
       confirmedIntactThroughIdx = k;
@@ -387,7 +387,7 @@ function resolveMotorLevel(
   // C5..T1 are 5 AND T2..L1 sensory are intact (presumed 5) => evaluate L2 (20) .. S1 (24)
   confirmedIntactThroughIdx = 19; // L1
   for (const k of LOWER_KEY_INDICES) {
-    const root = IDX_TO_KEY_ROOT[k]!;
+    const root = IDX_TO_KEY_ROOT[k];
     const g = keyMuscles[root];
     if (g === 5) {
       confirmedIntactThroughIdx = k;
@@ -471,11 +471,13 @@ function resolveMotorLevel(
 function resolveNli(
   levels: [LevelResolution, LevelResolution, LevelResolution, LevelResolution]
 ): LevelResolution {
-  const determined = levels.filter((l) => l.status === 'determined' && l.idx !== null);
+  const determinedIndices = levels
+    .filter((l): l is LevelResolution & { idx: number } => l.status === 'determined' && l.idx !== null)
+    .map((l) => l.idx);
   const undetermined = levels.filter((l) => l.status !== 'determined');
 
   if (undetermined.length === 0) {
-    const minIdx = Math.min(...determined.map((l) => l.idx!));
+    const minIdx = Math.min(...determinedIndices);
     return {
       status: 'determined',
       idx: minIdx,
@@ -487,8 +489,8 @@ function resolveNli(
   // Per ISNCSCI 2019: even if one limb/modality has NT (ND), if a determined level is
   // ALREADY rostral or equal to the earliest possible level of EVERY undetermined channel,
   // NLI is still definitively known!
-  if (determined.length > 0) {
-    const minDetermined = Math.min(...determined.map((l) => l.idx!));
+  if (determinedIndices.length > 0) {
+    const minDetermined = Math.min(...determinedIndices);
     const canAnyUndeterminedBeMoreRostral = undetermined.some(
       (u) => u.earliestPossibleIdx < minDetermined
     );
@@ -588,7 +590,7 @@ function resolveMotorZpp(
 
   for (let i = ALL_KEY_INDICES.length - 1; i >= 0; i--) {
     const k = ALL_KEY_INDICES[i];
-    const root = IDX_TO_KEY_ROOT[k]!;
+    const root = IDX_TO_KEY_ROOT[k];
     const g = keyMuscles[root];
     if (typeof g === 'number' && g >= 1) {
       lowestPreservedKeyIdx = k;
@@ -773,7 +775,7 @@ export function classifyAsiaIsncsci2019(
       let anyMissing = false;
       for (const k of ALL_KEY_INDICES) {
         if (k <= thresholdIdx) continue;
-        const root = IDX_TO_KEY_ROOT[k]!;
+        const root = IDX_TO_KEY_ROOT[k];
         const g = sideKeyMuscles[root];
         if (typeof g === 'number' && g >= 1) return 'yes';
 
@@ -849,7 +851,7 @@ export function classifyAsiaIsncsci2019(
 
         for (const k of ALL_KEY_INDICES) {
           if (k <= nliRes.idx) continue;
-          const root = IDX_TO_KEY_ROOT[k]!;
+          const root = IDX_TO_KEY_ROOT[k];
           for (const side of ['R', 'L'] as const) {
             total += 1;
             const g = keyMuscles[side][root];

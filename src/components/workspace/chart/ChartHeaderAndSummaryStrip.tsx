@@ -692,18 +692,18 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
         {/* Expanded alert details (only on demand) */}
         {hasAlerts && isAlertsOpen && (
           <div className="pt-2 border-t border-black/[0.045] dark:border-white/[0.06] space-y-1.5">
-            {redAlerts.map((text, idx) => (
+            {redAlerts.map((text) => (
               <p
-                key={`r-${idx}`}
+                key={`r-${text}`}
                 className="flex items-start gap-1.5 text-xs font-semibold text-rose-700 dark:text-rose-400 leading-relaxed"
               >
                 <ShieldAlert className="size-3.5 shrink-0 mt-0.5" />
                 <span>{text}</span>
               </p>
             ))}
-            {cautionAlerts.map((text, idx) => (
+            {cautionAlerts.map((text) => (
               <p
-                key={`c-${idx}`}
+                key={`c-${text}`}
                 className="flex items-start gap-1.5 text-xs font-semibold text-orange-600 dark:text-orange-400 leading-relaxed"
               >
                 <AlertTriangle className="size-3.5 shrink-0 mt-0.5" />

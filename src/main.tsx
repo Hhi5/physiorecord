@@ -27,7 +27,12 @@ import { installNativeExternalLinkInterceptor } from './platform/nativeBridge';
 initPwaClient();
 installNativeExternalLinkInterceptor();
 
-createRoot(document.getElementById('root')!).render(
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('Root mount element #root was not found.');
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     <App />
   </StrictMode>,

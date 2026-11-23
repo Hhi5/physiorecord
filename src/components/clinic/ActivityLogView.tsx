@@ -324,9 +324,9 @@ export const ActivityLogView: React.FC<ActivityLogViewProps> = ({ onRoleChanged 
               en: 'Inspect Local Activity Log',
               ckb: 'پشکنینی تۆماری چالاکی و کارە بەڵگەدارەکان',
             },
-          ].map((item, i) => (
+          ].map((item) => (
             <div
-              key={i}
+              key={item.en}
               className="p-3.5 rounded-xl bg-surface border border-line-2 flex items-center gap-2.5"
             >
               <CheckCircle2

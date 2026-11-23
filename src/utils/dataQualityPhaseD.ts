@@ -1313,8 +1313,7 @@ export async function executePatientImportBatchTransactional(params: {
   const tempExisting: PatientRecord[] = [...existingPatients];
   const stagedEntities: Array<{ id: string; entity: Record<string, unknown> }> = [];
 
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
+  for (const row of rows) {
     const nameAr = row.data.fullNameAr?.trim() || row.data.fullName?.trim();
     if (!row.isValid || !nameAr) {
       throw new Error(`صف غير صالح أثناء الاستيراد (صف ${row.rowNumber}): الاسم مفقود.`);
@@ -1733,8 +1732,8 @@ const CRC32_TABLE = (() => {
 
 function computeCrc32(bytes: Uint8Array): number {
   let crc = 0xffffffff;
-  for (let i = 0; i < bytes.length; i++) {
-    crc = CRC32_TABLE[(crc ^ bytes[i]) & 0xff] ^ (crc >>> 8);
+  for (const byte of bytes) {
+    crc = CRC32_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
   }
   return (crc ^ 0xffffffff) >>> 0;
 }

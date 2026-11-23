@@ -274,9 +274,9 @@ export const ChartEvaluationTab: React.FC<ChartEvaluationTabProps> = ({
                 <h3 className="text-xs sm:text-sm font-bold text-foreground truncate">
                   {sec.title}
                 </h3>
-                {sec.lines.map((line, idx) => (
+                {sec.lines.map((line) => (
                   <p
-                    key={idx}
+                    key={`${line.label ?? ''}:${line.text}`}
                     className={`text-xs leading-relaxed ${TONE_CLASS_MAP[line.tone || 'default']}`}
                   >
                     {line.label && (

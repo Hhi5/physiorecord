@@ -318,8 +318,7 @@ export function getCancellationAndNoShowStatsOps(
 ): CancellationNoShowStats {
   const scoped = getAppointmentsOps(rt).filter((a) => {
     if (dateFrom && a.date < dateFrom) return false;
-    if (dateTo && a.date > dateTo) return false;
-    return true;
+    return !(dateTo && a.date > dateTo);
   });
   const total = scoped.length;
   const completed = scoped.filter((a) => a.status === 'completed').length;

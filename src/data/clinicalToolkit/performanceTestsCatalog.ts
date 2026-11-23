@@ -363,9 +363,10 @@ export function computePerformanceTestResult(params: {
 
     case 'chair_stand_30s': {
       const reps = Math.max(0, Math.round(num('reps')));
+      const { age } = params;
       const band =
-        params.age !== undefined
-          ? CHAIR_STAND_30S_CUTOFFS.find((b) => params.age! >= b.minAge && params.age! <= b.maxAge)
+        age !== undefined
+          ? CHAIR_STAND_30S_CUTOFFS.find((b) => age >= b.minAge && age <= b.maxAge)
           : undefined;
       const expected = band
         ? params.gender === 'female'
@@ -376,16 +377,18 @@ export function computePerformanceTestResult(params: {
       return {
         computedValue: reps,
         unit: 'reps',
-        interpretationAr: expected !== undefined
-          ? below
-            ? `${reps} تكرار (أقل من الحد المرجعي ${expected} لعمر ${band!.ageRange} — يتطلب مراجعة مختص)`
-            : `${reps} تكرار (ضمن/فوق المرجع ${expected} لعمر ${band!.ageRange} — يتطلب مراجعة مختص)`
-          : `${reps} تكرار في 30 ثانية (يتطلب مراجعة مختص)`,
-        interpretationEn: expected !== undefined
-          ? below
-            ? `${reps} reps (< ${expected} STEADI ref for age ${band!.ageRange} — needs expert verification)`
-            : `${reps} reps (≥ ${expected} STEADI ref for age ${band!.ageRange} — needs expert verification)`
-          : `${reps} reps in 30s (needs expert verification)`,
+        interpretationAr:
+          band && expected !== undefined
+            ? below
+              ? `${reps} تكرار (أقل من الحد المرجعي ${expected} لعمر ${band.ageRange} — يتطلب مراجعة مختص)`
+              : `${reps} تكرار (ضمن/فوق المرجع ${expected} لعمر ${band.ageRange} — يتطلب مراجعة مختص)`
+            : `${reps} تكرار في 30 ثانية (يتطلب مراجعة مختص)`,
+        interpretationEn:
+          band && expected !== undefined
+            ? below
+              ? `${reps} reps (< ${expected} STEADI ref for age ${band.ageRange} — needs expert verification)`
+              : `${reps} reps (≥ ${expected} STEADI ref for age ${band.ageRange} — needs expert verification)`
+            : `${reps} reps in 30s (needs expert verification)`,
       };
     }
 
@@ -409,9 +412,10 @@ export function computePerformanceTestResult(params: {
       const rightKg = num('rightKg');
       const leftKg = num('leftKg');
       const peak = Number(Math.max(rightKg, leftKg).toFixed(1));
+      const { age } = params;
       const band =
-        params.age !== undefined
-          ? GRIP_STRENGTH_NORMS_KG.find((b) => params.age! >= b.minAge && params.age! <= b.maxAge)
+        age !== undefined
+          ? GRIP_STRENGTH_NORMS_KG.find((b) => age >= b.minAge && age <= b.maxAge)
           : undefined;
       const refMean = band
         ? params.gender === 'female'
@@ -422,14 +426,19 @@ export function computePerformanceTestResult(params: {
         computedValue: peak,
         unit: 'kg',
         interpretationAr:
-          refMean !== undefined
-            ? `القبضة العليا ${peak} كغم (متوسط عمر ${band!.ageRange}: ~${refMean} كغم — يتطلب مراجعة مختص)`
+          band && refMean !== undefined
+            ? `القبضة العليا ${peak} كغم (متوسط عمر ${band.ageRange}: ~${refMean} كغم — يتطلب مراجعة مختص)`
             : `القبضة يمين ${rightKg} / يسار ${leftKg} كغم (يتطلب مراجعة مختص)`,
         interpretationEn:
-          refMean !== undefined
-            ? `Peak grip ${peak} kg (age ${band!.ageRange} ref mean ~${refMean} kg — needs expert verification)`
+          band && refMean !== undefined
+            ? `Peak grip ${peak} kg (age ${band.ageRange} ref mean ~${refMean} kg — needs expert verification)`
             : `Grip R ${rightKg} / L ${leftKg} kg (needs expert verification)`,
       };
+    }
+
+    default: {
+      const exhaustiveCheck: never = params.testId;
+      throw new Error(`Unsupported performance test: ${String(exhaustiveCheck)}`);
     }
   }
 }

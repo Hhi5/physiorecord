@@ -35,6 +35,8 @@ export const RecoveredWorkBanner: React.FC<RecoveredWorkBannerProps> = ({
         return bi('مسودة فاتورة', 'Invoice Draft', 'ڕەشنووسی پسووڵە');
       case 'appointment':
         return bi('مسودة موعد', 'Appointment Draft', 'ڕەشنووسی چاوپێکەوتن');
+      default:
+        return bi('مسودة محفوظة', 'Saved Draft', 'ڕەشنووسی پاشەکەوتکراو');
     }
   };
 

@@ -123,8 +123,7 @@ export function isDemoPatient(
 ): boolean {
   if (!patient) return false;
   if (patient.data?.isDemo) return true;
-  if (patient.id && patient.id.startsWith('syn-patient-')) return true;
-  return false;
+  return Boolean(patient.id?.startsWith('syn-patient-'));
 }
 
 const NONE_STRINGS = new Set([

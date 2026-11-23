@@ -594,17 +594,19 @@ export const LockScreen: React.FC = () => {
               dir="ltr"
               className="p-3.5 rounded-2xl bg-surface grid grid-cols-2 sm:grid-cols-4 gap-2 text-center select-all"
             >
-              {recoveryGroups.map((grp, idx) => (
-                <div
-                  key={idx}
-                  className="py-2 px-2 rounded-xl bg-card font-mono text-xs font-bold text-primary whitespace-nowrap flex items-center justify-center gap-1 shadow-2xs"
-                >
-                  <span className="text-xs text-muted-foreground-1 select-none">
-                    #{idx + 1}
-                  </span>
-                  <span>{grp}</span>
-                </div>
-              ))}
+              {recoveryGroups
+                .map((grp, pos) => ({ slotKey: `grp-${pos + 1}-${grp}`, pos, grp }))
+                .map(({ slotKey, pos, grp }) => (
+                  <div
+                    key={slotKey}
+                    className="py-2 px-2 rounded-xl bg-card font-mono text-xs font-bold text-primary whitespace-nowrap flex items-center justify-center gap-1 shadow-2xs"
+                  >
+                    <span className="text-xs text-muted-foreground-1 select-none">
+                      #{pos + 1}
+                    </span>
+                    <span>{grp}</span>
+                  </div>
+                ))}
             </div>
 
             {/* Action Buttons: Copy / Download .txt / Print */}

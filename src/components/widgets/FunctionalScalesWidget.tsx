@@ -161,6 +161,80 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
     };
   }, []);
 
+  const activeSpec =
+    selectedId === 'custom'
+      ? undefined
+      : OUTCOME_INSTRUMENTS[selectedId as keyof typeof OUTCOME_INSTRUMENTS];
+
+  const activeScaleMeta = useMemo(() => {
+    if (selectedId === 'custom' || !activeSpec) {
+      return {
+        code: 'CUSTOM',
+        nameAr: customConfig.nameAr || 'مقياس مخصص',
+        nameEn: customConfig.nameEn || 'Custom Measure',
+        unitAr: customConfig.unitAr || 'نقطة',
+        unitEn: customConfig.unitEn || 'pts',
+        higherIsBetter: customConfig.higherIsBetter,
+      };
+    }
+    return {
+      code: activeSpec.code,
+      nameAr: activeSpec.nameAr,
+      nameEn: activeSpec.nameEn,
+      unitAr: activeSpec.unitAr,
+      unitEn: activeSpec.unitEn,
+      higherIsBetter: activeSpec.higherIsBetter,
+    };
+  }, [selectedId, activeSpec, customConfig]);
+
+  const emitScoreUpdate = (
+    targetId: Exclude<ValidatedScaleId, 'oswestry'>,
+    raw: number,
+    maxDenom: number,
+    extraResponses: Record<string, number> = {},
+    nextPsfs?: Array<{ id: string; activity: string; score0to10: number }>,
+    nextCustomConfig?: CustomOutcomeMeasureConfig,
+    baselineOverride?: number
+  ) => {
+    const cfg = nextCustomConfig || customConfig;
+    const pct = computeScalePercentage(targetId, raw, maxDenom, cfg);
+    const sev = classifyOutcomeSeverity(targetId, raw, pct, cfg);
+    const spec =
+      targetId === 'custom'
+        ? undefined
+        : OUTCOME_INSTRUMENTS[targetId as keyof typeof OUTCOME_INSTRUMENTS];
+
+    onChange({
+      scaleId: targetId,
+      scaleNameAr: targetId === 'custom' || !spec ? cfg.nameAr : spec.nameAr,
+      scaleNameEn: targetId === 'custom' || !spec ? cfg.nameEn : spec.nameEn,
+      responses: { rawScore: raw, ...extraResponses },
+      psfsActivities: nextPsfs ?? value?.psfsActivities,
+      scorePercentage: pct,
+      severityLabelAr: sev.ar,
+      severityLabelEn: sev.en,
+      rawScore: raw,
+      maxScore: targetId === 'custom' ? cfg.maxScore : maxDenom,
+      entryMode:
+        targetId === 'custom'
+          ? 'custom'
+          : spec?.category === 'procedure'
+            ? 'procedure'
+            : 'score_entry',
+      baselineScore:
+        typeof baselineOverride === 'number'
+          ? baselineOverride
+          : baselineInput.trim() !== '' && !Number.isNaN(Number(baselineInput))
+            ? Number(baselineInput)
+            : value?.baselineScore,
+      customMeasureConfig: targetId === 'custom' ? cfg : value?.customMeasureConfig,
+      unitLabelAr: targetId === 'custom' ? cfg.unitAr : spec?.unitAr,
+      unitLabelEn: targetId === 'custom' ? cfg.unitEn : spec?.unitEn,
+      officialSourceUrl: spec?.officialSourceUrl,
+      history: value?.history || [],
+    });
+  };
+
   const stopTimer = (applyToRaw: boolean) => {
     if (timerIntervalRef.current !== null) {
       window.clearInterval(timerIntervalRef.current);
@@ -207,80 +281,6 @@ export const FunctionalScalesWidget: React.FC<FunctionalScalesWidgetProps> = ({
     }
     setTimerRunning(false);
     setElapsedSeconds(0);
-  };
-
-  const activeSpec =
-    selectedId === 'custom'
-      ? undefined
-      : OUTCOME_INSTRUMENTS[selectedId as keyof typeof OUTCOME_INSTRUMENTS];
-
-  const activeScaleMeta = useMemo(() => {
-    if (selectedId === 'custom') {
-      return {
-        code: 'CUSTOM',
-        nameAr: customConfig.nameAr || 'مقياس مخصص',
-        nameEn: customConfig.nameEn || 'Custom Measure',
-        unitAr: customConfig.unitAr || 'نقطة',
-        unitEn: customConfig.unitEn || 'pts',
-        higherIsBetter: customConfig.higherIsBetter,
-      };
-    }
-    return {
-      code: activeSpec!.code,
-      nameAr: activeSpec!.nameAr,
-      nameEn: activeSpec!.nameEn,
-      unitAr: activeSpec!.unitAr,
-      unitEn: activeSpec!.unitEn,
-      higherIsBetter: activeSpec!.higherIsBetter,
-    };
-  }, [selectedId, activeSpec, customConfig]);
-
-  const emitScoreUpdate = (
-    targetId: Exclude<ValidatedScaleId, 'oswestry'>,
-    raw: number,
-    maxDenom: number,
-    extraResponses: Record<string, number> = {},
-    nextPsfs?: Array<{ id: string; activity: string; score0to10: number }>,
-    nextCustomConfig?: CustomOutcomeMeasureConfig,
-    baselineOverride?: number
-  ) => {
-    const cfg = nextCustomConfig || customConfig;
-    const pct = computeScalePercentage(targetId, raw, maxDenom, cfg);
-    const sev = classifyOutcomeSeverity(targetId, raw, pct, cfg);
-    const spec =
-      targetId === 'custom'
-        ? undefined
-        : OUTCOME_INSTRUMENTS[targetId as keyof typeof OUTCOME_INSTRUMENTS];
-
-    onChange({
-      scaleId: targetId,
-      scaleNameAr: targetId === 'custom' ? cfg.nameAr : spec!.nameAr,
-      scaleNameEn: targetId === 'custom' ? cfg.nameEn : spec!.nameEn,
-      responses: { rawScore: raw, ...extraResponses },
-      psfsActivities: nextPsfs ?? value?.psfsActivities,
-      scorePercentage: pct,
-      severityLabelAr: sev.ar,
-      severityLabelEn: sev.en,
-      rawScore: raw,
-      maxScore: targetId === 'custom' ? cfg.maxScore : maxDenom,
-      entryMode:
-        targetId === 'custom'
-          ? 'custom'
-          : spec?.category === 'procedure'
-            ? 'procedure'
-            : 'score_entry',
-      baselineScore:
-        typeof baselineOverride === 'number'
-          ? baselineOverride
-          : baselineInput.trim() !== '' && !Number.isNaN(Number(baselineInput))
-            ? Number(baselineInput)
-            : value?.baselineScore,
-      customMeasureConfig: targetId === 'custom' ? cfg : value?.customMeasureConfig,
-      unitLabelAr: targetId === 'custom' ? cfg.unitAr : spec?.unitAr,
-      unitLabelEn: targetId === 'custom' ? cfg.unitEn : spec?.unitEn,
-      officialSourceUrl: spec?.officialSourceUrl,
-      history: value?.history || [],
-    });
   };
 
   const handleTabChange = (nextKey: React.Key) => {

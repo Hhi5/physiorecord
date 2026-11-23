@@ -87,23 +87,21 @@ export function upsertBoundedSessionTimer(
 ): Record<string, number> {
   const cleanId = sessionId.trim();
   const safeSeconds = Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0;
-  const next: Record<string, number> = { ...(existing || {}) };
+  const entries = new Map<string, number>(Object.entries(existing || {}));
 
   if (!cleanId || safeSeconds <= 0) {
-    return next;
+    return Object.fromEntries(entries);
   }
 
-  delete next[cleanId];
-  next[cleanId] = safeSeconds;
+  entries.delete(cleanId);
+  entries.set(cleanId, safeSeconds);
 
-  const keys = Object.keys(next);
-  if (keys.length > MAX_STORED_SESSION_TIMERS) {
-    const excess = keys.length - MAX_STORED_SESSION_TIMERS;
-    for (let i = 0; i < excess; i++) {
-      delete next[keys[i]];
-    }
+  while (entries.size > MAX_STORED_SESSION_TIMERS) {
+    const oldestKey = entries.keys().next().value;
+    if (oldestKey === undefined) break;
+    entries.delete(oldestKey);
   }
-  return next;
+  return Object.fromEntries(entries);
 }
 
 /**
@@ -113,7 +111,7 @@ export function removeSessionTimerEntry(
   existing: Record<string, number> | undefined,
   sessionId: string
 ): Record<string, number> {
-  const next: Record<string, number> = { ...(existing || {}) };
-  delete next[sessionId.trim()];
-  return next;
+  const entries = new Map<string, number>(Object.entries(existing || {}));
+  entries.delete(sessionId.trim());
+  return Object.fromEntries(entries);
 }

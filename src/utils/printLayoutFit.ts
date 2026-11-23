@@ -134,8 +134,8 @@ export function computeFloatingA4Scale({
   const sheetW = A4_WIDTH_PX;
   const sheetH = Math.max(
     A4_HEIGHT_PX,
-    Number.isFinite(contentHeightPx) && (contentHeightPx ?? 0) > 0
-      ? Math.ceil(contentHeightPx!)
+    typeof contentHeightPx === 'number' && Number.isFinite(contentHeightPx) && contentHeightPx > 0
+      ? Math.ceil(contentHeightPx)
       : A4_HEIGHT_PX
   );
 

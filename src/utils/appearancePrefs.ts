@@ -237,8 +237,7 @@ export function detectLowEndHardware(): boolean {
       ? nav.hardwareConcurrency
       : undefined;
   if (mem !== undefined && mem <= 4) return true;
-  if (cores !== undefined && cores <= 2) return true;
-  return false;
+  return cores !== undefined && cores <= 2;
 }
 
 export function resolveReducedEffectsEnabled(

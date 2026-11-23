@@ -658,7 +658,7 @@ export class PhysioRecordDatabase extends Dexie {
               .count();
             if (sessionAddendaCount > 0) {
               throw new PatientHardDeletionBlockedError(
-                `لا يمكن إجراء الحذف المادي النهائي للمريض: توجد ملاحق سريرية مرتبطة بجلسات المريض.`
+                'لا يمكن إجراء الحذف المادي النهائي للمريض: توجد ملاحق سريرية مرتبطة بجلسات المريض.'
               );
             }
             await this.soapNotes.where('sessionId').anyOf(episodeSessionIds).delete();
@@ -731,7 +731,7 @@ export class PhysioRecordDatabase extends Dexie {
    * and episode-linked invoices/payments atomically.
    * Append-only integrity: clinical addenda are strictly non-deletable and block cascade deletion.
    */
-  async deleteEpisodeCascade(episodeId: string): Promise<void> {
+  deleteEpisodeCascade(episodeId: string): Promise<void> {
     return this.transaction(
       'rw',
       [
@@ -796,7 +796,7 @@ export class PhysioRecordDatabase extends Dexie {
    * Cascade delete a single draft session and its child draft SOAP note atomically.
    * Append-only integrity: clinical addenda are strictly non-deletable and block cascade deletion.
    */
-  async deleteSessionCascade(sessionId: string): Promise<void> {
+  deleteSessionCascade(sessionId: string): Promise<void> {
     return this.transaction('rw', [this.sessions, this.soapNotes, this.clinicalAddenda], async () => {
       const addendaCount = await this.clinicalAddenda.where('sessionId').equals(sessionId).count();
       if (addendaCount > 0) {

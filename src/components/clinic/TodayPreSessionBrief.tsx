@@ -272,7 +272,7 @@ export const TodayPreSessionBrief: React.FC<TodayPreSessionBriefProps> = ({
     if (isMeaningfulClinicalAlertText(pData.redFlags)) {
       alertLines.push({
         label: bi('علامة خطر:', 'Red Flag:', 'ئاڵای سوور:'),
-        text: pData.redFlags!.trim(),
+        text: (pData.redFlags ?? '').trim(),
         tone: 'danger',
       });
     }
@@ -286,14 +286,14 @@ export const TodayPreSessionBrief: React.FC<TodayPreSessionBriefProps> = ({
     if (isMeaningfulClinicalAlertText(pData.contraindications)) {
       alertLines.push({
         label: bi('ممنوعات:', 'Contraindication:', 'قەدەغەکراو:'),
-        text: pData.contraindications!.trim(),
+        text: (pData.contraindications ?? '').trim(),
         tone: 'danger',
       });
     }
     if (isMeaningfulClinicalAlertText(pData.precautions)) {
       alertLines.push({
         label: bi('محاذير:', 'Precaution:', 'وریایی:'),
-        text: pData.precautions!.trim(),
+        text: (pData.precautions ?? '').trim(),
         tone: 'warn',
       });
     }
@@ -389,9 +389,9 @@ export const TodayPreSessionBrief: React.FC<TodayPreSessionBriefProps> = ({
         {/* High-Signal Red Flag / Precaution Text (Color-coded text only, zero colored boxes) */}
         {alertLines.length > 0 && (
           <div className="space-y-1.5 py-0.5 text-xs">
-            {alertLines.slice(0, 3).map((al, idx) => (
+            {alertLines.slice(0, 3).map((al) => (
               <div
-                key={idx}
+                key={`${al.tone}:${al.label}:${al.text}`}
                 className={`flex items-start gap-1.5 ${
                   al.tone === 'danger'
                     ? 'text-rose-700 dark:text-rose-400'
@@ -625,9 +625,9 @@ export const TodayPreSessionBrief: React.FC<TodayPreSessionBriefProps> = ({
       {/* 3. Safety & Red Flags Strip (Color-coded text only, zero colored boxes) */}
       {alertLines.length > 0 && (
         <div className="space-y-1.5 py-0.5">
-          {alertLines.map((al, idx) => (
+          {alertLines.map((al) => (
             <div
-              key={idx}
+              key={`${al.tone}:${al.label}:${al.text}`}
               className={`flex items-start gap-2 text-xs ${
                 al.tone === 'danger'
                   ? 'text-rose-700 dark:text-rose-400'

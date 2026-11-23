@@ -1515,7 +1515,9 @@ export const IraqiFinancialLedgerView: React.FC<IraqiFinancialLedgerViewProps> =
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                openCollectPaymentForInvoice(group.firstOpenDebtInvoice!);
+                                if (group.firstOpenDebtInvoice) {
+                                  openCollectPaymentForInvoice(group.firstOpenDebtInvoice);
+                                }
                               }}
                               className="compact-btn h-8 px-2.5 rounded-xl bg-primary/10 hover:bg-primary hover:text-primary-foreground text-primary text-xs font-bold inline-flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
                             >
@@ -2263,7 +2265,7 @@ export const IraqiFinancialLedgerView: React.FC<IraqiFinancialLedgerViewProps> =
                             </div>
                             <div>
                               <label htmlFor="fin-inv-fx-rate" className="text-xs font-semibold text-foreground block mb-1">
-                                {bi(`سعر الصرف (1 ${invPayCurrency}):`, `FX Rate:`, `نرخی گۆڕینەوە:`)}
+                                {bi(`سعر الصرف (1 ${invPayCurrency}):`, 'FX Rate:', 'نرخی گۆڕینەوە:')}
                               </label>
                               <input
                                 id="fin-inv-fx-rate"
@@ -2809,7 +2811,7 @@ export const IraqiFinancialLedgerView: React.FC<IraqiFinancialLedgerViewProps> =
                       </div>
                       <div>
                         <label htmlFor="fin-pay-fx-rate" className="text-xs font-semibold text-foreground block mb-1">
-                          {bi(`سعر الصرف (1 ${paymentCurrency}):`, `FX Rate:`, `نرخی گۆڕینەوە:`)}
+                          {bi(`سعر الصرف (1 ${paymentCurrency}):`, 'FX Rate:', 'نرخی گۆڕینەوە:')}
                         </label>
                         <input
                           id="fin-pay-fx-rate"

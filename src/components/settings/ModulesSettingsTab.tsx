@@ -152,7 +152,9 @@ export const ModulesSettingsTab: React.FC<ModulesSettingsTabProps> = ({
     const tag = language === 'en' ? 'en-US' : language === 'ckb' ? 'ckb-IQ' : 'ar-IQ';
     void detectSpeechDictationSupport(tag, allowCloudSpeechOptIn)
       .then(setSpeechCheckStatus)
-      .catch(() => {});
+      .catch(() => {
+        /* Speech capability detection is best-effort */
+      });
   }, [isModalOpen, isActiveTab, language, allowCloudSpeechOptIn]);
 
   const coreActiveCount = [

@@ -65,14 +65,11 @@ export function isDevOrPreviewHostname(hostname: string): boolean {
     return true;
   }
   // Private LAN IPv4 addresses used for local clinic testing
-  if (
+  return (
     /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) ||
     /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
     /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host)
-  ) {
-    return true;
-  }
-  return false;
+  );
 }
 
 export function detectDesktopOs(userAgent: string): 'windows' | 'macos' | 'linux' | 'other' {

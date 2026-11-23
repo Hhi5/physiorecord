@@ -813,6 +813,7 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
               const isPinned = pinnedIds.includes(patient.id);
               const metrics = patientMetricsMap.get(patient.id);
               const rowMenuOpen = openRowMenuId === patient.id;
+              const completionMeta = completionMetaByPatient.get(patient.id);
 
               return (
                 <div
@@ -885,18 +886,14 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                           </span>
                         )}
                         <span className="text-muted-foreground-1 truncate max-w-[200px] sm:max-w-md">
-                          {completionMetaByPatient.get(patient.id)?.isCompleted &&
-                          completionMetaByPatient.get(patient.id)?.dischargeSummary
-                            ? localizeDemoText(
-                                completionMetaByPatient.get(patient.id)!.dischargeSummary,
-                                language
-                              )
+                          {completionMeta?.isCompleted && completionMeta.dischargeSummary
+                            ? localizeDemoText(completionMeta.dischargeSummary, language)
                             : localizeDemoText(p.medicalHistory, language) ||
                               localizeDemoText(p.occupation, language) ||
                               bi('ملف سريري نشط', 'Active clinical chart', 'دۆسیەی چالاک')}
                         </span>
 
-                        {completionMetaByPatient.get(patient.id)?.isCompleted && (
+                        {completionMeta?.isCompleted && (
                           <span
                             data-testid={`patient-completed-badge-${patient.id}`}
                             className="text-emerald-700 dark:text-emerald-400 font-extrabold inline-flex items-center gap-1 shrink-0"
@@ -904,24 +901,19 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                             <Award className="size-3.5 shrink-0" />
                             <span>
                               {bi('أنهى العلاج', 'Completed', 'چارەسەر تەواوبوو')}
-                              {completionMetaByPatient.get(patient.id)?.dischargeDate
-                                ? ` · ${formatDateDDMMYYYY(
-                                    completionMetaByPatient.get(patient.id)!.dischargeDate!
-                                  )}`
+                              {completionMeta.dischargeDate
+                                ? ` · ${formatDateDDMMYYYY(completionMeta.dischargeDate)}`
                                 : ''}
                             </span>
                           </span>
                         )}
 
-                        {showTeamOversight &&
-                          completionMetaByPatient.get(patient.id)?.assignedTherapistName && (
-                            <span className="text-primary font-bold inline-flex items-center gap-1 shrink-0">
-                              <Users className="size-3 shrink-0" />
-                              <span>
-                                {completionMetaByPatient.get(patient.id)!.assignedTherapistName}
-                              </span>
-                            </span>
-                          )}
+                        {showTeamOversight && completionMeta?.assignedTherapistName && (
+                          <span className="text-primary font-bold inline-flex items-center gap-1 shrink-0">
+                            <Users className="size-3 shrink-0" />
+                            <span>{completionMeta.assignedTherapistName}</span>
+                          </span>
+                        )}
 
                         {hasRedFlags && (
                           <span
@@ -945,11 +937,11 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                           </span>
                         )}
 
-                        {(metrics?.debtIQD ?? 0) > 0 && (
+                        {metrics && metrics.debtIQD > 0 && (
                           <span className="text-orange-600 dark:text-orange-400 font-extrabold inline-flex items-center gap-1 shrink-0 tabular-nums">
                             <Wallet className="size-3.5 shrink-0" />
                             <span>{bi('ذمة', 'Due', 'ماوە')}</span>
-                            <Money amount={metrics!.debtIQD} />
+                            <Money amount={metrics.debtIQD} />
                           </span>
                         )}
                       </div>

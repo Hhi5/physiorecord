@@ -410,7 +410,11 @@ export const GuidedTourModal: React.FC<GuidedTourModalProps> = ({
                       <div className="pt-1">
                         <button
                           type="button"
-                          onClick={() => void handleRequestSectionTour(topic.tourId!)}
+                          onClick={() => {
+                            if (topic.tourId) {
+                              void handleRequestSectionTour(topic.tourId);
+                            }
+                          }}
                           className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1.5 cursor-pointer"
                         >
                           <Compass className="size-3.5" />

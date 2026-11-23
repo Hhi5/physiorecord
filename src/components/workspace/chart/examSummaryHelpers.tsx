@@ -73,6 +73,8 @@ export function formatBodySide(lat: BodyLaterality, bi: BiFn): string {
       return bi('محوري', 'Mid', 'تەوەرەیی');
     case 'bilateral':
       return 'R/L';
+    default:
+      return '';
   }
 }
 
@@ -337,7 +339,7 @@ export function buildClinicalExamSummary(
       const hasTug = gp?.tugSeconds !== null && gp?.tugSeconds !== undefined;
       const hasPattern = Boolean(gp && (gp.gaitPattern !== 'normal' || gp.assistiveDevice !== 'none'));
       const parts: string[] = [];
-      if (hasTug) parts.push(`TUG: ${gp!.tugSeconds} ${bi('ث', 's', 'چ')}`);
+      if (gp && hasTug) parts.push(`TUG: ${gp.tugSeconds} ${bi('ث', 's', 'چ')}`);
       if (gp && gp.gaitPattern !== 'normal') {
         parts.push(bi(`النمط: ${gp.gaitPattern}`, `Gait: ${gp.gaitPattern}`));
       }

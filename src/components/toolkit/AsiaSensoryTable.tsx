@@ -121,11 +121,13 @@ export const AsiaSensoryTable: React.FC<AsiaSensoryTableProps> = ({
   ) => {
     if (readOnly) return;
     const key = getAsiaSensoryCellKey(rootLevel, side, modality);
-    const nextTable: Record<string, SensoryTableModalityGrade> = { ...resolvedTable };
-    if (nextTable[key] === grade) {
-      delete nextTable[key];
+    let nextTable: Record<string, SensoryTableModalityGrade>;
+    if (resolvedTable[key] === grade) {
+      const { [key]: _removed, ...rest } = resolvedTable;
+      void _removed;
+      nextTable = rest;
     } else {
-      nextTable[key] = grade;
+      nextTable = { ...resolvedTable, [key]: grade };
     }
     onChange(buildSyncedDermatomes(nextTable), nextTable);
   };
@@ -144,13 +146,16 @@ export const AsiaSensoryTable: React.FC<AsiaSensoryTableProps> = ({
 
   const handleClearVisible = () => {
     if (readOnly) return;
-    const nextTable: Record<string, SensoryTableModalityGrade> = { ...resolvedTable };
+    const keysToRemove = new Set<string>();
     for (const row of filteredRows) {
-      delete nextTable[getAsiaSensoryCellKey(row.rootLevel, 'R', 'LT')];
-      delete nextTable[getAsiaSensoryCellKey(row.rootLevel, 'R', 'PP')];
-      delete nextTable[getAsiaSensoryCellKey(row.rootLevel, 'L', 'LT')];
-      delete nextTable[getAsiaSensoryCellKey(row.rootLevel, 'L', 'PP')];
+      keysToRemove.add(getAsiaSensoryCellKey(row.rootLevel, 'R', 'LT'));
+      keysToRemove.add(getAsiaSensoryCellKey(row.rootLevel, 'R', 'PP'));
+      keysToRemove.add(getAsiaSensoryCellKey(row.rootLevel, 'L', 'LT'));
+      keysToRemove.add(getAsiaSensoryCellKey(row.rootLevel, 'L', 'PP'));
     }
+    const nextTable: Record<string, SensoryTableModalityGrade> = Object.fromEntries(
+      Object.entries(resolvedTable).filter(([entryKey]) => !keysToRemove.has(entryKey))
+    );
     onChange(buildSyncedDermatomes(nextTable), nextTable);
   };
 
