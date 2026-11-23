@@ -70,6 +70,8 @@
   },
   "overrides": {
     "@grpc/grpc-js": "^1.14.7",
-    "yargs": "^18.2.0"
+    "@grpc/proto-loader": {
+      "yargs": "^18.2.0"
+    }
   }
 }
