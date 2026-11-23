@@ -458,7 +458,7 @@ test.describe('Phase A — Crash Resilience, Auto-Lock Warning, Sandbox Drill, L
       await expect(
         page
           .locator(
-            'button[aria-label*="العودة لدليل المرضى"], button[aria-label*="Back to patient directory"]'
+            'button[aria-label*="العودة إلى سجل المرضى"], button[aria-label*="العودة لدليل المرضى"], button[aria-label*="Back to patient"]'
           )
           .first()
       ).toBeVisible({ timeout: 15_000 });

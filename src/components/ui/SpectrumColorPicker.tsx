@@ -53,7 +53,7 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
 function rgbToHex(r: number, g: number, b: number): string {
   const clampByte = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
   const hexBody = [clampByte(r), clampByte(g), clampByte(b)]
-    .map((n) => n.toString(16).padStart(2, '0').toUpperCase())
+    .map((channel) => channel.toString(16).padStart(2, '0').toUpperCase())
     .join('');
   return `#${hexBody}`;
 }

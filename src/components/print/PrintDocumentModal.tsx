@@ -1523,14 +1523,20 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                         {isDocAr ? 'قياسات المدى الحركي المسجلة (ROM):' : 'Measured Range of Motion (ROM):'}
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 print:gap-1">
-                        {(latestSnap?.romSummary || baselineSnap.romSummary).slice(0, 8).map((r) => (
+                        {(latestSnap?.romSummary || baselineSnap.romSummary).slice(0, 8).map((romEntry) => (
                           <div
-                            key={`${r.canonicalKey || r.jointMovementKey || r.labelEn || r.labelAr}-${r.aromDegrees ?? ''}`}
+                            key={`${romEntry.canonicalKey || romEntry.jointMovementKey || romEntry.labelEn || romEntry.labelAr}-${romEntry.aromDegrees ?? ''}`}
                             className="px-2.5 py-1 print:py-0.5 bg-slate-50 border border-slate-300 flex justify-between"
                           >
-                            <span>{isDocAr ? r.labelAr || r.labelEn : r.labelEn || r.labelAr}</span>
+                            <span>
+                              {isDocAr
+                                ? romEntry.labelAr || romEntry.labelEn
+                                : romEntry.labelEn || romEntry.labelAr}
+                            </span>
                             <span className="font-mono font-bold">
-                              <bdi dir="ltr">{r.aromDegrees !== null ? `${r.aromDegrees}°` : '—'}</bdi>
+                              <bdi dir="ltr">
+                                {romEntry.aromDegrees !== null ? `${romEntry.aromDegrees}°` : '—'}
+                              </bdi>
                             </span>
                           </div>
                         ))}

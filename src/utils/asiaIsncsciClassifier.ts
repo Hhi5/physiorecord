@@ -472,8 +472,11 @@ function resolveNli(
   levels: [LevelResolution, LevelResolution, LevelResolution, LevelResolution]
 ): LevelResolution {
   const determinedIndices = levels
-    .filter((l): l is LevelResolution & { idx: number } => l.status === 'determined' && l.idx !== null)
-    .map((l) => l.idx);
+    .filter(
+      (level): level is LevelResolution & { idx: number } =>
+        level.status === 'determined' && level.idx !== null
+    )
+    .map((level) => level.idx);
   const undetermined = levels.filter((l) => l.status !== 'determined');
 
   if (undetermined.length === 0) {

@@ -335,16 +335,16 @@ export const DischargeEpisodeModal: React.FC<DischargeEpisodeModalProps> = ({
               journey.romHighlights.length > 0 ||
               journey.totalGoalsCount > 0) && (
               <div className="pt-2 border-t border-emerald-500/15 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                {journey.outcomeScales.map((sc) => (
+                {journey.outcomeScales.map((scale) => (
                   <div
-                    key={sc.scaleName}
+                    key={scale.scaleName}
                     className="px-2.5 py-2 rounded-xl bg-card/90 border border-card-line flex items-center justify-between gap-2"
                   >
-                    <span className="font-bold text-foreground truncate">{sc.scaleName}</span>
+                    <span className="font-bold text-foreground truncate">{scale.scaleName}</span>
                     <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 shrink-0">
-                      {sc.firstScore}
-                      {sc.unit || ''} → {sc.latestScore}
-                      {sc.unit || ''}
+                      {scale.firstScore}
+                      {scale.unit || ''} → {scale.latestScore}
+                      {scale.unit || ''}
                     </span>
                   </div>
                 ))}

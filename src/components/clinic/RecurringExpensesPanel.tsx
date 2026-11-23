@@ -199,11 +199,9 @@ export const RecurringExpensesPanel: React.FC<RecurringExpensesPanelProps> = ({
     });
     onExpensesUpdated(updatedExpenses);
     setTemplates(ClinicOperationsService.getRecurringExpenseTemplates());
-    setDrafts((prev) => {
-      const { [tplId]: _removed, ...next } = prev;
-      void _removed;
-      return next;
-    });
+    setDrafts((prev) =>
+      Object.fromEntries(Object.entries(prev).filter(([entryId]) => entryId !== tplId))
+    );
     setFormNotice(null);
   };
 

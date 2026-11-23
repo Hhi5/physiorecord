@@ -578,7 +578,7 @@ export const CsvOnboardingModal: React.FC<CsvOnboardingModalProps> = ({
               {headers.map((header, colIndex) => {
                 const headerOccurrence = headers
                   .slice(0, colIndex)
-                  .filter((h) => h === header).length;
+                  .filter((colHeader) => colHeader === header).length;
                 return (
                 <div
                   key={`${header}-${headerOccurrence}`}

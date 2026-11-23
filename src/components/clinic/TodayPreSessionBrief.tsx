@@ -389,18 +389,18 @@ export const TodayPreSessionBrief: React.FC<TodayPreSessionBriefProps> = ({
         {/* High-Signal Red Flag / Precaution Text (Color-coded text only, zero colored boxes) */}
         {alertLines.length > 0 && (
           <div className="space-y-1.5 py-0.5 text-xs">
-            {alertLines.slice(0, 3).map((al) => (
+            {alertLines.slice(0, 3).map((alertLine) => (
               <div
-                key={`${al.tone}:${al.label}:${al.text}`}
+                key={`${alertLine.tone}:${alertLine.label}:${alertLine.text}`}
                 className={`flex items-start gap-1.5 ${
-                  al.tone === 'danger'
+                  alertLine.tone === 'danger'
                     ? 'text-rose-700 dark:text-rose-400'
                     : 'text-amber-700 dark:text-amber-300'
                 }`}
               >
                 <AlertTriangle className="size-3.5 shrink-0 mt-0.5" />
                 <span className="leading-snug line-clamp-2">
-                  <strong className="font-extrabold">{al.label}</strong> {al.text}
+                  <strong className="font-extrabold">{alertLine.label}</strong> {alertLine.text}
                 </span>
               </div>
             ))}
@@ -625,18 +625,18 @@ export const TodayPreSessionBrief: React.FC<TodayPreSessionBriefProps> = ({
       {/* 3. Safety & Red Flags Strip (Color-coded text only, zero colored boxes) */}
       {alertLines.length > 0 && (
         <div className="space-y-1.5 py-0.5">
-          {alertLines.map((al) => (
+          {alertLines.map((alertLine) => (
             <div
-              key={`${al.tone}:${al.label}:${al.text}`}
+              key={`${alertLine.tone}:${alertLine.label}:${alertLine.text}`}
               className={`flex items-start gap-2 text-xs ${
-                al.tone === 'danger'
+                alertLine.tone === 'danger'
                   ? 'text-rose-700 dark:text-rose-400'
                   : 'text-amber-700 dark:text-amber-300'
               }`}
             >
               <AlertTriangle className="size-4 shrink-0 mt-0.5" />
               <span className="leading-relaxed">
-                <strong className="font-extrabold">{al.label}</strong> {al.text}
+                <strong className="font-extrabold">{alertLine.label}</strong> {alertLine.text}
               </span>
             </div>
           ))}

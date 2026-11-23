@@ -243,15 +243,15 @@ export const PhotoMeasurementStudioModal: React.FC<PhotoMeasurementStudioModalPr
   useEffect(() => {
     if (!isOpen || !attachment) return;
     setCurrentAttachment(attachment);
-    const w = attachment.widthPx && attachment.widthPx > 16 ? attachment.widthPx : 800;
-    const h = attachment.heightPx && attachment.heightPx > 16 ? attachment.heightPx : 600;
+    const initWidth = attachment.widthPx && attachment.widthPx > 16 ? attachment.widthPx : 800;
+    const initHeight = attachment.heightPx && attachment.heightPx > 16 ? attachment.heightPx : 600;
 
     if (attachment.annotations) {
       setState(attachment.annotations);
       setSavedAnnotations(attachment.annotations);
       lastCommittedRef.current = attachment.annotations;
     } else {
-      const initial = buildInitialAnnotationState(starterLang, w, h);
+      const initial = buildInitialAnnotationState(starterLang, initWidth, initHeight);
       setState(initial);
       setSavedAnnotations(null);
       lastCommittedRef.current = initial;

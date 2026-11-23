@@ -937,11 +937,11 @@ export const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                           </span>
                         )}
 
-                        {metrics && metrics.debtIQD > 0 && (
+                        {(metrics?.debtIQD ?? 0) > 0 && (
                           <span className="text-orange-600 dark:text-orange-400 font-extrabold inline-flex items-center gap-1 shrink-0 tabular-nums">
                             <Wallet className="size-3.5 shrink-0" />
                             <span>{bi('ذمة', 'Due', 'ماوە')}</span>
-                            <Money amount={metrics.debtIQD} />
+                            <Money amount={metrics?.debtIQD ?? 0} />
                           </span>
                         )}
                       </div>

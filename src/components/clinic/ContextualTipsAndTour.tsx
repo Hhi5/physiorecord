@@ -412,7 +412,7 @@ export const GuidedTourModal: React.FC<GuidedTourModalProps> = ({
                           type="button"
                           onClick={() => {
                             if (topic.tourId) {
-                              void handleRequestSectionTour(topic.tourId);
+                              handleRequestSectionTour(topic.tourId);
                             }
                           }}
                           className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1.5 cursor-pointer"

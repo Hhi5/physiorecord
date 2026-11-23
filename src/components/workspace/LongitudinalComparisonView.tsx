@@ -1628,12 +1628,12 @@ export const LongitudinalComparisonView: React.FC<LongitudinalComparisonViewProp
                                   </div>
                                 )}
                               </td>
-                              {row.milestoneValues.slice(0, snapshots.length).map((mv) => (
+                              {row.milestoneValues.slice(0, snapshots.length).map((milestone) => (
                                 <td
-                                  key={`${row.id}-${mv.label}-${mv.date ?? ''}`}
+                                  key={`${row.id}-${milestone.label}-${milestone.date ?? ''}`}
                                   className="py-3 px-4 font-mono text-muted-foreground-2"
                                 >
-                                  {mv.valueDisplay}
+                                  {milestone.valueDisplay}
                                 </td>
                               ))}
                               <td className="py-3 px-4 font-mono font-bold text-primary bg-primary/5">

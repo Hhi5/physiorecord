@@ -366,7 +366,9 @@ export function computePerformanceTestResult(params: {
       const { age } = params;
       const band =
         age !== undefined
-          ? CHAIR_STAND_30S_CUTOFFS.find((b) => age >= b.minAge && age <= b.maxAge)
+          ? CHAIR_STAND_30S_CUTOFFS.find(
+              (bandEntry) => age >= bandEntry.minAge && age <= bandEntry.maxAge
+            )
           : undefined;
       const expected = band
         ? params.gender === 'female'
@@ -415,7 +417,9 @@ export function computePerformanceTestResult(params: {
       const { age } = params;
       const band =
         age !== undefined
-          ? GRIP_STRENGTH_NORMS_KG.find((b) => age >= b.minAge && age <= b.maxAge)
+          ? GRIP_STRENGTH_NORMS_KG.find(
+              (bandEntry) => age >= bandEntry.minAge && age <= bandEntry.maxAge
+            )
           : undefined;
       const refMean = band
         ? params.gender === 'female'

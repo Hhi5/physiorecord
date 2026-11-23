@@ -180,7 +180,7 @@ export const CustomWidgetStudioModal: React.FC<CustomWidgetStudioModalProps> = (
   if (!isOpen) return null;
 
   const handleCopyPrompt = () => {
-    void navigator.clipboard?.writeText?.(AI_PROMPT_TEMPLATE).catch(() => {
+    navigator.clipboard?.writeText?.(AI_PROMPT_TEMPLATE).catch(() => {
       /* Clipboard permission may be denied in restricted contexts */
     });
     setCopiedPrompt(true);

@@ -121,14 +121,10 @@ export const AsiaSensoryTable: React.FC<AsiaSensoryTableProps> = ({
   ) => {
     if (readOnly) return;
     const key = getAsiaSensoryCellKey(rootLevel, side, modality);
-    let nextTable: Record<string, SensoryTableModalityGrade>;
-    if (resolvedTable[key] === grade) {
-      const { [key]: _removed, ...rest } = resolvedTable;
-      void _removed;
-      nextTable = rest;
-    } else {
-      nextTable = { ...resolvedTable, [key]: grade };
-    }
+    const nextTable: Record<string, SensoryTableModalityGrade> =
+      resolvedTable[key] === grade
+        ? Object.fromEntries(Object.entries(resolvedTable).filter(([entryKey]) => entryKey !== key))
+        : { ...resolvedTable, [key]: grade };
     onChange(buildSyncedDermatomes(nextTable), nextTable);
   };
 
