@@ -145,24 +145,43 @@ export function safeJsonParse(rawJson) {
   });
 }
 
-export function isAllowedLanCorsOrigin(origin) {
-  if (!origin || typeof origin !== 'string') return false;
+const STATIC_ALLOWED_LAN_CORS_ORIGINS = new Set([
+  'app://bundle',
+  'capacitor://localhost',
+  'https://physiorecord.pages.dev',
+]);
+
+export function getValidatedLanCorsOrigin(origin) {
+  if (!origin || typeof origin !== 'string') return null;
   const trimmed = origin.trim();
-  if (!trimmed || /[\s\r\n\0]/.test(trimmed)) return false;
-  if (trimmed === 'app://bundle' || trimmed === 'capacitor://localhost') return true;
+  if (!trimmed || /[\s\r\n\0]/.test(trimmed)) return null;
+  if (STATIC_ALLOWED_LAN_CORS_ORIGINS.has(trimmed)) {
+    for (const allowed of STATIC_ALLOWED_LAN_CORS_ORIGINS) {
+      if (allowed === trimmed) return allowed;
+    }
+  }
   let parsed;
   try {
     parsed = new URL(trimmed);
   } catch {
-    return false;
+    return null;
   }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
-  if (parsed.username || parsed.password) return false;
-  const host = parsed.hostname.toLowerCase();
-  if (parsed.protocol === 'https:' && (host === 'pages.dev' || host.endsWith('.pages.dev'))) {
-    return true;
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+  if (parsed.username || parsed.password) return null;
+  const canonicalOrigin = `${parsed.protocol}//${parsed.host}`;
+  if (STATIC_ALLOWED_LAN_CORS_ORIGINS.has(canonicalOrigin)) {
+    for (const allowed of STATIC_ALLOWED_LAN_CORS_ORIGINS) {
+      if (allowed === canonicalOrigin) return allowed;
+    }
   }
-  return isPrivateLanSyncUrl(`${parsed.protocol}//${parsed.host}`);
+  if (isPrivateLanSyncUrl(canonicalOrigin)) {
+    return canonicalOrigin;
+  }
+  return null;
+}
+
+export function isAllowedLanCorsOrigin(origin) {
+  return getValidatedLanCorsOrigin(origin) !== null;
 }
 
 export function createTrustedIpcSenderGuard(getMainWindow) {

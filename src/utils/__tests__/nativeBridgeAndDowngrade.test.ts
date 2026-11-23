@@ -196,7 +196,7 @@ describe('Multi-Platform Native Bridge, Version Sync & Schema Downgrade Guard', 
   it('routes Android Google Drive OAuth to native loopback bridge and blocks broken Firebase popup', async () => {
     const store = new Map<string, string>();
     const startGoogleDriveOAuthMock = vi.fn().mockResolvedValue({
-      accessToken: 'ya29.test-native-token',
+      accessToken: 'mock-oauth-native-token',
       email: 'clinic@example.com',
       displayName: 'Clinic PT',
       photoURL: '',
@@ -257,7 +257,7 @@ describe('Multi-Platform Native Bridge, Version Sync & Schema Downgrade Guard', 
   it('routes Windows Electron Desktop Google Drive OAuth and API calls through Main-Process IPC (preserving connect-src none)', async () => {
     const store = new Map<string, string>();
     const startOAuthMock = vi.fn().mockResolvedValue({
-      accessToken: 'ya29.desktop-native-token',
+      accessToken: 'mock-oauth-desktop-token',
       email: 'desktop-clinic@example.com',
       displayName: 'Clinic PC',
       photoURL: '',
@@ -301,7 +301,7 @@ describe('Multi-Platform Native Bridge, Version Sync & Schema Downgrade Guard', 
     expect(folderId).toBe('folder_1234567890');
     expect(driveApiMock).toHaveBeenCalledTimes(1);
     expect(driveApiMock.mock.calls[0][0].headers.Authorization).toBe(
-      'Bearer ya29.desktop-native-token'
+      'Bearer mock-oauth-desktop-token'
     );
 
     await signOutGoogleDrive();
@@ -767,5 +767,32 @@ describe('updateSafety & Android Release Packaging Guards', () => {
       expect(tag).toMatch(/\bdomain="[^"]+"/);
       expect(tag).toMatch(/\bpath="[^"]+"/);
     }
+
+    const manifestPath = path.join(
+      process.cwd(),
+      'android',
+      'app',
+      'src',
+      'main',
+      'AndroidManifest.xml'
+    );
+    const manifestXml = fs.readFileSync(manifestPath, 'utf8');
+    expect(manifestXml).toContain('android:networkSecurityConfig="@xml/network_security_config"');
+    expect(manifestXml).toContain('android:permission="android.permission.MANAGE_DOCUMENTS"');
+    expect(manifestXml).toContain('android:usesCleartextTraffic="false"');
+
+    const netSecPath = path.join(
+      process.cwd(),
+      'android',
+      'app',
+      'src',
+      'main',
+      'res',
+      'xml',
+      'network_security_config.xml'
+    );
+    const netSecXml = fs.readFileSync(netSecPath, 'utf8');
+    expect(netSecXml).toContain('<base-config cleartextTrafficPermitted="false">');
+    expect(netSecXml).toContain('<certificates src="system" />');
   });
 });

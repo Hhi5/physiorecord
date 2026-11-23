@@ -131,6 +131,21 @@ public class PhysioRecordNativePlugin extends Plugin {
         startActivityForResult(call, intent, "handleSaveDocumentResult");
     }
 
+    private boolean isSafeSafContentUri(Uri uri) {
+        if (uri == null || !"content".equalsIgnoreCase(uri.getScheme())) {
+            return false;
+        }
+        String authority = uri.getAuthority() != null ? uri.getAuthority().toLowerCase() : "";
+        String pkgName = getContext() != null && getContext().getPackageName() != null
+                ? getContext().getPackageName().toLowerCase()
+                : "org.physiorecord.app";
+        if (authority.startsWith(pkgName)) {
+            return false;
+        }
+        String path = uri.getPath() != null ? uri.getPath() : "";
+        return !path.contains("..") && !path.startsWith("/data/");
+    }
+
     @ActivityCallback
     private void handleSaveDocumentResult(PluginCall call, ActivityResult result) {
         if (call == null) {
@@ -146,6 +161,10 @@ public class PhysioRecordNativePlugin extends Plugin {
         }
 
         Uri uri = result.getData().getData();
+        if (!isSafeSafContentUri(uri)) {
+            call.reject("Blocked unsafe or non-content SAF URI.");
+            return;
+        }
         String content = call.getString("content", "");
         String filename = call.getString("filename", "PhysioRecord_Export.ptbackup");
         byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
@@ -215,6 +234,10 @@ public class PhysioRecordNativePlugin extends Plugin {
         }
 
         Uri uri = result.getData().getData();
+        if (!isSafeSafContentUri(uri)) {
+            call.reject("Blocked unsafe or non-content SAF URI.");
+            return;
+        }
         String displayName = "sync.ptsync.json";
         try (Cursor cursor = getContext().getContentResolver().query(uri, null, null, null, null)) {
             if (cursor != null && cursor.moveToFirst()) {
@@ -540,6 +563,9 @@ public class PhysioRecordNativePlugin extends Plugin {
             final java.util.concurrent.atomic.AtomicBoolean launchFailed =
                     new java.util.concurrent.atomic.AtomicBoolean(false);
             try {
+                // RFC 8252 Section 7.3 loopback redirect listener (127.0.0.1 only) for native PKCE OAuth;
+                // token exchange itself runs over HTTPS to https://oauth2.googleapis.com/token.
+                // nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
                 final ServerSocket boundServer = new ServerSocket(0, 8, InetAddress.getByName("127.0.0.1"));
                 server = boundServer;
                 server.setSoTimeout(180_000);
@@ -587,6 +613,9 @@ public class PhysioRecordNativePlugin extends Plugin {
 
                 while (authCode == null && oauthError == null && System.currentTimeMillis() < deadline) {
                     try (Socket client = server.accept()) {
+                        if (client.getInetAddress() == null || !client.getInetAddress().isLoopbackAddress()) {
+                            continue;
+                        }
                         client.setSoTimeout(5000);
                         BufferedReader reader = new BufferedReader(
                                 new InputStreamReader(client.getInputStream(), StandardCharsets.UTF_8)

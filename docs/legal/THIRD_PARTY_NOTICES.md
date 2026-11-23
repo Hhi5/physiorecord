@@ -60,11 +60,11 @@ Generated automatically from `package-lock.json` via `npm run check:licenses -- 
 | `@fontsource/jetbrains-mono` | `5.3.0` | `OFL-1.1` | Google Inc. ([repo](https://github.com/fontsource/font-files)) | Permitted |
 | `@grpc/grpc-js` | `1.14.7` | `Apache-2.0` | Google Inc. ([repo](https://github.com/grpc/grpc-node/tree/master/packages/grpc-js)) | Permitted |
 | `@grpc/proto-loader` | `0.7.15` | `Apache-2.0` | Google Inc. ([repo](https://github.com/grpc/grpc-node)) | Permitted |
-| `@grpc/proto-loader` | `0.8.1` | `Apache-2.0` | Upstream Contributors | Permitted |
+| `@grpc/proto-loader` | `0.8.1` | `Apache-2.0` | Google Inc. ([repo](https://github.com/grpc/grpc-node)) | Permitted |
 | `@internationalized/date` | `3.12.4` | `Apache-2.0` | Upstream Contributors ([repo](https://github.com/adobe/react-spectrum/tree/main/packages/@internationalized/date)) | Permitted |
 | `@internationalized/number` | `3.6.9` | `Apache-2.0` | Upstream Contributors ([repo](https://github.com/adobe/react-spectrum)) | Permitted |
 | `@internationalized/string` | `3.2.10` | `Apache-2.0` | Upstream Contributors ([repo](https://github.com/adobe/react-spectrum)) | Permitted |
-| `@js-sdsl/ordered-map` | `4.4.2` | `MIT` | Upstream Contributors | Permitted |
+| `@js-sdsl/ordered-map` | `4.4.2` | `MIT` | ZLY201 ([repo](https://github.com/js-sdsl/js-sdsl)) | Permitted |
 | `@opentelemetry/api` | `1.10.0` | `Apache-2.0` | OpenTelemetry Authors ([repo](open-telemetry/opentelemetry-js)) | Permitted |
 | `@opentelemetry/api-logs` | `0.223.0` | `Apache-2.0` | OpenTelemetry Authors ([repo](open-telemetry/opentelemetry-js)) | Permitted |
 | `@opentelemetry/browser-api` | `0.1.0` | `Apache-2.0` | OpenTelemetry Authors ([repo](https://github.com/open-telemetry/opentelemetry-browser)) | Permitted |
@@ -138,7 +138,7 @@ Generated automatically from `package-lock.json` via `npm run check:licenses -- 
 | `react-konva` | `19.3.2` | `MIT` | Upstream Contributors ([repo](https://github.com/konvajs/react-konva)) | Permitted |
 | `react-reconciler` | `0.34.0` | `MIT` | Upstream Contributors ([repo](https://github.com/react/react)) | Permitted |
 | `react-stately` | `3.51.0` | `Apache-2.0` | Upstream Contributors ([repo](https://github.com/adobe/react-spectrum)) | Permitted |
-| `require-directory` | `2.1.1` | `MIT` | Troy Goode <troygoode@gmail.com> (http://github.com/troygoode/) ([repo](https://github.com/troygoode/node-require-directory)) | Permitted |
+| `require-directory` | `2.1.1` | `MIT` | Upstream Contributors | Permitted |
 | `require-in-the-middle` | `8.0.1` | `MIT` | Thomas Watson Steen <w@tson.dk> (https://twitter.com/wa7son) ([repo](https://github.com/nodejs/require-in-the-middle)) | Permitted |
 | `safe-buffer` | `5.2.1` | `MIT` | Feross Aboukhadijeh ([repo](https://github.com/feross/safe-buffer)) | Permitted |
 | `scheduler` | `0.28.0` | `MIT` | Upstream Contributors ([repo](https://github.com/react/react)) | Permitted |

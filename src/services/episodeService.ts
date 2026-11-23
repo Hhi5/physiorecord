@@ -88,7 +88,7 @@ export class EpisodeService {
           },
         });
       } catch (err) {
-        console.error(`Failed to decrypt episode record ${entity.id}:`, err);
+        console.error('Failed to decrypt episode record:', entity.id, err);
       }
     }
 
@@ -156,7 +156,7 @@ export class EpisodeService {
           },
         });
       } catch (err) {
-        console.error(`Failed to decrypt episode record ${entity.id}:`, err);
+        console.error('Failed to decrypt episode record:', entity.id, err);
       }
     }
 

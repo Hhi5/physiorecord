@@ -1206,7 +1206,7 @@ export class SoapService {
         });
       } catch (err) {
         failedCount++;
-        console.error(`Failed to decrypt addendum ${entity.id}:`, err);
+        console.error('Failed to decrypt addendum:', entity.id, err);
       }
     }
 

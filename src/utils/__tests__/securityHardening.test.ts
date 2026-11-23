@@ -8,10 +8,12 @@ import {
   sanitizeStorageKeyName,
 } from '../safeDevDiagnostics';
 import {
+  getValidatedLanCorsOrigin,
   isAllowedExternalActionUrl,
   isPrivateLanSyncUrl,
   isSafeSyncDeviceId,
   isValidGoogleDriveId,
+  randomHexCsprng,
   safeJsonParse,
   sanitizeExportedDocumentHtml,
 } from '../securityHardening';
@@ -56,6 +58,24 @@ describe('Security Hardening — SSRF & Private LAN Sync URL Validation', () => 
     expect(isPrivateLanSyncUrl('http://192.168.1.15:47821/evil')).toBe(false);
     expect(isPrivateLanSyncUrl('javascript:alert(1)')).toBe(false);
     expect(isPrivateLanSyncUrl('file:///etc/passwd')).toBe(false);
+  });
+
+  it('canonicalizes allowed LAN CORS origins and rejects untrusted *.pages.dev subdomains and external origins', () => {
+    expect(getValidatedLanCorsOrigin('app://bundle')).toBe('app://bundle');
+    expect(getValidatedLanCorsOrigin('capacitor://localhost')).toBe('capacitor://localhost');
+    expect(getValidatedLanCorsOrigin('https://physiorecord.pages.dev')).toBe(
+      'https://physiorecord.pages.dev'
+    );
+    expect(getValidatedLanCorsOrigin('http://192.168.1.25:3000')).toBe('http://192.168.1.25:3000');
+    expect(getValidatedLanCorsOrigin('http://localhost:5173')).toBe('http://localhost:5173');
+
+    // Reject untrusted sibling Cloudflare Pages tenants and external domains
+    expect(getValidatedLanCorsOrigin('https://attacker.pages.dev')).toBeNull();
+    expect(getValidatedLanCorsOrigin('https://pages.dev')).toBeNull();
+    expect(getValidatedLanCorsOrigin('https://evil.example.com')).toBeNull();
+    expect(getValidatedLanCorsOrigin('http://169.254.169.254')).toBeNull();
+    expect(getValidatedLanCorsOrigin('http://192.168.1.10\r\nX-Injected: 1')).toBeNull();
+    expect(randomHexCsprng(4)).toMatch(/^[0-9a-f]{8}$/);
   });
 });
 

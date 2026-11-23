@@ -371,7 +371,7 @@ export class SessionService {
           },
         });
       } catch (err) {
-        console.error(`Failed to decrypt session record ${entity.id}:`, err);
+        console.error('Failed to decrypt session record:', entity.id, err);
       }
     }
 
@@ -504,7 +504,7 @@ export class SessionService {
           },
         });
       } catch (err) {
-        console.error(`Failed to inspect session draft ${entity.id}:`, err);
+        console.error('Failed to inspect session draft:', entity.id, err);
       }
     }
 

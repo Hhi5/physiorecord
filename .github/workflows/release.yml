@@ -17,19 +17,22 @@ on:
         type: boolean
         default: false
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   verify-and-build-web:
     name: Verify Quality Gates & Build Web PWA
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -87,13 +90,13 @@ jobs:
           cd dist && zip -r "../PhysioRecord-Web-PWA-${VERSION_TAG}.zip" .
 
       - name: Upload Web PWA bundle for GitHub Release
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: web-pwa-bundle
           path: PhysioRecord-Web-PWA-*.zip
 
       - name: Upload CycloneDX SBOM (CI compliance artifact)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: compliance-sbom
           path: build/sbom.cdx.json
@@ -102,18 +105,22 @@ jobs:
     name: Build Universal Android APK (Capacitor 8)
     needs: verify-and-build-web
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
 
       - name: Setup Java 21 (Temurin)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
           java-version: 21
@@ -132,13 +139,14 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ALLOW_UNSIGNED_DEBUG: ${{ inputs.allow_unsigned_debug }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
             echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/physiorecord-release.jks"
             echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/physiorecord-release.jks" >> "$GITHUB_ENV"
             echo "REQUIRE_SIGNED_RELEASE=true" >> "$GITHUB_ENV"
             echo "signed=true" >> "$GITHUB_OUTPUT"
-          elif [ "$ALLOW_UNSIGNED_DEBUG" = "true" ] && [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          elif [ "$ALLOW_UNSIGNED_DEBUG" = "true" ] && [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             echo "::warning::Building unsigned debug APK because allow_unsigned_debug=true was manually set. This build CANNOT upgrade existing installs!"
             echo "signed=false" >> "$GITHUB_OUTPUT"
           else
@@ -172,9 +180,10 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          IS_KEYSTORE_SIGNED: ${{ steps.keystore.outputs.signed }}
         run: |
           chmod +x ./gradlew
-          if [ "${{ steps.keystore.outputs.signed }}" = "true" ]; then
+          if [ "$IS_KEYSTORE_SIGNED" = "true" ]; then
             ./gradlew assembleRelease --no-daemon
           else
             ./gradlew assembleDebug --no-daemon
@@ -184,6 +193,7 @@ jobs:
         env:
           INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
           EXPECTED_SHA256: ${{ secrets.ANDROID_CERT_SHA256 }}
+          IS_KEYSTORE_SIGNED: ${{ steps.keystore.outputs.signed }}
         run: |
           set -euo pipefail
           VERSION_TAG="${INPUT_RELEASE_TAG:-${GITHUB_REF_NAME:-}}"
@@ -193,7 +203,7 @@ jobs:
           if [[ "$VERSION_TAG" != v* ]]; then
             VERSION_TAG="v${VERSION_TAG}"
           fi
-          if [ "${{ steps.keystore.outputs.signed }}" = "true" ]; then
+          if [ "$IS_KEYSTORE_SIGNED" = "true" ]; then
             OUT_APK="PhysioRecord-Android-Universal-${VERSION_TAG}.apk"
             if compgen -G "android/app/build/outputs/apk/release/*-unsigned.apk" > /dev/null; then
               echo "::error::Unsigned release APK detected! Refusing to publish an un-installable APK."
@@ -252,14 +262,14 @@ jobs:
           fi
 
       - name: Upload Android APK for GitHub Release
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: android-universal-apk
           path: PhysioRecord-Android-Universal-*.apk
 
       - name: Upload Android signing report (CI verification artifact)
         if: ${{ steps.keystore.outputs.signed == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: android-signing-report
           path: ANDROID_SIGNING_SHA256.txt
@@ -269,12 +279,16 @@ jobs:
     name: Build Windows Setup & Portable EXE (Electron)
     needs: verify-and-build-web
     runs-on: windows-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -282,19 +296,19 @@ jobs:
       - name: Sync version metadata from release tag
         env:
           INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
-        shell: pwsh
+        shell: bash
         run: |
-          $tag = if ($env:INPUT_RELEASE_TAG) { $env:INPUT_RELEASE_TAG } else { $env:GITHUB_REF_NAME }
-          if ($tag -match '^v?\d+\.\d+\.\d+$') {
-            node scripts/sync-version.mjs --version "$tag"
-          } else {
+          TAG="${INPUT_RELEASE_TAG:-${GITHUB_REF_NAME:-}}"
+          if [[ "$TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            node scripts/sync-version.mjs --version "$TAG"
+          else
             node scripts/sync-version.mjs
-          }
+          fi
 
       - name: Install project dependencies & Electron packaging tools
-        shell: pwsh
+        shell: bash
         run: |
-          Remove-Item -Force -ErrorAction SilentlyContinue package-lock.json
+          rm -f package-lock.json
           npm install --no-audit --no-fund
           npm install --no-save --save-exact electron@34.3.0 electron-builder@25.1.8
 
@@ -302,12 +316,13 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
           VITE_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+        shell: bash
         run: |
           npm run build:desktop:web
           npx electron-builder --config electron/electron-builder.yml --win nsis portable --publish never
 
       - name: Upload Windows EXE installers for GitHub Release
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: windows-exe-release
           path: release/*.exe
@@ -320,24 +335,28 @@ jobs:
       - build-android-apk
       - build-windows-installer
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Download Web PWA artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: web-pwa-bundle
           path: release-assets
 
       - name: Download Android APK artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: android-universal-apk
           path: release-assets
 
       - name: Download Windows EXE artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: windows-exe-release
           path: release-assets
@@ -347,7 +366,7 @@ jobs:
         run: ls -lh
 
       - name: Create or Update GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           tag_name: ${{ inputs.release_tag != '' && inputs.release_tag || github.ref_name }}
           generate_release_notes: true

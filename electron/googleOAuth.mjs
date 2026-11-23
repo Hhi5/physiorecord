@@ -45,6 +45,11 @@ function isAllowedGoogleDriveApiUrl(rawUrl) {
   );
 }
 
+const ALLOWED_GOOGLE_HTTPS_HOSTS = new Set([
+  'www.googleapis.com',
+  'oauth2.googleapis.com',
+]);
+
 function httpsTextRequest(
   urlStr,
   {
@@ -57,6 +62,17 @@ function httpsTextRequest(
 ) {
   return new Promise((resolve, reject) => {
     const target = new URL(urlStr);
+    const cleanHost = target.hostname.toLowerCase();
+    if (
+      target.protocol !== 'https:' ||
+      target.username ||
+      target.password ||
+      (target.port && target.port !== '443') ||
+      !ALLOWED_GOOGLE_HTTPS_HOSTS.has(cleanHost)
+    ) {
+      reject(new Error('Blocked non-allowlisted Google HTTPS endpoint.'));
+      return;
+    }
     const reqHeaders = { ...headers };
     const bodyBuf = typeof body === 'string' ? Buffer.from(body, 'utf8') : undefined;
     if (bodyBuf && !reqHeaders['Content-Length']) {
@@ -64,8 +80,11 @@ function httpsTextRequest(
     }
 
     const req = https.request(
-      target,
       {
+        protocol: 'https:',
+        hostname: cleanHost,
+        port: 443,
+        path: `${target.pathname}${target.search}`,
         method,
         headers: reqHeaders,
         timeout: timeoutMs,

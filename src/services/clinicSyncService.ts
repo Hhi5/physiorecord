@@ -692,13 +692,18 @@ export async function syncWithLocalLanHub(params: {
       const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
       const timeoutId = controller ? setTimeout(() => controller.abort(), 12000) : null;
       try {
-        const response = await fetch(`${targetUrl}/api/sync/exchange`, {
+        const lanExchangeEndpoint = new URL('/api/sync/exchange', `${targetUrl}/`);
+        if (!isPrivateLanSyncUrl(lanExchangeEndpoint.origin)) {
+          throw new Error('Blocked non-LAN exchange origin.');
+        }
+        const response = await fetch(lanExchangeEndpoint.toString(), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-Clinic-Token': token,
           },
           body: JSON.stringify({ envelope: localEnvelope }),
+          redirect: 'error',
           signal: controller?.signal,
         });
         if (!response.ok) {

@@ -43,13 +43,14 @@ if (entryScripts.length === 0) {
 }
 
 const statAsset = (file) => {
-  const fullPath = path.join(ASSETS_DIR, file);
-  if (!fs.existsSync(fullPath)) {
+  const safeBaseName = path.basename(String(file || ''));
+  const fullPath = path.resolve(ASSETS_DIR, safeBaseName);
+  if (!fullPath.startsWith(ASSETS_DIR + path.sep) || !fs.existsSync(fullPath)) {
     fail(`Asset referenced in dist/index.html is missing on disk: ${file}`);
   }
   const buf = fs.readFileSync(fullPath);
   const gzBytes = zlib.gzipSync(buf, { level: 9 }).length;
-  return { file, rawBytes: buf.length, gzBytes };
+  return { file: safeBaseName, rawBytes: buf.length, gzBytes };
 };
 
 const entryJsStats = entryScripts.map(statAsset);

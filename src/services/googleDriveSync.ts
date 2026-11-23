@@ -306,6 +306,21 @@ async function getValidDriveAccessToken(): Promise<string> {
   return cachedAccessToken;
 }
 
+function isAllowedGoogleDriveEndpoint(rawUrl: string): boolean {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol !== 'https:' || parsed.username || parsed.password) return false;
+    if (parsed.port && parsed.port !== '443') return false;
+    if (parsed.hostname.toLowerCase() !== 'www.googleapis.com') return false;
+    return (
+      parsed.pathname.startsWith('/drive/v3/') ||
+      parsed.pathname.startsWith('/upload/drive/v3/')
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function driveHttpRequest(
   url: string,
   options: {
@@ -314,6 +329,9 @@ async function driveHttpRequest(
     body?: string;
   } = {}
 ): Promise<{ ok: boolean; status: number; text: string; contentLength: number }> {
+  if (!isAllowedGoogleDriveEndpoint(url)) {
+    throw new Error('Blocked non-allowlisted Google Drive API URL.');
+  }
   const token = await getValidDriveAccessToken();
   const mergedHeaders: Record<string, string> = {
     ...(options.headers || {}),
@@ -339,10 +357,12 @@ async function driveHttpRequest(
     };
   }
 
-  const response = await fetch(url, {
+  const parsedTarget = new URL(url);
+  const response = await fetch(parsedTarget.toString(), {
     method: options.method || 'GET',
     headers: mergedHeaders,
     body: options.body,
+    redirect: 'error',
   });
   const text = await response.text().catch(() => '');
   const contentLength = Number(response.headers.get('content-length') || 0) || text.length;

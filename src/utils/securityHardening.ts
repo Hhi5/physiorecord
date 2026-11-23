@@ -93,6 +93,46 @@ export function isPrivateLanSyncUrl(rawUrl: string): boolean {
   return isPrivateLanHostname(parsed.hostname);
 }
 
+const STATIC_ALLOWED_LAN_CORS_ORIGINS = new Set([
+  'app://bundle',
+  'capacitor://localhost',
+  'https://physiorecord.pages.dev',
+]);
+
+/**
+ * Validates and canonicalizes a request `Origin` header for the Local Wi-Fi (LAN) Clinic Sync Hub.
+ * Returns a canonical origin string from the strict allowlist (or private RFC1918 LAN origin),
+ * and rejects arbitrary `*.pages.dev` tenants or external internet origins.
+ */
+export function getValidatedLanCorsOrigin(origin: string | undefined | null): string | null {
+  if (!origin || typeof origin !== 'string') return null;
+  const trimmed = origin.trim();
+  if (!trimmed || /[\s\r\n\0]/.test(trimmed)) return null;
+  if (STATIC_ALLOWED_LAN_CORS_ORIGINS.has(trimmed)) {
+    for (const allowed of STATIC_ALLOWED_LAN_CORS_ORIGINS) {
+      if (allowed === trimmed) return allowed;
+    }
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+  if (parsed.username || parsed.password) return null;
+  const canonicalOrigin = `${parsed.protocol}//${parsed.host}`;
+  if (STATIC_ALLOWED_LAN_CORS_ORIGINS.has(canonicalOrigin)) {
+    for (const allowed of STATIC_ALLOWED_LAN_CORS_ORIGINS) {
+      if (allowed === canonicalOrigin) return allowed;
+    }
+  }
+  if (isPrivateLanSyncUrl(canonicalOrigin)) {
+    return canonicalOrigin;
+  }
+  return null;
+}
+
 /**
  * Strict URL-parsed allowlist for opening external links from Web, Electron, or Android:
  * - `https://wa.me/...`

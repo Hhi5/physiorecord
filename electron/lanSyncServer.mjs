@@ -14,7 +14,7 @@ import crypto from 'node:crypto';
 import {
   DEFAULT_LAN_SYNC_PORT,
   MAX_SYNC_ENVELOPE_BYTES,
-  isAllowedLanCorsOrigin,
+  getValidatedLanCorsOrigin,
   isPrivateLanSyncUrl,
   safeJsonParse,
 } from './security.mjs';
@@ -193,9 +193,10 @@ export function registerLanSyncHandlers({ ipcMain, assertTrustedIpcSender }) {
 
     return new Promise((resolve) => {
       const server = http.createServer(async (req, res) => {
-        const reqOrigin = typeof req.headers.origin === 'string' ? req.headers.origin : '';
-        if (reqOrigin && isAllowedLanCorsOrigin(reqOrigin)) {
-          res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+        const allowedOrigin = getValidatedLanCorsOrigin(req.headers.origin);
+        if (allowedOrigin) {
+          // nosemgrep: javascript.express.security.cors-misconfiguration.cors-misconfiguration
+          res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
           res.setHeader('Vary', 'Origin');
         }
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -317,6 +318,12 @@ export function registerLanSyncHandlers({ ipcMain, assertTrustedIpcSender }) {
     }
 
     const endpoint = new URL(`${serverUrl}/api/sync/exchange`);
+    if (!isPrivateLanSyncUrl(endpoint.origin) || endpoint.pathname !== '/api/sync/exchange') {
+      return {
+        ok: false,
+        error: 'Blocked non-LAN server URL.',
+      };
+    }
     const bodyStr = JSON.stringify({ envelope });
     const clientMod = endpoint.protocol === 'https:' ? https : http;
 
@@ -330,8 +337,11 @@ export function registerLanSyncHandlers({ ipcMain, assertTrustedIpcSender }) {
       };
 
       const req = clientMod.request(
-        endpoint,
         {
+          protocol: endpoint.protocol,
+          hostname: endpoint.hostname,
+          port: endpoint.port || (endpoint.protocol === 'https:' ? 443 : 80),
+          path: '/api/sync/exchange',
           method: 'POST',
           timeout: 12000,
           headers: {

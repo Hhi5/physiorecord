@@ -39,8 +39,18 @@ function buildPurl(fullName, version) {
 }
 
 function readPackageJson(lockKey) {
-  const fullPath = path.join(ROOT_DIR, lockKey, 'package.json');
-  if (!fs.existsSync(fullPath)) return {};
+  if (!lockKey || typeof lockKey !== 'string' || lockKey.includes('\0') || lockKey.includes('..')) {
+    return {};
+  }
+  const nodeModulesRoot = path.resolve(ROOT_DIR, 'node_modules');
+  const fullPath = path.resolve(ROOT_DIR, lockKey, 'package.json');
+  if (
+    !fullPath.startsWith(nodeModulesRoot + path.sep) ||
+    path.basename(fullPath) !== 'package.json' ||
+    !fs.existsSync(fullPath)
+  ) {
+    return {};
+  }
   try {
     return JSON.parse(fs.readFileSync(fullPath, 'utf8'));
   } catch {

@@ -39,6 +39,12 @@ interface RecoveryDrillModalProps {
   onClose: () => void;
 }
 
+function pickRandomRecoveryGroupIndex(): number {
+  const buf = new Uint8Array(1);
+  crypto.getRandomValues(buf);
+  return buf[0] % 8;
+}
+
 export const RecoveryDrillModal: React.FC<RecoveryDrillModalProps> = ({
   isOpen,
   onClose,
@@ -47,7 +53,7 @@ export const RecoveryDrillModal: React.FC<RecoveryDrillModalProps> = ({
   const { refreshRecoveryDrillStatus, lastRecoveryDrillAt } = useVault();
 
   const [meta, setMeta] = useState<VaultMetaEntity | null>(null);
-  const [groupIndex, setGroupIndex] = useState<number>(() => Math.floor(Math.random() * 8));
+  const [groupIndex, setGroupIndex] = useState<number>(() => pickRandomRecoveryGroupIndex());
   const [groupInput, setGroupInput] = useState('');
   const [fullLegacyKeyInput, setFullLegacyKeyInput] = useState('');
   const [keyStatus, setKeyStatus] = useState<'idle' | 'verifying' | 'passed' | 'failed'>('idle');
@@ -64,7 +70,7 @@ export const RecoveryDrillModal: React.FC<RecoveryDrillModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    setGroupIndex(Math.floor(Math.random() * 8));
+    setGroupIndex(pickRandomRecoveryGroupIndex());
     setGroupInput('');
     setFullLegacyKeyInput('');
     setKeyStatus('idle');

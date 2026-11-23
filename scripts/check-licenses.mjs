@@ -50,8 +50,18 @@ function normalizePackageName(lockKey) {
 }
 
 function readPackageMetadata(lockKey) {
-  const pkgJsonPath = path.join(ROOT_DIR, lockKey, 'package.json');
-  if (!fs.existsSync(pkgJsonPath)) return {};
+  if (!lockKey || typeof lockKey !== 'string' || lockKey.includes('\0') || lockKey.includes('..')) {
+    return {};
+  }
+  const nodeModulesRoot = path.resolve(ROOT_DIR, 'node_modules');
+  const pkgJsonPath = path.resolve(ROOT_DIR, lockKey, 'package.json');
+  if (
+    !pkgJsonPath.startsWith(nodeModulesRoot + path.sep) ||
+    path.basename(pkgJsonPath) !== 'package.json' ||
+    !fs.existsSync(pkgJsonPath)
+  ) {
+    return {};
+  }
   try {
     return JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
   } catch {

@@ -552,7 +552,11 @@ export class PhysioRecordDatabase extends Dexie {
       .map((b) => b.toString(16).padStart(2, '0'))
       .join('');
 
-    const purgeAuditId = `audit_purge_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const purgeRandomBytes = crypto.getRandomValues(new Uint8Array(4));
+    const purgeRandomHex = Array.from(purgeRandomBytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+    const purgeAuditId = `audit_purge_${Date.now()}_${purgeRandomHex}`;
     const now = new Date().toISOString();
     const purgePayloadObj = {
       id: purgeAuditId,

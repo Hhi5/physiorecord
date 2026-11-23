@@ -210,7 +210,7 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
             })
           );
         } catch (decryptErr) {
-          console.error(`Failed to decrypt patient record ${entity.id} (AAD or Auth Tag failure):`, decryptErr);
+          console.error('Failed to decrypt patient record (AAD or Auth Tag failure):', entity.id, decryptErr);
         }
       }
 
@@ -240,7 +240,7 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       return fullRecord;
     } catch (err) {
-      console.error(`Failed to load full patient record ${patientId}:`, err);
+      console.error('Failed to load full patient record:', patientId, err);
       return null;
     }
   }, []);

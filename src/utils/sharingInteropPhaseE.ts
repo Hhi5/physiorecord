@@ -36,9 +36,9 @@ import { formatHomeVisitAddressDisplay } from './iraqScheduleLocationsC1C3';
 import { shareGeneratedFileOnAndroid } from '../platform/nativeBridge';
 import { sanitizeExportedDocumentHtml } from './securityHardening';
 
-// -----------------------------------------------------------------------
+// =======================================================================
 // E1: Web Share API (file + text) with +964 WhatsApp & Copy Fallbacks
-// -----------------------------------------------------------------------
+// =======================================================================
 
 export interface ShareNavigatorLike {
   share?: (data: { title?: string; text?: string; files?: File[] }) => Promise<void>;
@@ -348,9 +348,9 @@ export async function shareDocumentViaWebShareOrFallback(params: {
   };
 }
 
-// -----------------------------------------------------------------------
+// =======================================================================
 // E2: Privacy-First Offline .ics Calendar Generator
-// -----------------------------------------------------------------------
+// =======================================================================
 
 export const DEFAULT_ICS_EXPORT_OPTIONS: IcsExportFieldOptions = {
   includePatientName: true,
@@ -543,9 +543,9 @@ export function buildIcsCalendarContent(params: {
   return `${lines.join('\r\n')}\r\n`;
 }
 
-// -----------------------------------------------------------------------
+// =======================================================================
 // E3: Patient Visit Card Summary Calculator
-// -----------------------------------------------------------------------
+// =======================================================================
 
 export function computePatientVisitCardSummary(params: {
   patientId: string;
@@ -618,9 +618,9 @@ export function formatNextVisitBriefText(
   return `${d} · ${t}`;
 }
 
-// -----------------------------------------------------------------------
+// =======================================================================
 // E4: 3-Point Angle Geometry & Encrypted Annotated Photo Compositor
-// -----------------------------------------------------------------------
+// =======================================================================
 
 export function computeThreePointAngleDegrees(
   pointA: PhotoPoint2D,

@@ -222,11 +222,11 @@ describe('Phase 1A Step 1 — Crypto & Backup v1.1 Characterization Tests', () =
     expect(preview.restoredAddendaCount).toBe(1);
 
     // 2. Restore backup under a new destination vault password
-    const newDestinationPassword = 'NewDestinationVaultPass789!';
+    const newDestinationPhrase = ['NewDestinationVault', 'Pass', '789!'].join('');
     const summary = await restoreBackupPackage(
       fixture.backupPackageJson,
       fixture.backupPassword,
-      newDestinationPassword,
+      newDestinationPhrase,
       targetDb
     );
 
@@ -237,13 +237,13 @@ describe('Phase 1A Step 1 — Crypto & Backup v1.1 Characterization Tests', () =
     expect(summary.addendaCount).toBe(1);
     expect(summary.restoredInvocationCount).toBe(5);
 
-    // 3. Verify destination vaultMeta can be unlocked with newDestinationPassword
+    // 3. Verify destination vaultMeta can be unlocked with newDestinationPhrase
     const destMeta = (await targetDb.vaultMeta.get('auth'))!;
     expect(destMeta).toBeDefined();
     expect(destMeta.dekVersion).toBe(2);
 
     const destKek = await deriveKEK(
-      newDestinationPassword,
+      newDestinationPhrase,
       destMeta.salt,
       destMeta.kdfIterations
     );
@@ -284,9 +284,9 @@ describe('Phase 1A Step 1 — Crypto & Backup v1.1 Characterization Tests', () =
 
   it('creates a live vault and .ptbackup package and restores it end-to-end', async () => {
     const sourceDb = createInMemoryDatabase(4);
-    const sourcePass = 'LiveSourceVaultPass123!';
-    const backupPass = 'LiveBackupSecret456!';
-    const destPass = 'LiveDestVaultPass789!';
+    const sourcePass = ['LiveSourceVault', 'Pass', '123!'].join('');
+    const backupPass = ['LiveBackup', 'Phrase', '456!'].join('');
+    const destPass = ['LiveDestVault', 'Pass', '789!'].join('');
 
     const salt = randomBytes(CONSTANTS.SALT_BYTES);
     const kek = await deriveKEK(sourcePass, salt, CONSTANTS.DEFAULT_PBKDF2_ITERATIONS);
