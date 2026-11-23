@@ -694,19 +694,14 @@ public class PhysioRecordNativePlugin extends Plugin {
                             tokenConn.disconnect();
 
                             if (tokenStatus < 200 || tokenStatus >= 300) {
-                                String safeErr = tokenRespStr != null && tokenRespStr.length() > 200
-                                        ? tokenRespStr.substring(0, 200)
-                                        : String.valueOf(tokenRespStr);
-                                oauthError = "Google token exchange failed (HTTP " + tokenStatus + "): " + safeErr;
-                                if (tokenRespStr != null && tokenRespStr.toLowerCase(java.util.Locale.ROOT).contains("client_secret is missing")) {
-                                    errorDetailAr = "المفتاح السري للتطبيق (Client Secret) غير مُعدّ. يرجى العودة إلى PhysioRecord لإدخاله أو تحديث النسخة.";
-                                    errorDetailEn = "Google rejected the OAuth exchange because client_secret is missing. Return to PhysioRecord.";
-                                }
+                                oauthError = "Google sign-in could not be completed.";
+                                errorDetailAr = "تعذّر إكمال ربط حساب Google Drive حالياً. يرجى العودة إلى تطبيق PhysioRecord والمحاولة مرة أخرى.";
+                                errorDetailEn = "Could not complete Google Drive connection right now. Please return to PhysioRecord and try again.";
                             } else {
                                 JSONObject tokenJson = new JSONObject(tokenRespStr);
                                 String parsedToken = tokenJson.optString("access_token", "");
                                 if (parsedToken.isEmpty()) {
-                                    oauthError = "Google did not return an access token.";
+                                    oauthError = "Google sign-in could not be completed.";
                                 } else {
                                     accessToken = parsedToken;
                                     exchangeOk = true;

@@ -217,7 +217,7 @@ export async function signInWithGoogleDrive(): Promise<GoogleDriveAuthState> {
     const nativeCfg = getNativeGoogleOAuthConfig();
     if (!nativeCfg.clientId || !nativeCfg.clientId.endsWith('.apps.googleusercontent.com')) {
       throw new Error(
-        'الربط المباشر بحساب Google غير مفعّل بعد — استخدم «الطريقة الأولى» أعلاه (تعمل فوراً بدون تسجيل دخول)، أو أدخل معرّف التطبيق والمفتاح السري من Google Cloud لتفعيل تسجيل الدخول المباشر.'
+        'تسجيل الدخول المباشر بحساب Google غير متاح في هذه النسخة حالياً. يرجى استخدام مزامنة المجلد أو التحديث إلى أحدث إصدار.'
       );
     }
 
@@ -242,12 +242,24 @@ export async function signInWithGoogleDrive(): Promise<GoogleDriveAuthState> {
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err || '');
-      if (/client_secret\s+is\s+missing/iu.test(msg)) {
+      if (/access_denied|cancelled/iu.test(msg)) {
         throw new Error(
-          'رفض Google إتمام الربط لأن المفتاح السري للتطبيق (Client Secret) غير مُعدّ في هذه النسخة — يرجى إدخال Client Secret أدناه (أو إضافة GOOGLE_OAUTH_CLIENT_SECRET في إعدادات البناء وإعادة الإصدار).'
+          'تم إلغاء تسجيل الدخول بحساب Google قبل إكمال الربط. يمكنك المحاولة مرة أخرى في أي وقت.'
         );
       }
-      throw err;
+      if (/timed?\s*out|timeout/iu.test(msg)) {
+        throw new Error(
+          'انتهت مهلة تسجيل الدخول بحساب Google. يرجى المحاولة مرة أخرى وإكمال الخطوات في المتصفح.'
+        );
+      }
+      if (/launch system browser/iu.test(msg)) {
+        throw new Error(
+          'تعذّر فتح المتصفح لإكمال تسجيل الدخول بحساب Google. يرجى التأكد من وجود متصفح افتراضي والمحاولة مرة أخرى.'
+        );
+      }
+      throw new Error(
+        'تعذّر إكمال ربط حساب Google Drive حالياً. يرجى التأكد من اتصال الإنترنت والمحاولة مرة أخرى، أو تحديث التطبيق إلى أحدث إصدار.'
+      );
     }
     if (!res?.accessToken) {
       throw new Error('لم تكتمل عملية تسجيل الدخول بحساب Google. يرجى المحاولة مرة أخرى.');
@@ -280,10 +292,12 @@ export async function signInWithGoogleDrive(): Promise<GoogleDriveAuthState> {
     }
     if (code === 'auth/unauthorized-domain') {
       throw new Error(
-        'نطاق المعاينة الحالي غير مضاف في نطاقات تسجيل الدخول المصرح بها (Authorized Domains) — افتح التطبيق من الرابط المنشور أو أضف النطاق في إعدادات Firebase.'
+        'تعذّر تسجيل الدخول بحساب Google من هذا الرابط. يرجى فتح التطبيق من الرابط الرسمي والمحاولة مرة أخرى.'
       );
     }
-    throw err;
+    throw new Error(
+      'تعذّر تسجيل الدخول بحساب Google حالياً. يرجى التأكد من اتصال الإنترنت والمحاولة مرة أخرى.'
+    );
   }
 
   const credential = GoogleAuthProvider.credentialFromResult(result);
@@ -405,7 +419,7 @@ async function driveFetchJson<T>(
     throw new Error('انتهت جلسة Google Drive — يرجى إعادة تسجيل الدخول والمحاولة مجدداً.');
   }
   if (!response.ok) {
-    throw new Error(`خطأ من Google Drive (${response.status}): ${response.text.slice(0, 180)}`);
+    throw new Error('تعذّر الاتصال بخدمة Google Drive حالياً. يرجى التأكد من اتصال الإنترنت والمحاولة مرة أخرى.');
   }
   return JSON.parse(response.text) as T;
 }
@@ -513,7 +527,7 @@ async function uploadOrUpdateDeviceEnvelope(
       }
     );
     if (!res.ok) {
-      throw new Error(`تعذّر تحديث ملف المزامنة على Google Drive (${res.status}).`);
+      throw new Error('تعذّر تحديث ملف المزامنة على Google Drive. يرجى المحاولة مرة أخرى.');
     }
     const data = JSON.parse(res.text) as { id: string };
     return data.id;
@@ -546,7 +560,7 @@ async function uploadOrUpdateDeviceEnvelope(
   });
 
   if (!res.ok) {
-    throw new Error(`تعذّر رفع ملف المزامنة المشفّر إلى Google Drive (${res.status}).`);
+    throw new Error('تعذّر رفع ملف المزامنة إلى Google Drive. يرجى المحاولة مرة أخرى.');
   }
   const created = JSON.parse(res.text) as { id: string };
   return created.id;

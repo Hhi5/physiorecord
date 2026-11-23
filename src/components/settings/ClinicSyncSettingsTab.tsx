@@ -57,9 +57,7 @@ import {
 } from '../../services/clinicSyncService';
 import {
   getGoogleDriveAuthState,
-  getNativeGoogleOAuthConfig,
   hasBuiltInNativeGoogleOAuth,
-  saveNativeGoogleOAuthConfig,
   signInWithGoogleDrive,
   signOutGoogleDrive,
   type GoogleDriveAuthState,
@@ -122,10 +120,6 @@ export const ClinicSyncSettingsTab: React.FC = () => {
 
   // Google Drive Auth state (in-memory only)
   const [driveAuth, setDriveAuth] = useState<GoogleDriveAuthState>(() => getGoogleDriveAuthState());
-  const [nativeOAuthCfg, setNativeOAuthCfg] = useState(() => getNativeGoogleOAuthConfig());
-  const [showNativeOAuthSetup, setShowNativeOAuthSetup] = useState(
-    () => !builtInGoogleOAuth && Boolean(getNativeGoogleOAuthConfig().clientId)
-  );
   const [showDriveConfirmModal, setShowDriveConfirmModal] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
@@ -337,16 +331,12 @@ export const ClinicSyncSettingsTab: React.FC = () => {
         ),
       });
     } catch (err) {
-      const errText =
-        err instanceof Error
-          ? err.message
-          : bi('تعذّر تسجيل الدخول بحساب Google.', 'Google Sign-In failed.');
-      if (isNativeAppPlatform && /client.?secret|المفتاح السري/i.test(errText)) {
-        setShowNativeOAuthSetup(true);
-      }
       setFeedback({
         kind: 'error',
-        text: errText,
+        text:
+          err instanceof Error
+            ? err.message
+            : bi('تعذّر تسجيل الدخول بحساب Google.', 'Google Sign-In failed.'),
       });
     } finally {
       setBusyAction(null);
@@ -1293,7 +1283,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             </div>
           )}
 
-          {/* METHOD 2: Direct Google Account Sign-In (Web | Built-In Native OAuth | Optional Owner Setup) */}
+          {/* METHOD 2: Direct Google Account Sign-In (Web | Built-In Native OAuth) */}
           {!driveAuth.isSignedIn && feedback?.kind === 'error' && (
             <div
               role="alert"
@@ -1303,85 +1293,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             </div>
           )}
           {!driveAuth.isSignedIn ? (
-            isNativeAppPlatform && !builtInGoogleOAuth ? (
-              <div className="rounded-xl bg-surface/80 border border-line-2 overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setShowNativeOAuthSetup((v) => !v)}
-                  className="w-full px-4 py-3 flex items-center justify-between gap-2 text-start text-xs font-bold text-foreground cursor-pointer hover:bg-surface transition-colors"
-                >
-                  <span>
-                    {bi(
-                      'الطريقة الثانية (اختيارية): تسجيل الدخول المباشر بحساب Google',
-                      'Method 2 (Optional): Direct Sign in with Google Account'
-                    )}
-                  </span>
-                  {showNativeOAuthSetup ? (
-                    <ChevronUp className="size-4 text-muted-foreground-1 shrink-0" />
-                  ) : (
-                    <ChevronDown className="size-4 text-muted-foreground-1 shrink-0" />
-                  )}
-                </button>
-                {showNativeOAuthSetup && (
-                  <div className="px-4 pb-4 pt-2 border-t border-card-divider space-y-3">
-                    <p className="text-xs text-muted-foreground-1 leading-relaxed">
-                      {bi(
-                        'إذا أردت ربط حساب Google مباشرة حتى تتم المزامنة التلقائية بضغطة زر على الموبايل والحاسبة، أدخل مفتاحي الربط من حسابك المجاني في Google Cloud (تُطلب مرة واحدة فقط، أو استخدم الطريقة الأولى أعلاه بدون أي إعداد):',
-                        'To enable 1-tap automatic cloud sync directly with your Google account, enter your free Google Cloud Desktop credentials below (one-time setup — or use Method 1 above with zero setup):'
-                      )}
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      <div>
-                        <label htmlFor="android-oauth-client-id" className="block text-xs font-bold text-foreground mb-1">
-                          {bi('معرّف التطبيق (Client ID)', 'App Client ID')}
-                        </label>
-                        <input
-                          id="android-oauth-client-id"
-                          type="text"
-                          dir="ltr"
-                          value={nativeOAuthCfg.clientId}
-                          onChange={(e) =>
-                            setNativeOAuthCfg(saveNativeGoogleOAuthConfig({ clientId: e.target.value }))
-                          }
-                          placeholder="123456789-xxxx.apps.googleusercontent.com"
-                          className="w-full min-w-0 h-10 px-3 rounded-xl bg-card border border-line-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="android-oauth-client-secret" className="block text-xs font-bold text-foreground mb-1">
-                          {bi('المفتاح السري (Client Secret — مطلوب من Google)', 'Client Secret (Required by Google)')}
-                        </label>
-                        <input
-                          id="android-oauth-client-secret"
-                          type="password"
-                          dir="ltr"
-                          value={nativeOAuthCfg.clientSecret}
-                          onChange={(e) =>
-                            setNativeOAuthCfg(saveNativeGoogleOAuthConfig({ clientSecret: e.target.value }))
-                          }
-                          placeholder="GOCSPX-..."
-                          className="w-full min-w-0 h-10 px-3 rounded-xl bg-card border border-line-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
-                        />
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      data-testid="google-drive-signin-btn"
-                      disabled={busyAction === 'google-signin'}
-                      onClick={handleSignInGoogle}
-                      className="h-10 px-4 rounded-xl bg-white hover:bg-neutral-50 text-[#1f1f1f] border border-[#747775] font-semibold text-xs inline-flex items-center justify-center gap-2.5 shadow-xs cursor-pointer shrink-0 transition-colors"
-                    >
-                      <GoogleBrandMark />
-                      <span>
-                        {busyAction === 'google-signin'
-                          ? bi('جاري فتح المتصفح لتسجيل الدخول...', 'Opening browser to sign in...')
-                          : bi('تسجيل الدخول بحساب Google', 'Sign in with Google')}
-                      </span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
+            !isNativeAppPlatform || builtInGoogleOAuth ? (
               <div className="p-4 rounded-xl bg-surface/80 border border-line-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="text-xs font-extrabold text-foreground">
@@ -1411,7 +1323,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                   </span>
                 </button>
               </div>
-            )
+            ) : null
           ) : (
             <div className="p-3.5 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/25 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">

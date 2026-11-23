@@ -251,26 +251,17 @@ export function registerGoogleDriveHandlers({ ipcMain, assertTrustedIpcSender, g
           });
 
           if (!tokenResp.ok) {
-            const missingSecret = /client_secret\s+is\s+missing/iu.test(tokenResp.text);
             sendCallbackHtml(
               res,
               false,
-              missingSecret
-                ? 'تعذّر إتمام الربط لأن المفتاح السري للتطبيق (Client Secret) غير مُعدّ. يرجى العودة إلى PhysioRecord وإدخاله أو تحديث النسخة.'
-                : 'رفض خادم Google إتمام تبادل رمز الدخول. يرجى العودة إلى تطبيق PhysioRecord والمحاولة مجدداً.',
-              missingSecret
-                ? 'Google rejected the Desktop OAuth exchange because client_secret is missing. Return to PhysioRecord.'
-                : 'Google rejected the OAuth token exchange. Please return to PhysioRecord and try again.'
+              'تعذّر إكمال ربط حساب Google Drive حالياً. يرجى العودة إلى تطبيق PhysioRecord والمحاولة مرة أخرى.',
+              'Could not complete Google Drive connection right now. Please return to PhysioRecord and try again.'
             );
             settled = true;
             if (timer) clearTimeout(timer);
             closeServer(server);
             focusMainWindow();
-            reject(
-              new Error(
-                `Google token exchange failed (HTTP ${tokenResp.status}): ${tokenResp.text.slice(0, 200)}`
-              )
-            );
+            reject(new Error('Google sign-in could not be completed.'));
             return;
           }
 
@@ -280,14 +271,14 @@ export function registerGoogleDriveHandlers({ ipcMain, assertTrustedIpcSender, g
             sendCallbackHtml(
               res,
               false,
-              'لم يُرجع Google رمز صلاحية صالحاً. يرجى العودة إلى تطبيق PhysioRecord والمحاولة مجدداً.',
-              'Google did not return a valid access token. Please return to PhysioRecord.'
+              'تعذّر إكمال تسجيل الدخول بحساب Google. يرجى العودة إلى تطبيق PhysioRecord والمحاولة مرة أخرى.',
+              'Could not complete Google sign-in. Please return to PhysioRecord and try again.'
             );
             settled = true;
             if (timer) clearTimeout(timer);
             closeServer(server);
             focusMainWindow();
-            reject(new Error('Google did not return an access token.'));
+            reject(new Error('Google sign-in could not be completed.'));
             return;
           }
 
