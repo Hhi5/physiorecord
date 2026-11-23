@@ -29,7 +29,9 @@ export const DRIVE_SYNC_FOLDER_NAME = 'PhysioRecord-Clinic-Sync';
 const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
 const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3';
 const MAX_DRIVE_ENVELOPE_BYTES = MAX_SYNC_ENVELOPE_BYTES;
+// skipcq: SCT-A000 - localStorage key identifier, not a secret
 const NATIVE_OAUTH_CLIENT_ID_KEY = 'physiorecord_android_google_oauth_client_id_v1';
+// skipcq: SCT-A000 - legacy localStorage key identifier, not a secret
 const LEGACY_NATIVE_OAUTH_CLIENT_SECRET_KEY = 'physiorecord_android_google_oauth_client_secret_v1';
 
 // Strictly session-only in-memory cache for optional Desktop OAuth clientSecret (NEVER stored in localStorage)

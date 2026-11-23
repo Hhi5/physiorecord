@@ -559,7 +559,7 @@ export const ExamPresetBar: React.FC<ExamPresetBarProps> = ({
 
             <button
               type="button"
-              onClick={() => handleOpenCustomize(undefined)}
+              onClick={() => handleOpenCustomize()}
               className="compact-btn h-8 px-3 rounded-xl bg-primary text-primary-foreground font-bold inline-flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="size-3.5" />

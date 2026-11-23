@@ -59,12 +59,12 @@ export class DraftRecoveryService {
     {
       dek: CryptoKey;
       database: PhysioRecordDatabase;
-      input: PendingDraftInput<any>;
+      input: PendingDraftInput<unknown>;
     }
   >();
   private static flushSources = new Map<
     string,
-    () => PendingDraftInput<any> | null
+    () => PendingDraftInput<unknown> | null
   >();
   private static inFlightSaves = new Set<Promise<unknown>>();
   private static listeners: Set<() => void> = new Set();
@@ -345,7 +345,7 @@ export class DraftRecoveryService {
    */
   static registerDraftFlushSource(
     sourceKey: string,
-    collector: () => PendingDraftInput<any> | null
+    collector: () => PendingDraftInput<unknown> | null
   ): () => void {
     this.flushSources.set(sourceKey, collector);
     return () => {
@@ -368,7 +368,7 @@ export class DraftRecoveryService {
 
     const toSave = new Map<
       string,
-      { dek: CryptoKey; database: PhysioRecordDatabase; input: PendingDraftInput<any> }
+      { dek: CryptoKey; database: PhysioRecordDatabase; input: PendingDraftInput<unknown> }
     >(this.pendingInputs);
     this.pendingInputs.clear();
 

@@ -382,7 +382,7 @@ export const FinishSessionFlowModal: React.FC<FinishSessionFlowModalProps> = ({
   };
 
   const handleCompleteFlow = () => {
-    let finalUndo = { ...undoSnapshot };
+    const finalUndo = { ...undoSnapshot };
     const activeStaff = ClinicOperationsService.getActiveStaff();
 
     if (bookNextVisit && nextDate) {

@@ -290,7 +290,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, []);
 
-  const snoozeRecoveryDrillBanner = useCallback((days: number = 14) => {
+  const snoozeRecoveryDrillBanner = useCallback((days = 14) => {
     if (typeof localStorage !== 'undefined') {
       const until = Date.now() + Math.max(1, days) * 24 * 60 * 60 * 1000;
       localStorage.setItem('physiorecord_recovery_drill_snooze_until', String(until));
@@ -310,7 +310,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsPasswordReminderDueNow(isPasswordReminderDue(next));
   }, []);
 
-  const snoozePasswordReminder = useCallback((days: number = 2) => {
+  const snoozePasswordReminder = useCallback((days = 2) => {
     const next = snoozePasswordReminderState(days);
     setPasswordReminderState(next);
     setIsPasswordReminderDueNow(isPasswordReminderDue(next));
@@ -463,7 +463,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
 
         setSchemaDowngradeError(null);
-        setIsInitialized(!!meta);
+        setIsInitialized(Boolean(meta));
         const availability = await getBiometricAvailabilityInfo();
         setIsPrfSupported(availability.supported);
         setBiometricMode(availability.mode);

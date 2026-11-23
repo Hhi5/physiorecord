@@ -845,5 +845,5 @@ export async function runStrictWriteTransaction<T>(
   tables: unknown[],
   scope: () => Promise<T>
 ): Promise<T> {
-  return await database.transaction('rw', tables as any[], scope);
+  return await database.transaction('rw', tables as Array<Table<unknown, unknown>>, scope);
 }

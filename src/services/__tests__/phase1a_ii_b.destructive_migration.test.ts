@@ -174,7 +174,7 @@ describe('Phase 1A-ii-b: Destructive Migration, Rotation, Backup v2, and Cleanup
       // Verify that Dexie stores hold the verified encrypted records
       const apptRecord = await testDb.appointments.get('appt-100');
       expect(apptRecord).toBeDefined();
-      const decAppt = await decryptRecordPayload<any>(
+      const decAppt = await decryptRecordPayload<{ patientName: string }>(
         dek,
         'appointments',
         'appt-100',
@@ -320,7 +320,7 @@ describe('Phase 1A-ii-b: Destructive Migration, Rotation, Backup v2, and Cleanup
       // Verify restored appointment is decryptable
       const restoredAppt = await targetDb.appointments.get('appt-1');
       expect(restoredAppt).toBeDefined();
-      const decRestored = await decryptRecordPayload<any>(
+      const decRestored = await decryptRecordPayload<{ patientName: string }>(
         restoreResult.destinationOperationalDek,
         'appointments',
         'appt-1',
@@ -420,7 +420,7 @@ describe('Phase 1A-ii-b: Destructive Migration, Rotation, Backup v2, and Cleanup
       expect(rotInvoice).toBeDefined();
       expect(rotInvoice!.dekVersion).toBe(2);
 
-      const decInv = await decryptRecordPayload<any>(
+      const decInv = await decryptRecordPayload<{ invoiceNumber: string; totalAmountIQD: number }>(
         rotationSummary.newOperationalDek,
         'invoices',
         'inv-rot-1',
@@ -473,9 +473,10 @@ describe('Phase 1A-ii-b: Destructive Migration, Rotation, Backup v2, and Cleanup
     it('returns empty array and does NOT seed demo appointments when not in DEV', () => {
       mockStorage.clear();
       // In tests/production, if import.meta.env.DEV is simulated as false:
+      const envRecord = import.meta.env as Record<string, unknown>;
       const originalDev = import.meta.env.DEV;
       try {
-        (import.meta.env as any).DEV = false;
+        envRecord.DEV = false;
         const appts = ClinicOperationsService.getAppointments();
         expect(appts).toEqual([]);
         expect(mockStorage.getItem('physiorecord_appointments_v2')).toBeNull();
@@ -492,7 +493,7 @@ describe('Phase 1A-ii-b: Destructive Migration, Rotation, Backup v2, and Cleanup
         expect(expenses).toEqual([]);
         expect(mockStorage.getItem('physiorecord_expenses_iqd_v2')).toBeNull();
       } finally {
-        (import.meta.env as any).DEV = originalDev;
+        envRecord.DEV = originalDev;
       }
     });
   });

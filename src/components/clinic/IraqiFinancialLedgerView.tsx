@@ -265,7 +265,7 @@ export const IraqiFinancialLedgerView: React.FC<IraqiFinancialLedgerViewProps> =
   // Recover unsaved invoice draft
   useEffect(() => {
     if (!dek) return;
-    void DraftRecoveryService.getDraftAsync<Record<string, any>>(dek, 'invoice', 'new').then(
+    void DraftRecoveryService.getDraftAsync<Record<string, unknown>>(dek, 'invoice', 'new').then(
       (recovered) => {
         if (!recovered) return;
         const p = recovered.payload;

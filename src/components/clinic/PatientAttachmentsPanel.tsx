@@ -755,9 +755,11 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
           <div className="space-y-3">
             {previewAttachment.mimeType === 'application/pdf' ? (
               isSafeAttachmentDataUrl(previewAttachment.payloadDataUrl, 'pdf') ? (
+                // skipcq: JS-D010 - data:application/pdf URLs already run in an opaque origin; HTML5 sandbox disables Chromium/Electron built-in PDF viewer plugins.
                 <iframe
                   title={previewAttachment.title}
                   src={previewAttachment.payloadDataUrl}
+                  referrerPolicy="no-referrer"
                   className="w-full h-[70vh] rounded-xl border border-card-stroke bg-white"
                 />
               ) : (

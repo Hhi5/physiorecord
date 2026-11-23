@@ -200,7 +200,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({
 
   // Calculate age automatically when DOB changes
   const handleDobChange = (dob: string) => {
-    const calculatedAge = computePatientAge(dob, undefined);
+    const calculatedAge = computePatientAge(dob);
     setFormData(prev => ({
       ...prev,
       dateOfBirth: dob,

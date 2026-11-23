@@ -318,8 +318,8 @@ export const PatientKioskModal: React.FC<PatientKioskModalProps> = ({
       onOpenChange={onOpenChange}
       size="xl"
       isDismissable={false}
-      isKeyboardDismissDisabled={true}
-      hideCloseButton={true}
+      isKeyboardDismissDisabled
+      hideCloseButton
       title={t('kiosk.title')}
       subtitle={
         isEn

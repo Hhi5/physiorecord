@@ -304,7 +304,14 @@ export const ChartOverviewTab: React.FC<ChartOverviewTabProps> = ({
                     <span>{bi('المدى الحركي (ROM):', 'ROM:', 'مەودای جووڵە:')}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 text-xs flex-1 justify-end">
-                    {romEntries.slice(0, 4).map((entry: any, idx: number) => {
+                    {romEntries.slice(0, 4).map((rawEntry) => {
+                      const entry = rawEntry as typeof rawEntry & {
+                        id?: string;
+                        label?: string;
+                        measuredAngleDegrees?: number;
+                        activeDegrees?: number;
+                        passiveDegrees?: number;
+                      };
                       const jointLabel = bi(
                         `${entry.jointNameAr || ''} ${
                           entry.movementNameAr ? `(${entry.movementNameAr})` : ''
@@ -326,7 +333,10 @@ export const ChartOverviewTab: React.FC<ChartOverviewTabProps> = ({
                       const angle =
                         entry.measuredAngleDegrees ?? entry.activeDegrees ?? entry.passiveDegrees;
                       return (
-                        <span key={idx} className="text-xs font-semibold inline-flex items-center gap-1">
+                        <span
+                          key={entry.id || `${jointLabel}-${side}`}
+                          className="text-xs font-semibold inline-flex items-center gap-1"
+                        >
                           <span className="text-foreground/85">
                             {jointLabel} {side ? `(${side})` : ''}:
                           </span>
@@ -363,7 +373,15 @@ export const ChartOverviewTab: React.FC<ChartOverviewTabProps> = ({
                     <span>{bi('القوة العضلية (MMT):', 'MMT:', 'هێزی ماسولکەکان:')}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 text-xs flex-1 justify-end">
-                    {mmtEntries.slice(0, 4).map((entry: any, idx: number) => {
+                    {mmtEntries.slice(0, 4).map((rawEntry) => {
+                      const entry = rawEntry as typeof rawEntry & {
+                        id?: string;
+                        label?: string;
+                        actionNameAr?: string;
+                        actionNameEn?: string;
+                        grade?: string | number;
+                        gradeValue?: string | number;
+                      };
                       const muscleLabel = bi(
                         entry.label || entry.muscleNameAr || entry.actionNameAr || 'عضلة',
                         entry.label || entry.muscleNameEn || entry.actionNameEn || 'Muscle'
@@ -376,7 +394,10 @@ export const ChartOverviewTab: React.FC<ChartOverviewTabProps> = ({
                           : '';
                       const grade = entry.gradeValue ?? entry.grade ?? '—';
                       return (
-                        <span key={idx} className="text-xs font-semibold inline-flex items-center gap-1">
+                        <span
+                          key={entry.id || `${muscleLabel}-${side}`}
+                          className="text-xs font-semibold inline-flex items-center gap-1"
+                        >
                           <span className="text-foreground/85">
                             {muscleLabel} {side}:
                           </span>
@@ -443,9 +464,9 @@ export const ChartOverviewTab: React.FC<ChartOverviewTabProps> = ({
                     <span>{bi('الفحوصات الخاصة:', 'Special Tests:', 'پشکنینە تایبەتەکان:')}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2.5 text-xs flex-1 justify-end">
-                    {specialTests.slice(0, 4).map((test, idx) => (
+                    {specialTests.slice(0, 4).map((test) => (
                       <span
-                        key={idx}
+                        key={test.id || `${test.nameEn}-${test.outcome}`}
                         className={`text-xs font-bold ${
                           test.outcome === 'positive'
                             ? 'text-rose-700 dark:text-rose-400'

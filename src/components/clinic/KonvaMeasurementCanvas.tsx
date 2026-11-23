@@ -1181,7 +1181,7 @@ export const KonvaMeasurementCanvas = forwardRef<
                               uiScale={uiScale}
                               imgW={imageBox.width}
                               imgH={imageBox.height}
-                              invisiblePin={true}
+                              invisiblePin
                               onDragPoint={(pt) => onDragArrowPoint(idx, 'end', pt)}
                               onDragCommit={onInteractionCommit}
                             />

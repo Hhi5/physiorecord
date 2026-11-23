@@ -643,8 +643,8 @@ export class LocalStorageMigrationService {
 
         // 2. Classify & stage records for this key
         const stagedForThisKey: StagedVerificationRecord[] = [];
-        let keyPainConflicts: MigrationPainConflictRecord[] = [];
-        let keyOrphanFlowsheets: MigrationOrphanFlowsheetRecord[] = [];
+        const keyPainConflicts: MigrationPainConflictRecord[] = [];
+        const keyOrphanFlowsheets: MigrationOrphanFlowsheetRecord[] = [];
         let episodeClinicalToSaveViaGuard: EpisodeScopedClinicalStore | null = null;
         let cleanupPlaintextKeyOnly = false;
 

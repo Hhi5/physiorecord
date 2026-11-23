@@ -39,6 +39,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 import org.json.JSONObject;
 
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.util.Arrays;
 import javax.crypto.Cipher;
@@ -50,9 +51,11 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -146,6 +149,7 @@ public class PhysioRecordNativePlugin extends Plugin {
         return !path.contains("..") && !path.startsWith("/data/");
     }
 
+    // skipcq: JAVA-W0324 - Invoked reflectively by Capacitor startActivityForResult("handleSaveDocumentResult")
     @ActivityCallback
     private void handleSaveDocumentResult(PluginCall call, ActivityResult result) {
         if (call == null) {
@@ -219,6 +223,7 @@ public class PhysioRecordNativePlugin extends Plugin {
         startActivityForResult(call, intent, "handleOpenDocumentResult");
     }
 
+    // skipcq: JAVA-W0324 - Invoked reflectively by Capacitor startActivityForResult("handleOpenDocumentResult")
     @ActivityCallback
     private void handleOpenDocumentResult(PluginCall call, ActivityResult result) {
         if (call == null) {
@@ -497,7 +502,7 @@ public class PhysioRecordNativePlugin extends Plugin {
         return Base64.encodeToString(digest, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
     }
 
-    private static Map<String, String> parseQueryParams(String query) throws Exception {
+    private static Map<String, String> parseQueryParams(String query) throws UnsupportedEncodingException {
         Map<String, String> map = new HashMap<>();
         if (query == null || query.isEmpty()) return map;
         String[] pairs = query.split("&");
@@ -512,7 +517,7 @@ public class PhysioRecordNativePlugin extends Plugin {
         return map;
     }
 
-    private static String readAllStream(InputStream is) throws Exception {
+    private static String readAllStream(InputStream is) throws IOException {
         if (is == null) return "";
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
@@ -566,6 +571,7 @@ public class PhysioRecordNativePlugin extends Plugin {
                 // RFC 8252 Section 7.3 loopback redirect listener (127.0.0.1 only) for native PKCE OAuth;
                 // token exchange itself runs over HTTPS to https://oauth2.googleapis.com/token.
                 // nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
+                // skipcq: JAVA-S1011
                 final ServerSocket boundServer = new ServerSocket(0, 8, InetAddress.getByName("127.0.0.1"));
                 server = boundServer;
                 server.setSoTimeout(180_000);
@@ -689,6 +695,7 @@ public class PhysioRecordNativePlugin extends Plugin {
                         .append("&grant_type=authorization_code")
                         .append("&code_verifier=").append(URLEncoder.encode(codeVerifier, "UTF-8"));
                 if (!clientSecret.isEmpty()) {
+                    // skipcq: SCT-A000 - Form-encoded parameter name; secret value is supplied at runtime
                     formBody.append("&client_secret=").append(URLEncoder.encode(clientSecret, "UTF-8"));
                 }
 
@@ -845,7 +852,7 @@ public class PhysioRecordNativePlugin extends Plugin {
         return keyGenerator.generateKey();
     }
 
-    private SecretKey loadBiometricKeystoreKey() throws Exception {
+    private SecretKey loadBiometricKeystoreKey() throws GeneralSecurityException, IOException {
         KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
         ks.load(null);
         return (SecretKey) ks.getKey(BIOMETRIC_KEY_ALIAS, null);

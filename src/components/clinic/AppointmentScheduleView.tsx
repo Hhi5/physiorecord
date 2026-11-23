@@ -182,14 +182,6 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
     'appointments'
   );
   const [showNewApptSheet, setShowNewApptSheet] = useState(false);
-
-  useEffect(() => {
-    if (quickBookingNonce > 0) {
-      setScheduleMode('single');
-      setAppointmentMode('clinic');
-      setShowNewApptSheet(true);
-    }
-  }, [quickBookingNonce]);
   const [showNewWaitlistForm, setShowNewWaitlistForm] = useState(false);
   const [showClosedDaysBreaksModal, setShowClosedDaysBreaksModal] = useState(false);
   const [closedDaysModalTab, setClosedDaysModalTab] = useState<ClosedDaysBreaksModalTab>('breaks');
@@ -262,6 +254,14 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
   );
   const [visitType] = useState<SessionType>('follow_up');
   const [appointmentMode, setAppointmentMode] = useState<AppointmentMode>('clinic');
+
+  useEffect(() => {
+    if (quickBookingNonce > 0) {
+      setScheduleMode('single');
+      setAppointmentMode('clinic');
+      setShowNewApptSheet(true);
+    }
+  }, [quickBookingNonce]);
   const [locationId, setLocationId] = useState<string>(() =>
     resolveDefaultLocationId(ClinicOperationsService.getPracticeLocations(), 'clinic')
   );
@@ -357,7 +357,7 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
 
   useEffect(() => {
     if (!dek) return;
-    void DraftRecoveryService.getDraftAsync<Record<string, any>>(
+    void DraftRecoveryService.getDraftAsync<Record<string, unknown>>(
       dek,
       'appointment',
       'new'
@@ -368,7 +368,13 @@ export const AppointmentScheduleView: React.FC<AppointmentScheduleViewProps> = (
       if (p.scheduleMode === 'single' || p.scheduleMode === 'recurring') {
         setScheduleMode(p.scheduleMode);
       }
-      if (Array.isArray(p.selectedWeekdays)) setSelectedWeekdays(p.selectedWeekdays);
+      if (Array.isArray(p.selectedWeekdays)) {
+        setSelectedWeekdays(
+          p.selectedWeekdays.filter(
+            (d): d is WeekdayIndex => typeof d === 'number' && Number.isInteger(d) && d >= 0 && d <= 6
+          )
+        );
+      }
       if (typeof p.selectedDate === 'string') setSelectedDate(p.selectedDate);
       if (typeof p.episodeTitle === 'string') setEpisodeTitle(p.episodeTitle);
       if (typeof p.therapistName === 'string') setTherapistName(p.therapistName);

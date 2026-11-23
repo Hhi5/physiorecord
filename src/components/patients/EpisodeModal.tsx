@@ -674,19 +674,25 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
                 </button>
               </div>
               <div className="space-y-1.5">
-                {shortTermGoals.map((g, idx) => (
-                  <div key={idx} className="flex items-center justify-between gap-2 px-3 py-1.5 bg-surface rounded-lg border border-layer-line text-xs text-foreground">
-                    <span className="min-w-0 break-words">{g}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveShortGoal(idx)}
-                      aria-label={bi('حذف الهدف', 'Remove goal')}
-                      className="shrink-0 text-muted-foreground-2 hover:text-rose-600 transition-colors cursor-pointer"
+                {shortTermGoals.map((g, idx) => {
+                  const occurrence = shortTermGoals.slice(0, idx).filter((item) => item === g).length;
+                  return (
+                    <div
+                      key={`short-${g}-${occurrence}`}
+                      className="flex items-center justify-between gap-2 px-3 py-1.5 bg-surface rounded-lg border border-layer-line text-xs text-foreground"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
+                      <span className="min-w-0 break-words">{g}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveShortGoal(idx)}
+                        aria-label={bi('حذف الهدف', 'Remove goal')}
+                        className="shrink-0 text-muted-foreground-2 hover:text-rose-600 transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -727,19 +733,25 @@ export const EpisodeModal: React.FC<EpisodeModalProps> = ({
                 </button>
               </div>
               <div className="space-y-1.5">
-                {longTermGoals.map((g, idx) => (
-                  <div key={idx} className="flex items-center justify-between gap-2 px-3 py-1.5 bg-surface rounded-lg border border-layer-line text-xs text-foreground">
-                    <span className="min-w-0 break-words">{g}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveLongGoal(idx)}
-                      aria-label={bi('حذف الهدف', 'Remove goal')}
-                      className="shrink-0 text-muted-foreground-2 hover:text-rose-600 transition-colors cursor-pointer"
+                {longTermGoals.map((g, idx) => {
+                  const occurrence = longTermGoals.slice(0, idx).filter((item) => item === g).length;
+                  return (
+                    <div
+                      key={`long-${g}-${occurrence}`}
+                      className="flex items-center justify-between gap-2 px-3 py-1.5 bg-surface rounded-lg border border-layer-line text-xs text-foreground"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
+                      <span className="min-w-0 break-words">{g}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveLongGoal(idx)}
+                        aria-label={bi('حذف الهدف', 'Remove goal')}
+                        className="shrink-0 text-muted-foreground-2 hover:text-rose-600 transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

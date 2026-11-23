@@ -1155,7 +1155,7 @@ export const AppLayout: React.FC = () => {
     const firstDemoId = SYNTHETIC_PATIENTS[0]?.id ?? null;
     if (!firstDemoId || !dek) return;
     try {
-      let eps = await EpisodeService.getEpisodesByPatient(firstDemoId, dek);
+      const eps = await EpisodeService.getEpisodesByPatient(firstDemoId, dek);
       let activeEp = eps.find((e) => e.data.status === 'active') ?? eps[0];
       if (!activeEp) {
         activeEp = await EpisodeService.createEpisode(
@@ -1219,7 +1219,7 @@ export const AppLayout: React.FC = () => {
     }
   };
 
-  const handleCloseSpotlightTour = (wasDisplayed: boolean = true) => {
+  const handleCloseSpotlightTour = (wasDisplayed = true) => {
     if (fullWalkthroughStageIdx !== null) {
       if (!wasDisplayed) {
         setFullWalkthroughStageIdx(null);
@@ -1943,7 +1943,7 @@ export const AppLayout: React.FC = () => {
       {mergeModalExistingPatientId && (
         <Suspense fallback={null}>
           <PatientMergeModal
-            isOpen={true}
+            isOpen
             onClose={() => setMergeModalExistingPatientId(null)}
             initialSurvivingPatientId={mergeModalExistingPatientId}
             onMerged={(survivingId) => {

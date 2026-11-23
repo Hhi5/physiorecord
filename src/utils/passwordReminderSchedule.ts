@@ -5,6 +5,7 @@
 // fresh in memory and forgetfulness is caught BEFORE a lockout occurs.
 // =======================================================================
 
+// skipcq: SCT-A000 - localStorage key identifier, not a secret
 export const PASSWORD_REMINDER_STORAGE_KEY = 'physiorecord_password_reminder_v1';
 
 /** Expanding intervals in days: 1 day -> 3 days -> 1 week -> 2 weeks -> monthly */
@@ -150,7 +151,7 @@ export function recordPasswordChangedSchedule(nowMs: number = Date.now()): Passw
  * Snooze the gentle reminder for N days (default 2 days) without resetting progress.
  */
 export function snoozePasswordReminderState(
-  days: number = 2,
+  days = 2,
   nowMs: number = Date.now()
 ): PasswordReminderState {
   const current = loadPasswordReminderState(nowMs);
@@ -196,9 +197,9 @@ interface PasswordCredentialInitCompat {
   name?: string;
 }
 
-interface PasswordCredentialConstructorCompat {
-  new (data: PasswordCredentialInitCompat): Credential;
-}
+type PasswordCredentialConstructorCompat = new (
+  data: PasswordCredentialInitCompat
+) => Credential;
 
 interface WindowWithPasswordCredential extends Window {
   PasswordCredential?: PasswordCredentialConstructorCompat;

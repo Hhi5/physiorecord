@@ -20,5 +20,5 @@ export const BodyMapSlot: React.FC<BodyMapSlotProps> = ({ renderer = null }) => 
   if (!renderer) {
     return null;
   }
-  return <>{renderer}</>;
+  return renderer;
 };

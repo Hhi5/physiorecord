@@ -144,6 +144,7 @@ export function getValidatedLanCorsOrigin(origin: string | undefined | null): st
 export function isAllowedExternalActionUrl(rawUrl: string): boolean {
   if (!rawUrl || typeof rawUrl !== 'string') return false;
   const trimmed = rawUrl.trim();
+  // skipcq: JS-0004 - Intentionally rejects ASCII control characters to prevent CRLF/header injection
   if (!trimmed || /[\u0000-\u001F\u007F]/.test(trimmed)) return false;
 
   let parsed: URL;
@@ -263,8 +264,10 @@ export function sanitizeExportedDocumentHtml(rawHtml: string): string {
       (_match, attrPrefix: string, dq?: string, sq?: string, bare?: string) => {
         const rawVal = (dq ?? sq ?? bare ?? '').trim();
         const decodedVal = decodeHtmlEntitiesForUrlCheck(rawVal);
+        // skipcq: JS-0004 - Intentionally strips ASCII control chars to defeat obfuscated protocol smuggling
         const normalized = decodedVal.replace(/[\u0000-\u0020]+/g, '').toLowerCase();
         if (
+          // skipcq: JS-0087 - Explicitly blocks javascript: URIs during HTML sanitization
           normalized.startsWith('javascript:') ||
           normalized.startsWith('vbscript:') ||
           normalized.startsWith('data:text/html') ||

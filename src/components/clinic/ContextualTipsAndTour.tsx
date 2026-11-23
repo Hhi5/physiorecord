@@ -130,7 +130,9 @@ interface GuidedTourModalProps {
   onDeleteAllDemoData: () => Promise<void>;
   isSoloMode?: boolean;
   currentPageTourId?: PageTourId;
-  onStartSpotlightTour?: (pageId?: PageTourId) => void | boolean | Promise<boolean | void>;
+  onStartSpotlightTour?: (
+    pageId?: PageTourId
+  ) => boolean | undefined | Promise<boolean | undefined>;
   onStartPatientChartTourWithDemo?: () => Promise<void>;
   onStartSessionSoapTourWithDemo?: () => Promise<void>;
   onAddFirstPatient?: () => void;

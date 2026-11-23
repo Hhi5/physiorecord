@@ -303,7 +303,7 @@ export const computeSessionNumberHmacToken = async (
   const canonicalInput = `physiorecord:seq:${episodeId}:${normalizedNum}`;
   const dataBytes = new TextEncoder().encode(canonicalInput);
 
-  let hmacKey = getSequenceHmacKey(dek);
+  const hmacKey = getSequenceHmacKey(dek);
 
   if (!hmacKey) {
     // Fallback: If hmacKey is not registered, use SHA-256 digest of canonical input as a deterministic hash
@@ -692,7 +692,7 @@ export const unwrapOperationalDEK = async (
   wrappedDek: Uint8Array,
   wrappedDekIv: Uint8Array,
   vaultKek: CryptoKey,
-  generation: number = 1
+  generation = 1
 ): Promise<CryptoKey> => {
   try {
     const wrapAad = new TextEncoder().encode('vault-dek-wrap:v1.1');
@@ -1297,11 +1297,12 @@ export const encryptRecordPayload = async <T>(
   dek: CryptoKey,
   tableName: string,
   recordId: string,
-  parentIds: string[] = [],
+  parentIds: string[] | undefined,
   data: T,
   recordCryptoVersion: number = CURRENT_RECORD_CRYPTO_VERSION,
   dekVersion: number = CURRENT_DEK_VERSION
 ): Promise<{ iv: Uint8Array; ciphertext: Uint8Array; recordSalt?: Uint8Array }> => {
+  const normalizedParentIds = parentIds ?? [];
   const iv = randomBytes(IV_BYTES);
   const plaintext = new TextEncoder().encode(JSON.stringify(data));
 
@@ -1311,7 +1312,7 @@ export const encryptRecordPayload = async <T>(
     const aad = buildCanonicalAAD(
       tableName,
       recordId,
-      parentIds,
+      normalizedParentIds,
       recordCryptoVersion,
       dekVersion,
       recordSalt
@@ -1328,7 +1329,7 @@ export const encryptRecordPayload = async <T>(
     return { iv, ciphertext: framedCiphertext, recordSalt };
   }
 
-  const aad = buildCanonicalAAD(tableName, recordId, parentIds, recordCryptoVersion, dekVersion);
+  const aad = buildCanonicalAAD(tableName, recordId, normalizedParentIds, recordCryptoVersion, dekVersion);
   const cipherBuffer = await subtle.encrypt(
     { name: 'AES-GCM', iv, additionalData: aad },
     dek,
@@ -1353,12 +1354,13 @@ export const encryptRecordWithMandatoryReservation = async <T>(
   dek: CryptoKey,
   tableName: string,
   recordId: string,
-  parentIds: string[] = [],
+  parentIds: string[] | undefined,
   data: T,
   recordCryptoVersion: number = CURRENT_RECORD_CRYPTO_VERSION,
   dekVersion: number = CURRENT_DEK_VERSION,
   explicitExpectedGeneration?: number
 ): Promise<{ iv: Uint8Array; ciphertext: Uint8Array; recordSalt?: Uint8Array; reservedCount: number }> => {
+  const normalizedParentIds = parentIds ?? [];
   // Step 1: Enforce fail-closed key-bound generation fence in the central crypto layer
   const actualBoundGeneration = getDekGeneration(dek);
   if (actualBoundGeneration === undefined) {
@@ -1383,7 +1385,7 @@ export const encryptRecordWithMandatoryReservation = async <T>(
     dek,
     tableName,
     recordId,
-    parentIds,
+    normalizedParentIds,
     data,
     recordCryptoVersion,
     dekVersion
@@ -1399,13 +1401,14 @@ export const decryptRecordPayload = async <T>(
   dek: CryptoKey,
   tableName: string,
   recordId: string,
-  parentIds: string[] = [],
+  parentIds: string[] | undefined,
   iv: Uint8Array,
   ciphertext: Uint8Array,
   recordCryptoVersion: number = CURRENT_RECORD_CRYPTO_VERSION,
   dekVersion: number = CURRENT_DEK_VERSION,
   explicitRecordSalt?: Uint8Array
 ): Promise<T> => {
+  const normalizedParentIds = parentIds ?? [];
   try {
     if (recordCryptoVersion >= 2) {
       if (!ciphertext || ciphertext.byteLength < SALT_BYTES + 16) {
@@ -1428,7 +1431,7 @@ export const decryptRecordPayload = async <T>(
       const aad = buildCanonicalAAD(
         tableName,
         recordId,
-        parentIds,
+        normalizedParentIds,
         recordCryptoVersion,
         dekVersion,
         embeddedSalt
@@ -1442,7 +1445,13 @@ export const decryptRecordPayload = async <T>(
       return JSON.parse(jsonStr) as T;
     }
 
-    const aad = buildCanonicalAAD(tableName, recordId, parentIds, recordCryptoVersion, dekVersion);
+    const aad = buildCanonicalAAD(
+      tableName,
+      recordId,
+      normalizedParentIds,
+      recordCryptoVersion,
+      dekVersion
+    );
     const plainBuffer = await subtle.decrypt(
       { name: 'AES-GCM', iv, additionalData: aad },
       dek,
@@ -1516,6 +1525,7 @@ export const benchmarkKdf = async (
   iterations = DEFAULT_PBKDF2_ITERATIONS,
   sampleCount = 5
 ): Promise<{ samples: number[]; medianMs: number; worstMs: number }> => {
+  // skipcq: SCT-A000 - Throwaway dummy string used solely to benchmark local PBKDF2 timing
   const testPassword = 'Benchmarking_Secret_Password_123!';
   const testSalt = randomBytes(SALT_BYTES);
   const samples: number[] = [];
@@ -1746,7 +1756,16 @@ export const rotateAllKeys = async (
 
     // 4. Decrypt every record across ALL stores in CLINICAL_STORES_REGISTRY with old key,
     // and re-encrypt under newOperationalDek with newDekVersion & CURRENT_RECORD_CRYPTO_VERSION
-    const stagedStores: Record<string, any[]> = {};
+    type StagedEncryptedRow = {
+      id: string;
+      iv: Uint8Array;
+      ciphertext: Uint8Array;
+      recordCryptoVersion: number;
+      dekVersion: number;
+      recordSalt?: Uint8Array;
+      [key: string]: unknown;
+    };
+    const stagedStores: Record<string, StagedEncryptedRow[]> = {};
     const rotatedStoreCounts: Record<string, number> = {};
     let totalRecordsRotated = 0;
 
@@ -1787,7 +1806,7 @@ export const rotateAllKeys = async (
           newDekVersion
         );
 
-        const stagedRecord = {
+        const stagedRecord: StagedEncryptedRow = {
           ...r,
           recordCryptoVersion: targetCryptoVersion,
           dekVersion: newDekVersion,
@@ -1803,7 +1822,7 @@ export const rotateAllKeys = async (
     }
 
     // Also stage any active encrypted drafts in Dexie v10 `drafts` (excluded from portable backup)
-    const stagedDrafts: any[] = [];
+    const stagedDrafts: StagedEncryptedRow[] = [];
     const draftsTable = database.verno >= 10 ? database.table('drafts') : undefined;
     if (draftsTable) {
       const existingDrafts = await draftsTable.toArray();

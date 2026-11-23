@@ -83,19 +83,22 @@ const FRACTION_EXACT_RE = /^\d+(?:\.\d+)?\s*\/\s*\d+(?:\.\d+)?$/;
 const BidiClinicalText: React.FC<{ text: string }> = ({ text }) => {
   const parts = text.split(FRACTION_SPLIT_RE);
   if (parts.length <= 1) {
-    return <>{text}</>;
+    return text;
   }
+  let offset = 0;
   return (
     <>
-      {parts.map((part, idx) =>
-        FRACTION_EXACT_RE.test(part) ? (
-          <bdi key={idx} dir="ltr" className="tabular-nums font-semibold">
+      {parts.map((part) => {
+        const key = `${offset}:${part}`;
+        offset += part.length;
+        return FRACTION_EXACT_RE.test(part) ? (
+          <bdi key={key} dir="ltr" className="tabular-nums font-semibold">
             {part.replace(/\s+/g, '')}
           </bdi>
         ) : (
-          <React.Fragment key={idx}>{part}</React.Fragment>
-        )
-      )}
+          <React.Fragment key={key}>{part}</React.Fragment>
+        );
+      })}
     </>
   );
 };

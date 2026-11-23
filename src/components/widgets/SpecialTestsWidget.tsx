@@ -1100,7 +1100,7 @@ interface SpecialTestRowCardProps {
   onRemoveCustom?: () => void;
 }
 
-const SpecialTestRowCard: React.FC<SpecialTestRowCardProps> = ({
+function SpecialTestRowCard({
   test,
   currentOutcome,
   notes,
@@ -1108,7 +1108,7 @@ const SpecialTestRowCard: React.FC<SpecialTestRowCardProps> = ({
   onSelectOutcome,
   onOpenNotes,
   onRemoveCustom,
-}) => {
+}: SpecialTestRowCardProps) {
   const { bi } = useLanguage();
 
   return (
@@ -1120,7 +1120,7 @@ const SpecialTestRowCard: React.FC<SpecialTestRowCardProps> = ({
           </div>
           {notes && (
             <div className="mt-1 text-xs text-muted-foreground-1 line-clamp-1 italic bg-card px-2 py-0.5 rounded-md">
-              "{notes}"
+              {`"${notes}"`}
             </div>
           )}
         </div>

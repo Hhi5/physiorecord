@@ -31,7 +31,7 @@ import { createInMemoryDatabase } from './testDbHelper';
 import type { VaultMetaEntity } from '../../types/clinical';
 
 describe('Phase 1B: KDF Bounds, Auto-Upgrade, Emergency Recovery Key, and Auto-Lock', () => {
-  let testDb: any;
+  let testDb: ReturnType<typeof createInMemoryDatabase>;
 
   beforeEach(async () => {
     testDb = createInMemoryDatabase(6);

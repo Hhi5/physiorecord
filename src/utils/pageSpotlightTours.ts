@@ -167,6 +167,7 @@ export interface DesktopShortcutItem {
   detailCkb: string;
 }
 
+// skipcq: SCT-A000 - localStorage key identifier, not a secret
 export const PAGE_TOURS_STORAGE_KEY = 'physiorecord_page_tours_v1';
 
 const VALID_PAGE_TOUR_IDS: ReadonlySet<PageTourId> = new Set([

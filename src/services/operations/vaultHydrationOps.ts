@@ -853,15 +853,16 @@ export async function ensureColdStoreLoadedOps(
 export async function ensurePatientColdStoresLoadedOps(
   rt: OperationsRuntime,
   patientId: string,
-  episodeIds: string[] = [],
+  episodeIds: string[] | undefined,
   isPatientColdStoresLoaded: (pid: string) => boolean
 ): Promise<void> {
+  const normalizedEpisodeIds = episodeIds ?? [];
   const activeDek = rt.getActiveDek();
   if (!patientId || !activeDek) return;
   const cache = rt.getCache();
   const loadedColdEpisodeIds = rt.getLoadedColdEpisodeIds();
   if (isPatientColdStoresLoaded(patientId)) {
-    const missingEp = episodeIds.some(
+    const missingEp = normalizedEpisodeIds.some(
       (id) => id && !loadedColdEpisodeIds.has(id) && !cache.episodeClinicalByEpisodeId.has(id)
     );
     if (!missingEp) return;
@@ -869,7 +870,7 @@ export async function ensurePatientColdStoresLoadedOps(
 
   const coldPatientLoadPromises = rt.getColdPatientLoadPromises();
   const existingPromise = coldPatientLoadPromises.get(patientId);
-  if (existingPromise && episodeIds.length === 0) return existingPromise;
+  if (existingPromise && normalizedEpisodeIds.length === 0) return existingPromise;
 
   const dek = activeDek;
   const database = rt.getActiveDb();
@@ -898,8 +899,8 @@ export async function ensurePatientColdStoresLoadedOps(
       !loadedColdStores.has('episodeClinical')
         ? database.episodeClinical.where('patientId').equals(patientId).toArray()
         : Promise.resolve([]),
-      !loadedColdStores.has('episodeClinical') && episodeIds.length > 0
-        ? database.episodeClinical.where('episodeId').anyOf(episodeIds).toArray()
+      !loadedColdStores.has('episodeClinical') && normalizedEpisodeIds.length > 0
+        ? database.episodeClinical.where('episodeId').anyOf(normalizedEpisodeIds).toArray()
         : Promise.resolve([]),
     ]);
 
@@ -983,7 +984,7 @@ export async function ensurePatientColdStoresLoadedOps(
       }
       loadedColdEpisodeIds.add(epStore.episodeId);
     }
-    for (const epId of episodeIds) {
+    for (const epId of normalizedEpisodeIds) {
       if (epId) loadedColdEpisodeIds.add(epId);
     }
     loadedColdPatientIds.add(patientId);
