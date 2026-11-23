@@ -230,6 +230,7 @@ export const ChartHeroAndUtilityStrip: React.FC<ChartHeroAndUtilityStripProps> =
               <button
                 type="button"
                 onClick={onBackToDirectory}
+                aria-label={bi('العودة إلى سجل المرضى', 'Back to Patient Directory', 'گەڕانەوە بۆ لیستی نەخۆشەکان')}
                 title={bi('العودة إلى سجل المرضى', 'Back to Patient Directory', 'گەڕانەوە بۆ لیستی نەخۆشەکان')}
                 className="compact-btn size-9 rounded-xl bg-surface/80 hover:bg-surface flex items-center justify-center text-foreground hover:text-primary transition-colors cursor-pointer shrink-0"
               >

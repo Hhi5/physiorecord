@@ -457,9 +457,9 @@ test.describe('Phase A — Crash Resilience, Auto-Lock Warning, Sandbox Drill, L
         .click();
       await expect(
         page
-          .locator(
-            'button[aria-label*="العودة إلى سجل المرضى"], button[aria-label*="العودة لدليل المرضى"], button[aria-label*="Back to patient"]'
-          )
+          .getByRole('button', {
+            name: /العودة إلى سجل المرضى|العودة لدليل المرضى|Back to patient/i,
+          })
           .first()
       ).toBeVisible({ timeout: 15_000 });
       const openWorkspaceMs = Date.now() - openChartStart;
