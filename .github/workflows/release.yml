@@ -90,13 +90,13 @@ jobs:
           cd dist && zip -r "../PhysioRecord-Web-PWA-${VERSION_TAG}.zip" .
 
       - name: Upload Web PWA bundle for GitHub Release
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: web-pwa-bundle
           path: PhysioRecord-Web-PWA-*.zip
 
       - name: Upload CycloneDX SBOM (CI compliance artifact)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: compliance-sbom
           path: build/sbom.cdx.json
@@ -262,14 +262,14 @@ jobs:
           fi
 
       - name: Upload Android APK for GitHub Release
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: android-universal-apk
           path: PhysioRecord-Android-Universal-*.apk
 
       - name: Upload Android signing report (CI verification artifact)
         if: ${{ steps.keystore.outputs.signed == 'true' }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: android-signing-report
           path: ANDROID_SIGNING_SHA256.txt
@@ -322,7 +322,7 @@ jobs:
           npx electron-builder --config electron/electron-builder.yml --win nsis portable --publish never
 
       - name: Upload Windows EXE installers for GitHub Release
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: windows-exe-release
           path: release/*.exe
