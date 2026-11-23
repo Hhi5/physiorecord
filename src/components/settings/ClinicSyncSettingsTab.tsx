@@ -337,12 +337,16 @@ export const ClinicSyncSettingsTab: React.FC = () => {
         ),
       });
     } catch (err) {
+      const errText =
+        err instanceof Error
+          ? err.message
+          : bi('تعذّر تسجيل الدخول بحساب Google.', 'Google Sign-In failed.');
+      if (isNativeAppPlatform && /client.?secret|المفتاح السري/i.test(errText)) {
+        setShowNativeOAuthSetup(true);
+      }
       setFeedback({
         kind: 'error',
-        text:
-          err instanceof Error
-            ? err.message
-            : bi('تعذّر تسجيل الدخول بحساب Google.', 'Google Sign-In failed.'),
+        text: errText,
       });
     } finally {
       setBusyAction(null);
@@ -1290,6 +1294,14 @@ export const ClinicSyncSettingsTab: React.FC = () => {
           )}
 
           {/* METHOD 2: Direct Google Account Sign-In (Web | Built-In Native OAuth | Optional Owner Setup) */}
+          {!driveAuth.isSignedIn && feedback?.kind === 'error' && (
+            <div
+              role="alert"
+              className="p-3 rounded-xl border bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs font-bold leading-relaxed"
+            >
+              {feedback.text}
+            </div>
+          )}
           {!driveAuth.isSignedIn ? (
             isNativeAppPlatform && !builtInGoogleOAuth ? (
               <div className="rounded-xl bg-surface/80 border border-line-2 overflow-hidden">

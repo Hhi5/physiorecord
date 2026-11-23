@@ -57,7 +57,9 @@ function getBuildTimeNativeGoogleOAuthConfig(): NativeGoogleOAuthConfig {
     const env = typeof import.meta !== 'undefined' ? (import.meta.env as Record<string, string | undefined>) : undefined;
     return {
       clientId: String(env?.VITE_GOOGLE_OAUTH_CLIENT_ID || '').trim(),
-      clientSecret: '',
+      // Google Cloud Desktop OAuth clients (required for RFC 8252 127.0.0.1 loopback) mandate
+      // client_secret on https://oauth2.googleapis.com/token even with PKCE S256.
+      clientSecret: String(env?.VITE_GOOGLE_OAUTH_CLIENT_SECRET || '').trim(),
     };
   } catch {
     return { clientId: '', clientSecret: '' };
@@ -66,28 +68,33 @@ function getBuildTimeNativeGoogleOAuthConfig(): NativeGoogleOAuthConfig {
 
 export function hasBuiltInNativeGoogleOAuth(): boolean {
   const builtIn = getBuildTimeNativeGoogleOAuthConfig();
-  return Boolean(builtIn.clientId && builtIn.clientId.endsWith('.apps.googleusercontent.com'));
+  return Boolean(
+    builtIn.clientId &&
+      builtIn.clientId.endsWith('.apps.googleusercontent.com') &&
+      builtIn.clientSecret
+  );
 }
 
 export function getNativeGoogleOAuthConfig(): NativeGoogleOAuthConfig {
   const builtIn = getBuildTimeNativeGoogleOAuthConfig();
   purgeLegacyLocalStorageSecret();
+  const resolvedSecret = inMemoryNativeOAuthClientSecret || builtIn.clientSecret;
   try {
     if (typeof window === 'undefined' || !window.localStorage) {
       return {
         clientId: builtIn.clientId,
-        clientSecret: inMemoryNativeOAuthClientSecret,
+        clientSecret: resolvedSecret,
       };
     }
     const storedId = (window.localStorage.getItem(NATIVE_OAUTH_CLIENT_ID_KEY) || '').trim();
     return {
       clientId: storedId || builtIn.clientId,
-      clientSecret: inMemoryNativeOAuthClientSecret,
+      clientSecret: resolvedSecret,
     };
   } catch {
     return {
       clientId: builtIn.clientId,
-      clientSecret: inMemoryNativeOAuthClientSecret,
+      clientSecret: resolvedSecret,
     };
   }
 }
@@ -226,11 +233,22 @@ export async function signInWithGoogleDrive(): Promise<GoogleDriveAuthState> {
       );
     }
 
-    const res = await nativeOAuthFn({
-      clientId: nativeCfg.clientId,
-      clientSecret: nativeCfg.clientSecret || undefined,
-      scope: `${GOOGLE_DRIVE_FILE_SCOPE} openid email profile`,
-    });
+    let res;
+    try {
+      res = await nativeOAuthFn({
+        clientId: nativeCfg.clientId,
+        clientSecret: nativeCfg.clientSecret || undefined,
+        scope: `${GOOGLE_DRIVE_FILE_SCOPE} openid email profile`,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err || '');
+      if (/client_secret\s+is\s+missing/iu.test(msg)) {
+        throw new Error(
+          'رفض Google إتمام الربط لأن المفتاح السري للتطبيق (Client Secret) غير مُعدّ في هذه النسخة — يرجى إدخال Client Secret أدناه (أو إضافة GOOGLE_OAUTH_CLIENT_SECRET في إعدادات البناء وإعادة الإصدار).'
+        );
+      }
+      throw err;
+    }
     if (!res?.accessToken) {
       throw new Error('لم تكتمل عملية تسجيل الدخول بحساب Google. يرجى المحاولة مرة أخرى.');
     }

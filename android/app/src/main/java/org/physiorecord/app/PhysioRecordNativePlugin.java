@@ -613,11 +613,11 @@ public class PhysioRecordNativePlugin extends Plugin {
                     }
                 });
 
-                String authCode = null;
+                String accessToken = null;
                 String oauthError = null;
                 long deadline = System.currentTimeMillis() + 180_000L;
 
-                while (authCode == null && oauthError == null && System.currentTimeMillis() < deadline) {
+                while (accessToken == null && oauthError == null && System.currentTimeMillis() < deadline) {
                     try (Socket client = server.accept()) {
                         if (client.getInetAddress() == null || !client.getInetAddress().isLoopbackAddress()) {
                             continue;
@@ -651,14 +651,72 @@ public class PhysioRecordNativePlugin extends Plugin {
                         String returnedError = params.get("error");
                         String returnedCode = params.get("code");
 
-                        boolean ok = returnedError == null
+                        boolean callbackOk = returnedError == null
                                 && returnedCode != null
                                 && !returnedCode.isEmpty()
                                 && state.equals(returnedState);
 
-                        String htmlBody = ok
+                        boolean exchangeOk = false;
+                        String errorDetailAr = "يرجى العودة إلى تطبيق PhysioRecord والمحاولة مجدداً.";
+                        String errorDetailEn = "Please return to PhysioRecord and try again.";
+
+                        if (!callbackOk) {
+                            oauthError = "OAuth cancelled or failed: " + (returnedError != null ? returnedError : "state_mismatch");
+                        } else {
+                            // Exchange authorization code BEFORE sending final browser HTML so Chrome never falsely claims success
+                            StringBuilder formBody = new StringBuilder();
+                            formBody.append("code=").append(URLEncoder.encode(returnedCode, "UTF-8"))
+                                    .append("&client_id=").append(URLEncoder.encode(clientId, "UTF-8"))
+                                    .append("&redirect_uri=").append(URLEncoder.encode(redirectUri, "UTF-8"))
+                                    .append("&grant_type=authorization_code")
+                                    .append("&code_verifier=").append(URLEncoder.encode(codeVerifier, "UTF-8"));
+                            if (!clientSecret.isEmpty()) {
+                                // skipcq: SCT-A000 - Form-encoded parameter name; secret value is supplied at runtime
+                                formBody.append("&client_secret=").append(URLEncoder.encode(clientSecret, "UTF-8"));
+                            }
+
+                            HttpURLConnection tokenConn = (HttpURLConnection) new URL("https://oauth2.googleapis.com/token").openConnection();
+                            tokenConn.setRequestMethod("POST");
+                            tokenConn.setConnectTimeout(10_000);
+                            tokenConn.setReadTimeout(10_000);
+                            tokenConn.setDoOutput(true);
+                            tokenConn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                            try (OutputStream os = tokenConn.getOutputStream()) {
+                                os.write(formBody.toString().getBytes(StandardCharsets.UTF_8));
+                            }
+
+                            int tokenStatus = tokenConn.getResponseCode();
+                            String tokenRespStr = readAllStream(
+                                    tokenStatus >= 200 && tokenStatus < 300
+                                            ? tokenConn.getInputStream()
+                                            : tokenConn.getErrorStream()
+                            );
+                            tokenConn.disconnect();
+
+                            if (tokenStatus < 200 || tokenStatus >= 300) {
+                                String safeErr = tokenRespStr != null && tokenRespStr.length() > 200
+                                        ? tokenRespStr.substring(0, 200)
+                                        : String.valueOf(tokenRespStr);
+                                oauthError = "Google token exchange failed (HTTP " + tokenStatus + "): " + safeErr;
+                                if (tokenRespStr != null && tokenRespStr.toLowerCase(java.util.Locale.ROOT).contains("client_secret is missing")) {
+                                    errorDetailAr = "المفتاح السري للتطبيق (Client Secret) غير مُعدّ. يرجى العودة إلى PhysioRecord لإدخاله أو تحديث النسخة.";
+                                    errorDetailEn = "Google rejected the OAuth exchange because client_secret is missing. Return to PhysioRecord.";
+                                }
+                            } else {
+                                JSONObject tokenJson = new JSONObject(tokenRespStr);
+                                String parsedToken = tokenJson.optString("access_token", "");
+                                if (parsedToken.isEmpty()) {
+                                    oauthError = "Google did not return an access token.";
+                                } else {
+                                    accessToken = parsedToken;
+                                    exchangeOk = true;
+                                }
+                            }
+                        }
+
+                        String htmlBody = exchangeOk
                                 ? "<!doctype html><html dir=\"rtl\" lang=\"ar\"><head><meta charset=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/><title>PhysioRecord</title><style>body{font-family:sans-serif;text-align:center;padding:48px 20px;background:#f0fdf4;color:#065f46;}h2{margin-bottom:8px;}</style></head><body><h2>تم ربط Google Drive بنجاح</h2><p>يمكنك إغلاق هذه الصفحة والعودة إلى تطبيق PhysioRecord.</p><p dir=\"ltr\">Connected successfully. Return to PhysioRecord.</p></body></html>"
-                                : "<!doctype html><html dir=\"rtl\" lang=\"ar\"><head><meta charset=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/><title>PhysioRecord</title><style>body{font-family:sans-serif;text-align:center;padding:48px 20px;background:#fef2f2;color:#991b1b;}</style></head><body><h2>تعذّر إكمال تسجيل الدخول</h2><p>يرجى العودة إلى تطبيق PhysioRecord والمحاولة مجدداً.</p></body></html>";
+                                : "<!doctype html><html dir=\"rtl\" lang=\"ar\"><head><meta charset=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/><title>PhysioRecord</title><style>body{font-family:sans-serif;text-align:center;padding:48px 20px;background:#fef2f2;color:#991b1b;}</style></head><body><h2>تعذّر إكمال تسجيل الدخول</h2><p>" + errorDetailAr + "</p><p dir=\"ltr\">" + errorDetailEn + "</p></body></html>";
 
                         byte[] bodyBytes = htmlBody.getBytes(StandardCharsets.UTF_8);
                         String httpResp = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nContent-Security-Policy: default-src 'none'; style-src 'unsafe-inline'\r\nContent-Length: "
@@ -667,14 +725,8 @@ public class PhysioRecordNativePlugin extends Plugin {
                         out.write(httpResp.getBytes(StandardCharsets.UTF_8));
                         out.write(bodyBytes);
                         out.flush();
-
-                        if (ok) {
-                            authCode = returnedCode;
-                        } else {
-                            oauthError = returnedError != null ? returnedError : "state_mismatch";
-                        }
                     } catch (SocketTimeoutException timeout) {
-                        oauthError = "timeout";
+                        oauthError = "OAuth cancelled or failed: timeout";
                     }
                 }
 
@@ -682,53 +734,8 @@ public class PhysioRecordNativePlugin extends Plugin {
                     return;
                 }
 
-                if (oauthError != null || authCode == null) {
-                    call.reject("OAuth cancelled or failed: " + (oauthError != null ? oauthError : "timeout"));
-                    return;
-                }
-
-                // Exchange authorization code for OAuth access token over HTTPS
-                StringBuilder formBody = new StringBuilder();
-                formBody.append("code=").append(URLEncoder.encode(authCode, "UTF-8"))
-                        .append("&client_id=").append(URLEncoder.encode(clientId, "UTF-8"))
-                        .append("&redirect_uri=").append(URLEncoder.encode(redirectUri, "UTF-8"))
-                        .append("&grant_type=authorization_code")
-                        .append("&code_verifier=").append(URLEncoder.encode(codeVerifier, "UTF-8"));
-                if (!clientSecret.isEmpty()) {
-                    // skipcq: SCT-A000 - Form-encoded parameter name; secret value is supplied at runtime
-                    formBody.append("&client_secret=").append(URLEncoder.encode(clientSecret, "UTF-8"));
-                }
-
-                HttpURLConnection tokenConn = (HttpURLConnection) new URL("https://oauth2.googleapis.com/token").openConnection();
-                tokenConn.setRequestMethod("POST");
-                tokenConn.setConnectTimeout(10_000);
-                tokenConn.setReadTimeout(10_000);
-                tokenConn.setDoOutput(true);
-                tokenConn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                try (OutputStream os = tokenConn.getOutputStream()) {
-                    os.write(formBody.toString().getBytes(StandardCharsets.UTF_8));
-                }
-
-                int tokenStatus = tokenConn.getResponseCode();
-                String tokenRespStr = readAllStream(
-                        tokenStatus >= 200 && tokenStatus < 300
-                                ? tokenConn.getInputStream()
-                                : tokenConn.getErrorStream()
-                );
-                tokenConn.disconnect();
-
-                if (tokenStatus < 200 || tokenStatus >= 300) {
-                    String safeErr = tokenRespStr != null && tokenRespStr.length() > 200
-                            ? tokenRespStr.substring(0, 200)
-                            : String.valueOf(tokenRespStr);
-                    call.reject("Google token exchange failed (HTTP " + tokenStatus + "): " + safeErr);
-                    return;
-                }
-
-                JSONObject tokenJson = new JSONObject(tokenRespStr);
-                String accessToken = tokenJson.optString("access_token", "");
-                if (accessToken.isEmpty()) {
-                    call.reject("Google did not return an access token.");
+                if (oauthError != null || accessToken == null) {
+                    call.reject(oauthError != null ? oauthError : "OAuth cancelled or failed: timeout");
                     return;
                 }
 

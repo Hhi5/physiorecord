@@ -154,11 +154,49 @@ export function registerGoogleDriveHandlers({ ipcMain, assertTrustedIpcSender, g
     const codeVerifier = randomBase64Url(48);
     const codeChallenge = sha256Base64Url(codeVerifier);
 
-    const { authCode, redirectUri } = await new Promise((resolve, reject) => {
+    const focusMainWindow = () => {
+      try {
+        const mainWin = getMainWindow?.();
+        if (mainWin && !mainWin.isDestroyed()) {
+          if (mainWin.isMinimized()) mainWin.restore();
+          mainWin.show();
+          mainWin.focus();
+        }
+      } catch {
+        // Ignore window focus errors
+      }
+    };
+
+    const sendCallbackHtml = (res, isSuccess, detailAr, detailEn) => {
+      const html = isSuccess
+        ? '<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8"/><title>PhysioRecord</title><style>body{font-family:sans-serif;text-align:center;padding:48px 20px;background:#f0fdf4;color:#065f46;}</style></head><body><h2>تم ربط Google Drive بنجاح</h2><p>يمكنك إغلاق هذه الصفحة والعودة إلى تطبيق PhysioRecord على الحاسبة.</p><p dir="ltr">Connected successfully. Return to PhysioRecord.</p></body></html>'
+        : `<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8"/><title>PhysioRecord</title><style>body{font-family:sans-serif;text-align:center;padding:48px 20px;background:#fef2f2;color:#991b1b;}</style></head><body><h2>تعذّر إكمال تسجيل الدخول</h2><p>${detailAr}</p><p dir="ltr">${detailEn}</p></body></html>`;
+
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+        'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'",
+      });
+      res.end(html);
+    };
+
+    return await new Promise((resolve, reject) => {
       let settled = false;
+      let handlingCallback = false;
       let timer = null;
       let boundRedirectUri = '';
-      const server = http.createServer((req, res) => {
+
+      const closeServer = (server) => {
+        try {
+          server.close();
+        } catch {
+          // ignore
+        }
+        if (activeOAuthServer === server) activeOAuthServer = null;
+      };
+
+      const server = http.createServer(async (req, res) => {
         try {
           const reqUrl = new URL(req.url || '/', 'http://127.0.0.1');
           if (reqUrl.pathname !== '/oauth2callback') {
@@ -166,45 +204,140 @@ export function registerGoogleDriveHandlers({ ipcMain, assertTrustedIpcSender, g
             res.end('Not found');
             return;
           }
+          if (handlingCallback || settled) {
+            res.writeHead(204);
+            res.end();
+            return;
+          }
+          handlingCallback = true;
+
           const returnedState = reqUrl.searchParams.get('state');
           const returnedError = reqUrl.searchParams.get('error');
           const returnedCode = reqUrl.searchParams.get('code');
-          const ok = Boolean(!returnedError && returnedCode && returnedState === state);
+          const callbackOk = Boolean(!returnedError && returnedCode && returnedState === state);
 
-          const html = ok
-            ? '<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8"/><title>PhysioRecord</title><style>body{font-family:sans-serif;text-align:center;padding:48px 20px;background:#f0fdf4;color:#065f46;}</style></head><body><h2>تم ربط Google Drive بنجاح</h2><p>يمكنك إغلاق هذه الصفحة والعودة إلى تطبيق PhysioRecord على الحاسبة.</p><p dir="ltr">Connected successfully. Return to PhysioRecord.</p></body></html>'
-            : '<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8"/><title>PhysioRecord</title><style>body{font-family:sans-serif;text-align:center;padding:48px 20px;background:#fef2f2;color:#991b1b;}</style></head><body><h2>تعذّر إكمال تسجيل الدخول</h2><p>يرجى العودة إلى تطبيق PhysioRecord والمحاولة مجدداً.</p></body></html>';
-
-          res.writeHead(200, {
-            'Content-Type': 'text/html; charset=utf-8',
-            'Cache-Control': 'no-store',
-            'X-Content-Type-Options': 'nosniff',
-            'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'",
-          });
-          res.end(html);
-
-          if (!settled) {
+          if (!callbackOk) {
+            sendCallbackHtml(
+              res,
+              false,
+              'تم إلغاء تسجيل الدخول أو انتهت صلاحية الجلسة. يرجى العودة إلى تطبيق PhysioRecord والمحاولة مجدداً.',
+              'Sign-in was cancelled or expired. Please return to PhysioRecord and try again.'
+            );
             settled = true;
             if (timer) clearTimeout(timer);
-            try {
-              server.close();
-            } catch {
-              // ignore
-            }
-            if (activeOAuthServer === server) activeOAuthServer = null;
-            if (ok) {
-              resolve({
-                authCode: returnedCode,
-                redirectUri: boundRedirectUri,
-              });
-            } else {
-              reject(new Error(`OAuth cancelled or failed: ${returnedError || 'state_mismatch'}`));
-            }
+            closeServer(server);
+            focusMainWindow();
+            reject(new Error(`OAuth cancelled or failed: ${returnedError || 'state_mismatch'}`));
+            return;
           }
+
+          const formParams = new URLSearchParams({
+            code: returnedCode,
+            client_id: clientId,
+            redirect_uri: boundRedirectUri,
+            grant_type: 'authorization_code',
+            code_verifier: codeVerifier,
+          });
+          if (clientSecret) {
+            formParams.set('client_secret', clientSecret);
+          }
+
+          const tokenResp = await httpsTextRequest('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formParams.toString(),
+            timeoutMs: 12000,
+            maxBytes: 1024 * 1024,
+          });
+
+          if (!tokenResp.ok) {
+            const missingSecret = /client_secret\s+is\s+missing/iu.test(tokenResp.text);
+            sendCallbackHtml(
+              res,
+              false,
+              missingSecret
+                ? 'تعذّر إتمام الربط لأن المفتاح السري للتطبيق (Client Secret) غير مُعدّ. يرجى العودة إلى PhysioRecord وإدخاله أو تحديث النسخة.'
+                : 'رفض خادم Google إتمام تبادل رمز الدخول. يرجى العودة إلى تطبيق PhysioRecord والمحاولة مجدداً.',
+              missingSecret
+                ? 'Google rejected the Desktop OAuth exchange because client_secret is missing. Return to PhysioRecord.'
+                : 'Google rejected the OAuth token exchange. Please return to PhysioRecord and try again.'
+            );
+            settled = true;
+            if (timer) clearTimeout(timer);
+            closeServer(server);
+            focusMainWindow();
+            reject(
+              new Error(
+                `Google token exchange failed (HTTP ${tokenResp.status}): ${tokenResp.text.slice(0, 200)}`
+              )
+            );
+            return;
+          }
+
+          const tokenJson = JSON.parse(tokenResp.text);
+          const accessToken = String(tokenJson.access_token || '');
+          if (!accessToken) {
+            sendCallbackHtml(
+              res,
+              false,
+              'لم يُرجع Google رمز صلاحية صالحاً. يرجى العودة إلى تطبيق PhysioRecord والمحاولة مجدداً.',
+              'Google did not return a valid access token. Please return to PhysioRecord.'
+            );
+            settled = true;
+            if (timer) clearTimeout(timer);
+            closeServer(server);
+            focusMainWindow();
+            reject(new Error('Google did not return an access token.'));
+            return;
+          }
+
+          let email = '';
+          let displayName = '';
+          let photoURL = '';
+          try {
+            const infoResp = await httpsTextRequest(
+              'https://www.googleapis.com/oauth2/v3/userinfo',
+              {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${accessToken}` },
+                timeoutMs: 8000,
+                maxBytes: 256 * 1024,
+              }
+            );
+            if (infoResp.ok) {
+              const infoJson = JSON.parse(infoResp.text);
+              email = String(infoJson.email || '');
+              displayName = String(infoJson.name || '');
+              photoURL = String(infoJson.picture || '');
+            }
+          } catch {
+            // Optional user profile fetch
+          }
+
+          sendCallbackHtml(res, true, '', '');
+          settled = true;
+          if (timer) clearTimeout(timer);
+          closeServer(server);
+          focusMainWindow();
+          resolve({ accessToken, email, displayName, photoURL });
         } catch (err) {
+          try {
+            if (!res.headersSent) {
+              sendCallbackHtml(
+                res,
+                false,
+                'حدث خطأ غير متوقع أثناء إكمال تسجيل الدخول. يرجى العودة إلى تطبيق PhysioRecord والمحاولة مجدداً.',
+                'Unexpected error while completing sign-in. Please return to PhysioRecord.'
+              );
+            }
+          } catch {
+            // ignore
+          }
           if (!settled) {
             settled = true;
             if (timer) clearTimeout(timer);
+            closeServer(server);
+            focusMainWindow();
             reject(err);
           }
         }
@@ -214,7 +347,7 @@ export function registerGoogleDriveHandlers({ ipcMain, assertTrustedIpcSender, g
         if (!settled) {
           settled = true;
           if (timer) clearTimeout(timer);
-          if (activeOAuthServer === server) activeOAuthServer = null;
+          closeServer(server);
           reject(err);
         }
       });
@@ -239,12 +372,7 @@ export function registerGoogleDriveHandlers({ ipcMain, assertTrustedIpcSender, g
         timer = setTimeout(() => {
           if (!settled) {
             settled = true;
-            try {
-              server.close();
-            } catch {
-              // ignore
-            }
-            if (activeOAuthServer === server) activeOAuthServer = null;
+            closeServer(server);
             reject(new Error('OAuth timed out before completing sign-in.'));
           }
         }, 180_000);
@@ -253,68 +381,12 @@ export function registerGoogleDriveHandlers({ ipcMain, assertTrustedIpcSender, g
           if (!settled) {
             settled = true;
             if (timer) clearTimeout(timer);
-            try {
-              server.close();
-            } catch {
-              // ignore
-            }
-            if (activeOAuthServer === server) activeOAuthServer = null;
+            closeServer(server);
             reject(new Error(`Could not launch system browser: ${err?.message || err}`));
           }
         });
       });
     });
-
-    const formParams = new URLSearchParams({
-      code: authCode,
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      grant_type: 'authorization_code',
-      code_verifier: codeVerifier,
-    });
-    if (clientSecret) {
-      formParams.set('client_secret', clientSecret);
-    }
-
-    const tokenResp = await httpsTextRequest('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formParams.toString(),
-      timeoutMs: 12000,
-      maxBytes: 1024 * 1024,
-    });
-
-    if (!tokenResp.ok) {
-      throw new Error(`Google token exchange failed (HTTP ${tokenResp.status}): ${tokenResp.text.slice(0, 200)}`);
-    }
-
-    const tokenJson = JSON.parse(tokenResp.text);
-    const accessToken = String(tokenJson.access_token || '');
-    if (!accessToken) {
-      throw new Error('Google did not return an access token.');
-    }
-
-    let email = '';
-    let displayName = '';
-    let photoURL = '';
-    try {
-      const infoResp = await httpsTextRequest('https://www.googleapis.com/oauth2/v3/userinfo', {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${accessToken}` },
-        timeoutMs: 8000,
-        maxBytes: 256 * 1024,
-      });
-      if (infoResp.ok) {
-        const infoJson = JSON.parse(infoResp.text);
-        email = String(infoJson.email || '');
-        displayName = String(infoJson.name || '');
-        photoURL = String(infoJson.picture || '');
-      }
-    } catch {
-      // Optional user profile fetch
-    }
-
-    return { accessToken, email, displayName, photoURL };
   });
 
   // Strictly allowlisted Main-Process Google Drive v3 API proxy (keeps renderer CSP `connect-src 'none'` intact)
