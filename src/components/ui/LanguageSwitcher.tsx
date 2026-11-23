@@ -48,7 +48,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                 type="button"
                 onClick={() => handleSelect(opt.code)}
                 aria-pressed={active}
-                aria-label={opt.label}
+                aria-label={compact ? `${opt.shortLabel} — ${opt.label}` : opt.label}
                 title={opt.label}
                 className={`min-h-[36px] ${compact ? 'px-1' : 'px-1.5'} text-xs cursor-pointer transition-colors bg-transparent border-0 whitespace-nowrap ${
                   active

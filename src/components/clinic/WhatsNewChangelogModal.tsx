@@ -17,7 +17,7 @@ import { GeometricHeaderBackdrop } from '../ui/Dialog';
 import {
   APP_SEMVER_VERSION,
   BUNDLED_CHANGELOG_RELEASES,
-  DEXIE_MIGRATION_GUIDE_V1_TO_V10,
+  DEXIE_MIGRATION_GUIDE_V1_TO_V11,
 } from '../../utils/settingsOnboardingPhaseF';
 import {
   OFFICIAL_GITHUB_REPO,
@@ -47,7 +47,7 @@ const CHANGELOG_CKB: Record<
       'قۆناغی C (کارگێڕی کلینیکەکان لە عێراق): پشتگیری سەردانی ماڵەوە بە ناونیشانی عێراقی و کرێی هاتوچۆ، فرە-لقی کلینیک، ڕۆژانی پشوو و کاتی پشوو و بەرواری کۆچی، پلانی قیست و قەرزی ٣٠/٦٠/٩٠ ڕۆژە، خەرجییە دووبارەکان (موەلیدە/کرێ)، پزیشکانی ڕەوانەکار و لیستی بەدواداچوون.',
       'قۆناغی D (کوالێتی داتا و هاوردەکردن): دۆزەرەوەی دووبارەبوونەوەی نەخۆش و یەکگرتنەوەی سەلامەت بە وێنەی پاشگەزبوونەوەی نهێنیکراو، ڕێنیشاندەری هاوردەکردنی CSV/XLSX بە تاقیکردنەوەی پێشوەخت و گەڕانەوە، سەبەتەی سڕاوەکان بۆ ٣٠ ڕۆژ، شاشەی تەندروستی داتا و فەرهەنگی دووزمانە.',
       'قۆناغی E (هاوبەشکردن و هەناردەکردن): هاوبەشکردنی ڕاپۆرت و پسوڵە لە ڕێگەی سیستەمی ئامێر یان واتسئاپ (+964)، هەناردەکردنی کاتەکان بۆ ڕۆژژمێری مۆبایل (.ics) بە بژاردەی نهێنیپارێزی، چاپکردنی خشتەی سبەی و کارتی سەردانی نەخۆش، و ئامرازی پێوانەی گۆشە و هێڵی شاقوڵ لەسەر وێنە.',
-      'قۆناغی F (ڕێکخستنی سادە، ڕێبەری دەستپێکردن و سەرچاوەی کراوە): گەڕانی خێرا لە ڕێکخستنەکان بە گۆڕەری دۆخی سادە/پێشکەوتوو، لیستی هەنگاوەکانی دەستپێکردن، پەنجەرەی "چی نوێ هەیە" و ڕێبەری Dexie (v1–v10)، و دۆخی نمایشی گشتی (Public Demo).',
+      'قۆناغی F و Dexie v11: گەڕانی خێرا لە ڕێکخستنەکان بە دۆخی سادە/پێشکەوتوو، ڕێبەری Dexie (v1–v11)، تۆماری سڕینەوەی نهێنیکراو (deletionTombstones) بۆ ڕێگری لە گەڕانەوەی تۆمارە سڕاوەکان، و پاراستنی پێشوەخت لە کردنەوەی بنکەی نوێتر بە وەشانی کۆنتر.',
     ],
   },
   '1.0.0': {
@@ -111,6 +111,12 @@ const DEXIE_MIGRATION_CKB: Record<number, { summaryCkb: string; upgradeBehaviorC
       'خشتەی ڕەشنووسە نهێنیکراوەکانی خۆڕاگر بەرامبەر بڕانی کارەبا یان داخستنی لەناکاوی وێبگەڕ (Phase A).',
     upgradeBehaviorCkb:
       'تایبەتە بە ئامێرەکە (لە پاشەکەوتی دەرەکی جیا دەکرێتەوە) و لەگەڵ کردنەوەی خەزێنە خۆکارانە دەگەڕێنرێتەوە.',
+  },
+  11: {
+    summaryCkb:
+      'خشتەی شۆهیدەکانی سڕینەوەی نهێنیکراو (deletionTombstones) بۆ ڕێگری لە گەڕانەوەی تۆمارە سڕاوەکان لە کاتی یەکگرتنەوەی پاشەکەوت یان هاوکاتکردندا.',
+    upgradeBehaviorCkb:
+      'لە پاشەکەوتی .ptbackup V3.0 و هاوکاتکردندا گواستراوەیە؛ لەگەڵ پشکنینی پێشوەختی دابەزاندنی وەشان و بەڕێوەبردنی فرە-تاب (versionchange/blocked).',
   },
 };
 
@@ -213,9 +219,9 @@ export const WhatsNewChangelogModal: React.FC<WhatsNewChangelogModalProps> = ({
                 </div>
                 <p className="text-xs text-primary-foreground/85 mt-0.5">
                   {bi(
-                    'سجل التحديثات المدمج مع مزامنة إصدارات مستودع GitHub وسلسلة ترقيات الخزنة (Dexie v1–v10)',
-                    'Bundled & GitHub-synced release notes plus append-only Dexie v1–v10 schema lineage',
-                    'تۆماری نوێکارییەکان و هاوکاتکردن لەگەڵ گیتهەب و ڕێڕەوی نوێکردنەوەی Dexie'
+                    'سجل التحديثات المدمج مع مزامنة إصدارات مستودع GitHub وسلسلة ترقيات الخزنة (Dexie v1–v11)',
+                    'Bundled & GitHub-synced release notes plus append-only Dexie v1–v11 schema lineage',
+                    'تۆماری نوێکارییەکان و هاوکاتکردن لەگەڵ گیتهەب و ڕێڕەوی نوێکردنەوەی Dexie (v1–v11)'
                   )}
                 </p>
               </div>
@@ -269,9 +275,9 @@ export const WhatsNewChangelogModal: React.FC<WhatsNewChangelogModalProps> = ({
               <Database className="size-3.5" />
               <span>
                 {bi(
-                  'دليل ترقية Dexie (v1–v10)',
-                  'Dexie Migration Guide (v1–v10)',
-                  'ڕێبەری نوێکردنەوەی Dexie'
+                  'دليل ترقية Dexie (v1–v11)',
+                  'Dexie Migration Guide (v1–v11)',
+                  'ڕێبەری نوێکردنەوەی Dexie (v1–v11)'
                 )}
               </span>
             </button>
@@ -497,23 +503,23 @@ export const WhatsNewChangelogModal: React.FC<WhatsNewChangelogModalProps> = ({
                 <div className="space-y-1">
                   <p className="font-bold">
                     {bi(
-                      'قاعدة عدم تعديل المخططات السابقة (Append-Only Dexie Schema v1–v10)',
-                      'Append-Only Dexie Schema Invariant (v1–v10 · 28 Total Stores)',
-                      'یاسای نەگۆڕینی پێکهاتەکانی پێشوو (Append-Only Dexie Schema v1–v10)'
+                      'قاعدة عدم تعديل المخططات السابقة (Append-Only Dexie Schema v1–v11)',
+                      'Append-Only Dexie Schema Invariant (v1–v11 · 29 Total Stores)',
+                      'یاسای نەگۆڕینی پێکهاتەکانی پێشوو (Append-Only Dexie Schema v1–v11)'
                     )}
                   </p>
                   <p className="text-muted-foreground-1 leading-relaxed">
                     {bi(
-                      'لا يتم تعديل أي إصدار سابق في قاعدة البيانات أبداً؛ تتم كل ترقية بإضافة إصدار أعلى غير تلافي يحافظ على 23 جدولاً سريرياً مشفراً قابلاً للنقل و5 جداول محلية للجهاز.',
-                      'Historical Dexie versions (v1–v9) are never mutated. Upgrades strictly append higher versions preserving all 23 portable encrypted clinical stores + 5 device-local stores.',
-                      'هیچ وەشانێکی پێشووی بنکەی داتا هەرگیز دەستکاری ناکرێت؛ هەموو نوێکردنەوەیەک وەشانێکی بەرزتری نا-تێکدەر زیاد دەکات کە هەموو ٢٣ خشتە کلینیکییە نهێنیکراوە گواستراوەکان و ٥ خشتەی ناوخۆیی ئامێرەکە دەپارێزێت.'
+                      'لا يتم تعديل أي إصدار سابق في قاعدة البيانات أبداً؛ تتم كل ترقية بإضافة إصدار أعلى غير تلافي يحافظ على 24 جدولاً سريرياً مشفراً قابلاً للنقل و5 جداول محلية للجهاز.',
+                      'Historical Dexie versions (v1–v10) are never mutated. Upgrades strictly append higher versions preserving all 24 portable encrypted clinical stores + 5 device-local stores.',
+                      'هیچ وەشانێکی پێشووی بنکەی داتا هەرگیز دەستکاری ناکرێت؛ هەموو نوێکردنەوەیەک وەشانێکی بەرزتری نا-تێکدەر زیاد دەکات کە هەموو ٢٤ خشتە کلینیکییە نهێنیکراوە گواستراوەکان و ٥ خشتەی ناوخۆیی ئامێرەکە دەپارێزێت.'
                     )}
                   </p>
                 </div>
               </div>
 
               <div className="space-y-2.5">
-                {DEXIE_MIGRATION_GUIDE_V1_TO_V10.map((entry) => {
+                {DEXIE_MIGRATION_GUIDE_V1_TO_V11.map((entry) => {
                   const ckbEntry = DEXIE_MIGRATION_CKB[entry.version];
                   return (
                     <div

@@ -2,7 +2,7 @@
 // PhysioRecord — Phase F Pure Utilities (F1–F5)
 // - F1: Settings search catalog & Simple/Advanced view mode filtering
 // - F2: 4-step Onboarding Checklist progress computation
-// - F3: Bundled Semantic Versioning CHANGELOG & Dexie v1–v10 Migration Guide
+// - F3: Bundled Semantic Versioning CHANGELOG & Dexie v1–v11 Migration Guide
 // - F4: Public Demo Mode detection & synthetic dataset helpers
 // - F5: Community Content Pack license & source metadata validator
 // =======================================================================
@@ -351,23 +351,23 @@ export function computeOnboardingChecklistSummary(params: {
 }
 
 // -----------------------------------------------------------------------
-// F3: Bundled Semantic Versioning CHANGELOG & Dexie v1–v10 Migration Guide
+// F3: Bundled Semantic Versioning CHANGELOG & Dexie v1–v11 Migration Guide
 // -----------------------------------------------------------------------
 export const BUNDLED_CHANGELOG_RELEASES: ReadonlyArray<ChangelogReleaseEntry> = [
   {
     version: '1.1.0',
-    date: '2026-11-14',
-    tagAr: 'الإصدار الحالي · مراحل الإضافة السريرية والعراقية (A–F)',
-    tagEn: 'Current Release · Clinical & Iraqi Operations Addendum (Phases A–F)',
-    titleAr: 'مرونة انقطاع الكهرباء، سرعة التوثيق، العمليات العراقية، جودة البيانات، والمشاركة المحلية',
-    titleEn: 'Power-Cut Resilience, Clinical Speed, Iraqi Clinic Ops, Data Quality & Sharing Interop',
+    date: '2026-11-23',
+    tagAr: 'الإصدار الحالي · مراحل الإضافة السريرية والعراقية (A–F) وDexie v11',
+    tagEn: 'Current Release · Clinical & Iraqi Operations Addendum (Phases A–F) & Dexie v11',
+    titleAr: 'مرونة انقطاع الكهرباء، شواهد الحذف المشفّرة (Dexie v11)، سرعة التوثيق، والعمليات العراقية',
+    titleEn: 'Power-Cut Resilience, Encrypted Deletion Tombstones (Dexie v11), Clinical Speed & Iraqi Clinic Ops',
     highlightsAr: [
       'المرحلة A (الأداء وحفظ المسودات): حفظ تلقائي فوري للمسودات المشفرة في IndexedDB (Dexie v10) كل 2 ثانية وعند إخفاء التبويب لمنع ضياع أي حرف عند انقطاع الكهرباء، مع قوائم افتراضية سريعة لآلاف السجلات.',
       'المرحلة B (السرعة والسلامة السريرية): قوالب فحص بضغطة واحدة لـ 9 مناطق تشريحية، قائمة المشاكل والأهداف مع حساب التغير المهم سريرياً (MCID)، تنبيهات إعادة التقييم، فحص أمان أجهزة العلاج الطبيعي (TENS/US/Laser...) مع المراجع، العلامات الحيوية، وضوابط طب الأطفال.',
       'المرحلة C (عمليات العيادات في العراق): دعم الزيارات المنزلية مع العنوان العراقي وأجور التنقل، تعدد فروع العيادة، أيام العطل وأوقات الاستراحة والتاريخ الهجري، خطط الأقساط وتقادم الديون (30/60/90 يوماً)، المصاريف المتكررة (المولدة/الإيجار)، سجل الأطباء المحيلين وقوائم المتابعة.',
       'المرحلة D (جودة البيانات والاستيراد): كاشف تكرار المرضى والدمج الآمن مع لقطة تراجع مشفرة، معالج استيراد CSV/XLSX مع المعاينة التجريبية والتراجع الكامل، سلة مهملات لمدة 30 يوماً، شاشة صحة البيانات، ومعجم المصطلحات ثنائي اللغة.',
       'المرحلة E (المشاركة والتصدير): مشاركة التقارير والوصولات عبر نظام الجهاز أو واتساب (+964)، تصدير المواعيد لتقويم الهاتف (.ics) مع خيارات الخصوصية، طباعة جدول الغد وبطاقة مواعيد المريض، وأدوات قياس الزوايا والشاقول على الصور.',
-      'المرحلة F (الإعدادات المبسطة، دليل البدء، والمجتمع مفتوح المصدر): بحث فوري في الإعدادات مع مفتاح الوضع المبسط/المتقدم، قائمة خطوات البدء للعيادة، نافذة "ما الجديد" ودليل ترقيات Dexie (v1–v10)، ووضع العرض العام (Public Demo).',
+      'المرحلة F وDexie v11: بحث فوري في الإعدادات مع الوضع المبسط/المتقدم، دليل ترقيات Dexie (v1–v11)، شواهد الحذف المشفّرة (deletionTombstones) لمنع عودة السجلات المحذوفة عند الدمج والمزامنة، وحماية استباقية ضد فتح قاعدة أحدث بإصدار أقدم.',
     ],
     highlightsEn: [
       'Phase A (Resilience & Speed): Power-cut durable encrypted draft store (Dexie v10) flushing on 2s debounce & visibilitychange, plus windowed virtualization and strict 6x CPU performance budgets.',
@@ -375,7 +375,7 @@ export const BUNDLED_CHANGELOG_RELEASES: ReadonlyArray<ChangelogReleaseEntry> = 
       'Phase C (Iraq-Specific Operations): Home-visit scheduling with Iraqi address fields & travel fees, multi-location filter, closed days/breaks & optional Hijri date, installment plans & 30/60/90+ day debt aging, recurring expenses (generator/rent), referring doctors & retention lists.',
       'Phase D (Data Quality & Safe Import): Duplicate patient guard + transactional merge with encrypted undo snapshot, CSV/XLSX import wizard with dry-run & rollback, 30-day non-clinical recycle bin, Data Health scanner, and bilingual terminology glossary.',
       'Phase E (Sharing & Interop): Web Share API & +964 WhatsApp fallbacks, privacy-first .ics calendar export, tomorrow schedule & patient visit card printing, and 3-point photo angle & plumb-line studio.',
-      'Phase F (Settings, Onboarding & Open Source): Searchable Settings with Simple/Advanced switch, dismissible 4-step onboarding checklist, in-app What\'s New & Dexie v1–v10 migration guide, and badged Public Demo Mode.',
+      'Phase F & Dexie v11: Searchable Settings with Simple/Advanced switch, Dexie v1–v11 migration guide, encrypted deletionTombstones preventing resurrection across backup merge & sync, and proactive schema-downgrade + multi-tab lifecycle guards.',
     ],
   },
   {
@@ -400,7 +400,7 @@ export const BUNDLED_CHANGELOG_RELEASES: ReadonlyArray<ChangelogReleaseEntry> = 
   },
 ];
 
-export const DEXIE_MIGRATION_GUIDE_V1_TO_V10: ReadonlyArray<DexieMigrationVersionEntry> = [
+export const DEXIE_MIGRATION_GUIDE_V1_TO_V11: ReadonlyArray<DexieMigrationVersionEntry> = [
   {
     version: 1,
     storesAdded: ['patients', 'episodes', 'sessions', 'soapNotes', 'vaultMeta'],
@@ -499,7 +499,18 @@ export const DEXIE_MIGRATION_GUIDE_V1_TO_V10: ReadonlyArray<DexieMigrationVersio
     upgradeBehaviorAr: 'محلي للجهاز (مستثنى من النسخ الاحتياطية الخارجية) ويُستعاد فور فتح الخزنة.',
     upgradeBehaviorEn: 'Device-local store recovered automatically on vault unlock via RecoveredWorkBanner.',
   },
+  {
+    version: 11,
+    storesAdded: ['deletionTombstones'],
+    summaryAr: 'جدول شواهد الحذف المشفّرة لمنع عودة السجلات المحذوفة عمداً أثناء دمج النسخ الاحتياطية أو المزامنة بين الأجهزة.',
+    summaryEn: 'Encrypted deletion tombstones preventing resurrection of explicitly deleted records during backup merges and multi-device sync.',
+    upgradeBehaviorAr: 'قابل للنقل ضمن .ptbackup V3.0 والمزامنة؛ مع فحص استباقي لمنع فتح قاعدة أحدث بإصدار أقدم ومعالجة versionchange/blocked.',
+    upgradeBehaviorEn: 'Portable in .ptbackup V3.0 & clinic sync; paired with proactive schema-downgrade detection and multi-tab versionchange/blocked handling.',
+  },
 ];
+
+/** Backward-compatible alias pointing to the canonical v1–v11 guide. */
+export const DEXIE_MIGRATION_GUIDE_V1_TO_V10 = DEXIE_MIGRATION_GUIDE_V1_TO_V11;
 
 // -----------------------------------------------------------------------
 // F4: Public Demo Mode Detection

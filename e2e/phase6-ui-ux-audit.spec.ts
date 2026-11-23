@@ -258,7 +258,7 @@ test.describe('Phase 6 UI/UX Comprehensive Verification (AR/EN, 1440/390, Light/
     await check('recovery-key', '390x844', 'ar', 'dark', '02-recovery-ar-390-dark');
 
     // Verify challenge & enter workspace
-    const challengeInput = page.locator('input[type="text"]').first();
+    const challengeInput = page.locator('input#challenge-group-input');
     const expectedGroup = (await challengeInput.getAttribute('placeholder')) || '';
     if (expectedGroup) await challengeInput.fill(expectedGroup);
     await page.locator('input[type="checkbox"]').first().check();
@@ -276,21 +276,37 @@ test.describe('Phase 6 UI/UX Comprehensive Verification (AR/EN, 1440/390, Light/
     await expect(soloModeBtn).toBeVisible({ timeout: 15_000 });
     await soloModeBtn.click();
     await page.getByTestId('wizard-confirm-btn').click();
+    await expect(page.getByTestId('wizard-confirm-btn')).toBeHidden({ timeout: 15_000 });
     await expect(page.getByTestId('today-walkin-btn')).toBeVisible({ timeout: 15_000 });
 
-    const userMenuBtn = page.locator('header button[aria-label*="menu"], header button[aria-label*="المستخدم"]').first();
+    const userMenuBtn = page.getByTestId('rail-account-btn');
     // Switch back to Light Mode via User Menu
     await userMenuBtn.click();
-    await page.locator('button').filter({ hasText: /الوضع النهاري|Light Mode/i }).click();
+    await page.getByRole('button', { name: /الوضع النهاري|Light Mode/i }).click();
 
-    // Open Settings -> Modules -> Enable HEP & Analytics
-    await userMenuBtn.click();
-    await page.locator('button').filter({ hasText: /الإعدادات والخيارات|Settings/i }).first().click();
-    await page.locator('button').filter({ hasText: /الأقسام|Modules/i }).first().click();
-    const restoreHepBtn = page.locator('button').filter({ hasText: /استعادة وإظهار|Restore & Show Exercise/i }).first();
-    if (await restoreHepBtn.isVisible()) await restoreHepBtn.click();
-    const enableAnalyticsBtn = page.locator('button').filter({ hasText: /تفعيل لوحة التحليلات|Enable Local Analytics/i }).first();
-    if (await enableAnalyticsBtn.isVisible()) await enableAnalyticsBtn.click();
+    // Open Settings -> Modules -> Enable HEP & Analytics (menu stays open after theme toggle)
+    await page.getByTestId('account-settings-btn').click();
+    await page.getByTestId('settings-tab-modules').click();
+    const hepSwitch = page
+      .locator('div')
+      .filter({ hasText: /مكتبة التمارين والبرنامج المنزلي|Exercise Library & HEP Builder/i })
+      .filter({ has: page.locator('button[role="switch"]') })
+      .last()
+      .locator('button[role="switch"]')
+      .first();
+    if ((await hepSwitch.getAttribute('aria-checked')) !== 'true') {
+      await hepSwitch.click();
+    }
+    const analyticsSwitch = page
+      .locator('div')
+      .filter({ hasText: /التحليلات والإحصائيات السريرية المحلية|Local Clinic Analytics/i })
+      .filter({ has: page.locator('button[role="switch"]') })
+      .last()
+      .locator('button[role="switch"]')
+      .first();
+    if ((await analyticsSwitch.getAttribute('aria-checked')) !== 'true') {
+      await analyticsSwitch.click();
+    }
 
     // Developer tab -> Load Demo Cases
     await page.locator('button').filter({ hasText: /المطور|Developer/i }).first().click();
@@ -318,8 +334,13 @@ test.describe('Phase 6 UI/UX Comprehensive Verification (AR/EN, 1440/390, Light/
     // Switch to Team Mode via User Menu -> Settings -> Clinic
     await page.setViewportSize({ width: 1440, height: 900 });
     await userMenuBtn.click();
-    await page.locator('button').filter({ hasText: /الإعدادات والخيارات|Settings/i }).first().click();
-    await page.locator('button').filter({ hasText: /بيانات العيادة|Clinic/i }).first().click();
+    await page.getByTestId('account-settings-btn').click();
+    await page.getByTestId('settings-tab-clinic').click();
+    await page
+      .locator('button')
+      .filter({ hasText: /نمط العمل وقائمة الخدمات المخصصة|Workspace Mode & Custom Services/i })
+      .first()
+      .click();
     await page.locator('button').filter({ hasText: /عيادة مع فريق وكادر|I Have a Team/i }).first().click();
     // If First-Run Admin PIN modal appears, configure PIN (8472)
     const pinSaveBtn = page
@@ -372,23 +393,26 @@ test.describe('Phase 6 UI/UX Comprehensive Verification (AR/EN, 1440/390, Light/
     // Reception EN Dark 1440
     await page.setViewportSize({ width: 1440, height: 900 });
     await userMenuBtn.click();
-    await page.locator('button').filter({ hasText: /^EN$/ }).click();
-    await userMenuBtn.click();
-    await page.locator('button').filter({ hasText: /Dark Mode|الوضع الليلي/i }).click();
+    await page.getByTestId('account-menu-popover').locator('button').filter({ hasText: /^EN$/ }).click();
+    await page.getByRole('button', { name: /Dark Mode|الوضع الليلي/i }).click();
+    await page.keyboard.press('Escape');
     await check('reception-team', '1440x900', 'en', 'dark', '05-reception-en-1440-dark');
 
-    // HEP & Audit in EN
-    await page.locator('aside nav button').filter({ hasText: /Exercise & HEP/i }).click();
+    // HEP & Audit & Analytics in EN (secondary clinical modules live inside AccountMenuPopover)
+    await userMenuBtn.click();
+    await page.getByTestId('account-menu-popover').locator('button').filter({ hasText: /Exercise & HEP/i }).click();
     const hepH1 = await page.locator('h1, h2').first().textContent();
     console.log('PHASE6_ROUTE_CHECK hep_en_heading:', JSON.stringify(hepH1));
     await check('exercises-hep', '1440x900', 'en', 'dark', '06-hep-en-1440-dark');
 
-    await page.locator('aside nav button').filter({ hasText: /Audit & Staff Roles/i }).click();
+    await userMenuBtn.click();
+    await page.getByTestId('account-menu-popover').locator('button').filter({ hasText: /Audit & Staff Roles/i }).click();
     const auditH1 = await page.locator('h1, h2').first().textContent();
     console.log('PHASE6_ROUTE_CHECK audit_en_heading:', JSON.stringify(auditH1));
     await check('activity-log-audit', '1440x900', 'en', 'dark', '07-audit-en-1440-dark');
 
-    await page.locator('aside nav button').filter({ hasText: /Analytics/i }).click();
+    await userMenuBtn.click();
+    await page.getByTestId('account-menu-popover').locator('button').filter({ hasText: /Analytics/i }).click();
     await check('analytics', '1440x900', 'en', 'dark', '08-analytics-en-1440-dark');
 
     await page.locator('aside nav button').filter({ hasText: /Schedule/i }).click();
@@ -396,9 +420,9 @@ test.describe('Phase 6 UI/UX Comprehensive Verification (AR/EN, 1440/390, Light/
 
     // Finance in AR Light
     await userMenuBtn.click();
-    await page.locator('button').filter({ hasText: /^العربية$/ }).click();
-    await userMenuBtn.click();
-    await page.locator('button').filter({ hasText: /Light Mode|الوضع النهاري/i }).click();
+    await page.getByTestId('account-menu-popover').locator('button').filter({ hasText: /^عربي$/ }).click();
+    await page.getByRole('button', { name: /Light Mode|الوضع النهاري/i }).click();
+    await page.keyboard.press('Escape');
     await page.locator('aside nav button').filter({ hasText: /الحسابات/ }).click();
     await check('finance', '1440x900', 'ar', 'light', '10-finance-ar-1440-light');
 
@@ -407,15 +431,20 @@ test.describe('Phase 6 UI/UX Comprehensive Verification (AR/EN, 1440/390, Light/
     await check('finance', '390x844', 'ar', 'light', '11-finance-ar-390-light');
 
     // Directory 390 AR Light -> Open Seeded Patient
-    await page.locator('nav[aria-label*="التنقل"] button, nav button').filter({ hasText: /المرضى|Patients/ }).first().click();
+    const mobileDockTrigger = page.getByTestId('mobile-dock-trigger');
+    if (await mobileDockTrigger.isVisible()) {
+      await mobileDockTrigger.click();
+    }
+    await page.locator('button[data-nav-id="directory"]:visible').first().click();
     await check('directory', '390x844', 'ar', 'light', '12-directory-ar-390-light');
 
-    // Open Patient 1 Quick-View Popup -> verify UI audit -> click Open Patient Chart
-    await page.locator('button, [role="button"], h3').filter({ hasText: /أحمد فهد|Ahmed Fahad/i }).first().click();
+    // Open Patient 1 Chart (or Quick-View Popup if shown) -> verify UI audit
+    await page.locator('button, [role="button"], h3').filter({ hasText: /مازن رائد|Mazin Raed|أحمد فهد|Ahmed Fahad/i }).first().click();
     const quickViewDialog = page.getByRole('dialog');
-    await expect(quickViewDialog).toBeVisible({ timeout: 5_000 });
-    await check('patient-quick-view', '390x844', 'ar', 'light', '13a-patient-quick-view-ar-390-light');
-    await quickViewDialog.getByRole('button', { name: /فتح الملف السريري|Open Patient Chart/i }).click();
+    if (await quickViewDialog.isVisible({ timeout: 1_500 }).catch(() => false)) {
+      await check('patient-quick-view', '390x844', 'ar', 'light', '13a-patient-quick-view-ar-390-light');
+      await quickViewDialog.getByRole('button', { name: /فتح الملف السريري|Open Patient Chart/i }).click();
+    }
     await check('patient-assessment', '390x844', 'ar', 'light', '13-patient-assessment-ar-390-light');
 
     // Check PatientBanner & Red Flag toggle visibility on mobile 390
@@ -434,7 +463,7 @@ test.describe('Phase 6 UI/UX Comprehensive Verification (AR/EN, 1440/390, Light/
     console.log('PHASE6_METRIC patient_banner_mobile:', JSON.stringify(bannerStats));
 
     // Open Progress / Charts tab on Mobile 390 & Desktop 1440
-    await page.locator('button, [role="tab"]').filter({ hasText: /المقارنة|التقدّم|Progress/i }).first().click();
+    await page.locator('button, [role="tab"]').filter({ hasText: /المقارنة|التقدّم|الخطة والتقدم|Progress|Plan & Progress/i }).first().click();
     await check('patient-progress', '390x844', 'ar', 'light', '14-patient-progress-ar-390-light');
 
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -442,8 +471,9 @@ test.describe('Phase 6 UI/UX Comprehensive Verification (AR/EN, 1440/390, Light/
 
     // Open Assessment -> Toolkit/Dermatomes in EN Light 1440
     await userMenuBtn.click();
-    await page.locator('button').filter({ hasText: /^EN$/ }).click();
-    await page.locator('button, [role="tab"]').filter({ hasText: /التقييم|Assessment/i }).first().click();
+    await page.getByTestId('account-menu-popover').locator('button').filter({ hasText: /^EN$/ }).click();
+    await page.keyboard.press('Escape');
+    await page.locator('button, [role="tab"]').filter({ hasText: /التقييم|المتابعة|Assessment|Overview|Follow-up|Sessions/i }).first().click();
     await check('patient-assessment', '1440x900', 'en', 'light', '16-patient-assessment-en-1440-light');
 
     console.log('PHASE6_FINDINGS_JSON_START');

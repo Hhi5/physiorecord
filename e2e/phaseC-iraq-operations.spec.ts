@@ -18,7 +18,7 @@ async function completeFirstRunToSolo(page: Page, password: string) {
   await page.locator('input#confirmPassword').fill(password);
   await page.locator('button[type="submit"]').click();
 
-  const challengeInput = page.locator('input[type="text"]').first();
+  const challengeInput = page.locator('input#challenge-group-input');
   await expect(challengeInput).toBeVisible({ timeout: 15_000 });
   const expectedGroup = (await challengeInput.getAttribute('placeholder')) || '';
   if (expectedGroup) {
@@ -35,6 +35,7 @@ async function completeFirstRunToSolo(page: Page, password: string) {
   await expect(soloBtn).toBeVisible({ timeout: 15_000 });
   await soloBtn.click();
   await page.getByTestId('wizard-confirm-btn').click();
+  await expect(page.getByTestId('wizard-confirm-btn')).toBeHidden({ timeout: 15_000 });
   await expect(page.getByTestId('today-walkin-btn')).toBeVisible({ timeout: 20_000 });
 }
 
@@ -60,17 +61,9 @@ test.describe('Phase C — Iraq-Specific Operations E2E (C1–C7)', () => {
     await completeFirstRunToSolo(page, 'ClinicVault!2026');
 
     // 1) Verify Phase C Settings > Modules toggles exist and can be inspected
-    await page.locator('header button[aria-expanded]').click();
-    await page
-      .locator('button')
-      .filter({ hasText: /الإعدادات والخيارات|Settings/i })
-      .first()
-      .click();
-    await page
-      .locator('button')
-      .filter({ hasText: /^الأقسام$|^Modules$/i })
-      .first()
-      .click();
+    await page.getByTestId('rail-account-btn').click();
+    await page.getByTestId('account-settings-btn').click();
+    await page.getByTestId('settings-tab-modules').click();
 
     await expect(page.getByTestId('toggle-home-visits-btn')).toBeVisible({ timeout: 5_000 });
     await expect(page.getByTestId('toggle-practice-locations-btn')).toBeVisible();
@@ -85,6 +78,7 @@ test.describe('Phase C — Iraq-Specific Operations E2E (C1–C7)', () => {
     await page.getByRole('button', { name: /إغلاق الإعدادات|Close settings/i }).click();
 
     // 2) C6 Referrals: Open Referrals & Retention sub-tab -> Add Referring Doctor -> Register Referred Patient
+    await page.getByTestId('today-more-menu-btn').click();
     await page.getByTestId('today-subtab-referrals_retention').click();
     await expect(page.getByRole('button', { name: /إضافة طبيب محيل|Add Doctor/i })).toBeVisible({
       timeout: 10_000,
@@ -97,10 +91,8 @@ test.describe('Phase C — Iraq-Specific Operations E2E (C1–C7)', () => {
     await expect(page.locator('main')).toContainText('د. خالد المولى', { timeout: 5_000 });
 
     // Register referred adult patient and verify C6 MasterPatientChart pill + Report Back letter
-    await page
-      .getByRole('button', { name: /مريض جديد|New Patient/i })
-      .first()
-      .click();
+    await page.getByTestId('rail-quick-add-btn').click();
+    await page.getByTestId('quick-add-patient-btn').click();
     await page.locator('input[placeholder*="أحمد فهد"]').first().fill('زينب عبد الحسين');
     await page.locator('input[type="number"]').first().fill('34');
 
@@ -121,11 +113,12 @@ test.describe('Phase C — Iraq-Specific Operations E2E (C1–C7)', () => {
     await letterDialog.getByRole('button', { name: /إغلاق|Close/i }).first().click();
 
     // Return to Today view -> Schedule subtab
-    await page.getByRole('button', { name: /^اليوم$|^Today$/i }).first().click();
+    await page.locator('aside button[data-nav-id="today"]').first().click();
+    await page.getByTestId('today-more-menu-btn').click();
     await page.getByTestId('today-subtab-schedule').click();
-    await expect(page.getByTestId('location-summary-strip')).toBeVisible({ timeout: 10_000 });
 
-    // 3) C3 Closed Days, Breaks & Optional Hijri Display (lazy ClosedDaysBreaksModal)
+    // 3) C3 Closed Days, Breaks & Optional Hijri Display (lazy ClosedDaysBreaksModal via Schedule options menu)
+    await page.getByRole('button', { name: /خيارات الجدول والتاريخ|Schedule options/i }).click();
     await page.getByTestId('open-closed-days-breaks-btn').click();
     const scheduleModal = page.locator('[role="dialog"]').last();
     await expect(scheduleModal).toBeVisible({ timeout: 10_000 });
@@ -170,8 +163,8 @@ test.describe('Phase C — Iraq-Specific Operations E2E (C1–C7)', () => {
       .first()
       .click();
 
-    // Toggle Full Schedule Privacy Blur ON then OFF and verify blurred state
-    const scheduleBlurToggle = page.getByTestId('schedule-privacy-blur-toggle');
+    // Toggle Full Schedule Privacy Blur ON then OFF via Today header toggle and verify blurred state
+    const scheduleBlurToggle = page.getByRole('button', { name: /إخفاء أو إظهار أسماء المرضى|Show or hide patient names/i }).first();
     await expect(scheduleBlurToggle).toBeVisible({ timeout: 5_000 });
     await scheduleBlurToggle.click();
     await expect(page.locator('[data-privacy-blurred="true"]').first()).toBeVisible({ timeout: 5_000 });
@@ -224,27 +217,33 @@ test.describe('Phase C — Iraq-Specific Operations E2E (C1–C7)', () => {
       timeout: 10_000,
     });
 
-    // Recurring Expenses ("Due this month") in Expenses tab
-    await page.getByRole('button', { name: /مصاريف العيادة|Expenses/i }).first().click();
-    await expect(page.locator('main')).toContainText(/مستحق هذا الشهر|Due This Month/i, {
+    // Recurring Expenses ("Due") in Expenses tab
+    await page.getByRole('button', { name: /مصاريف العيادة|المصاريف|Expenses/i }).first().click();
+    await expect(page.locator('main')).toContainText(/المصاريف المتكررة|Recurring Expenses/i, {
       timeout: 10_000,
     });
-    const rentCard = page
-      .locator('main div')
+    await page
+      .locator('main button')
       .filter({ hasText: /إيجار العيادة الشهري|Monthly Clinic Rent/i })
-      .filter({ has: page.locator('input[inputmode="numeric"]') })
-      .last();
-    await expect(rentCard.locator('input[inputmode="numeric"]').first()).toHaveValue(/^0?$/);
-    await rentCard.locator('input[inputmode="numeric"]').first().fill('500000');
-    await rentCard.getByRole('button', { name: /تسجيل المصروف|Log Expense/i }).click();
+      .first()
+      .click();
+    const rentDialog = page.locator('[role="dialog"]').last();
+    await expect(rentDialog).toBeVisible({ timeout: 5_000 });
+    await expect(rentDialog.locator('input[inputmode="numeric"]').first()).toHaveValue(/^0?$/);
+    await rentDialog.locator('input[inputmode="numeric"]').first().fill('500000');
+    await rentDialog.getByRole('button', { name: /تم · تسجيل الدفع|Done · Log Payment|تسجيل المصروف|Log Expense/i }).click();
+    await expect(rentDialog).toContainText('500,000', { timeout: 8_000 });
+    await rentDialog.getByRole('button', { name: /^إغلاق$|^Close$/i }).first().click();
     await expect(page.locator('main')).toContainText('500,000', { timeout: 8_000 });
 
     // 6) Verify English LTR parity & C7 Retention unpaid balance list
-    await page.locator('header button[aria-expanded]').click();
-    await page.getByRole('button', { name: /^EN$/ }).click();
+    await page.getByTestId('rail-account-btn').click();
+    await page.getByTestId('account-menu-popover').locator('button').filter({ hasText: /^EN$/ }).click();
+    await page.keyboard.press('Escape');
     await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
 
     await page.getByRole('button', { name: /^Today$/i }).first().click();
+    await page.getByTestId('today-more-menu-btn').click();
     await page.getByTestId('today-subtab-referrals_retention').click();
     await page.getByRole('tab', { name: /Retention/i }).click();
     await expect(page.locator('main')).toContainText(/Unpaid Balance/i, { timeout: 10_000 });

@@ -292,7 +292,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           type="button"
           data-testid="rail-search-btn"
           onClick={onOpenGlobalSearch}
-          aria-label={bi('بحث شامل أو أمر (Ctrl+K)', 'Search or Command (Ctrl+K)', 'گەڕانی خێرا (Ctrl+K)')}
+          aria-label={
+            isExpanded
+              ? undefined
+              : bi('بحث سريع (Ctrl+K)', 'Search (Ctrl+K)', 'گەڕان (Ctrl+K)')
+          }
           title={bi('بحث وأوامر (Ctrl+K)', 'Search & Commands (Ctrl+K)', 'گەڕان و فەرمانەکان (Ctrl+K)')}
           className={`w-full min-h-[38px] rounded-full bg-white/10 hover:bg-white/16 border border-white/15 text-white/85 hover:text-white text-xs font-semibold flex items-center transition-colors cursor-pointer ${
             isExpanded ? 'px-3 gap-2 justify-between' : 'justify-center px-0'
@@ -307,7 +311,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {isExpanded && (
             <kbd
               dir="ltr"
-              className="px-1.5 py-0.5 rounded-md bg-white/15 border border-white/20 text-[10px] font-mono text-white/90 shrink-0"
+              aria-hidden="true"
+              className="px-1.5 py-0.5 rounded-md bg-white/15 border border-white/20 text-xs font-mono text-white/90 shrink-0"
             >
               ⌘K
             </kbd>
@@ -438,7 +443,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }}
                 data-active={isActive}
                 data-nav-id={item.id}
-                aria-label={label}
                 title={label}
                 aria-current={isActive ? 'page' : undefined}
                 className={`pr-nav-item relative justify-start px-3.5 gap-2.5 ${
@@ -480,7 +484,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             setIsQuickAddOpen(false);
             setIsAccountMenuOpen((prev) => !prev);
           }}
-          aria-label={bi('قائمة العيادة والإعدادات', 'Clinic & Account Menu', 'مێنووی کلینیک و هەژمار')}
+          aria-label={
+            isExpanded
+              ? undefined
+              : bi('قائمة العيادة والإعدادات', 'Clinic & Account Menu', 'مێنووی کلینیک و هەژمار')
+          }
           title={bi('قائمة العيادة والإعدادات', 'Clinic & Account Menu', 'مێنووی کلینیک و هەژمار')}
           className={`w-full min-h-[44px] rounded-2xl bg-white/[0.07] hover:bg-white/[0.14] text-white transition-colors flex items-center cursor-pointer ${
             isExpanded ? 'px-2.5 py-1.5 justify-between gap-2' : 'justify-center px-0'

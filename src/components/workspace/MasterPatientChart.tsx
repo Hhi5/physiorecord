@@ -594,9 +594,11 @@ export const MasterPatientChart: React.FC<MasterPatientChartProps> = ({
       ''
     ).slice(0, 10);
     const sessionsSinceLastEval = latestSnap
-      ? validSessions.filter(
-          (s) => (s.data.sessionDate || s.createdAt.slice(0, 10)) > latestSnap.recordedDate.slice(0, 10)
-        ).length
+      ? validSessions.filter((s) => {
+          const sessDay = (s.data.sessionDate || s.createdAt).slice(0, 10);
+          const snapDay = latestSnap.recordedDate.slice(0, 10);
+          return sessDay > snapDay || (sessDay === snapDay && s.createdAt > latestSnap.recordedDate);
+        }).length
       : validSessions.length;
     return evaluateReEvalDueStatus({
       enabled: enableReEvalNudges,

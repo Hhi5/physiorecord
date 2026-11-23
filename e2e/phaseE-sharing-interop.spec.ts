@@ -23,7 +23,7 @@ async function completeFirstRunToSolo(page: Page, password: string) {
   await page.locator('input#confirmPassword').fill(password);
   await page.locator('button[type="submit"]').click();
 
-  const challengeInput = page.locator('input[type="text"]').first();
+  const challengeInput = page.locator('input#challenge-group-input');
   await expect(challengeInput).toBeVisible({ timeout: 15_000 });
   const expectedGroup = (await challengeInput.getAttribute('placeholder')) || '';
   if (expectedGroup) {
@@ -40,6 +40,7 @@ async function completeFirstRunToSolo(page: Page, password: string) {
   await expect(soloBtn).toBeVisible({ timeout: 15_000 });
   await soloBtn.click();
   await page.getByTestId('wizard-confirm-btn').click();
+  await expect(page.getByTestId('wizard-confirm-btn')).toBeHidden({ timeout: 15_000 });
   await expect(page.getByTestId('today-walkin-btn')).toBeVisible({ timeout: 20_000 });
 }
 
@@ -65,17 +66,9 @@ test.describe('Phase E — Sharing & Interop (E1–E4)', () => {
     await completeFirstRunToSolo(page, 'ClinicVault!2026');
 
     // 1) Verify Phase E toggles in Settings > Modules & enable 5.2 Attachments for E4
-    await page.locator('header button[aria-expanded]').click();
-    await page
-      .locator('button')
-      .filter({ hasText: /الإعدادات والخيارات|Settings/i })
-      .first()
-      .click();
-    await page
-      .locator('button')
-      .filter({ hasText: /^الأقسام$|^Modules$/i })
-      .first()
-      .click();
+    await page.getByTestId('rail-account-btn').click();
+    await page.getByTestId('account-settings-btn').click();
+    await page.getByTestId('settings-tab-modules').click();
 
     await expect(page.getByTestId('settings-phaseE-modules-card')).toBeVisible({ timeout: 5_000 });
     await expect(page.getByTestId('toggle-web-share-interop-btn')).toBeVisible();
@@ -85,7 +78,8 @@ test.describe('Phase E — Sharing & Interop (E1–E4)', () => {
     await page.getByRole('button', { name: /إغلاق الإعدادات|Close settings/i }).click();
 
     // 2) Create a patient + book an appointment so E2 (.ics) & E3 (Schedule + Visit Card) have rich data
-    await page.getByRole('button', { name: /مريض جديد|New Patient/i }).first().click();
+    await page.getByTestId('rail-quick-add-btn').click();
+    await page.getByTestId('quick-add-patient-btn').click();
     await page.locator('input[placeholder*="أحمد فهد"]').first().fill('حيدر باسم علي');
     await page.locator('input[placeholder="0770 123 4567"]').first().fill('07701234567');
     await page.locator('input[type="number"]').first().fill('31');
@@ -156,14 +150,15 @@ test.describe('Phase E — Sharing & Interop (E1–E4)', () => {
     await uploadPhoto('posture_before', 'وقوف أمامي قبل الجلسات', 'before.png');
     await uploadPhoto('posture_after', 'وقوف أمامي بعد الجلسات', 'after.png');
 
-    // Verify Side-by-Side Before/After Plumb-Line & Grid toggles (E4)
-    await expect(page.getByTestId('toggle-posture-grid-btn')).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId('toggle-posture-plumb-line-btn')).toBeVisible();
-    await expect(page.getByTestId('posture-plumb-line-overlay').first()).toBeVisible();
-    await page.getByTestId('toggle-posture-plumb-line-btn').click();
-    await expect(page.getByTestId('posture-plumb-line-overlay')).toHaveCount(0);
-    await page.getByTestId('toggle-posture-plumb-line-btn').click();
-    await expect(page.getByTestId('posture-plumb-line-overlay').first()).toBeVisible();
+    // Verify Side-by-Side Before/After Photo Comparison Modal (E4)
+    const compareModalBtn = page.getByTestId('open-posture-compare-modal-btn');
+    await expect(compareModalBtn).toBeVisible({ timeout: 10_000 });
+    await compareModalBtn.click();
+    const compareDialog = page.getByRole('dialog');
+    await expect(compareDialog).toBeVisible({ timeout: 5_000 });
+    await expect(compareDialog).toContainText(/مقارنة الصور|Photo Comparison/i);
+    await compareDialog.getByRole('button', { name: /إغلاق|Close/i }).first().click();
+    await expect(compareDialog).toBeHidden({ timeout: 5_000 });
 
     // Open E4 Photo Measurement Studio on first image, adjust angle coordinates, toggle plumb/grid & save encrypted copy
     const openToolsBtn = page.locator('[data-testid^="open-photo-tools-btn-"]').first();
@@ -212,9 +207,13 @@ test.describe('Phase E — Sharing & Interop (E1–E4)', () => {
     await expect(readout).toContainText('90°');
     await page.getByTestId('photo-studio-grid-select').selectOption('6x6');
 
-    await page.getByTestId('photo-studio-save-encrypted-copy-btn').click();
-    // Should now have 3 attachments (original before, after, and new encrypted annotated copy)
-    await expect(page.locator('[data-testid^="open-photo-tools-btn-"]')).toHaveCount(3, {
+    await page.getByTestId('photo-studio-save-only-btn').click();
+    await expect(
+      page.getByText(/تم حفظ القياسات بنجاح|Measurements saved to encrypted record/i)
+    ).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('dialog').getByRole('button', { name: /إغلاق|Close/i }).first().click();
+    await expect(page.getByTestId('photo-studio-canvas-stage')).toBeHidden({ timeout: 5_000 });
+    await expect(page.locator('[data-testid^="open-photo-tools-btn-"]')).toHaveCount(2, {
       timeout: 10_000,
     });
 
@@ -244,10 +243,12 @@ test.describe('Phase E — Sharing & Interop (E1–E4)', () => {
     await page.getByTestId('print-copy-summary-btn').click();
     await expect(page.getByTestId('print-share-status-notice')).toBeVisible();
 
-    await page.locator('#physiorecord-print-portal button[aria-label]').last().click();
+    await page.getByRole('dialog').getByRole('button', { name: /إغلاق|Close/i }).first().click();
+    await expect(page.getByTestId('print-patient-visit-card-section')).toBeHidden({ timeout: 5_000 });
 
     // 3) Switch to Today -> Schedule for E2 (.ics) & E3 (Tomorrow/Day Schedule Print)
     await page.getByRole('button', { name: /^اليوم$|^Today$/i }).first().click();
+    await page.getByTestId('today-more-menu-btn').click();
     await page.getByTestId('today-subtab-schedule').click();
     await page.getByRole('button', { name: /^حجز موعد$|^Book Appointment$/i }).click();
     const patientSearchInput = page
@@ -261,7 +262,8 @@ test.describe('Phase E — Sharing & Interop (E1–E4)', () => {
       .first()
       .click();
 
-    // E2 Export .ics modal from Schedule header
+    // E2 Export .ics modal from Schedule options menu
+    await page.getByRole('button', { name: /خيارات الجدول والتاريخ|Schedule options/i }).click();
     await page.getByTestId('schedule-export-ics-btn').click();
     const icsPreview = page.getByTestId('ics-live-preview');
     await expect(icsPreview).toBeVisible({ timeout: 5_000 });
@@ -279,23 +281,28 @@ test.describe('Phase E — Sharing & Interop (E1–E4)', () => {
     expect(icsDownload.suggestedFilename().toLowerCase()).toContain('.ics');
     await page.getByRole('button', { name: /^إغلاق$|^Close$/i }).last().click();
 
-    // E3 Print Schedule from Schedule header & End-of-Day Tomorrow's Schedule
+    // E3 Print Schedule from Schedule options menu & End-of-Day Tomorrow's Schedule
+    await page.getByRole('button', { name: /خيارات الجدول والتاريخ|Schedule options/i }).click();
     await page.getByTestId('schedule-print-day-btn').click();
     await expect(page.getByTestId('print-tomorrow-schedule-section')).toBeVisible({
       timeout: 5_000,
     });
-    await page.locator('#physiorecord-print-portal button[aria-label]').last().click();
+    await page.getByRole('dialog').getByRole('button', { name: /إغلاق|Close/i }).first().click();
+    await expect(page.getByTestId('print-tomorrow-schedule-section')).toBeHidden({ timeout: 5_000 });
 
+    await page.getByRole('button', { name: /العودة لليوم|Back to Today/i }).first().click();
     await page.getByTestId('today-subtab-eod').click();
     await page.getByTestId('eod-print-tomorrow-schedule-btn').click();
     await expect(page.getByTestId('print-tomorrow-schedule-section')).toBeVisible({
       timeout: 5_000,
     });
-    await page.locator('#physiorecord-print-portal button[aria-label]').last().click();
+    await page.getByRole('dialog').getByRole('button', { name: /إغلاق|Close/i }).first().click();
+    await expect(page.getByTestId('print-tomorrow-schedule-section')).toBeHidden({ timeout: 5_000 });
 
     // 4) Switch to English LTR parity check
-    await page.locator('header button[aria-expanded]').click();
-    await page.getByRole('button', { name: /^EN$/ }).click();
+    await page.getByTestId('rail-account-btn').click();
+    await page.getByTestId('account-menu-popover').locator('button').filter({ hasText: /^EN$/ }).click();
+    await page.keyboard.press('Escape');
     await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
     await expect(page.getByTestId('eod-print-tomorrow-schedule-btn')).toContainText(/Print Tomorrow/i);
 

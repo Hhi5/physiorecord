@@ -165,7 +165,7 @@ Sync is **disabled by default**—PhysioRecord makes zero external network calls
 | **2. Encrypted Google Drive (BYOC)** | Syncing when clinic PC is off, across branches, or from home | Only during sync (auto-queues offline) | **No** | Client-side `AES-256-GCM` + `PBKDF2` (`310,000` iters) before upload; minimal `drive.file` scope only |
 | **3. Encrypted File (`.ptsync.json`)** | Air-gapped clinics, USB drives, or manual transfer | **No** | **No** | Client-side `AES-256-GCM` encrypted file with non-destructive merge |
 
-> **Non-Destructive Guarantee:** All sync modes perform strictly **additive merging**—syncing never deletes existing clinical records from a therapist's device, and finalized SOAP notes remain protected.
+> **Safe Sync & Explicit Deletion Tombstones:** Ordinary absence of a record on a peer device **never deletes** local clinical records. Only explicit clinician-confirmed deletions propagate via encrypted `deletionTombstones` (`Dexie v11`) so deleted records do not resurrect across devices or backup merges, while finalized SOAP notes remain protected unless deliberately deleted with audit logging.
 
 <details>
 <summary><strong>Step-by-step setup for Local Wi-Fi (LAN) &amp; Encrypted Google Drive</strong></summary>
@@ -191,7 +191,7 @@ Clinician Password / WebAuthn PRF / Windows Hello / Touch ID
    └─▶ PBKDF2-HMAC-SHA256 (>= 600,000 iterations in dedicated Web Worker)
          └─▶ Master Key (non-extractable WebCrypto)
                ├─▶ HKDF-SHA256 Per-Record Subkeys
-               └─▶ AES-256-GCM Encrypted IndexedDB (PhysioRecordDB, Dexie v1–v10)
+               └─▶ AES-256-GCM Encrypted IndexedDB (PhysioRecordDB, Dexie v1–v11)
 ```
 
 | Security Control | Implementation |
@@ -264,7 +264,7 @@ See [`docs/DESKTOP_ANDROID_RELEASE.md`](docs/DESKTOP_ANDROID_RELEASE.md) and [`d
 | --- | --- |
 | **UI & Accessibility** | React `19`, TypeScript `7`, Tailwind CSS `4` (`@tailwindcss/vite`), React Aria Components (`Apache-2.0`), Lucide Icons (`ISC`) |
 | **Self-Hosted Typography** | `@fontsource/ibm-plex-sans-arabic`, `@fontsource/inter`, `@fontsource/jetbrains-mono` (`OFL-1.1`) |
-| **Storage & Search** | Dexie `4` (`IndexedDB` `v1`–`v10`, 28 stores), `MiniSearch` `7` (Arabic/Kurdish normalization), `Zod` `4` |
+| **Storage & Search** | Dexie `4` (`IndexedDB` `v1`–`v11`, 29 stores: 24 portable + 5 device-local), `MiniSearch` `7` (Arabic/Kurdish normalization), `Zod` `4` |
 | **Clinical Canvas** | `Konva` `10` + `react-konva` `19` (photo angle/posture measurement & annotations) |
 | **Desktop & Mobile Shells** | Capacitor `8` (`@capacitor/android`), Electron `34` + `electron-builder` (`25.1.8`) |
 | **Build & QA Tooling** | Vite `8`, Vitest `5`, Playwright `1.65` + `@axe-core/playwright` |
@@ -307,7 +307,7 @@ physiorecord/
 │   ├── context/              # Vault, Language (ar/ckb/en), Theme, Currency, Patient/Episode/Session
 │   ├── crypto/               # WebCrypto AES-GCM vault, PBKDF2 Worker, .ptbackup, WebAuthn PRF
 │   ├── data/                 # Consent templates, CC0 note snippets, terminology & clinicalToolkit/
-│   ├── db/                   # Dexie v1–v10 schema (28 stores), registry & durability helpers
+│   ├── db/                   # Dexie v1–v11 schema (29 stores), registry & durability helpers
 │   ├── hooks/                # Reusable hooks (useVirtualWindow)
 │   ├── i18n/                 # Externalized ar/ckb/en dictionaries & Kurdish Sorani phrase mapper
 │   ├── platform/             # Unified Web / Capacitor Android / Electron native bridge
@@ -328,10 +328,10 @@ physiorecord/
 ### Main Architecture Decisions
 
 1. **Zero-Backend Local-First Encryption (`src/crypto/`, `src/db/`)**: All patient charts, notes, attachments, schedules, and financial ledgers are encrypted at rest inside `IndexedDB` (`Dexie`) using non-extractable WebCrypto `AES-256-GCM` keys derived in a dedicated Web Worker (`PBKDF2-HMAC-SHA256 >= 600,000` iterations) with `HKDF-SHA256` per-record subkeys and atomic IV reservation.
-2. **Append-Only Schema & Clinical Immutability**: Historical Dexie schema versions (`v1`–`v10`) are never mutated—new stores/indexes are appended as higher versions. Finalized SOAP records are sealed with `SHA-256` and cannot be silently edited; clinical corrections are recorded as append-only `clinicalAddenda`.
+2. **Append-Only Schema & Clinical Immutability**: Historical Dexie schema versions (`v1`–`v10`) are never mutated—`v11` appends encrypted `deletionTombstones` with proactive post-open schema-downgrade detection and multi-tab `versionchange`/`blocked` lifecycle handling. Finalized SOAP records are sealed with `SHA-256` and cannot be silently edited; clinical corrections are recorded as append-only `clinicalAddenda`.
 3. **Single-Writer Service Layer (`src/services/`)**: Components never write encrypted tables ad-hoc; all encrypted reads/writes flow through centralized domain services (`sessionService`, `soapService`, `episodeService`, `clinicOperationsService`, `clinicSyncService`) to maintain audit logs, drafts, and referential integrity.
 4. **Hardened Multi-Platform Shell (`src/platform/nativeBridge.ts`, `electron/`)**: A single React codebase targets Web PWA, Capacitor Android, and Electron Desktop. On Desktop, the renderer runs under `app://bundle` with `connect-src 'none'`; all opt-in external actions (LAN Hub, Google Drive PKCE OAuth, GitHub update checks, OS biometrics) live in isolated main-process modules (`electron/*.mjs`) guarded by strict origin and allowlist checks.
-5. **Non-Destructive Optional Sync (`src/utils/clinicSyncEngine.ts`)**: Multi-device sync (Clinic LAN Hub, E2EE Google Drive `drive.file`, or `.ptsync.json`) is strictly opt-in, encrypts payloads client-side before leaving the device, and performs additive merging so syncing never deletes local clinical records.
+5. **Tombstone-Aware Optional Sync (`src/utils/clinicSyncEngine.ts`)**: Multi-device sync (Clinic LAN Hub, E2EE Google Drive `drive.file`, or `.ptsync.json`) is strictly opt-in and encrypts payloads client-side before leaving the device. Ordinary absence never deletes local records, while explicit clinician-confirmed deletions propagate via encrypted `deletionTombstones` so deleted records do not reappear.
 6. **Arabic RTL-First Accessibility & Zero-CDN Compliance**: Arabic (`ar` RTL) is the primary clinical UI with Kurdish Sorani (`ckb` RTL) and English (`en` LTR) parity. Fonts (`@fontsource/*`), SVGs, and icons are self-hosted and audited by `npm run check:content`, `npm run check:licenses`, and Playwright offline E2E tests.
 
 ---
@@ -360,9 +360,9 @@ npm audit --omit=dev --audit-level=high   # Production dependency vulnerability 
 | --- | --- |
 | **[`docs/INDEX.md`](docs/INDEX.md)** | Full bilingual Arabic/English documentation hub |
 | **[`CHANGELOG.md`](CHANGELOG.md)** | Release history (`v1.0.0` & `v1.1.0` Phases `A`–`F`) |
-| **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** | Local-first topology, single-writer services & 28 Dexie stores |
+| **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** | Local-first topology, single-writer services & 29 Dexie stores |
 | **[`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md)** | Cryptographic design & security threat boundaries |
-| **[`docs/MIGRATIONS.md`](docs/MIGRATIONS.md)** | Append-only Dexie `v1`–`v10` schema migrations |
+| **[`docs/MIGRATIONS.md`](docs/MIGRATIONS.md)** | Append-only Dexie `v1`–`v11` schema migrations & compatibility policy |
 | **[`docs/BACKUP_FORMAT.md`](docs/BACKUP_FORMAT.md)** | `.ptbackup` `V3.0` chunked encrypted archive specification |
 | **[`docs/FHIR_R4_MAPPING.md`](docs/FHIR_R4_MAPPING.md)** | HL7 FHIR R4 Bundle (`LOINC` / `SNOMED CT`) mapping |
 | **[`docs/TRANSLATION_GUIDE.md`](docs/TRANSLATION_GUIDE.md)** | `ar` / `ckb` / `en` localization & RTL guidelines |

@@ -2,7 +2,7 @@
 // PhysioRecord — Backup & Restoration Engine (.ptbackup v3.0 + v1.1/v2.0 compatibility)
 // =======================================================================
 
-import { PhysioRecordDatabase } from '../db/db';
+import { PhysioRecordDatabase, CURRENT_DEXIE_SCHEMA_VERSION } from '../db/db';
 import {
   CLINICAL_STORES_REGISTRY,
   extractAndValidateParentIds,
@@ -802,7 +802,54 @@ export const restoreBackupPackage = async (
   let skippedImmutableCount = 0;
 
   try {
-    for (const storeDef of Object.values(CLINICAL_STORES_REGISTRY)) {
+    // Reconcile `deletionTombstones` FIRST so tombstones from BOTH the local vault and
+    // incoming backup prevent resurrection of explicitly deleted records during merge
+    // (including when merging an older pre-v11 backup that lacks `deletionTombstones`).
+    const orderedStoreDefs = [
+      ...(CLINICAL_STORES_REGISTRY.deletionTombstones
+        ? [CLINICAL_STORES_REGISTRY.deletionTombstones]
+        : []),
+      ...Object.values(CLINICAL_STORES_REGISTRY).filter(
+        (def) => def.name !== 'deletionTombstones'
+      ),
+    ];
+
+    // Map `${storeName}:${recordId}` -> deletedAt timestamp (ms)
+    const effectiveTombstonesMs = new Map<string, { deletedAtMs: number; deletedAtIso?: string }>();
+    const isRecordSuppressedByTombstone = (
+      storeName: string,
+      rec: SerializedEncryptedRecord,
+      plaintext: Record<string, unknown>
+    ): { suppressed: boolean; deletedAtIso?: string } => {
+      if (storeName === 'deletionTombstones') return { suppressed: false };
+
+      const recordMs = getComparableRecordTimestamp(rec, plaintext);
+      const directKey = `${storeName}:${rec.id}`;
+      const direct = effectiveTombstonesMs.get(directKey);
+      if (direct && (recordMs === 0 || direct.deletedAtMs >= recordMs)) {
+        return { suppressed: true, deletedAtIso: direct.deletedAtIso };
+      }
+
+      // Cascade suppression: if a parent session, episode, or patient was tombstoned,
+      // do not resurrect orphaned child records (soapNotes, clinicalAddenda, sessions, episodes)
+      const parentRefs: Array<[string, unknown]> = [
+        ['sessions', rec.sessionId ?? plaintext.sessionId],
+        ['episodes', rec.episodeId ?? plaintext.episodeId],
+        ['patients', rec.patientId ?? plaintext.patientId],
+      ];
+      for (const [parentStore, parentIdVal] of parentRefs) {
+        if (typeof parentIdVal === 'string' && parentIdVal.trim()) {
+          const parentTomb = effectiveTombstonesMs.get(`${parentStore}:${parentIdVal.trim()}`);
+          if (parentTomb && (recordMs === 0 || parentTomb.deletedAtMs >= recordMs)) {
+            return { suppressed: true, deletedAtIso: parentTomb.deletedAtIso };
+          }
+        }
+      }
+
+      return { suppressed: false };
+    };
+
+    for (const storeDef of orderedStoreDefs) {
       const storeName = storeDef.name;
       const incomingRecords = Array.isArray(snapshot[storeName]) ? snapshot[storeName] : [];
       stagedStores[storeName] = [];
@@ -873,15 +920,103 @@ export const restoreBackupPackage = async (
           const localEntry = localMap.get(recId);
           const backupEntry = incomingMap.get(recId);
 
+          if (storeName === 'deletionTombstones') {
+            let chosen = localEntry || backupEntry;
+            if (localEntry && backupEntry) {
+              const localMs = Date.parse(
+                String(localEntry.plaintext.deletedAt || localEntry.raw.updatedAt || '')
+              );
+              const backupMs = Date.parse(
+                String(backupEntry.plaintext.deletedAt || backupEntry.raw.updatedAt || '')
+              );
+              chosen = (Number.isFinite(backupMs) ? backupMs : 0) > (Number.isFinite(localMs) ? localMs : 0)
+                ? backupEntry
+                : localEntry;
+            }
+            if (chosen) {
+              reconciledList.push(chosen);
+              const targetStore = String(chosen.plaintext.storeName || chosen.raw.storeName || '').trim();
+              const targetRecId = String(chosen.plaintext.recordId || chosen.raw.recordId || '').trim();
+              const deletedAtIso = String(
+                chosen.plaintext.deletedAt || chosen.raw.deletedAt || chosen.raw.updatedAt || ''
+              ).trim();
+              const deletedAtMs = Date.parse(deletedAtIso);
+              if (targetStore && targetRecId) {
+                effectiveTombstonesMs.set(`${targetStore}:${targetRecId}`, {
+                  deletedAtMs: Number.isFinite(deletedAtMs) ? deletedAtMs : Date.now(),
+                  deletedAtIso: deletedAtIso || undefined,
+                });
+              }
+            }
+            continue;
+          }
+
           if (localEntry && !backupEntry) {
+            const tombCheck = isRecordSuppressedByTombstone(
+              storeName,
+              localEntry.raw,
+              localEntry.plaintext
+            );
+            if (tombCheck.suppressed) {
+              conflicts.push({
+                storeName,
+                recordId: recId,
+                resolution: 'skipped_deleted',
+                localUpdatedAt: getIsoTimestampString(localEntry.raw, localEntry.plaintext),
+                backupUpdatedAt: tombCheck.deletedAtIso,
+                reasonAr: 'تم حذف هذا السجل صراحةً (سجل توثيق الحذف): تمت إزالته أثناء الدمج لمنع بقائه.',
+                reasonEn: 'Record has an explicit deletion tombstone: removed during merge.',
+              });
+              continue;
+            }
             reconciledList.push(localEntry);
             continue;
           }
           if (!localEntry && backupEntry) {
+            const tombCheck = isRecordSuppressedByTombstone(
+              storeName,
+              backupEntry.raw,
+              backupEntry.plaintext
+            );
+            if (tombCheck.suppressed) {
+              conflicts.push({
+                storeName,
+                recordId: recId,
+                resolution: 'skipped_deleted',
+                localUpdatedAt: tombCheck.deletedAtIso,
+                backupUpdatedAt: getIsoTimestampString(backupEntry.raw, backupEntry.plaintext),
+                reasonAr: 'تم حذف هذا السجل سابقاً: تم منع إعادة ظهوره من النسخة الاحتياطية.',
+                reasonEn: 'Record was previously deleted: prevented resurrection from backup.',
+              });
+              continue;
+            }
             reconciledList.push(backupEntry);
             continue;
           }
           if (localEntry && backupEntry) {
+            const localTombCheck = isRecordSuppressedByTombstone(
+              storeName,
+              localEntry.raw,
+              localEntry.plaintext
+            );
+            const backupTombCheck = isRecordSuppressedByTombstone(
+              storeName,
+              backupEntry.raw,
+              backupEntry.plaintext
+            );
+            if (localTombCheck.suppressed && backupTombCheck.suppressed) {
+              conflicts.push({
+                storeName,
+                recordId: recId,
+                resolution: 'skipped_deleted',
+                localUpdatedAt: getIsoTimestampString(localEntry.raw, localEntry.plaintext),
+                backupUpdatedAt: getIsoTimestampString(backupEntry.raw, backupEntry.plaintext),
+                reasonAr: 'تم حذف هذا السجل صراحةً في سجل توثيق الحذف: تم تخطيه أثناء الدمج.',
+                reasonEn: 'Record is covered by an explicit deletion tombstone: skipped during merge.',
+              });
+              continue;
+            }
+
             const isImmutable =
               storeName === 'clinicalAddenda' ||
               storeName === 'auditLogs' ||
@@ -1068,7 +1203,11 @@ export const restoreBackupPackage = async (
         wrappedDekIv: newWrappedDekIv,
         verifierIv: verifier.verifierIv,
         verifierCiphertext: verifier.verifierCiphertext,
-        schemaVersion: header.schemaVersion || targetDatabase.verno || 10,
+        schemaVersion: Math.max(
+          Number(header.schemaVersion) || 0,
+          Number(targetDatabase.verno) || 0,
+          CURRENT_DEXIE_SCHEMA_VERSION
+        ),
         kdfAlgorithm: 'PBKDF2-HMAC-SHA256',
         kdfIterations: CONSTANTS.DEFAULT_PBKDF2_ITERATIONS,
         dekVersion: newDekVersion,

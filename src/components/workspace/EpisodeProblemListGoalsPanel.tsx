@@ -175,7 +175,7 @@ export const EpisodeProblemListGoalsPanel: React.FC<EpisodeProblemListGoalsPanel
               'مثال: صعوبة صعود الدرج بسبب ضعف الرباعية...',
               'e.g., Difficulty climbing stairs due to quad weakness...'
             )}
-            className="flex-1 px-3 py-2 rounded-xl bg-surface/75 text-xs text-foreground"
+            className="flex-1 min-w-0 px-3 py-2 rounded-xl bg-surface/75 text-xs text-foreground"
           />
           <select
             aria-label={bi('تصنيف المشكلة السريرية', 'Problem category', 'پۆلێنکردنی کێشە')}

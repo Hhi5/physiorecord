@@ -617,7 +617,10 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             <div className="flex flex-wrap gap-2 pt-1 text-xs font-bold">
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
                 <CheckCircle2 className="size-3.5" />
-                {bi('دمج آمن — لا يُحذف أي مريض أو جلسة من جهازك', 'Safe merge — never deletes any patient or session')}
+                {bi(
+                  'دمج آمن — لا يحذف السجلات تلقائياً ويزامن الحذف المؤكّد بشواهد مشفّرة',
+                  'Safe merge — ordinary absence never deletes; explicit deletions sync via encrypted tombstones'
+                )}
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary">
                 <Lock className="size-3.5" />
@@ -1496,8 +1499,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                   </div>
                   <p className="text-muted-foreground-1">
                     {bi(
-                      'نعم تماماً: التطبيق يقفل ملفات المرضى بكلمة سر عيادتك قبل مغادرة جهازك — لا يستطيع Google ولا أي شخص آخر قراءة اسم مريض واحد بدون كلمة السر. كما أن المزامنة تضيف السجلات الجديدة فقط ولا تحذف أي مريض أو جلسة محفوظة لديك.',
-                      'Yes — your files are locked with your clinic password before leaving your device so neither Google nor anyone else can read them. Sync only adds new records and never deletes existing patients or sessions.'
+                      'نعم تماماً: التطبيق يقفل ملفات المرضى بكلمة سر عيادتك قبل مغادرة جهازك — لا يستطيع Google ولا أي شخص آخر قراءة اسم مريض واحد بدون كلمة السر. كما أن المزامنة لا تحذف أي سجل بسبب غيابه من جهاز آخر، ولا تُطبّق الحذف إلا إذا حذفه المعالج صراحةً مع تسجيل شاهد حذف مشفّر لمنع عودة السجل المحذوف.',
+                      'Yes — your files are locked with your clinic password before leaving your device so neither Google nor anyone else can read them. Sync never deletes a record merely because it is absent on another device; only explicit clinician-confirmed deletions propagate via encrypted deletion tombstones so deleted records do not reappear.'
                     )}
                   </p>
                 </div>

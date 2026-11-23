@@ -308,7 +308,17 @@ describe('Phase 7 — Migrations (v1–v9), Crypto Completeness & Release Integr
       'updatedAt',
     ]);
 
-    // Original v1 patient survived all 8 sequential upgrades and still decrypts cleanly
+    // v10 -> v11: encrypted deletionTombstones added (portable store)
+    testDb.upgradeToVersion(11);
+    expect(testDb.verno).toBe(11);
+    expect(testDb.getDeclaredIndexesForStore('deletionTombstones')).toEqual([
+      'id',
+      'storeName',
+      'recordId',
+      'deletedAt',
+    ]);
+
+    // Original v1 patient survived all 10 sequential upgrades and still decrypts cleanly
     const rawPatient = await testDb.patients.get('pat-mig-1');
     expect(rawPatient).toBeDefined();
     const decrypted = await decryptRecordPayload<PatientClinicalData>(
@@ -324,7 +334,7 @@ describe('Phase 7 — Migrations (v1–v9), Crypto Completeness & Release Integr
     );
     expect(decrypted.fullName).toBe('سعدون الجبوري');
 
-    // Verify PhysioRecordDatabase v10 declared stores match CLINICAL_STORES_REGISTRY U EXCLUDED_DEVICE_STORES 1:1
+    // Verify PhysioRecordDatabase v11 declared stores match CLINICAL_STORES_REGISTRY U EXCLUDED_DEVICE_STORES 1:1
     const realInspectorDb = new PhysioRecordDatabase('__phase7_registry_parity');
     const versions = (
       realInspectorDb as unknown as {
@@ -332,13 +342,13 @@ describe('Phase 7 — Migrations (v1–v9), Crypto Completeness & Release Integr
       }
     )._versions || [];
     const maxVerno = Math.max(...versions.map((v) => v._cfg?.version || 0));
-    expect(maxVerno).toBe(10);
+    expect(maxVerno).toBe(11);
 
-    const declaredV10Stores = new Set<string>();
+    const declaredV11Stores = new Set<string>();
     for (const v of [...versions].sort((a, b) => (a._cfg?.version || 0) - (b._cfg?.version || 0))) {
       for (const [k, spec] of Object.entries(v._cfg?.storesSource || {})) {
-        if (spec === null) declaredV10Stores.delete(k);
-        else declaredV10Stores.add(k);
+        if (spec === null) declaredV11Stores.delete(k);
+        else declaredV11Stores.add(k);
       }
     }
 
@@ -349,7 +359,8 @@ describe('Phase 7 — Migrations (v1–v9), Crypto Completeness & Release Integr
       expect(excludedNames.has(name)).toBe(false);
     }
     const union = new Set([...registryNames, ...excludedNames]);
-    expect(union).toEqual(declaredV10Stores);
+    expect(union.size).toBe(29);
+    expect(union).toEqual(declaredV11Stores);
   });
 
   it('7.2: covers WebAuthn PRF enroll/unlock/disable, tampering rejection, Worker PBKDF2 fallback & gzip roundtrip', async () => {

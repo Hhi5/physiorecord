@@ -85,6 +85,7 @@ export const LockScreen: React.FC = () => {
     biometricMode,
     isPinEnrolled,
     schemaDowngradeError,
+    dbLifecycleEvent,
     resetPasswordWithRecovery,
     resetPasswordWithPrf,
     wipeDatabase,
@@ -547,7 +548,7 @@ export const LockScreen: React.FC = () => {
   if (generatedRecoveryKey) {
     return (
       <div
-        className="min-h-dvh w-full text-foreground flex flex-col relative overflow-x-hidden md:px-6"
+        className="min-h-dvh w-full bg-primary-700 dark:bg-primary-950 text-foreground flex flex-col relative overflow-x-hidden md:px-6"
         dir={isRtl ? 'rtl' : 'ltr'}
       >
         {renderBannerArt()}
@@ -688,7 +689,7 @@ export const LockScreen: React.FC = () => {
                 setGeneratedRecoveryKey(null);
                 completeSetup();
               }}
-              className="w-full h-12 px-5 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground disabled:opacity-45 disabled:cursor-not-allowed font-bold text-sm transition-all cursor-pointer"
+              className="w-full h-12 px-5 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground disabled:opacity-60 disabled:cursor-not-allowed font-bold text-sm transition-all cursor-pointer"
             >
               {bi(
                 'الدخول إلى مساحة العمل السريرية',
@@ -708,7 +709,7 @@ export const LockScreen: React.FC = () => {
 
   return (
     <div
-      className="min-h-dvh w-full text-foreground flex flex-col relative overflow-x-hidden md:px-6"
+      className="min-h-dvh w-full bg-primary-700 dark:bg-primary-950 text-foreground flex flex-col relative overflow-x-hidden md:px-6"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Full-Viewport Geometric Art Backdrop (stays visible behind the sheet & floating card) */}
@@ -788,6 +789,43 @@ export const LockScreen: React.FC = () => {
             <div className="mb-4 p-3 rounded-2xl bg-surface/75 flex items-start gap-2 text-rose-700 dark:text-rose-300 text-xs font-medium">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{displayError}</span>
+            </div>
+          )}
+
+          {dbLifecycleEvent && !schemaDowngradeError && (
+            <div
+              data-testid="db-lifecycle-notice-card"
+              className="mb-4 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs space-y-1.5 text-foreground"
+            >
+              <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300">
+                <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <span>
+                  {dbLifecycleEvent.type === 'blocked'
+                    ? bi(
+                        'ترقية قاعدة البيانات بانتظار إغلاق تبويب آخر',
+                        'Database Upgrade Waiting for Another Open Tab',
+                        'نوێکردنەوەی داتابەیس چاوەڕوانی داخستنی تابێکی ترە'
+                      )
+                    : bi(
+                        'تم تحديث قاعدة البيانات في تبويب آخر',
+                        'Database Updated in Another Tab',
+                        'داتابەیس لە تابێکی تردا نوێکرایەوە'
+                      )}
+                </span>
+              </div>
+              <p className="leading-relaxed text-muted-foreground-1">
+                {dbLifecycleEvent.type === 'blocked'
+                  ? bi(
+                      'يوجد تبويب آخر مفتوح على إصدار أقدم من التطبيق. يرجى إغلاق التبويبات الأخرى أو إعادة تحميل الصفحة للمتابعة بأمان.',
+                      'Another open tab is holding an older database connection. Close other PhysioRecord tabs or reload this page to finish upgrading safely.',
+                      'تابێکی تر لەسەر وەشانێکی کۆنتر کراوەتەوە. تکایە تابەکانی تر دابخە یان پەڕەکە نوێ بکەرەوە.'
+                    )
+                  : bi(
+                      'تم إغلاق اتصال هذا التبويب تلقائياً لحماية السجلات. أعد تحميل الصفحة للمتابعة على أحدث إصدار.',
+                      'This tab safely closed its database connection to protect records. Reload this page to continue on the latest version.',
+                      'پەیوەندی ئەم تابە بە سەلامەتی داخرا. پەڕەکە نوێ بکەرەوە بۆ بەردەوامبوون.'
+                    )}
+              </p>
             </div>
           )}
 
@@ -1056,7 +1094,7 @@ export const LockScreen: React.FC = () => {
                 <button
                   type="submit"
                   disabled={submitting || (isSetup && (!pwHasMinLen || !pwMatches))}
-                  className="w-full h-12 px-5 rounded-full text-sm font-bold text-primary-foreground bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-45 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full h-12 px-5 rounded-full text-sm font-bold text-primary-foreground bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
                   <span>
                     {submitting
@@ -1120,7 +1158,7 @@ export const LockScreen: React.FC = () => {
                         setSubmitting(false);
                       }
                     }}
-                    className="mt-2.5 w-full h-11 px-4 rounded-full bg-surface hover:bg-layer-hover text-xs font-semibold text-foreground disabled:opacity-50 transition-all cursor-pointer inline-flex items-center justify-center gap-2"
+                    className="mt-2.5 w-full h-11 px-4 rounded-full bg-surface hover:bg-layer-hover text-xs font-semibold text-foreground disabled:opacity-60 transition-all cursor-pointer inline-flex items-center justify-center gap-2"
                   >
                     {deviceFormFactor === 'desktop' ? (
                       <Laptop className="w-4 h-4 text-primary" />

@@ -297,6 +297,7 @@ export class ClinicOperationsService {
   private static activeDb: PhysioRecordDatabase = defaultDb;
   private static versionMap: Map<string, number> = new Map();
   private static pendingWrites: Set<Promise<void>> = new Set();
+  private static recordWriteQueues: Map<string, Promise<void>> = new Map();
   private static auditChainQueue: Promise<void> = Promise.resolve();
   private static listeners: Set<() => void> = new Set();
   private static concurrencyListeners: Set<(err: OptimisticConcurrencyError) => void> = new Set();
@@ -475,6 +476,7 @@ export class ClinicOperationsService {
     this.loadedColdPatientIds.clear();
     this.loadedColdEpisodeIds.clear();
     this.coldPatientLoadPromises.clear();
+    this.recordWriteQueues.clear();
     this.notifyListeners();
   }
 
@@ -552,6 +554,22 @@ export class ClinicOperationsService {
     this.telemetryPersistCounter += 1;
   }
 
+  private static enqueueRecordWrite(key: string, fn: () => Promise<void>): Promise<void> {
+    const previous = this.recordWriteQueues.get(key) ?? Promise.resolve();
+    const run = previous.then(fn, fn);
+    const cleanup = run.then(
+      () => undefined,
+      () => undefined
+    );
+    this.recordWriteQueues.set(key, cleanup);
+    void cleanup.finally(() => {
+      if (this.recordWriteQueues.get(key) === cleanup) {
+        this.recordWriteQueues.delete(key);
+      }
+    });
+    return run;
+  }
+
   private static async putRecordEncrypted(
     tableName: OperationsTableName,
     id: string,
@@ -560,10 +578,12 @@ export class ClinicOperationsService {
     extraColumns: Record<string, unknown> = {},
     options: { skipBroadcast?: boolean; skipConcurrencyCheck?: boolean } = {}
   ): Promise<void> {
-    if (!this.activeDek) return;
-    const dek = this.activeDek;
-    const database = this.activeDb;
-    const now = new Date().toISOString();
+    const versionKey = `${tableName}:${id}`;
+    return this.enqueueRecordWrite(versionKey, async () => {
+      if (!this.activeDek) return;
+      const dek = this.activeDek;
+      const database = this.activeDb;
+      const now = new Date().toISOString();
     const meta = await database.vaultMeta.get('auth');
     const activeDekVersion = meta?.dekVersion || CURRENT_DEK_VERSION;
 
@@ -632,6 +652,7 @@ export class ClinicOperationsService {
     if (!options.skipBroadcast) {
       broadcastVaultEvent({ type: 'OPERATIONS_UPDATED' });
     }
+    });
   }
 
   private static async putRecordsEncryptedBatch(items: BatchEncryptedWriteItem[]): Promise<void> {
@@ -692,14 +713,17 @@ export class ClinicOperationsService {
     tableName: OperationsTableName,
     id: string
   ): Promise<void> {
-    if (!this.activeDek) return;
-    const database = this.activeDb;
-    const tableRef = database.table(tableName);
-    await database.transaction('rw', [tableRef], async () => {
-      await tableRef.delete(id);
+    const versionKey = `${tableName}:${id}`;
+    return this.enqueueRecordWrite(versionKey, async () => {
+      if (!this.activeDek) return;
+      const database = this.activeDb;
+      const tableRef = database.table(tableName);
+      await database.transaction('rw', [tableRef], async () => {
+        await tableRef.delete(id);
+      });
+      this.versionMap.delete(versionKey);
+      broadcastVaultEvent({ type: 'OPERATIONS_UPDATED' });
     });
-    this.versionMap.delete(`${tableName}:${id}`);
-    broadcastVaultEvent({ type: 'OPERATIONS_UPDATED' });
   }
 
   // ---------------------------------------------------------------------

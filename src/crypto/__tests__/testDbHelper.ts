@@ -242,6 +242,7 @@ export function createInMemoryDatabase(initialVerno = 8) {
   const cashClosesTable = makeTable('cashCloses', 'id');
   const attachmentsTable = makeTable('attachments', 'id');
   const noteTemplatesTable = makeTable('noteTemplates', 'id');
+  const deletionTombstonesTable = makeTable('deletionTombstones', 'id');
   const fsHandlesTable = makeTable('fsHandles', 'id');
   const migrationStateTable = makeTable('migrationState', 'id');
   const draftsTable = makeTable('drafts', 'id');
@@ -285,6 +286,7 @@ export function createInMemoryDatabase(initialVerno = 8) {
     cashCloses: cashClosesTable,
     attachments: attachmentsTable,
     noteTemplates: noteTemplatesTable,
+    deletionTombstones: deletionTombstonesTable,
     fsHandles: fsHandlesTable,
     migrationState: migrationStateTable,
     drafts: draftsTable,

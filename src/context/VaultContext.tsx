@@ -4,7 +4,12 @@
 // =======================================================================
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { db, requestPersistentStorage } from '../db/db';
+import {
+  db,
+  requestPersistentStorage,
+  CURRENT_DEXIE_SCHEMA_VERSION,
+  type DatabaseVersionLifecycleEvent,
+} from '../db/db';
 import {
   generateAndWrapOperationalDEK,
   unwrapOperationalDEK,
@@ -62,6 +67,7 @@ import {
   clearDesktopOsBiometricDek,
   clearNativeAndroidBiometricDek,
   detectDexieSchemaDowngradeError,
+  inspectOpenedDatabaseSchemaDowngrade,
   isNativeAppShell,
   type DexieSchemaDowngradeInfo,
 } from '../platform/nativeBridge';
@@ -105,6 +111,7 @@ interface VaultContextType {
   biometricUnavailableReason: BiometricUnavailableReason;
   keyUsageStatus: EncryptionKeyUsageStatus | null;
   schemaDowngradeError: DexieSchemaDowngradeInfo | null;
+  dbLifecycleEvent: DatabaseVersionLifecycleEvent | null;
   lastRepairSummary: VaultRepairSummary | null;
   repairError: string | null;
   lastMigrationResult: LocalStorageMigrationResult | null;
@@ -172,6 +179,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     useState<BiometricUnavailableReason>('browser-unsupported');
   const [keyUsageStatus, setKeyUsageStatus] = useState<EncryptionKeyUsageStatus | null>(null);
   const [schemaDowngradeError, setSchemaDowngradeError] = useState<DexieSchemaDowngradeInfo | null>(null);
+  const [dbLifecycleEvent, setDbLifecycleEvent] = useState<DatabaseVersionLifecycleEvent | null>(null);
   const [secondsUntilAutoLock, setSecondsUntilAutoLock] = useState<number | null>(null);
   const [recoveredDrafts, setRecoveredDrafts] = useState<DecryptedDraftRecord[]>([]);
   const [lastRecoveryDrillAt, setLastRecoveryDrillAt] = useState<string | null>(null);
@@ -411,11 +419,49 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [isLocked, lock, updateActivity, autoLockTimeoutMs]);
 
-  // Initial boot check
+  // Multi-tab IndexedDB versionchange / blocked lifecycle coordination
+  useEffect(() => {
+    if (typeof db.subscribeLifecycleEvents !== 'function') return;
+    return db.subscribeLifecycleEvents((event) => {
+      setDbLifecycleEvent(event);
+      if (event.type === 'versionchange') {
+        // Another tab opened a newer schema version and our IDB connection closed cleanly.
+        // Lock in-memory key material immediately to avoid stale writes.
+        lock(false);
+      }
+    });
+  }, [lock]);
+
+  // Initial boot check (proactively guards against Dexie 4 silent-open schema downgrades)
   useEffect(() => {
     const initCheck = async () => {
       try {
+        await db.open();
+        setDbLifecycleEvent((prev) => (prev?.type === 'blocked' ? null : prev));
+        const backendVersionRaw =
+          typeof db.getBackendIdbVersion === 'function' ? db.getBackendIdbVersion() : null;
+        const backendDb = typeof db.backendDB === 'function' ? db.backendDB() : null;
         const meta = await db.vaultMeta.get('auth');
+
+        const silentDowngrade = inspectOpenedDatabaseSchemaDowngrade({
+          backendVersionRaw,
+          vaultMetaSchemaVersion: meta?.schemaVersion ?? null,
+          declaredMaxVersion: CURRENT_DEXIE_SCHEMA_VERSION,
+          backendStoreNames: backendDb?.objectStoreNames ?? null,
+          declaredStoreNames: Array.isArray(db.tables) ? db.tables.map((t) => t.name) : null,
+        });
+        if (silentDowngrade) {
+          try {
+            db.close();
+          } catch {
+            // Ignore close failure
+          }
+          setSchemaDowngradeError(silentDowngrade);
+          // Mark as initialized so LockScreen never offers to overwrite a newer database
+          setIsInitialized(true);
+          return;
+        }
+
         setSchemaDowngradeError(null);
         setIsInitialized(!!meta);
         const availability = await getBiometricAvailabilityInfo();
@@ -503,7 +549,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         wrappedDekIv,
         verifierIv,
         verifierCiphertext,
-        schemaVersion: 1,
+        schemaVersion: CURRENT_DEXIE_SCHEMA_VERSION,
         kdfAlgorithm: 'PBKDF2-HMAC-SHA256',
         kdfIterations: CONSTANTS.DEFAULT_PBKDF2_ITERATIONS,
         dekVersion: CURRENT_DEK_VERSION,
@@ -616,6 +662,13 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       refreshPasswordReminderStatus();
 
       const latestMeta = await db.vaultMeta.get('auth');
+      if (latestMeta && (latestMeta.schemaVersion || 0) < CURRENT_DEXIE_SCHEMA_VERSION) {
+        try {
+          await db.vaultMeta.update('auth', { schemaVersion: CURRENT_DEXIE_SCHEMA_VERSION });
+        } catch (schemaErr: unknown) {
+          recordSafeNonFatalWarning('vault', 'bump_vault_meta_schema_version', schemaErr);
+        }
+      }
       setIsPrfEnrolled(await isBiometricUnlockEnrolled(latestMeta));
       setIsPinEnrolled(isPinUnlockEnrolled(latestMeta));
 
@@ -1060,6 +1113,7 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         biometricUnavailableReason,
         keyUsageStatus,
         schemaDowngradeError,
+        dbLifecycleEvent,
         lastRepairSummary,
         repairError,
         lastMigrationResult,

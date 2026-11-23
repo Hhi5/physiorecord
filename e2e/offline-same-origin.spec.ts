@@ -96,7 +96,7 @@ test.describe('Offline & Self-Hosted Security Gate (0.4 & 1.12)', () => {
     await page.locator('button[type="submit"]').click();
 
     // 3. Complete Step 2 recovery key challenge & enter workspace
-    const challengeInput = page.locator('input[type="text"]').first();
+    const challengeInput = page.locator('input#challenge-group-input');
     await expect(challengeInput).toBeVisible({ timeout: 20_000 });
     const expectedGroup = (await challengeInput.getAttribute('placeholder')) || '';
     if (expectedGroup) {
@@ -118,6 +118,7 @@ test.describe('Offline & Self-Hosted Security Gate (0.4 & 1.12)', () => {
     await expect(soloModeBtn).toBeVisible({ timeout: 15_000 });
     await soloModeBtn.click();
     await page.getByTestId('wizard-confirm-btn').click();
+    await expect(page.getByTestId('wizard-confirm-btn')).toBeHidden({ timeout: 15_000 });
 
     const pinSetupBtn = page
       .locator('button[type="submit"]')
@@ -134,10 +135,20 @@ test.describe('Offline & Self-Hosted Security Gate (0.4 & 1.12)', () => {
     await page.getByTestId('walkin-name-input').fill('أحمد علي الاختبار');
     await page.getByTestId('walkin-submit-btn').click();
 
-    await expect(page.locator('main textarea').first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('visit-row-subjective')).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId('visit-row-subjective').click();
+    await expect(page.locator('#soap-chief-complaint')).toBeVisible({ timeout: 10_000 });
+    await page.locator('[role="dialog"] button').filter({ hasText: /^تم$|^Done$/i }).first().click();
+
+    const backToDirBtn = page
+      .locator('button[aria-label*="العودة لدليل المرضى"], button[aria-label*="Back to patient directory"]')
+      .first();
+    if (await backToDirBtn.isVisible().catch(() => false)) {
+      await backToDirBtn.click();
+    }
 
     const navTodayBtn = page
-      .locator('aside button[aria-label="اليوم"], aside button[aria-label="Today"]')
+      .locator('aside button[data-nav-id="today"]')
       .first();
     await expect(navTodayBtn).toBeVisible({ timeout: 10_000 });
     await navTodayBtn.click();

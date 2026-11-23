@@ -18,7 +18,7 @@ async function completeFirstRunToSolo(page: Page, password: string) {
   await page.locator('input#confirmPassword').fill(password);
   await page.locator('button[type="submit"]').click();
 
-  const challengeInput = page.locator('input[type="text"]').first();
+  const challengeInput = page.locator('input#challenge-group-input');
   await expect(challengeInput).toBeVisible({ timeout: 15_000 });
   const expectedGroup = (await challengeInput.getAttribute('placeholder')) || '';
   if (expectedGroup) {
@@ -35,6 +35,7 @@ async function completeFirstRunToSolo(page: Page, password: string) {
   await expect(soloBtn).toBeVisible({ timeout: 15_000 });
   await soloBtn.click();
   await page.getByTestId('wizard-confirm-btn').click();
+  await expect(page.getByTestId('wizard-confirm-btn')).toBeHidden({ timeout: 15_000 });
   await expect(page.getByTestId('today-walkin-btn')).toBeVisible({ timeout: 20_000 });
 }
 
@@ -60,10 +61,8 @@ test.describe('Phase B — Faster Clinical Workflow & Safety E2E (B1–B8)', () 
     await completeFirstRunToSolo(page, 'ClinicVault!2026');
 
     // 1) Phase B8 (Pediatric Safeguard) + B6 (Structured Precaution on Patient Creation)
-    await page
-      .getByRole('button', { name: /مريض جديد|New Patient/i })
-      .first()
-      .click();
+    await page.getByTestId('rail-quick-add-btn').click();
+    await page.getByTestId('quick-add-patient-btn').click();
 
     await page.locator('input[placeholder*="أحمد فهد"]').first().fill('علي حسين الطفل');
     await page.locator('input[type="number"]').first().fill('12');
@@ -111,68 +110,10 @@ test.describe('Phase B — Faster Clinical Workflow & Safety E2E (B1–B8)', () 
       page.locator('button').filter({ hasText: /جلسة جديدة|New Session/i }).first()
     ).toBeVisible({ timeout: 10_000 });
 
-    // 3) Phase B1: One-tap CC0-1.0 Knee Exam Preset -> populates widgets & red-flag reminder
-    await expect(page.getByTestId('exam-preset-btn-knee')).toBeVisible({ timeout: 12_000 });
-    await page.getByTestId('exam-preset-btn-knee').click();
-    await expect(page.getByTestId('exam-preset-redflag-reminder')).toBeVisible({ timeout: 5_000 });
-
-    // Verify collapsible plain-text clinical summary & modal Exam Shelf button
-    await expect(page.getByTestId('clinical-summary-collapsible')).toBeVisible({ timeout: 5_000 });
-    await page.getByTestId('toggle-clinical-summary-btn').click();
-    await page.getByTestId('toggle-clinical-summary-btn').click();
-    await expect(page.getByTestId('open-exam-shelf-btn')).toBeVisible({ timeout: 5_000 });
-    await page.getByTestId('open-exam-shelf-btn').click();
-    const shelfModal = page.locator('[role="dialog"]').last();
-    await expect(shelfModal).toBeVisible({ timeout: 5_000 });
-    await shelfModal.getByRole('button', { name: /إغلاق|Close|داخستن/i }).first().click();
-
-    // Verify continuous spectrum color picker inside Body Chart
-    await expect(page.getByTestId('spectrum-color-picker').first()).toBeVisible({ timeout: 5_000 });
-
-    // 4) Phase B2: Problem List & Outcome-Linked Goals
-    await page.getByTestId('problem-list-input').fill('ألم المفصل الرضفي الفخذي');
-    await page.getByTestId('problem-list-add-btn').click();
-    await page.getByTestId('outcome-goal-title-input').fill('تقليل العجز الحركي');
-    await page.getByTestId('outcome-goal-baseline-input').fill('50');
-    await page.getByTestId('outcome-goal-target-input').fill('20');
-    await page.getByTestId('outcome-goal-add-btn').click();
-    await expect(page.locator('[data-testid^="outcome-goal-status-"]').first()).toBeVisible({
-      timeout: 5_000,
-    });
-
-    // 5) Phase B5: Performance-Test Library (LSI) with "Needs expert verification" notice
-    await expect(page.getByTestId('performance-tests-panel')).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId('perf-expert-verification-badge')).toBeVisible();
-    await page.getByTestId('perf-test-tab-lsi').click();
-    await page.getByTestId('perf-input-involved').fill('85');
-    await page.getByTestId('perf-input-uninvolved').fill('100');
-    await expect(page.getByTestId('perf-live-interpretation')).toContainText('85%');
-    await page.getByTestId('perf-save-result-btn').click();
-
-    // 6) Phase B7: Baseline Vitals threshold alert
-    await page.getByTestId('vitals-sbp-input').first().fill('185');
-    await page.getByTestId('vitals-dbp-input').first().fill('112');
-    await expect(page.getByTestId('vitals-alerts-banner').first()).toBeVisible({ timeout: 5_000 });
-
-    // Save Master Chart changes
-    await page
-      .locator('button')
-      .filter({ hasText: /^حفظ$|^Save$/i })
-      .first()
-      .click();
-
-    // 7) Open Settings -> Modules -> verify B3 default OFF -> ON & Senior PT B6 Review Sign-off
-    await page.locator('header button[aria-expanded]').click();
-    await page
-      .locator('button')
-      .filter({ hasText: /الإعدادات والخيارات|Settings/i })
-      .first()
-      .click();
-    await page
-      .locator('button')
-      .filter({ hasText: /^الأقسام$|^Modules$/i })
-      .first()
-      .click();
+    // 3) Open Settings -> Modules -> verify B3 default OFF -> ON & Senior PT B6 Review Sign-off
+    await page.getByTestId('rail-account-btn').click();
+    await page.getByTestId('account-settings-btn').click();
+    await page.getByTestId('settings-tab-modules').click();
 
     const reEvalToggle = page.getByTestId('toggle-reeval-nudges-btn');
     await expect(reEvalToggle).toContainText(/معطّلة افتراضياً|Off \(Default\)/i);
@@ -188,47 +129,100 @@ test.describe('Phase B — Faster Clinical Workflow & Safety E2E (B1–B8)', () 
 
     await page.getByRole('button', { name: /إغلاق الإعدادات|Close settings/i }).click();
 
-    // 8) Start Session #1 -> verify B8 geometric pain shapes, B6 pacemaker override, B7 vitals & B4 non-blocking finalize
+    // 4) Start Session #1 -> verify B1 presets, SpectrumColorPicker, B2 problems/goals, B5 performance tests, B8 pain, B6 pacemaker override, B7 vitals & B4 non-blocking finalize
     await page
       .locator('button')
       .filter({ hasText: /جلسة جديدة|New Session/i })
       .first()
       .click();
     await page
+      .locator('form button')
+      .filter({ hasText: /Follow-up|متابعة/i })
+      .first()
+      .click();
+    await page
       .getByRole('button', { name: /حفظ الجلسة كمسودة|Save Draft/i })
       .click();
 
-    await expect(page.getByTestId('add-modality-TENS')).toBeVisible({ timeout: 12_000 });
+    await expect(page.getByTestId('session-add-item-btn')).toBeVisible({ timeout: 12_000 });
+
+    // Phase B1: One-tap CC0-1.0 Knee Exam Preset -> populates widgets & red-flag reminder
+    await page.getByTestId('session-add-item-btn').click();
+    await page.getByTestId('picker-item-presets').click();
+    await expect(page.getByTestId('exam-preset-btn-knee')).toBeVisible({ timeout: 12_000 });
+    await page.getByTestId('exam-preset-btn-knee').click();
+    await expect(page.getByTestId('exam-preset-redflag-reminder')).toBeVisible({ timeout: 5_000 });
+
+    // Verify continuous spectrum color picker inside Body Chart drawer
+    await page.locator('[role="dialog"] button').filter({ hasText: /قائمة الإضافة|Add Menu/i }).first().click();
+    await page.getByTestId('picker-item-body_chart').click();
+    await page.locator('[role="dialog"]').getByRole('button', { name: /لون العلامة|Marker Color/i }).first().click();
+    await expect(page.getByTestId('spectrum-color-picker').first()).toBeVisible({ timeout: 10_000 });
+
+    // Phase B2: Problem List & Outcome-Linked Goals drawer
+    await page.locator('[role="dialog"] button').filter({ hasText: /قائمة الإضافة|Add Menu/i }).first().click();
+    await page.getByTestId('picker-item-problems').click();
+    await page.getByTestId('problem-list-input').fill('ألم المفصل الرضفي الفخذي');
+    await page.getByTestId('problem-list-add-btn').click();
+    await page.getByTestId('outcome-goal-title-input').fill('تقليل العجز الحركي');
+    await page.getByTestId('outcome-goal-baseline-input').fill('50');
+    await page.getByTestId('outcome-goal-target-input').fill('20');
+    await page.getByTestId('outcome-goal-add-btn').click();
+    await expect(page.locator('[data-testid^="outcome-goal-status-"]').first()).toBeVisible({
+      timeout: 5_000,
+    });
+
+    // Phase B5: Performance-Test Library (LSI) with "Needs expert verification" notice inside Outcome Measures drawer
+    await page.locator('[role="dialog"] button').filter({ hasText: /قائمة الإضافة|Add Menu/i }).first().click();
+    await page.getByTestId('picker-item-functional_scales').click();
+    await expect(page.getByTestId('performance-tests-panel')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('perf-expert-verification-badge')).toBeVisible();
+    await page.getByTestId('perf-test-tab-lsi').click();
+    await page.getByTestId('perf-input-involved').fill('85');
+    await page.getByTestId('perf-input-uninvolved').fill('100');
+    await expect(page.getByTestId('perf-live-interpretation')).toContainText('85%');
+    await page.getByTestId('perf-save-result-btn').click();
+
+    // B8 Subjective Pain (Pre/Post NPRS)
+    await page.locator('[role="dialog"] button').filter({ hasText: /قائمة الإضافة|Add Menu/i }).first().click();
+    await page.getByTestId('picker-item-subjective').click();
     await expect(page.getByTestId('nprs-geometric-icons')).toHaveCount(0);
-    // Pre-session pain (NPRS 5) + Post-session pain (NPRS 2)
     await page.getByTestId('nprs-num-5').first().click();
     await page.getByTestId('nprs-num-2').nth(1).click();
 
     // B6 Modality Safety Alert & Non-Blocking Override
+    await page.locator('[role="dialog"] button').filter({ hasText: /قائمة الإضافة|Add Menu/i }).first().click();
+    await page.getByTestId('picker-item-modalities').click();
+    await expect(page.getByTestId('add-modality-TENS')).toBeVisible({ timeout: 10_000 });
     await page.getByTestId('add-modality-TENS').click();
     await expect(page.getByTestId('modality-safety-override-modal')).toBeVisible({ timeout: 5_000 });
     await page.getByTestId('modality-safety-confirm-override-btn').click();
-    await expect(page.getByTestId('session-modality-overrides-list')).toBeVisible({
+    await expect(page.getByTestId('session-modality-overrides-list').first()).toBeVisible({
       timeout: 5_000,
     });
 
-    // Clinical Impression & Progress Status (required by medico-legal finalization; leave nextSessionPlan empty to test non-blocking checklist!)
+    // Clinical Impression & Progress Status (leave nextSessionPlan empty to test non-blocking checklist!)
+    await page.locator('[role="dialog"] button').filter({ hasText: /قائمة الإضافة|Add Menu/i }).first().click();
+    await page.getByTestId('picker-item-assessment_plan').click();
     await page
-      .locator('select')
+      .locator('[role="dialog"] select')
       .filter({ has: page.locator('option[value="improved"]') })
       .first()
       .selectOption('improved');
     await page
-      .locator('textarea[placeholder*="التفسير السريري"], textarea[placeholder*="clinical reasoning"]')
+      .locator('[role="dialog"] textarea[placeholder*="التفسير السريري"], [role="dialog"] textarea[placeholder*="clinical reasoning"]')
       .first()
       .fill('استجابة جيدة للجلسة مع تراجع الألم بعد التداخل.');
 
-    // Record Session #1 Vitals
+    // B7 Session #1 Vitals threshold alert
+    await page.locator('[role="dialog"] button').filter({ hasText: /قائمة الإضافة|Add Menu/i }).first().click();
+    await page.getByTestId('picker-item-vitals').click();
     await page.getByTestId('vitals-sbp-input').fill('185');
     await page.getByTestId('vitals-dbp-input').fill('112');
     await page.getByTestId('vitals-hr-input').fill('88');
     await page.getByTestId('vitals-spo2-input').fill('97');
     await expect(page.getByTestId('vitals-alerts-banner')).toBeVisible({ timeout: 5_000 });
+    await page.locator('[role="dialog"] button').filter({ hasText: /^تم$|^Done$/i }).first().click();
 
     // B4 Note Completeness Checklist (leave nextSessionPlan blank -> non-blocking "Finalize anyway")
     await page
@@ -247,13 +241,12 @@ test.describe('Phase B — Faster Clinical Workflow & Safety E2E (B1–B8)', () 
     await page.getByTestId('finish-step3-complete-btn').click();
     await expect(page.getByTestId('finish-step3-complete-btn')).toBeHidden({ timeout: 10_000 });
 
-    // 9) Return to Master Chart -> verify B3 Re-eval due banner after Session #1, then start Session #2 for B7 SVG trend
+    // 9) Return to Master Chart -> start Session #2 (Follow-up) for B7 SVG trend, finalize it, and verify B3 Re-eval due banner (1 session after Session #1 baseline)
     await page
       .locator('button')
       .filter({ hasText: /السجل العام|Episode Chart/i })
       .first()
       .click();
-    await expect(page.getByTestId('reeval-due-banner')).toBeVisible({ timeout: 10_000 });
 
     await page
       .locator('button')
@@ -263,11 +256,34 @@ test.describe('Phase B — Faster Clinical Workflow & Safety E2E (B1–B8)', () 
     await page
       .getByRole('button', { name: /حفظ الجلسة كمسودة|Save Draft/i })
       .click();
-    await expect(page.getByTestId('add-modality-TENS')).toBeVisible({ timeout: 12_000 });
+    await expect(page.getByTestId('session-add-item-btn')).toBeVisible({ timeout: 12_000 });
+    await page.getByTestId('session-add-item-btn').click();
+    await page.getByTestId('picker-item-vitals').click();
     await page.getByTestId('vitals-sbp-input').fill('122');
     await page.getByTestId('vitals-hr-input').fill('74');
     await page.getByTestId('vitals-spo2-input').fill('98');
     await expect(page.getByTestId('vitals-trend-svg')).toBeVisible({ timeout: 5_000 });
+    await page.locator('[role="dialog"] button').filter({ hasText: /^تم$|^Done$/i }).first().click();
+
+    // Finalize Session #2 so 1 follow-up session has elapsed since the initial evaluation snapshot
+    await page
+      .locator('button')
+      .filter({ hasText: /إنهاء واعتماد|Finish & Sign/i })
+      .first()
+      .click();
+    await page.getByTestId('finish-step1-finalize-btn').click();
+    await expect(page.getByTestId('finish-step2-next-btn')).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId('finish-step2-next-btn').click();
+    await expect(page.getByTestId('finish-step3-complete-btn')).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId('finish-step3-complete-btn').click();
+    await expect(page.getByTestId('finish-step3-complete-btn')).toBeHidden({ timeout: 10_000 });
+
+    await page
+      .locator('button')
+      .filter({ hasText: /السجل العام|Episode Chart/i })
+      .first()
+      .click();
+    await expect(page.getByTestId('reeval-due-banner')).toBeVisible({ timeout: 10_000 });
 
     expect(externalRequests).toEqual([]);
   });

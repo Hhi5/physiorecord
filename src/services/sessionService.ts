@@ -16,6 +16,7 @@ import { isTestEnvironment, registerTestHooks } from '../utils/testHooks';
 import { ReferentialIntegrityError } from '../db/registry';
 import { EpisodeService } from './episodeService';
 import { SoapService } from './soapService';
+import { recordDeletionTombstones } from './deletionTombstoneService';
 import {
   CannotDeleteFinalizedRecordError,
   VaultGenerationChangedError,
@@ -1879,6 +1880,8 @@ export class SessionService {
       await sessionMutationTestHook('deleteSession', { sessionId });
     }
 
+    let deletedSoapIds: string[] = [];
+    let sessionDeleted = false;
     await database.transaction(
       'rw',
       [database.sessions, database.soapNotes, database.clinicalAddenda],
@@ -1927,18 +1930,45 @@ export class SessionService {
         }
 
         if (latestSoapList.length > 0) {
-          await database.soapNotes.bulkDelete(latestSoapList.map((n) => n.id));
+          deletedSoapIds = latestSoapList.map((n) => n.id);
+          await database.soapNotes.bulkDelete(deletedSoapIds);
         }
         await database.sessions.delete(sessionId);
+        sessionDeleted = true;
       }
     );
+
+    if (sessionDeleted) {
+      const deletedAt = new Date().toISOString();
+      await recordDeletionTombstones(
+        [
+          {
+            storeName: 'sessions',
+            recordId: sessionId,
+            deletedAt,
+            reason: 'draft_session_delete',
+            parentIds: [session.patientId, session.episodeId],
+          },
+          ...deletedSoapIds.map((soapId) => ({
+            storeName: 'soapNotes',
+            recordId: soapId,
+            deletedAt,
+            reason: 'draft_session_delete',
+            parentIds: [session.patientId, session.episodeId, sessionId],
+          })),
+        ],
+        dek,
+        database
+      );
+    }
 
     await this.releaseSessionNumber(session.episodeId, session.sessionNumber, dek, database);
   }
 
   /**
    * Explicitly delete a finalized (or draft) session along with its linked SOAP notes
-   * and clinical addenda inside one atomic IndexedDB transaction.
+   * and clinical addenda inside one atomic IndexedDB transaction, and record encrypted
+   * deletion tombstones so neither backup merges nor multi-device sync resurrect them.
    * Intended strictly for deliberate clinician-confirmed removal (e.g., accidental empty finalization).
    */
   static async deleteFinalizedSession(
@@ -1956,6 +1986,9 @@ export class SessionService {
       throw new Error(`الجلسة بالمعرف "${sessionId}" غير موجودة.`);
     }
 
+    let deletedSoapIds: string[] = [];
+    let deletedAddendaIds: string[] = [];
+
     await database.transaction(
       'rw',
       [database.sessions, database.soapNotes, database.clinicalAddenda],
@@ -1965,7 +1998,8 @@ export class SessionService {
           .equals(sessionId)
           .toArray();
         if (soapList.length > 0) {
-          await database.soapNotes.bulkDelete(soapList.map((n) => n.id));
+          deletedSoapIds = soapList.map((n) => n.id);
+          await database.soapNotes.bulkDelete(deletedSoapIds);
         }
 
         const addendaList = await database.clinicalAddenda
@@ -1973,11 +2007,41 @@ export class SessionService {
           .equals(sessionId)
           .toArray();
         if (addendaList.length > 0) {
-          await database.clinicalAddenda.bulkDelete(addendaList.map((a) => a.id));
+          deletedAddendaIds = addendaList.map((a) => a.id);
+          await database.clinicalAddenda.bulkDelete(deletedAddendaIds);
         }
 
         await database.sessions.delete(sessionId);
       }
+    );
+
+    const deletedAt = new Date().toISOString();
+    await recordDeletionTombstones(
+      [
+        {
+          storeName: 'sessions',
+          recordId: sessionId,
+          deletedAt,
+          reason: 'explicit_finalized_session_delete',
+          parentIds: [session.patientId, session.episodeId],
+        },
+        ...deletedSoapIds.map((soapId) => ({
+          storeName: 'soapNotes',
+          recordId: soapId,
+          deletedAt,
+          reason: 'explicit_finalized_session_delete',
+          parentIds: [session.patientId, session.episodeId, sessionId],
+        })),
+        ...deletedAddendaIds.map((addId) => ({
+          storeName: 'clinicalAddenda',
+          recordId: addId,
+          deletedAt,
+          reason: 'explicit_finalized_session_delete',
+          parentIds: [session.patientId, sessionId],
+        })),
+      ],
+      dek,
+      database
     );
 
     await this.releaseSessionNumber(session.episodeId, session.sessionNumber, dek, database);

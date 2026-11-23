@@ -50,6 +50,7 @@ import type {
   EncryptedAttachmentEntity,
   EncryptedNoteTemplateEntity,
   EncryptedDraftEntity,
+  EncryptedDeletionTombstoneEntity,
   DeviceHandleEntity,
   MigrationStateEntity,
   VaultMetaEntity,
@@ -58,6 +59,21 @@ import type {
 } from '../types/clinical';
 import { PatientHardDeletionBlockedError } from '../types/clinical';
 import { registerTestHooks } from '../utils/testHooks';
+
+/**
+ * Highest declared Dexie schema version in this binary.
+ * Historical versions v1–v10 are strictly immutable; v11 appends `deletionTombstones`.
+ */
+export const CURRENT_DEXIE_SCHEMA_VERSION = 11;
+
+export interface DatabaseVersionLifecycleEvent {
+  type: 'versionchange' | 'blocked';
+  currentVersion?: number;
+  newVersion?: number | null;
+  occurredAt: string;
+}
+
+export type DatabaseLifecycleListener = (event: DatabaseVersionLifecycleEvent) => void;
 
 export class PhysioRecordDatabase extends Dexie {
   patients!: Table<EncryptedPatientEntity, string>;
@@ -83,11 +99,15 @@ export class PhysioRecordDatabase extends Dexie {
   cashCloses!: Table<EncryptedCashCloseEntity, string>;
   attachments!: Table<EncryptedAttachmentEntity, string>;
   noteTemplates!: Table<EncryptedNoteTemplateEntity, string>;
+  deletionTombstones!: Table<EncryptedDeletionTombstoneEntity, string>;
   drafts!: Table<EncryptedDraftEntity, string>;
   fsHandles!: Table<DeviceHandleEntity, string>;
   migrationState!: Table<MigrationStateEntity, string>;
   vaultMeta!: Table<VaultMetaEntity, string>;
   episodeSequences!: Table<EpisodeSequenceEntity, string>;
+
+  private lifecycleListeners = new Set<DatabaseLifecycleListener>();
+  private lastLifecycleEvent: DatabaseVersionLifecycleEvent | null = null;
 
   constructor(dbName = 'PhysioRecordDB') {
     super(dbName, {
@@ -302,6 +322,80 @@ export class PhysioRecordDatabase extends Dexie {
     this.version(10).stores({
       drafts: '&id, draftType, entityId, patientId, updatedAt',
     });
+
+    // Version 11 Schema Definition (Encrypted Deletion Tombstones for Sync & Backup Merge Integrity)
+    // Historical schemas v1-v10 remain strictly immutable; v11 only appends `deletionTombstones`.
+    this.version(11).stores({
+      deletionTombstones: '&id, storeName, recordId, deletedAt',
+    });
+
+    // Multi-tab schema lifecycle safety:
+    // 1) When a newer tab requests a schema upgrade (`versionchange`), release this tab's
+    //    IDB connection cleanly so the upgrading tab does not hang indefinitely in `blocked`.
+    this.on('versionchange', (event) => {
+      const payload: DatabaseVersionLifecycleEvent = {
+        type: 'versionchange',
+        currentVersion: typeof event.oldVersion === 'number' ? event.oldVersion : undefined,
+        newVersion: event.newVersion ?? null,
+        occurredAt: new Date().toISOString(),
+      };
+      this.lastLifecycleEvent = payload;
+      try {
+        this.close();
+      } catch {
+        // Ignore close errors if connection is already closing
+      }
+      this.emitLifecycleEvent(payload);
+      // Prevent Dexie's default console warning / reload behavior so VaultContext handles UX cleanly
+      return false;
+    });
+
+    // 2) When this tab's upgrade is blocked by an older tab still holding a connection open,
+    //    notify VaultContext so the UI can guide the clinician to reload/close the other tab.
+    this.on('blocked', (event) => {
+      const payload: DatabaseVersionLifecycleEvent = {
+        type: 'blocked',
+        currentVersion: typeof event.oldVersion === 'number' ? event.oldVersion : undefined,
+        newVersion: event.newVersion ?? null,
+        occurredAt: new Date().toISOString(),
+      };
+      this.lastLifecycleEvent = payload;
+      this.emitLifecycleEvent(payload);
+    });
+  }
+
+  private emitLifecycleEvent(event: DatabaseVersionLifecycleEvent): void {
+    for (const listener of Array.from(this.lifecycleListeners)) {
+      try {
+        listener(event);
+      } catch {
+        // Never allow a subscriber error to disrupt DB lifecycle handling
+      }
+    }
+  }
+
+  subscribeLifecycleEvents(listener: DatabaseLifecycleListener): () => void {
+    this.lifecycleListeners.add(listener);
+    return () => {
+      this.lifecycleListeners.delete(listener);
+    };
+  }
+
+  getLastLifecycleEvent(): DatabaseVersionLifecycleEvent | null {
+    return this.lastLifecycleEvent;
+  }
+
+  /**
+   * Returns the raw underlying IndexedDB numeric version (Dexie scales schema versions by 10,
+   * e.g. Dexie v11 -> IDB 110), or null when the database is closed or running on an in-memory mock.
+   */
+  getBackendIdbVersion(): number | null {
+    try {
+      const idb = typeof this.backendDB === 'function' ? this.backendDB() : null;
+      return idb && typeof idb.version === 'number' ? idb.version : null;
+    } catch {
+      return null;
+    }
   }
 
   /**

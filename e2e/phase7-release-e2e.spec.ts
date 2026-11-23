@@ -14,7 +14,7 @@ async function completeFirstRunToSolo(page: Page, password: string) {
   await page.locator('button[type="submit"]').click();
 
   // Recovery Key confirmation group
-  const challengeInput = page.locator('input[type="text"]').first();
+  const challengeInput = page.locator('input#challenge-group-input');
   await expect(challengeInput).toBeVisible({ timeout: 10_000 });
   const expectedGroup = (await challengeInput.getAttribute('placeholder')) || '';
   if (expectedGroup) {
@@ -32,6 +32,7 @@ async function completeFirstRunToSolo(page: Page, password: string) {
   await expect(soloBtn).toBeVisible({ timeout: 10_000 });
   await soloBtn.click();
   await page.getByTestId('wizard-confirm-btn').click();
+  await expect(page.getByTestId('wizard-confirm-btn')).toBeHidden({ timeout: 15_000 });
   await expect(page.getByTestId('today-walkin-btn')).toBeVisible({ timeout: 15_000 });
 }
 
@@ -221,32 +222,34 @@ test.describe('Phase 7 — Full Release E2E, Accessibility (axe-core), RTL Visua
       timeout: 12_000,
     });
 
-    // 1) Pre-Session Pain NPRS = 7, Post-Session Pain NPRS = 3
-    const nprsGroups = page.locator('div.p-4.rounded-xl.bg-surface').filter({
-      hasText: /شدة الألم|Pre-Session Pain|Post-Session Pain/i,
-    });
-    await nprsGroups.nth(0).locator('button', { hasText: /^7$/ }).first().click();
-    await nprsGroups.nth(1).locator('button', { hasText: /^3$/ }).first().click();
-
-    // 2) Add an exercise entry to flowsheet
-    await page.locator('button').filter({ hasText: /إدراج تمرين|Add Exercise/i }).first().click();
-
-    // 3) Fill Chief Complaint & Clinical Impression & select Progress Status
+    // 1) Pre-Session Pain NPRS = 7, Post-Session Pain NPRS = 3 & Chief Complaint (via Subjective sheet)
+    await page.getByTestId('visit-row-subjective').click();
+    await expect(page.locator('#soap-chief-complaint')).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId('nprs-num-7').first().click();
+    await page.getByTestId('nprs-num-3').nth(1).click();
     await page
-      .locator('textarea[placeholder*="شكوى المريض"], textarea[placeholder*="chief complaint"]')
-      .first()
+      .locator('#soap-chief-complaint')
       .fill('ألم أسفل الظهر منذ أسبوعين يزداد بالجلوس الطويل');
 
+    // 2) Add an exercise entry to flowsheet (via Picker -> Exercises sheet)
+    await page.locator('[role="dialog"] button').filter({ hasText: /قائمة الإضافة|Add Menu/i }).first().click();
+    await page.getByTestId('picker-item-exercises').click();
+    await page.locator('[role="dialog"] button').filter({ hasText: /إدراج تمرين|Add Exercise/i }).first().click();
+
+    // 3) Fill Clinical Impression & select Progress Status (via Picker -> Assessment & Plan sheet)
+    await page.locator('[role="dialog"] button').filter({ hasText: /قائمة الإضافة|Add Menu/i }).first().click();
+    await page.getByTestId('picker-item-assessment_plan').click();
     await page
-      .locator('select')
+      .locator('[role="dialog"] select')
       .filter({ has: page.locator('option[value="improved"]') })
       .first()
       .selectOption('improved');
 
     await page
-      .locator('textarea[placeholder*="التفسير السريري"], textarea[placeholder*="clinical reasoning"]')
+      .locator('[role="dialog"] textarea[placeholder*="التفسير السريري"], [role="dialog"] textarea[placeholder*="clinical reasoning"]')
       .first()
       .fill('استجابة جيدة للعلاج اليدوي وتمارين الثبات القطني مع تراجع الألم من 7 إلى 3.');
+    await page.locator('[role="dialog"] button').filter({ hasText: /^تم$|^Done$/i }).first().click();
 
     // 4) Open Finish Sequence Flow
     await page.locator('button').filter({ hasText: /إنهاء واعتماد|Finish & Sign/i }).first().click();
@@ -292,7 +295,7 @@ test.describe('Phase 7 — Full Release E2E, Accessibility (axe-core), RTL Visua
 
     // 6) Navigate Back to Today -> EOD -> Verify Payment + Next Visit + Export .ptbackup
     await page
-      .locator('aside button[aria-label="اليوم"], aside button[aria-label="Today"]')
+      .locator('aside button[data-nav-id="today"]')
       .first()
       .click();
     await expect(page.getByTestId('today-subtab-eod')).toBeVisible({ timeout: 10_000 });
@@ -325,7 +328,7 @@ test.describe('Phase 7 — Full Release E2E, Accessibility (axe-core), RTL Visua
     const backupJsonText = fs.readFileSync(downloadedPath, 'utf8');
     const parsedBackup = JSON.parse(backupJsonText);
     expect(parsedBackup.header.magic).toBe('PHYSIORECORD_BACKUP_V3.0');
-    expect(parsedBackup.header.schemaVersion).toBe(10);
+    expect(parsedBackup.header.schemaVersion).toBe(11);
     await expect(
       page.locator('text=/تم تصدير النسخة الاحتياطية والتحقق من سلامتها بنجاح/i').first()
     ).toBeVisible({ timeout: 20_000 });
@@ -459,16 +462,15 @@ test.describe('Phase 7 — Full Release E2E, Accessibility (axe-core), RTL Visua
 
     // 4. Desktop Walk-In Quick SOAP (Dark Mode Arabic RTL 1440x900)
     await page.setViewportSize({ width: 1440, height: 900 });
-    const userMenuBtn = page
-      .locator('header button[aria-label*="menu"], header button[aria-label*="المستخدم"]')
-      .first();
+    const userMenuBtn = page.getByTestId('rail-account-btn');
     await userMenuBtn.click();
-    await page.locator('button').filter({ hasText: /الوضع الليلي|Dark Mode/i }).click();
+    await page.getByRole('button', { name: /الوضع الليلي|Dark Mode/i }).click();
+    await page.keyboard.press('Escape');
 
     await page.getByTestId('today-walkin-btn').click();
     await page.getByTestId('walkin-name-input').fill('سارة جعفر');
     await page.getByTestId('walkin-submit-btn').click();
-    await expect(page.locator('main textarea').first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('visit-row-subjective')).toBeVisible({ timeout: 10_000 });
     snapshots.push(
       await captureRtlSnapshotAndAxe(page, '04-quick-soap-dark', {
         lang: 'ar',
@@ -477,8 +479,15 @@ test.describe('Phase 7 — Full Release E2E, Accessibility (axe-core), RTL Visua
     );
 
     // 5. Financial Ledger (Arabic RTL Light 1440x900)
+    const exitFocusBtn = page
+      .locator('button[aria-label*="العودة لدليل المرضى"], button[aria-label*="Back to patient directory"]')
+      .first();
+    if (await exitFocusBtn.isVisible().catch(() => false)) {
+      await exitFocusBtn.click();
+    }
     await userMenuBtn.click();
-    await page.locator('button').filter({ hasText: /الوضع النهاري|Light Mode/i }).click();
+    await page.getByRole('button', { name: /الوضع النهاري|Light Mode/i }).click();
+    await page.keyboard.press('Escape');
     await page
       .getByRole('complementary')
       .getByRole('button', { name: /الحسابات|Finance/i })
@@ -496,7 +505,8 @@ test.describe('Phase 7 — Full Release E2E, Accessibility (axe-core), RTL Visua
 
     // 6. Patient Directory in English LTR (Light 1440x900) to confirm RTL/LTR symmetry
     await userMenuBtn.click();
-    await page.locator('button').filter({ hasText: /^EN$/ }).click();
+    await page.getByTestId('account-menu-popover').locator('button').filter({ hasText: /^EN$/ }).click();
+    await page.keyboard.press('Escape');
     await page
       .getByRole('complementary')
       .getByRole('button', { name: /Patients|المرضى/i })

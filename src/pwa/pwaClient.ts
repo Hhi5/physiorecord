@@ -189,7 +189,7 @@ export function initPwaClient(): void {
     window.location.protocol.startsWith('http') &&
     !import.meta.env.DEV
   ) {
-    window.addEventListener('load', () => {
+    const registerServiceWorker = () => {
       navigator.serviceWorker
         .register('/sw.js', { scope: '/' })
         .then((registration) => {
@@ -229,7 +229,13 @@ export function initPwaClient(): void {
         refreshing = true;
         window.location.reload();
       });
-    });
+    };
+
+    if (document.readyState === 'complete') {
+      registerServiceWorker();
+    } else {
+      window.addEventListener('load', registerServiceWorker, { once: true });
+    }
   }
 }
 

@@ -12,6 +12,7 @@ const rawTarget = (process.argv[2] || process.env.VITE_APP_TARGET || 'web').trim
 const allowedTargets = new Set(['web', 'android', 'ios', 'desktop']);
 const target = allowedTargets.has(rawTarget) ? rawTarget : 'web';
 
+process.env.NODE_ENV = 'production';
 process.env.VITE_APP_TARGET = target;
 
 if (target === 'android' || target === 'desktop') {
@@ -19,4 +20,4 @@ if (target === 'android' || target === 'desktop') {
 }
 
 console.log(`[build-target] Building PhysioRecord for target: ${target}`);
-await build();
+await build({ mode: 'production' });

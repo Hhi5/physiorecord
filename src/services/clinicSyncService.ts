@@ -15,6 +15,10 @@ import {
 } from '../crypto/vault';
 import { EpisodeService } from './episodeService';
 import { ClinicOperationsService } from './clinicOperationsService';
+import {
+  getAllDeletionTombstones,
+  recordDeletionTombstones,
+} from './deletionTombstoneService';
 import { getElectronDesktopBridge } from '../platform/nativeBridge';
 import { SYNC_ENVELOPE_MAGIC } from '../config/appConstants';
 import {
@@ -340,11 +344,12 @@ export async function collectLocalClinicSyncPayload(
     }
   }
 
-  // 6. Operational stores
+  // 6. Operational stores & explicit deletion tombstones (Dexie v11)
   const appointments = ClinicOperationsService.getAppointments();
   const invoices = ClinicOperationsService.getInvoicesIQD();
   const episodeClinicalStores = ClinicOperationsService.getAllEpisodeClinicalStores();
   const staffRoster = ClinicOperationsService.getStaffRoster();
+  const deletionTombstones = await getAllDeletionTombstones(dek, database);
 
   return {
     schemaVersion: 1,
@@ -360,12 +365,14 @@ export async function collectLocalClinicSyncPayload(
     invoices,
     episodeClinicalStores,
     staffRoster,
+    deletionTombstones,
   };
 }
 
 /**
- * Persists strictly additive/newer merged records back into local encrypted IndexedDB.
- * NEVER deletes any existing local record.
+ * Persists merged records and explicit deletion tombstones back into local encrypted IndexedDB.
+ * Ordinary absence never deletes local data; only explicit clinician-recorded deletion tombstones
+ * propagate deletions to prevent deleted records from resurrecting across devices.
  */
 async function persistMergedChangesToLocalDb(
   mergeResult: ReturnType<typeof mergeClinicSyncPayloads>,
@@ -523,6 +530,44 @@ async function persistMergedChangesToLocalDb(
   if (changed.staffRosterChanged) {
     ClinicOperationsService.saveStaffRoster(merged.staffRoster);
   }
+
+  // 7. Persist incoming deletion tombstones and apply explicit tombstoned deletions locally
+  if (changed.deletionTombstones && changed.deletionTombstones.length > 0) {
+    await recordDeletionTombstones(
+      changed.deletionTombstones.map((t) => ({
+        storeName: t.storeName,
+        recordId: t.recordId,
+        deletedAt: t.deletedAt,
+        deletedByDeviceId: t.deletedByDeviceId,
+        reason: t.reason,
+        parentIds: t.parentIds,
+      })),
+      dek,
+      database
+    );
+  }
+
+  if (changed.deletedIds) {
+    if (changed.deletedIds.clinicalAddenda.length > 0) {
+      await database.clinicalAddenda.bulkDelete(changed.deletedIds.clinicalAddenda);
+    }
+    if (changed.deletedIds.soapNotes.length > 0) {
+      await database.soapNotes.bulkDelete(changed.deletedIds.soapNotes);
+    }
+    if (changed.deletedIds.sessions.length > 0) {
+      await database.sessions.bulkDelete(changed.deletedIds.sessions);
+    }
+    if (changed.deletedIds.episodes.length > 0) {
+      await database.episodes.bulkDelete(changed.deletedIds.episodes);
+    }
+    if (changed.deletedIds.patients.length > 0) {
+      await database.patients.bulkDelete(changed.deletedIds.patients);
+    }
+    for (const apptId of changed.deletedIds.appointments) {
+      ClinicOperationsService.deleteAppointment(apptId, { bypassRecycleBin: true });
+    }
+  }
+
   await ClinicOperationsService.flushPendingWrites();
 }
 
@@ -563,13 +608,17 @@ function summarizeStatsAr(stats: SyncMergeStats, peers: number): string {
     stats.invoicesMerged +
     stats.episodeStoresMerged +
     stats.staffMerged;
+  const tombstonedDeleted = stats.recordsDeletedByTombstones ?? 0;
   if (peers === 0) {
     return 'تم رفع نسختك المشفّرة بنجاح (لا توجد أجهزة أخرى متصلة بعد). جميع سجلاتك المحلية محفوظة بالكامل.';
   }
-  if (totalIncoming === 0) {
-    return `تمت المزامنة مع ${peers} جهاز بنجاح — جميع سجلاتك محدثة ولم يُحذف أي سجل محلي.`;
+  if (totalIncoming === 0 && tombstonedDeleted === 0) {
+    return `تمت المزامنة مع ${peers} جهاز بنجاح — جميع سجلاتك محدثة بالكامل.`;
   }
-  return `تم دمج ${totalIncoming} سجل جديد/محدّث من ${peers} جهاز بأمان دون حذف أي سجل محلي (${stats.patientsAdded} مرضى جدد، ${stats.sessionsAdded} جلسات جديدة، ${stats.invoicesMerged} فواتير).`;
+  if (tombstonedDeleted > 0) {
+    return `تمت المزامنة مع ${peers} جهاز بنجاح: دمج ${totalIncoming} سجل وتطبيق ${tombstonedDeleted} عملية حذف صريحة موثّقة لمنع عودة السجلات المحذوفة.`;
+  }
+  return `تم دمج ${totalIncoming} سجل جديد/محدّث من ${peers} جهاز بأمان (${stats.patientsAdded} مرضى جدد، ${stats.sessionsAdded} جلسات جديدة، ${stats.invoicesMerged} فواتير).`;
 }
 
 function summarizeStatsEn(stats: SyncMergeStats, peers: number): string {
@@ -587,13 +636,17 @@ function summarizeStatsEn(stats: SyncMergeStats, peers: number): string {
     stats.invoicesMerged +
     stats.episodeStoresMerged +
     stats.staffMerged;
+  const tombstonedDeleted = stats.recordsDeletedByTombstones ?? 0;
   if (peers === 0) {
     return 'Encrypted sync package uploaded (no other clinic devices yet). All local records preserved.';
   }
-  if (totalIncoming === 0) {
-    return `Synced with ${peers} device(s) — already up to date. Zero local records deleted.`;
+  if (totalIncoming === 0 && tombstonedDeleted === 0) {
+    return `Synced with ${peers} device(s) — already up to date.`;
   }
-  return `Merged ${totalIncoming} incoming record(s) from ${peers} device(s) non-destructively (${stats.patientsAdded} new patients, ${stats.sessionsAdded} new sessions, ${stats.invoicesMerged} invoices).`;
+  if (tombstonedDeleted > 0) {
+    return `Synced with ${peers} device(s): merged ${totalIncoming} record(s) and applied ${tombstonedDeleted} explicit deletion tombstone(s) to prevent resurrection.`;
+  }
+  return `Merged ${totalIncoming} incoming record(s) from ${peers} device(s) (${stats.patientsAdded} new patients, ${stats.sessionsAdded} new sessions, ${stats.invoicesMerged} invoices).`;
 }
 
 /**

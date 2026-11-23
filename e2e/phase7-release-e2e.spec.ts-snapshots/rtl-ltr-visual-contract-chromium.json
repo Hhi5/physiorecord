@@ -38,8 +38,8 @@
     "dir": "rtl",
     "lang": "ar",
     "horizontalOverflowPx": 0,
-    "hasSidebar": true,
-    "sidebarOnExpectedSide": true,
+    "hasSidebar": false,
+    "sidebarOnExpectedSide": null,
     "allButtonsLabeled": true,
     "minVisibleFontPx": 12
   },

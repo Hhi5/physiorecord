@@ -35,7 +35,7 @@ async function completeFirstRunToSolo(page: Page, password: string) {
   await page.locator('input#confirmPassword').fill(password);
   await page.locator('button[type="submit"]').click();
 
-  const challengeInput = page.locator('input[type="text"]').first();
+  const challengeInput = page.locator('input#challenge-group-input');
   await expect(challengeInput).toBeVisible({ timeout: 15_000 });
   const expectedGroup = (await challengeInput.getAttribute('placeholder')) || '';
   if (expectedGroup) {
@@ -52,6 +52,7 @@ async function completeFirstRunToSolo(page: Page, password: string) {
   await expect(soloBtn).toBeVisible({ timeout: 15_000 });
   await soloBtn.click();
   await page.getByTestId('wizard-confirm-btn').click();
+  await expect(page.getByTestId('wizard-confirm-btn')).toBeHidden({ timeout: 15_000 });
   await expect(page.getByTestId('today-walkin-btn')).toBeVisible({ timeout: 20_000 });
 }
 
@@ -69,7 +70,7 @@ async function generate125PatientBackupFile(backupPassword: string): Promise<str
     wrappedDekIv: generated.wrappedDekIv,
     verifierIv,
     verifierCiphertext,
-    schemaVersion: 10,
+    schemaVersion: 11,
     kdfAlgorithm: 'PBKDF2-HMAC-SHA256' as const,
     kdfIterations: 1000,
     dekVersion: CURRENT_DEK_VERSION,
@@ -176,13 +177,13 @@ test.describe('Phase A — Crash Resilience, Auto-Lock Warning, Sandbox Drill, L
     await page.getByTestId('walkin-name-input').fill('علي حسن كريم');
     await page.getByTestId('walkin-submit-btn').click();
 
-    const complaintBox = page
-      .locator('textarea[placeholder*="شكوى المريض"], textarea[placeholder*="chief complaint"]')
-      .first();
+    await expect(page.getByTestId('visit-row-subjective')).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId('visit-row-subjective').click();
+    const complaintBox = page.locator('#soap-chief-complaint');
     await expect(complaintBox).toBeVisible({ timeout: 15_000 });
     await complaintBox.fill('ألم الكتف الأيمن أثناء الرفع قبل انقطاع الكهرباء');
 
-    // Wait > 700ms so the 650ms encrypted debounce writes to Dexie v10 `drafts`
+    // Wait > 700ms so the 650ms encrypted debounce writes to Dexie `drafts`
     await page.waitForTimeout(900);
 
     // Simulate sudden power cut / reload before hitting Save or Finish
@@ -201,6 +202,8 @@ test.describe('Phase A — Crash Resilience, Auto-Lock Warning, Sandbox Drill, L
       .first()
       .click();
 
+    await expect(page.getByTestId('visit-row-subjective')).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId('visit-row-subjective').click();
     await expect(complaintBox).toBeVisible({ timeout: 15_000 });
     await expect(complaintBox).toHaveValue('ألم الكتف الأيمن أثناء الرفع قبل انقطاع الكهرباء');
 
@@ -219,6 +222,8 @@ test.describe('Phase A — Crash Resilience, Auto-Lock Warning, Sandbox Drill, L
       .filter({ hasText: /استعادة|Restore/i })
       .first()
       .click();
+    await expect(page.getByTestId('visit-row-subjective')).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId('visit-row-subjective').click();
     await expect(complaintBox).toHaveValue('تحديث سريع تم حفظه تلقائياً عند Ctrl+L', {
       timeout: 15_000,
     });
@@ -267,15 +272,9 @@ test.describe('Phase A — Crash Resilience, Auto-Lock Warning, Sandbox Drill, L
     await completeFirstRunToSolo(page, 'DrillVault!2026');
 
     // 1. Toggle Low-End Device Performance Mode in Settings -> Display & Fonts
-    const userMenuBtn = page
-      .locator('header button[aria-label*="menu"], header button[aria-label*="المستخدم"]')
-      .first();
+    const userMenuBtn = page.getByTestId('rail-account-btn');
     await userMenuBtn.click();
-    await page
-      .locator('button')
-      .filter({ hasText: /الإعدادات والخيارات|Settings/i })
-      .first()
-      .click();
+    await page.getByTestId('account-settings-btn').click();
     await page.getByTestId('settings-tab-display').click();
 
     await expect(page.getByTestId('reduced-effects-on')).toBeVisible({ timeout: 10_000 });
@@ -329,11 +328,7 @@ test.describe('Phase A — Crash Resilience, Auto-Lock Warning, Sandbox Drill, L
 
     // Open Settings -> Security tab -> Run Recovery Drill modal & verify isolated sandbox backup test
     await userMenuBtn.click();
-    await page
-      .locator('button')
-      .filter({ hasText: /الإعدادات والخيارات|Settings/i })
-      .first()
-      .click();
+    await page.getByTestId('account-settings-btn').click();
     await page
       .locator('button')
       .filter({ hasText: /الأمان|Security/i })

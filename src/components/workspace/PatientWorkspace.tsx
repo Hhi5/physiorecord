@@ -4,7 +4,7 @@
 // Mobile & Tablet (< xl): Full-Width Main Chart + Slide-Over Episodes/Sessions Drawer
 // =======================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useVault } from '../../context/VaultContext';
 import { usePatients } from '../../context/PatientContext';
 import { EpisodeService } from '../../services/episodeService';
@@ -12,9 +12,12 @@ import { SessionService } from '../../services/sessionService';
 import type { PatientRecord, EpisodeRecord, SessionRecord } from '../../types/clinical';
 import { PatientBanner } from './PatientBanner';
 import { MasterPatientChart } from './MasterPatientChart';
-import { TreatmentSessionView } from './TreatmentSessionView';
 import { EpisodeModal } from '../patients/EpisodeModal';
 import { SessionModal } from '../patients/SessionModal';
+
+const TreatmentSessionView = lazy(() =>
+  import('./TreatmentSessionView').then((m) => ({ default: m.TreatmentSessionView }))
+);
 import { ClinicOperationsService } from '../../services/clinicOperationsService';
 import type { FinishUndoSnapshot } from '../../types/clinicManagement';
 
@@ -166,34 +169,42 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({
       {/* Single Patient Column Workspace */}
       <div className="flex-1 flex flex-col overflow-hidden relative bg-transparent">
         {activeSession ? (
-          <TreatmentSessionView
-            session={activeSession}
-            patientId={resolvedPatient.id}
-            patientName={resolvedPatient.data.fullName}
-            episodeTitle={
-              activeEpisode?.data.title || activeEpisode?.data.medicalDiagnosis || 'Episode'
+          <Suspense
+            fallback={
+              <div className="flex-1 flex items-center justify-center p-6 text-xs text-muted-foreground-1">
+                ...
+              </div>
             }
-            initialAutoOpenFinish={autoOpenFinish}
-            onFinishCompleted={(snap, msgAr, msgEn) => {
-              setAutoOpenFinish(false);
-              onFinishCompleted?.(snap, msgAr, msgEn);
-            }}
-            onBack={() => {
-              setAutoOpenFinish(false);
-              setSelectedSessionId(null);
-            }}
-            onOpenMasterChart={() => {
-              setAutoOpenFinish(false);
-              setSelectedSessionId(null);
-            }}
-            onSessionUpdated={loadPatientClinicalData}
-            onSessionDeleted={() => {
-              setAutoOpenFinish(false);
-              setSelectedSessionId(null);
-              void loadPatientClinicalData();
-            }}
-            onStartSessionTour={onStartSessionTour}
-          />
+          >
+            <TreatmentSessionView
+              session={activeSession}
+              patientId={resolvedPatient.id}
+              patientName={resolvedPatient.data.fullName}
+              episodeTitle={
+                activeEpisode?.data.title || activeEpisode?.data.medicalDiagnosis || 'Episode'
+              }
+              initialAutoOpenFinish={autoOpenFinish}
+              onFinishCompleted={(snap, msgAr, msgEn) => {
+                setAutoOpenFinish(false);
+                onFinishCompleted?.(snap, msgAr, msgEn);
+              }}
+              onBack={() => {
+                setAutoOpenFinish(false);
+                setSelectedSessionId(null);
+              }}
+              onOpenMasterChart={() => {
+                setAutoOpenFinish(false);
+                setSelectedSessionId(null);
+              }}
+              onSessionUpdated={loadPatientClinicalData}
+              onSessionDeleted={() => {
+                setAutoOpenFinish(false);
+                setSelectedSessionId(null);
+                void loadPatientClinicalData();
+              }}
+              onStartSessionTour={onStartSessionTour}
+            />
+          </Suspense>
         ) : (
           <MasterPatientChart
             patient={resolvedPatient}

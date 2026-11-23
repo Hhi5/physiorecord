@@ -1,7 +1,7 @@
 // =======================================================================
 // PhysioRecord — Phase F Unit Tests (Settings, Onboarding & Open Source)
 // Covers F1 (Search & Simple/Advanced Mode), F2 (4-Step Onboarding Checklist),
-// F3 (Bundled SemVer Changelog & Dexie v1–v10 Migration Guide),
+// F3 (Bundled SemVer Changelog & Dexie v1–v11 Migration Guide),
 // F4 (CC0 Iraqi Synthetic Data Generator & Public Demo Mode), and
 // F5 (Community Content Pack Metadata & License Validator).
 // =======================================================================
@@ -14,7 +14,7 @@ import {
 import {
   APP_SEMVER_VERSION,
   BUNDLED_CHANGELOG_RELEASES,
-  DEXIE_MIGRATION_GUIDE_V1_TO_V10,
+  DEXIE_MIGRATION_GUIDE_V1_TO_V11,
   SETTINGS_SEARCHABLE_CATALOG,
   computeOnboardingChecklistSummary,
   filterSettingsCatalog,
@@ -122,19 +122,21 @@ describe('Phase F: Settings, Onboarding & Open-Source Community (F1–F5)', () =
     expect(ClinicOperationsService.isOnboardingChecklistDismissed()).toBe(false);
   });
 
-  it('F3: bundles Semantic Versioning CHANGELOG releases and complete Dexie v1–v10 migration guide', () => {
+  it('F3: bundles Semantic Versioning CHANGELOG releases and complete Dexie v1–v11 migration guide', () => {
     expect(APP_SEMVER_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
     expect(BUNDLED_CHANGELOG_RELEASES.length).toBeGreaterThanOrEqual(2);
     expect(BUNDLED_CHANGELOG_RELEASES[0].version).toBe('1.1.0');
     expect(BUNDLED_CHANGELOG_RELEASES[0].highlightsAr.length).toBeGreaterThanOrEqual(6);
     expect(BUNDLED_CHANGELOG_RELEASES[0].highlightsEn.length).toBeGreaterThanOrEqual(6);
 
-    // Verify all 10 Dexie versions (v1 through v10) are documented in order
-    expect(DEXIE_MIGRATION_GUIDE_V1_TO_V10.map((entry) => entry.version)).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    // Verify all 11 Dexie versions (v1 through v11) are documented in order
+    expect(DEXIE_MIGRATION_GUIDE_V1_TO_V11.map((entry) => entry.version)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
     ]);
-    const v10 = DEXIE_MIGRATION_GUIDE_V1_TO_V10.find((e) => e.version === 10);
+    const v10 = DEXIE_MIGRATION_GUIDE_V1_TO_V11.find((e) => e.version === 10);
     expect(v10?.storesAdded).toContain('drafts');
+    const v11 = DEXIE_MIGRATION_GUIDE_V1_TO_V11.find((e) => e.version === 11);
+    expect(v11?.storesAdded).toContain('deletionTombstones');
   });
 
   it('F4: generates deterministic CC0-1.0 Iraqi synthetic patients with +964 phones and Iraqi cities', () => {

@@ -11,9 +11,9 @@ Backups export as gzip-compressed, `256 KB` AES-256-GCM chunked `.ptbackup` JSON
   "header": {
     "formatVersion": "3.0",
     "magic": "PHYSIORECORD_BACKUP_V3.0",
-    "exportDateUtc": "2026-11-13T...",
+    "exportDateUtc": "2026-11-23T...",
     "clinicTimezone": "Asia/Baghdad",
-    "schemaVersion": 9,
+    "schemaVersion": 11,
     "kdfAlgorithm": "PBKDF2-HMAC-SHA256",
     "kdfIterations": 600000,
     "keyExpansion": "HKDF-SHA256",
@@ -52,13 +52,13 @@ Backups export as gzip-compressed, `256 KB` AES-256-GCM chunked `.ptbackup` JSON
 - **Magic Headers**:
   - `PHYSIORECORD_BACKUP_V1.1` (legacy core stores; backward-compatible restore supported).
   - `PHYSIORECORD_BACKUP_V2.0` (single-ciphertext Dexie v5/v6 snapshot; backward-compatible restore supported).
-  - `PHYSIORECORD_BACKUP_V3.0` (current default: Dexie `v9` full 23-store portable encrypted snapshot with gzip `CompressionStream` + `256 KiB` AES-GCM chunks, including `consents`, `cashCloses`, `attachments`, and `noteTemplates`, removing legacy 25 MiB monolith memory bounds).
+  - `PHYSIORECORD_BACKUP_V3.0` (current default: Dexie `v11` full 24-store portable encrypted snapshot with gzip `CompressionStream` + `256 KiB` AES-GCM chunks, including `consents`, `cashCloses`, `attachments`, `noteTemplates`, and `deletionTombstones`, removing legacy 25 MiB monolith memory bounds; older `V3.0` archives exported from `v9`/`v10` without `deletionTombstones` restore seamlessly).
 
 ## 3. Authenticated Encryption, Post-Export Verification & Merge Restore
 
 1. **Header & Chunk AAD Binding**: Canonical header AAD (`buildCanonicalBackupHeaderAAD`) is hashed with `SHA-256` (`computeHeaderAadHashHex`) and bound into each chunk's `buildChunkAAD` (`headerHash|magic|chunkIndex|totalChunks|isFinal`) to prevent header mutation, chunk reordering, or truncation.
 2. **Post-Export Verify (`verifyBackupPackage`)**: Every export runs an in-memory round-trip verification pass checking container integrity, chunk authentication, gzip decompression, and record decryptability before reporting success.
 3. **Replace vs Merge Modes (`restoreBackupPackage`)**:
-   - **Replace**: Replaces local stores cleanly under a newly rotated `CryptoKey` DEK.
-   - **Merge**: Preserves finalized immutable `soapNotes`, `clinicalAddenda`, signed `consents`, and closed `cashCloses`, merges mutable entities by newest timestamp, and outputs structured `MergeConflictRecord[]` entries.
+   - **Replace**: Replaces local stores cleanly under a newly rotated `CryptoKey` DEK, preserving all `deletionTombstones` stored in the backup.
+   - **Merge**: Reconciles `deletionTombstones` **first** across both local vault and incoming backup, suppresses resurrection of explicitly deleted records (including when merging legacy pre-v11 backups that lack `deletionTombstones`, logging `resolution: 'skipped_deleted'`), preserves finalized immutable `soapNotes`, `clinicalAddenda`, signed `consents`, and closed `cashCloses`, merges mutable entities by newest timestamp, and outputs structured `MergeConflictRecord[]` entries.
 4. **Emergency Safety Backup & File System Access**: Live restores save an emergency snapshot in secondary IndexedDB `PhysioRecordEmergencyRecoveryDB` and external `.ptbackup` via File System Access API (`src/crypto/fileSystemBackup.ts`) with browser download fallback. See [`docs/MIGRATIONS.md`](MIGRATIONS.md) for schema & format version upgrade paths.

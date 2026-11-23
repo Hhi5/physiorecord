@@ -1553,4 +1553,54 @@ export interface DecryptedDraftRecord<TPayload = Record<string, unknown>> {
   updatedAt: string;
 }
 
+// -----------------------------------------------------------------------
+// Dexie v11 Encrypted Deletion Tombstones (Backup Merge & Multi-Device Sync)
+// -----------------------------------------------------------------------
+export type DeletionTombstoneStoreName =
+  | 'patients'
+  | 'episodes'
+  | 'sessions'
+  | 'soapNotes'
+  | 'clinicalAddenda'
+  | 'appointments'
+  | 'waitingList'
+  | 'invoices'
+  | 'payments'
+  | 'expenses'
+  | 'episodeClinical'
+  | 'consents'
+  | 'attachments'
+  | 'noteTemplates'
+  | 'customWidgets'
+  | 'recurringSchedules'
+  | 'recurringSkippedDates'
+  | 'patientMedications';
 
+export interface DeletionTombstoneData {
+  storeName: DeletionTombstoneStoreName | string;
+  recordId: string;
+  deletedAt: string; // ISO-8601 UTC timestamp
+  deletedByDeviceId?: string;
+  reason?: string;
+  parentIds?: string[];
+}
+
+export interface DeletionTombstoneRecord extends DeletionTombstoneData {
+  id: string; // Deterministic composite key `${storeName}:${recordId}`
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EncryptedDeletionTombstoneEntity {
+  id: string; // `${storeName}:${recordId}`
+  storeName: string;
+  recordId: string;
+  deletedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  recordCryptoVersion: number;
+  dekVersion: number;
+  recordSalt?: Uint8Array;
+  iv: Uint8Array;
+  ciphertext: Uint8Array;
+}

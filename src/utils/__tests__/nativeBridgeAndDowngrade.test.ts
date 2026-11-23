@@ -107,6 +107,9 @@ describe('Multi-Platform Native Bridge, Version Sync & Schema Downgrade Guard', 
       isDowngrade: true,
       message:
         'The requested version (9) is less than the existing version (10).',
+      detectionSource: 'thrown_version_error',
+      supportedVersion: 9,
+      onDiskVersion: 10,
     });
     expect(detectDexieSchemaDowngradeError(wrappedDexieErr)?.isDowngrade).toBe(
       true

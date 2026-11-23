@@ -5,6 +5,7 @@
 
 import type {
   ClinicalAddendumRecord,
+  DeletionTombstoneRecord,
   EpisodeRecord,
   PatientRecord,
   SessionRecord,
@@ -42,6 +43,8 @@ export interface ClinicSyncPayload {
   invoices: FinancialInvoiceIQD[];
   episodeClinicalStores: EpisodeScopedClinicalStore[];
   staffRoster: ClinicStaffMember[];
+  /** Optional Dexie v11 explicit deletion tombstones (backward-compatible with older sync envelopes). */
+  deletionTombstones?: DeletionTombstoneRecord[];
 }
 
 export interface EncryptedSyncEnvelope {
@@ -74,6 +77,18 @@ export interface SyncMergeStats {
   staffMerged: number;
   localPreservedCount: number;
   remoteFinalizedSkippedAsImmutable: number;
+  tombstonesMerged?: number;
+  recordsDeletedByTombstones?: number;
+}
+
+export interface SyncDeletedIds {
+  patients: string[];
+  episodes: string[];
+  sessions: string[];
+  soapNotes: string[];
+  clinicalAddenda: string[];
+  appointments: string[];
+  invoices: string[];
 }
 
 export interface SyncMergeResult {
@@ -88,6 +103,8 @@ export interface SyncMergeResult {
     invoices: FinancialInvoiceIQD[];
     episodeClinicalStores: EpisodeScopedClinicalStore[];
     staffRosterChanged: boolean;
+    deletionTombstones: DeletionTombstoneRecord[];
+    deletedIds: SyncDeletedIds;
   };
   stats: SyncMergeStats;
 }
@@ -267,12 +284,14 @@ function toTimestampMs(iso?: string): number {
 }
 
 /**
- * Strictly non-destructive (additive-only) multi-device merge engine.
+ * Tombstone-aware, non-destructive-by-default multi-device merge engine.
  * Invariants:
- * 1. NEVER deletes any local record present in `local` (zero remote deletions).
- * 2. Finalized SOAP notes, finalized sessions, and clinical addenda are strictly
- *    immutable — once finalized locally, remote edits NEVER overwrite them.
- * 3. Mutable entities (patients, episodes, drafts, appointments, invoices, episode stores)
+ * 1. Ordinary absence in a remote payload NEVER deletes a local record (zero implicit deletions).
+ * 2. Explicit `deletionTombstones` (Dexie v11) propagate deliberate clinician deletions
+ *    (such as `deleteFinalizedSession`) across devices and prevent deleted records from resurrecting.
+ * 3. Non-deleted finalized SOAP notes, finalized sessions, and clinical addenda remain strictly
+ *    immutable — remote edits NEVER overwrite them.
+ * 4. Mutable entities (patients, episodes, drafts, appointments, invoices, episode stores)
  *    use newer-`updatedAt`-wins; equal timestamps preserve local safely.
  */
 export function mergeClinicSyncPayloads(
@@ -300,6 +319,60 @@ export function mergeClinicSyncPayloads(
       local.soapNotes.length +
       local.clinicalAddenda.length,
     remoteFinalizedSkippedAsImmutable: 0,
+    tombstonesMerged: 0,
+    recordsDeletedByTombstones: 0,
+  };
+
+  // 0. Reconcile explicit deletion tombstones FIRST across local + all remotes
+  const tombstoneMap = new Map<string, DeletionTombstoneRecord>();
+  const changedTombstones = new Map<string, DeletionTombstoneRecord>();
+  for (const lt of local.deletionTombstones || []) {
+    if (!lt?.storeName || !lt?.recordId) continue;
+    const key = `${lt.storeName}:${lt.recordId}`;
+    tombstoneMap.set(key, { ...lt, id: lt.id || key });
+  }
+  for (const remote of remotes) {
+    if (!remote) continue;
+    for (const rt of remote.deletionTombstones || []) {
+      if (!rt?.storeName || !rt?.recordId) continue;
+      const key = `${rt.storeName}:${rt.recordId}`;
+      const existing = tombstoneMap.get(key);
+      if (!existing || toTimestampMs(rt.deletedAt) > toTimestampMs(existing.deletedAt)) {
+        const normalized: DeletionTombstoneRecord = { ...rt, id: rt.id || key };
+        tombstoneMap.set(key, normalized);
+        changedTombstones.set(key, normalized);
+        stats.tombstonesMerged = (stats.tombstonesMerged ?? 0) + 1;
+      }
+    }
+  }
+
+  const isTombstoned = (
+    storeName: string,
+    recordId: string,
+    recordUpdatedIso?: string,
+    parentChecks?: Array<[string, string | undefined]>
+  ): boolean => {
+    const recMs = toTimestampMs(recordUpdatedIso);
+    const direct = tombstoneMap.get(`${storeName}:${recordId}`);
+    if (direct) {
+      const tombMs = toTimestampMs(direct.deletedAt);
+      if (tombMs === 0 || recMs === 0 || tombMs >= recMs) {
+        return true;
+      }
+    }
+    if (parentChecks) {
+      for (const [parentStore, parentId] of parentChecks) {
+        if (!parentId) continue;
+        const pTomb = tombstoneMap.get(`${parentStore}:${parentId}`);
+        if (pTomb) {
+          const tombMs = toTimestampMs(pTomb.deletedAt);
+          if (tombMs === 0 || recMs === 0 || tombMs >= recMs) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   };
 
   const patientMap = new Map<string, PatientRecord>(local.patients.map((p) => [p.id, p]));
@@ -331,11 +404,96 @@ export function mergeClinicSyncPayloads(
   const changedStores = new Map<string, EpisodeScopedClinicalStore>();
   let staffRosterChanged = false;
 
+  const deletedPatients = new Set<string>();
+  const deletedEpisodes = new Set<string>();
+  const deletedSessions = new Set<string>();
+  const deletedSoaps = new Set<string>();
+  const deletedAddenda = new Set<string>();
+  const deletedAppointments = new Set<string>();
+  const deletedInvoices = new Set<string>();
+
+  // Apply reconciled tombstones to local records first so explicit peer deletions propagate cleanly
+  for (const [id, p] of Array.from(patientMap.entries())) {
+    if (isTombstoned('patients', id, p.updatedAt || p.createdAt)) {
+      patientMap.delete(id);
+      deletedPatients.add(id);
+      stats.recordsDeletedByTombstones = (stats.recordsDeletedByTombstones ?? 0) + 1;
+    }
+  }
+  for (const [id, ep] of Array.from(episodeMap.entries())) {
+    if (
+      isTombstoned('episodes', id, ep.updatedAt || ep.createdAt, [['patients', ep.patientId]])
+    ) {
+      episodeMap.delete(id);
+      deletedEpisodes.add(id);
+      stats.recordsDeletedByTombstones = (stats.recordsDeletedByTombstones ?? 0) + 1;
+    }
+  }
+  for (const [id, sess] of Array.from(sessionMap.entries())) {
+    if (
+      isTombstoned('sessions', id, sess.updatedAt || sess.createdAt, [
+        ['episodes', sess.episodeId],
+        ['patients', sess.patientId],
+      ])
+    ) {
+      sessionMap.delete(id);
+      deletedSessions.add(id);
+      stats.recordsDeletedByTombstones = (stats.recordsDeletedByTombstones ?? 0) + 1;
+    }
+  }
+  for (const [id, note] of Array.from(soapMap.entries())) {
+    if (
+      isTombstoned('soapNotes', id, note.updatedAt || note.createdAt, [
+        ['sessions', note.sessionId],
+        ['episodes', note.episodeId],
+        ['patients', note.patientId],
+      ])
+    ) {
+      soapMap.delete(id);
+      soapBySessionId.delete(note.sessionId);
+      deletedSoaps.add(id);
+      stats.recordsDeletedByTombstones = (stats.recordsDeletedByTombstones ?? 0) + 1;
+    }
+  }
+  for (const [id, add] of Array.from(addendumMap.entries())) {
+    if (
+      isTombstoned('clinicalAddenda', id, add.createdAt, [
+        ['sessions', add.sessionId],
+        ['patients', add.patientId],
+      ])
+    ) {
+      addendumMap.delete(id);
+      deletedAddenda.add(id);
+      stats.recordsDeletedByTombstones = (stats.recordsDeletedByTombstones ?? 0) + 1;
+    }
+  }
+  for (const [id, appt] of Array.from(appointmentMap.entries())) {
+    if (
+      isTombstoned('appointments', id, appt.updatedAt || appt.date, [
+        ['patients', appt.patientId],
+      ])
+    ) {
+      appointmentMap.delete(id);
+      deletedAppointments.add(id);
+      stats.recordsDeletedByTombstones = (stats.recordsDeletedByTombstones ?? 0) + 1;
+    }
+  }
+  for (const [id, inv] of Array.from(invoiceMap.entries())) {
+    if (
+      isTombstoned('invoices', id, inv.updatedAt || inv.date, [['patients', inv.patientId]])
+    ) {
+      invoiceMap.delete(id);
+      deletedInvoices.add(id);
+      stats.recordsDeletedByTombstones = (stats.recordsDeletedByTombstones ?? 0) + 1;
+    }
+  }
+
   for (const remote of remotes) {
     if (!remote) continue;
 
-    // 1. Patients (non-destructive, newer updatedAt wins; never archive locally active patient if local is newer)
+    // 1. Patients (skip tombstoned records; newer updatedAt wins)
     for (const rp of remote.patients || []) {
+      if (isTombstoned('patients', rp.id, rp.updatedAt || rp.createdAt)) continue;
       const lp = patientMap.get(rp.id);
       if (!lp) {
         patientMap.set(rp.id, rp);
@@ -353,8 +511,13 @@ export function mergeClinicSyncPayloads(
       }
     }
 
-    // 2. Episodes (non-destructive, newer updatedAt wins)
+    // 2. Episodes (skip tombstoned records; newer updatedAt wins)
     for (const re of remote.episodes || []) {
+      if (
+        isTombstoned('episodes', re.id, re.updatedAt || re.createdAt, [['patients', re.patientId]])
+      ) {
+        continue;
+      }
       const le = episodeMap.get(re.id);
       if (!le) {
         episodeMap.set(re.id, re);
@@ -372,8 +535,16 @@ export function mergeClinicSyncPayloads(
       }
     }
 
-    // 3. Sessions (finalized sessions are strictly immutable once finalized locally)
+    // 3. Sessions (skip tombstoned records; non-deleted finalized sessions remain immutable)
     for (const rs of remote.sessions || []) {
+      if (
+        isTombstoned('sessions', rs.id, rs.updatedAt || rs.createdAt, [
+          ['episodes', rs.episodeId],
+          ['patients', rs.patientId],
+        ])
+      ) {
+        continue;
+      }
       const ls = sessionMap.get(rs.id);
       if (!ls) {
         sessionMap.set(rs.id, rs);
@@ -393,8 +564,17 @@ export function mergeClinicSyncPayloads(
       }
     }
 
-    // 4. SOAP Notes (1:1 by sessionId; finalized notes are strictly immutable!)
+    // 4. SOAP Notes (skip tombstoned records; 1:1 by sessionId; finalized notes stay immutable)
     for (const rn of remote.soapNotes || []) {
+      if (
+        isTombstoned('soapNotes', rn.id, rn.updatedAt || rn.createdAt, [
+          ['sessions', rn.sessionId],
+          ['episodes', rn.episodeId],
+          ['patients', rn.patientId],
+        ])
+      ) {
+        continue;
+      }
       const ln = soapMap.get(rn.id) || soapBySessionId.get(rn.sessionId);
       if (!ln) {
         soapMap.set(rn.id, rn);
@@ -417,8 +597,16 @@ export function mergeClinicSyncPayloads(
       }
     }
 
-    // 5. Clinical Addenda (strictly append-only — never overwrite or delete!)
+    // 5. Clinical Addenda (skip tombstoned records; otherwise strictly append-only)
     for (const ra of remote.clinicalAddenda || []) {
+      if (
+        isTombstoned('clinicalAddenda', ra.id, ra.createdAt, [
+          ['sessions', ra.sessionId],
+          ['patients', ra.patientId],
+        ])
+      ) {
+        continue;
+      }
       if (!addendumMap.has(ra.id)) {
         addendumMap.set(ra.id, ra);
         changedAddenda.set(ra.id, ra);
@@ -428,6 +616,13 @@ export function mergeClinicSyncPayloads(
 
     // 6. Appointments
     for (const rapp of remote.appointments || []) {
+      if (
+        isTombstoned('appointments', rapp.id, rapp.updatedAt || rapp.date, [
+          ['patients', rapp.patientId],
+        ])
+      ) {
+        continue;
+      }
       const lapp = appointmentMap.get(rapp.id);
       const rTs = toTimestampMs(rapp.updatedAt || rapp.date);
       const lTs = toTimestampMs(lapp?.updatedAt || lapp?.date);
@@ -440,6 +635,13 @@ export function mergeClinicSyncPayloads(
 
     // 7. Invoices
     for (const rinv of remote.invoices || []) {
+      if (
+        isTombstoned('invoices', rinv.id, rinv.updatedAt || rinv.date, [
+          ['patients', rinv.patientId],
+        ])
+      ) {
+        continue;
+      }
       const linv = invoiceMap.get(rinv.id);
       if (
         !linv ||
@@ -454,6 +656,7 @@ export function mergeClinicSyncPayloads(
 
     // 8. Episode Clinical Stores (ROM / MMT / Snapshots / HEP — merge snapshots append-only too!)
     for (const rstore of remote.episodeClinicalStores || []) {
+      if (isTombstoned('episodes', rstore.episodeId, rstore.updatedAt)) continue;
       const lstore = storeMap.get(rstore.episodeId);
       if (!lstore) {
         storeMap.set(rstore.episodeId, rstore);
@@ -508,6 +711,7 @@ export function mergeClinicSyncPayloads(
       invoices: Array.from(invoiceMap.values()),
       episodeClinicalStores: Array.from(storeMap.values()),
       staffRoster: Array.from(staffMap.values()),
+      deletionTombstones: Array.from(tombstoneMap.values()),
     },
     changed: {
       patients: Array.from(changedPatients.values()),
@@ -519,6 +723,16 @@ export function mergeClinicSyncPayloads(
       invoices: Array.from(changedInvoices.values()),
       episodeClinicalStores: Array.from(changedStores.values()),
       staffRosterChanged,
+      deletionTombstones: Array.from(changedTombstones.values()),
+      deletedIds: {
+        patients: Array.from(deletedPatients),
+        episodes: Array.from(deletedEpisodes),
+        sessions: Array.from(deletedSessions),
+        soapNotes: Array.from(deletedSoaps),
+        clinicalAddenda: Array.from(deletedAddenda),
+        appointments: Array.from(deletedAppointments),
+        invoices: Array.from(deletedInvoices),
+      },
     },
     stats,
   };

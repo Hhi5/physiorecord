@@ -605,33 +605,151 @@ export function computeAndroidVersionCode(semver: string): number {
 export interface DexieSchemaDowngradeInfo {
   isDowngrade: true;
   message: string;
+  onDiskVersion?: number;
+  supportedVersion?: number;
+  detectionSource?: 'thrown_version_error' | 'backend_db_version' | 'vault_meta_schema_version';
+}
+
+function collectErrorChain(err: unknown): Array<{ name: string; message: string }> {
+  const collected: Array<{ name: string; message: string }> = [];
+  const visited = new Set<unknown>();
+  const queue: unknown[] = [err];
+
+  while (queue.length > 0 && collected.length < 24) {
+    const current = queue.shift();
+    if (!current || typeof current !== 'object' || visited.has(current)) {
+      continue;
+    }
+    visited.add(current);
+    const e = current as {
+      name?: unknown;
+      message?: unknown;
+      inner?: unknown;
+      cause?: unknown;
+      failures?: unknown;
+    };
+    collected.push({
+      name: typeof e.name === 'string' ? e.name : '',
+      message: typeof e.message === 'string' ? e.message : '',
+    });
+    if (e.inner) queue.push(e.inner);
+    if (e.cause) queue.push(e.cause);
+    if (Array.isArray(e.failures)) {
+      for (const f of e.failures) queue.push(f);
+    }
+  }
+  return collected;
 }
 
 export function detectDexieSchemaDowngradeError(
   err: unknown
 ): DexieSchemaDowngradeInfo | null {
   if (!err || typeof err !== 'object') return null;
-  const e = err as {
-    name?: string;
-    message?: string;
-    inner?: { name?: string; message?: string };
-  };
-  const name = e.name || '';
-  const innerName = e.inner?.name || '';
-  const combinedMsg = `${e.message || ''} ${e.inner?.message || ''}`.trim();
+  const chain = collectErrorChain(err);
+  if (chain.length === 0) return null;
+
+  const hasVersionErrorName = chain.some((item) => item.name === 'VersionError');
+  const uniqueMessages = Array.from(
+    new Set(chain.map((item) => item.message.trim()).filter(Boolean))
+  );
+  const combinedMsg = uniqueMessages.join(' ').trim();
 
   if (
-    name === 'VersionError' ||
-    innerName === 'VersionError' ||
-    /less than the existing version|requested version .* is less than/i.test(combinedMsg)
+    hasVersionErrorName ||
+    /less than the existing version|requested version .* is less than|schema version .* is newer/i.test(
+      combinedMsg
+    )
   ) {
+    const versionMatch = combinedMsg.match(
+      /requested version \((\d+)\).*existing version \((\d+)\)/i
+    );
+    const supportedRaw = versionMatch ? Number.parseInt(versionMatch[1], 10) : undefined;
+    const onDiskRaw = versionMatch ? Number.parseInt(versionMatch[2], 10) : undefined;
     return {
       isDowngrade: true,
       message:
         combinedMsg ||
         'Database schema version on disk is newer than this application version.',
+      ...(Number.isFinite(onDiskRaw)
+        ? { onDiskVersion: onDiskRaw! >= 20 ? Math.round(onDiskRaw! / 10) : onDiskRaw }
+        : {}),
+      ...(Number.isFinite(supportedRaw)
+        ? { supportedVersion: supportedRaw! >= 20 ? Math.round(supportedRaw! / 10) : supportedRaw }
+        : {}),
+      detectionSource: 'thrown_version_error',
     };
   }
+  return null;
+}
+
+/**
+ * Proactive post-open schema downgrade guard for Dexie 4+.
+ *
+ * Why this is mandatory:
+ * In Dexie 4, opening an existing IndexedDB whose on-disk version (e.g. v11 -> IDB 110)
+ * exceeds the app's highest declared `this.version(N)` (e.g. v10 -> IDB 100) does NOT
+ * throw `VersionError`. Dexie probes with versionless `indexedDB.open(name)` and silently
+ * keeps the newer DB open while reporting `db.verno === N`.
+ *
+ * Comparing `backendDB().version` (Dexie multiplies version by 10 internally) and
+ * `vaultMeta.schemaVersion` against `declaredMaxVersion` catches silent downgrades
+ * reliably BEFORE any read/write proceeds.
+ */
+export function inspectOpenedDatabaseSchemaDowngrade(params: {
+  backendVersionRaw?: number | null;
+  vaultMetaSchemaVersion?: number | null;
+  declaredMaxVersion: number;
+  backendStoreNames?: Iterable<string> | null;
+  declaredStoreNames?: Iterable<string> | null;
+}): DexieSchemaDowngradeInfo | null {
+  const {
+    backendVersionRaw,
+    vaultMetaSchemaVersion,
+    declaredMaxVersion,
+    backendStoreNames,
+    declaredStoreNames,
+  } = params;
+
+  const declaredIdbVersion = declaredMaxVersion * 10;
+
+  if (
+    typeof backendVersionRaw === 'number' &&
+    Number.isFinite(backendVersionRaw) &&
+    backendVersionRaw > declaredIdbVersion
+  ) {
+    const onDiskDexieVersion = Number((backendVersionRaw / 10).toFixed(1));
+    const unknownStores: string[] = [];
+    if (backendStoreNames && declaredStoreNames) {
+      const declaredSet = new Set(declaredStoreNames);
+      for (const s of backendStoreNames) {
+        if (!declaredSet.has(s)) unknownStores.push(s);
+      }
+    }
+    const extraStoresSuffix =
+      unknownStores.length > 0 ? ` (unknown stores: ${unknownStores.join(', ')})` : '';
+    return {
+      isDowngrade: true,
+      onDiskVersion: onDiskDexieVersion,
+      supportedVersion: declaredMaxVersion,
+      detectionSource: 'backend_db_version',
+      message: `On-disk IndexedDB schema v${onDiskDexieVersion} (IDB ${backendVersionRaw}) is newer than this app binary's supported schema v${declaredMaxVersion} (IDB ${declaredIdbVersion})${extraStoresSuffix}.`,
+    };
+  }
+
+  if (
+    typeof vaultMetaSchemaVersion === 'number' &&
+    Number.isFinite(vaultMetaSchemaVersion) &&
+    vaultMetaSchemaVersion > declaredMaxVersion
+  ) {
+    return {
+      isDowngrade: true,
+      onDiskVersion: vaultMetaSchemaVersion,
+      supportedVersion: declaredMaxVersion,
+      detectionSource: 'vault_meta_schema_version',
+      message: `Vault metadata records schema v${vaultMetaSchemaVersion}, which is newer than this app binary's supported schema v${declaredMaxVersion}.`,
+    };
+  }
+
   return null;
 }
 

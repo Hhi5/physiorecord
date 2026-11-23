@@ -30,7 +30,7 @@ const PlatformAccessGateScreen = lazy(() =>
 );
 
 const AppContent: React.FC = () => {
-  const { ready, isInitialized, isLocked } = useVault();
+  const { ready, isInitialized, isLocked, dbLifecycleEvent } = useVault();
   const { language, isRtl, bi } = useLanguage();
   const pwa = usePwaStatus();
   const [allowExistingVaultRescue, setAllowExistingVaultRescue] = useState(false);
@@ -58,16 +58,39 @@ const AppContent: React.FC = () => {
 
   const loadingFallback = (
     <div
-      className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center text-slate-900 dark:text-white transition-colors"
+      className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center px-4 text-slate-900 dark:text-white transition-colors"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       <RefreshCw className="w-8 h-8 text-primary animate-spin mb-3" />
-      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium text-center">
         {bi(
           'جاري فحص الخزينة المشفرة والتحقق من التخزين المحلي...',
-          'Initializing local encrypted vault...'
+          'Initializing local encrypted vault...',
+          'پشکنینی خەزێنەی شفرەکراو و هەڵگرتنی خۆجێیی...'
         )}
       </p>
+      {dbLifecycleEvent?.type === 'blocked' && (
+        <div
+          role="alert"
+          data-testid="db-lifecycle-blocked-boot-card"
+          className="mt-4 max-w-md w-full p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-100 text-xs leading-relaxed space-y-2"
+        >
+          <p className="font-bold">
+            {bi(
+              'ترقية قاعدة البيانات بانتظار إغلاق تبويب آخر مفتوح',
+              'Database upgrade is waiting for another open tab to close',
+              'بەرزکردنەوەی بنکەی زانیاری چاوەڕوانی داخستنی تابێکی تری کراوەیە'
+            )}
+          </p>
+          <p>
+            {bi(
+              'يوجد تبويب أو نافذة أخرى لتطبيق PhysioRecord تستخدم إصداراً أقدم من قاعدة البيانات. أغلق أو أعد تحميل التبويبات الأخرى ليكتمل التحديث تلقائياً دون أي فقدان للبيانات.',
+              'Another PhysioRecord tab or window is holding an older database connection open. Close or reload other tabs so the schema upgrade can complete safely.',
+              'تابێک یان پەنجەرەیەکی تری PhysioRecord پەیوەندی بە وەشانێکی کۆنتری بنکەی زانیارییەوە گرتووە. تابەکانی تر دابخە یان نوێیان بکەرەوە بۆ ئەوەی بەرزکردنەوەکە بە سەلامەتی تەواو ببێت.'
+            )}
+          </p>
+        </div>
+      )}
     </div>
   );
 

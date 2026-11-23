@@ -132,6 +132,11 @@ export const CLINICAL_STORES_REGISTRY: Record<string, ClinicalStoreDefinition> =
     parentKeys: [],
     descriptionAr: 'قوالب الملاحظات السريرية والاختصارات وحزم المحتوى',
   },
+  deletionTombstones: {
+    name: 'deletionTombstones',
+    parentKeys: [],
+    descriptionAr: 'سجلات توثيق الحذف الصريح لمنع إعادة ظهور السجلات المحذوفة عند الدمج أو المزامنة',
+  },
 };
 
 /**

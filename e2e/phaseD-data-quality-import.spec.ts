@@ -18,7 +18,7 @@ async function completeFirstRunToSolo(page: Page, password: string) {
   await page.locator('input#confirmPassword').fill(password);
   await page.locator('button[type="submit"]').click();
 
-  const challengeInput = page.locator('input[type="text"]').first();
+  const challengeInput = page.locator('input#challenge-group-input');
   await expect(challengeInput).toBeVisible({ timeout: 15_000 });
   const expectedGroup = (await challengeInput.getAttribute('placeholder')) || '';
   if (expectedGroup) {
@@ -35,6 +35,7 @@ async function completeFirstRunToSolo(page: Page, password: string) {
   await expect(soloBtn).toBeVisible({ timeout: 15_000 });
   await soloBtn.click();
   await page.getByTestId('wizard-confirm-btn').click();
+  await expect(page.getByTestId('wizard-confirm-btn')).toBeHidden({ timeout: 15_000 });
   await expect(page.getByTestId('today-walkin-btn')).toBeVisible({ timeout: 20_000 });
 }
 
@@ -60,17 +61,9 @@ test.describe('Phase D — Data Quality, Import, 30-Day Recycle Bin, Health & Gl
     await completeFirstRunToSolo(page, 'ClinicVault!2026');
 
     // 1) Verify Phase D Settings > Modules controls & ESSENTIAL D1 badge
-    await page.locator('header button[aria-expanded]').click();
-    await page
-      .locator('button')
-      .filter({ hasText: /الإعدادات والخيارات|Settings/i })
-      .first()
-      .click();
-    await page
-      .locator('button')
-      .filter({ hasText: /^الأقسام$|^Modules$/i })
-      .first()
-      .click();
+    await page.getByTestId('rail-account-btn').click();
+    await page.getByTestId('account-settings-btn').click();
+    await page.getByTestId('settings-tab-modules').click();
 
     await expect(page.getByTestId('settings-phaseD-modules-card')).toBeVisible({ timeout: 5_000 });
     await expect(page.getByTestId('badge-duplicate-guard-essential')).toBeVisible();
@@ -81,7 +74,8 @@ test.describe('Phase D — Data Quality, Import, 30-Day Recycle Bin, Health & Gl
     await page.getByRole('button', { name: /إغلاق الإعدادات|Close settings/i }).click();
 
     // 2) D1 & D5 in PatientModal + EpisodeModal: Create Primary Patient using Glossary
-    await page.getByRole('button', { name: /مريض جديد|New Patient/i }).first().click();
+    await page.getByTestId('rail-quick-add-btn').click();
+    await page.getByTestId('quick-add-patient-btn').click();
     await page.locator('input[placeholder*="أحمد فهد"]').first().fill('سارة كريم محمد');
     await page.locator('input[placeholder="0770 123 4567"]').first().fill('07703334455');
     await page.locator('input[type="number"]').first().fill('29');
@@ -109,7 +103,8 @@ test.describe('Phase D — Data Quality, Import, 30-Day Recycle Bin, Health & Gl
 
     // 3) Return to Patients Directory -> Create intentional duplicate to verify D1 Duplicate Guard Banner
     await page.getByRole('button', { name: /المرضى|Patients/i }).first().click();
-    await page.getByRole('button', { name: /مريض جديد|New Patient/i }).first().click();
+    await page.getByTestId('rail-quick-add-btn').click();
+    await page.getByTestId('quick-add-patient-btn').click();
     await page.locator('input[placeholder*="أحمد فهد"]').first().fill('ساره كريم محمد');
     await page.locator('input[placeholder="0770 123 4567"]').first().fill('0770 333 4455');
 
@@ -124,6 +119,7 @@ test.describe('Phase D — Data Quality, Import, 30-Day Recycle Bin, Health & Gl
 
     // 4) D1 Patient Merge Modal: Merge duplicate pair transactionally
     await page.getByRole('button', { name: /المرضى|Patients/i }).first().click();
+    await page.getByRole('button', { name: /خيارات الدليل|Directory options/i }).first().click();
     await page.getByTestId('open-patient-merge-modal-btn').click();
     const mergeModal = page.getByTestId('patient-merge-modal');
     await expect(mergeModal).toBeVisible({ timeout: 10_000 });
@@ -135,7 +131,8 @@ test.describe('Phase D — Data Quality, Import, 30-Day Recycle Bin, Health & Gl
     await mergeModal.getByRole('button', { name: /إغلاق|Close/i }).last().click();
 
     // 5) D2 Import Wizard (CSV + XLSX sample export + Auto-Guess + Dry-Run + 'imported' badge)
-    await page.getByRole('button', { name: /استيراد مرضى|Import CSV \/ XLSX/i }).first().click();
+    await page.getByRole('button', { name: /خيارات الدليل|Directory options/i }).first().click();
+    await page.getByRole('menuitem', { name: /استيراد مرضى|Import CSV \/ XLSX/i }).first().click();
     const importDialog = page.locator('[role="dialog"]').last();
     await expect(importDialog).toBeVisible({ timeout: 5_000 });
 
@@ -166,6 +163,7 @@ test.describe('Phase D — Data Quality, Import, 30-Day Recycle Bin, Health & Gl
 
     // 6) D3 30-Day Recycle Bin + D4 Data Health Screen (5 categories)
     await page.getByRole('button', { name: /^اليوم$|^Today$/i }).first().click();
+    await page.getByTestId('today-more-menu-btn').click();
     await page.getByTestId('today-subtab-schedule').click();
     await page.getByRole('button', { name: /^حجز موعد$|^Book Appointment$/i }).click();
     const patientSearchInput = page
@@ -179,10 +177,16 @@ test.describe('Phase D — Data Quality, Import, 30-Day Recycle Bin, Health & Gl
       .first()
       .click();
 
-    const deleteApptBtn = page.locator('button[aria-label*="حذف موعد كرار"], button[title="حذف الموعد"]').first();
-    await expect(deleteApptBtn).toBeVisible({ timeout: 8_000 });
+    const rowMenuBtn = page
+      .locator('button[aria-label*="إجراءات إضافية لموعد كرار"], button[aria-label*="More actions for"]')
+      .first();
+    await expect(rowMenuBtn).toBeVisible({ timeout: 8_000 });
+    await rowMenuBtn.click();
+    const deleteApptBtn = page.getByRole('menuitem', { name: /حذف الموعد|Delete/i }).first();
+    await expect(deleteApptBtn).toBeVisible({ timeout: 5_000 });
     await deleteApptBtn.click();
 
+    await page.getByTestId('today-more-menu-btn').click();
     await page.getByTestId('today-subtab-data_health').click();
     await expect(page.getByTestId('data-health-screen-panel')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId('data-health-score-badge')).toBeVisible();
@@ -203,10 +207,11 @@ test.describe('Phase D — Data Quality, Import, 30-Day Recycle Bin, Health & Gl
     await expect(recyclePanel).not.toContainText('كرار علي جبار', { timeout: 5_000 });
 
     // 7) Verify English LTR parity & zero external requests
-    await page.locator('header button[aria-expanded]').click();
-    await page.getByRole('button', { name: /^EN$/ }).click();
+    await page.getByTestId('rail-account-btn').click();
+    await page.getByTestId('account-menu-popover').locator('button').filter({ hasText: /^EN$/ }).click();
+    await page.keyboard.press('Escape');
     await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
-    await expect(page.getByTestId('today-subtab-data_health')).toContainText(/Data Health/i);
+    await expect(page.getByTestId('data-health-screen-panel')).toContainText(/Data Health/i);
 
     expect(externalRequests).toEqual([]);
   });

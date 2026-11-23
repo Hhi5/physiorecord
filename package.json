@@ -16,7 +16,7 @@
   "main": "electron/main.mjs",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
-    "build": "vite build",
+    "build": "node scripts/build-target.mjs web",
     "build:web": "node scripts/build-target.mjs web",
     "build:android:web": "node scripts/build-target.mjs android",
     "build:ios:web": "node scripts/build-target.mjs ios",

@@ -888,7 +888,7 @@ export type BackupRestoreMode = 'replace' | 'merge';
 export interface MergeConflictRecord {
   storeName: string;
   recordId: string;
-  resolution: 'kept_local' | 'applied_backup' | 'skipped_immutable';
+  resolution: 'kept_local' | 'applied_backup' | 'skipped_immutable' | 'skipped_deleted';
   localUpdatedAt?: string;
   backupUpdatedAt?: string;
   reasonAr: string;

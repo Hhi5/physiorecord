@@ -38,17 +38,17 @@ PhysioRecord is a **local-first, browser-only SPA** designed for offline clinica
 | - WebCrypto AES-GCM + Per-Record HKDF-SHA256 Subkeys (`v2`)       |
 | - Web Worker PBKDF2-SHA256 (600k+) & Optional WebAuthn PRF Unlock |
 | - Block-Reserved GCM Counters (70% Auto-Rotation)                 |
-| - Dexie Schema v1–v10 (28 object stores) + `.ptbackup` V3.0 Gzip  |
+| - Dexie Schema v1–v11 (29 object stores) + `.ptbackup` V3.0 Gzip  |
 +-------------------------------------------------------------------+
 ```
 
 ## 2. Database Schema (`src/db/db.ts`)
 
-Current Dexie database version is **v10** (historical `v1`–`v9` remain immutable; see [`docs/MIGRATIONS.md`](MIGRATIONS.md)):
+Current Dexie database version is **v11** (historical `v1`–`v10` remain strictly immutable; see [`docs/MIGRATIONS.md`](MIGRATIONS.md)):
 
-- **Core Clinical Stores (`CLINICAL_STORES_REGISTRY`)**: `patients`, `episodes`, `sessions`, `soapNotes`, `clinicalAddenda`, `episodeClinical`
-- **Operations & Clinic Stores (Encrypted in Dexie v10, `CLINICAL_STORES_REGISTRY`)**: `appointments`, `waitingList`, `invoices`, `payments`, `expenses`, `auditLogs` (SHA-256 hash-chained), `staffState`, `customWidgets`, `migrationReports`, `recurringSchedules`, `recurringSkippedDates`, `clinicSettings`, `patientMedications`, `consents`, `cashCloses`, `attachments`, `noteTemplates`
-- **Device-Local Technical & Crash-Resilience Stores (`EXCLUDED_DEVICE_STORES`)**: `vaultMeta`, `episodeSequences`, `migrationState`, `fsHandles` (`FileSystemDirectoryHandle` references), and `drafts` (encrypted power-cut/crash-resilient form draft buffer added in `v10`), plus `BroadcastChannel` cross-tab sync (`src/utils/vaultEvents.ts`)
+- **Core Clinical Stores (`CLINICAL_STORES_REGISTRY`)**: `patients`, `episodes`, `sessions`, `soapNotes`, `clinicalAddenda`, `episodeClinical`, `deletionTombstones` (added in `v11`, encrypted deletion propagation & anti-resurrection store)
+- **Operations & Clinic Stores (Encrypted in Dexie v11, `CLINICAL_STORES_REGISTRY`)**: `appointments`, `waitingList`, `invoices`, `payments`, `expenses`, `auditLogs` (SHA-256 hash-chained), `staffState`, `customWidgets`, `migrationReports`, `recurringSchedules`, `recurringSkippedDates`, `clinicSettings`, `patientMedications`, `consents`, `cashCloses`, `attachments`, `noteTemplates` (24 portable encrypted stores total)
+- **Device-Local Technical & Crash-Resilience Stores (`EXCLUDED_DEVICE_STORES`)**: `vaultMeta`, `episodeSequences`, `migrationState`, `fsHandles` (`FileSystemDirectoryHandle` references), and `drafts` (encrypted power-cut/crash-resilient form draft buffer added in `v10`) — 5 device-local stores total, plus `BroadcastChannel` cross-tab sync (`src/utils/vaultEvents.ts`) and `versionchange`/`blocked` multi-tab coordination (`src/db/db.ts`)
 
 > **Storage Isolation**: Only non-sensitive UI preferences (selected palette theme, active language, display preferences key `physiorecord_display_prefs_v1`, dismissible migration notice flag) remain in `localStorage`. Uploaded local UI font binaries (non-PHI) live in isolated `PhysioRecordUiPrefsDB` (`IndexedDB`) and are loaded CSP-safely via `new FontFace(family, ArrayBuffer)` without modifying `PhysioRecordDB`. All clinical and operational data lives encrypted inside `PhysioRecordDB` (`navigator.storage.persist()` requested automatically on first vault unlock).
 

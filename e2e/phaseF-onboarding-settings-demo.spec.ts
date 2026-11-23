@@ -3,7 +3,7 @@
 // Verifies:
 // - F1: Searchable Settings, Simple/Advanced switch, Unified 6-pillar Hub
 // - F2: 4-step dismissible Onboarding Checklist & Teaching Empty States
-// - F3: In-app "What's New" CHANGELOG & Dexie v1–v10 Migration Guide
+// - F3: In-app "What's New" CHANGELOG & Dexie v1–v11 Migration Guide
 // - F4: CC0-1.0 Iraqi Synthetic Data Generator & Public Demo Mode banner
 // - Arabic RTL & English LTR parity + Zero external network requests
 // =======================================================================
@@ -29,7 +29,7 @@ async function completeFirstRunToSolo(page: Page, password: string): Promise<voi
   await page.locator('input#confirmPassword').fill(password);
   await page.locator('button[type="submit"]').click();
 
-  const challengeInput = page.locator('input[type="text"]').first();
+  const challengeInput = page.locator('input#challenge-group-input');
   await expect(challengeInput).toBeVisible({ timeout: 15_000 });
   const expectedGroup = (await challengeInput.getAttribute('placeholder')) || '';
   if (expectedGroup) {
@@ -46,6 +46,7 @@ async function completeFirstRunToSolo(page: Page, password: string): Promise<voi
   await expect(soloBtn).toBeVisible({ timeout: 15_000 });
   await soloBtn.click();
   await page.getByTestId('wizard-confirm-btn').click();
+  await expect(page.getByTestId('wizard-confirm-btn')).toBeHidden({ timeout: 15_000 });
   await expect(page.getByTestId('today-walkin-btn')).toBeVisible({ timeout: 20_000 });
 }
 
@@ -74,27 +75,29 @@ test.describe('Phase F: Settings, Onboarding Checklist, What\'s New & Public Dem
     // -------------------------------------------------------------------
     // 1) F2: Dismissible 4-Step Onboarding Checklist & Teaching Empty States
     // -------------------------------------------------------------------
+    await page.getByTestId('today-more-menu-btn').click();
+    await page.getByRole('menuitem', { name: /إعداد العيادة|Clinic Setup/i }).click();
     const checklistCard = page.getByTestId('onboarding-checklist-card');
     await expect(checklistCard).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId('onboarding-checklist-progress')).toContainText('/ 4');
+    await expect(page.getByTestId('onboarding-checklist-progress')).toContainText('/4');
     await expect(page.getByTestId('onboarding-step-clinic_profile')).toBeVisible();
     await expect(page.getByTestId('onboarding-step-first_patient')).toBeVisible();
     await expect(page.getByTestId('onboarding-step-first_backup')).toBeVisible();
     await expect(page.getByTestId('onboarding-step-verify_recovery_key')).toBeVisible();
 
-    // Dismiss and restore the Onboarding Checklist
+    // Dismiss and reopen the Onboarding Checklist from Today more menu
     await page.getByTestId('onboarding-checklist-dismiss-btn').click();
     await expect(checklistCard).toBeHidden();
-    const restoreBtn = page.getByTestId('onboarding-checklist-restore-btn');
-    await expect(restoreBtn).toBeVisible();
-    await restoreBtn.click();
+    await page.getByTestId('today-more-menu-btn').click();
+    await page.getByRole('menuitem', { name: /إعداد العيادة|Clinic Setup/i }).click();
     await expect(checklistCard).toBeVisible();
 
     // Verify Today teaching empty state (1 sentence + 1 primary button)
     await expect(page.getByTestId('today-empty-state')).toBeVisible();
     await expect(page.getByTestId('today-empty-primary-btn')).toBeVisible();
 
-    // Verify Schedule teaching empty state (via Today > Full Schedule subtab)
+    // Verify Schedule teaching empty state (via Today > More menu -> Full Schedule)
+    await page.getByTestId('today-more-menu-btn').click();
     await page.getByTestId('today-subtab-schedule').click();
     await expect(page.getByTestId('schedule-empty-state')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId('schedule-empty-primary-btn')).toBeVisible();
@@ -120,12 +123,8 @@ test.describe('Phase F: Settings, Onboarding Checklist, What\'s New & Public Dem
     // -------------------------------------------------------------------
     // 2) F1 & F3: Settings Search, Simple/Advanced Switch & In-App What's New
     // -------------------------------------------------------------------
-    await page.locator('header button[aria-expanded]').click();
-    await page
-      .locator('button')
-      .filter({ hasText: /الإعدادات والخيارات|Settings/i })
-      .first()
-      .click();
+    await page.getByTestId('rail-account-btn').click();
+    await page.getByTestId('account-settings-btn').click();
 
     await expect(page.getByTestId('settings-search-input')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId('settings-tab-currency')).toBeVisible();
@@ -154,7 +153,7 @@ test.describe('Phase F: Settings, Onboarding Checklist, What\'s New & Public Dem
     await page.getByTestId('settings-mode-advanced-btn').click();
     await expect(page.getByTestId('settings-tab-developer')).toBeVisible();
 
-    // Test F3: In-App What's New & Dexie v1–v10 Migration Guide
+    // Test F3: In-App What's New & Dexie v1–v11 Migration Guide
     await page.getByTestId('open-whats-new-btn').click();
     const whatsNewModal = page.getByTestId('whats-new-modal');
     await expect(whatsNewModal).toBeVisible({ timeout: 10_000 });
@@ -165,6 +164,7 @@ test.describe('Phase F: Settings, Onboarding Checklist, What\'s New & Public Dem
     await page.getByTestId('whats-new-tab-migrations').click();
     await expect(page.getByTestId('migration-guide-v1')).toBeVisible();
     await expect(page.getByTestId('migration-guide-v10')).toBeVisible();
+    await expect(page.getByTestId('migration-guide-v11')).toBeVisible();
     await page.getByTestId('whats-new-close-btn').click();
     await expect(whatsNewModal).toBeHidden();
 
@@ -193,12 +193,8 @@ test.describe('Phase F: Settings, Onboarding Checklist, What\'s New & Public Dem
       .last()
       .click();
 
-    await page.locator('header button[aria-expanded]').click();
-    await page
-      .locator('button')
-      .filter({ hasText: /الإعدادات والخيارات|Settings/i })
-      .first()
-      .click();
+    await page.getByTestId('rail-account-btn').click();
+    await page.getByTestId('account-settings-btn').click();
     await page.getByTestId('settings-tab-display').click();
     await page.getByTestId('settings-lang-ckb-btn').click();
     await expect(page.locator('html')).toHaveAttribute('lang', 'ckb');

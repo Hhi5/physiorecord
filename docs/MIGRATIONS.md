@@ -2,10 +2,10 @@
 
 > **Schema Invariant**: Historical Dexie schema definitions (`v1` through `v10` in [`src/db/db.ts`](../src/db/db.ts)) are strictly immutable. Never edit past `this.version(n).stores(...)` blocks; append higher versions (`v11`, `v12`, ...) only.
 
-## 1. Dexie / IndexedDB Schema Evolution (`v1` -> `v10`)
+## 1. Dexie / IndexedDB Schema Evolution (`v1` -> `v11`)
 
-`PhysioRecordDB` currently operates on **Dexie v10** with **28 object stores**:
-- **23 portable clinical & operational stores** registered in [`src/db/registry.ts`](../src/db/registry.ts) (`CLINICAL_STORES_REGISTRY`) — automatically included in `.ptbackup` export, inspection, merge, and restore.
+`PhysioRecordDB` currently operates on **Dexie v11** with **29 object stores**:
+- **24 portable clinical & operational stores** registered in [`src/db/registry.ts`](../src/db/registry.ts) (`CLINICAL_STORES_REGISTRY`) — automatically included in `.ptbackup` export, inspection, merge, and restore.
 - **5 device-local technical stores** listed in `EXCLUDED_DEVICE_STORES` (`vaultMeta`, `episodeSequences`, `migrationState`, `fsHandles`, `drafts`) — excluded from portable backups and reconstructed or initialized per device.
 
 | Version | Added Stores / Index Changes | Upgrade / Integrity Purpose |
@@ -20,12 +20,13 @@
 | **v8** | Adds `consents` (`&id, patientId, episodeId, createdAt, updatedAt`), `cashCloses` (`&id, dateKey, createdAt, updatedAt`) | Bilingual informed consents (signature canvas) and Daily Z-Reports |
 | **v9** | Adds `attachments` (`&id, patientId, episodeId, category, createdAt, updatedAt`), `noteTemplates` (`&id, category, createdAt, updatedAt`) | Encrypted clinical binary attachments & CC0 note template/snippet packs |
 | **v10** | Adds `drafts` (`&id, draftType, entityId, patientId, updatedAt`) | Encrypted power-cut / crash-resilient in-progress form drafts (SOAP, flowsheet, invoice, appointment) written with strict IndexedDB durability |
+| **v11** | Adds `deletionTombstones` (`&id, storeName, recordId, deletedAt`) | Encrypted deletion tombstones preventing resurrection of explicitly deleted records across backup merges (including legacy pre-v11 backups) and multi-device sync |
 
 ---
 
-## 2. Detailed Per-Version Dexie Migration Reference (`v1` – `v10`)
+## 2. Detailed Per-Version Dexie Migration Reference (`v1` – `v11`)
 
-Every Dexie version block in [`src/db/db.ts`](../src/db/db.ts) is **append-only**. Opening a database created on any historical version (`v1`–`v9`) automatically executes intermediate `.upgrade(tx)` hooks in sequence without decrypting or invalidating existing `AES-256-GCM` ciphertexts.
+Every Dexie version block in [`src/db/db.ts`](../src/db/db.ts) is **append-only**. Opening a database created on any historical version (`v1`–`v10`) automatically executes intermediate `.upgrade(tx)` hooks in sequence without decrypting or invalidating existing `AES-256-GCM` ciphertexts.
 
 ### Version 1 (`v1`) — Initial Encrypted Core Clinical Vault
 - **Stores Added**:
@@ -119,6 +120,32 @@ Every Dexie version block in [`src/db/db.ts`](../src/db/db.ts) is **append-only*
 - **Upgrade Hook**: Appends the `drafts` store while keeping `v1`–`v9` definitions strictly untouched; enables `chromeTransactionDurability` (`strict` for critical clinical commits, `relaxed` for high-frequency autosaves).
 - **Backup Portability**: Listed in `EXCLUDED_DEVICE_STORES` (device-local transient crash buffer; automatically cleared when the parent SOAP note, invoice, or appointment is saved or finalized).
 - **Safety Guarantees**: Flushes encrypted draft ciphertexts on a `2s` debounce and immediately on `visibilitychange` / `pagehide`; surfaced on next vault unlock via `RecoveredWorkBanner`.
+
+### Version 11 (`v11`) — Encrypted Deletion Tombstones & Proactive Downgrade Guard
+- **Stores Added**:
+  - `deletionTombstones`: `&id, storeName, recordId, deletedAt`
+- **Upgrade Hook**: Non-destructive schema expansion; `v1`–`v10` definitions and all existing encrypted records remain strictly untouched.
+- **Backup Portability**: Registered in `CLINICAL_STORES_REGISTRY` (24th portable encrypted store). Automatically included in `.ptbackup` `V3.0` exports and multi-device sync payloads (`ClinicSyncPayload.deletionTombstones`).
+- **Safety Guarantees**:
+  - Explicit clinician-confirmed deletions (e.g., `SessionService.deleteSession`, `SessionService.deleteFinalizedSession`) record encrypted tombstones (`storeName`, `recordId`, `deletedAt`, optional `reason`).
+  - During `.ptbackup` **merge** restore (including merging legacy pre-v11 backups lacking `deletionTombstones`), tombstones are reconciled first and suppress resurrection of deleted records (logged as `skipped_deleted`).
+  - During multi-device sync, ordinary absence of a record on a peer device still **never** deletes local data; only explicit tombstones propagate deletion and prevent resurrection.
+
+---
+
+## 2B. Backward Compatibility, Downgrade Policy & Multi-Tab Lifecycle
+
+1. **Forward Upgrade Only (`v10 -> v11`)**: Upgrading from `1.0.5` (`Dexie v10`, IndexedDB version `100`) to `v11` (`IndexedDB version 110`) is automatic, in-place, and non-destructive. Clinicians should still export a `.ptbackup` safety copy before upgrading major releases.
+2. **Why Already-Shipped `1.0.5` Binaries Cannot Detect `v11` (Dexie 4 Empirical Behavior)**:
+   - Dexie 4 multiplies declared schema versions by `10` in IndexedDB (`v10` = `100`, `v11` = `110`).
+   - When an older Dexie 4 binary (`1.0.5`, max declared `version(10)`) opens an on-disk `v11` database (`110`), Dexie performs a versionless `indexedDB.open(name)` probe, sees `idbdb.version (110) > 100`, and **silently opens the database without throwing `VersionError`** (reporting `db.verno === 10` while `db.backendDB().version === 110`).
+   - Because already-released `1.0.5` binaries are immutable, they cannot be retroactively patched to reject `v11` databases. **Never downgrade an installed binary (APK/EXE/PWA) back to `1.0.5` after upgrading a vault to `v11`.** Android `versionCode` remains strictly monotonic to prevent accidental APK downgrade.
+3. **Proactive Guard in `v11+` (`inspectOpenedDatabaseSchemaDowngrade`)**:
+   - Starting in `v11`, `VaultContext` runs a post-open inspection comparing `db.backendDB().version` (`> CURRENT_DEXIE_SCHEMA_VERSION * 10`), `vaultMeta.schemaVersion`, and unknown IndexedDB object stores against `CURRENT_DEXIE_SCHEMA_VERSION`.
+   - If a future `v12+` database is ever opened by a `v11` binary, PhysioRecord immediately closes the handle, refuses to treat the vault as uninitialized, and displays a blocking update-required notice on `LockScreen`.
+4. **Multi-Tab `versionchange` & `blocked` Coordination (`src/db/db.ts`)**:
+   - When a newer tab requests a schema upgrade, older tabs receive `versionchange`, immediately close their IndexedDB handle and lock in-memory DEK material, and notify the user to reload.
+   - If another tab refuses to release an older connection, the upgrading tab receives `blocked` and displays an explicit boot notice until the blocking tab closes, then automatically completes the upgrade.
 
 ---
 
