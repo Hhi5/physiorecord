@@ -1,0 +1,160 @@
+name: Build Test Apps (No Release)
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Which test app(s) to build (downloaded from Artifacts — never publishes a Release)'
+        required: true
+        type: choice
+        default: all
+        options:
+          - all
+          - android
+          - windows
+
+permissions: {}
+
+jobs:
+  build-test-android:
+    name: Build Test Android APK (Signed, No Release)
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java 21 (Temurin)
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Accept Android SDK licenses
+        run: |
+          if [ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
+          fi
+
+      - name: Configure Persistent Release Keystore (allows in-place test installs without data loss)
+        id: keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/physiorecord-release.jks"
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/physiorecord-release.jks" >> "$GITHUB_ENV"
+            echo "REQUIRE_SIGNED_RELEASE=true" >> "$GITHUB_ENV"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Signing secrets missing; falling back to debug APK."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install project dependencies
+        run: npm ci
+
+      - name: Build Android web assets & sync Capacitor
+        env:
+          VITE_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          VITE_GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+        run: |
+          node scripts/sync-version.mjs
+          npm run build:android:web
+          node scripts/prepare-android-template.mjs
+          npx cap sync android
+
+      - name: Assemble Universal Android APK
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          IS_KEYSTORE_SIGNED: ${{ steps.keystore.outputs.signed }}
+        run: |
+          chmod +x ./gradlew
+          if [ "$IS_KEYSTORE_SIGNED" = "true" ]; then
+            ./gradlew assembleRelease --no-daemon
+          else
+            ./gradlew assembleDebug --no-daemon
+          fi
+
+      - name: Prepare test APK artifact
+        env:
+          IS_KEYSTORE_SIGNED: ${{ steps.keystore.outputs.signed }}
+          SHORT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          APP_VER="$(node -p "require('./package.json').version")"
+          SHA7="${SHORT_SHA:0:7}"
+          if [ "$IS_KEYSTORE_SIGNED" = "true" ]; then
+            SRC_APK="$(find android/app/build/outputs/apk/release -maxdepth 1 -name '*.apk' ! -name '*-unsigned.apk' | head -n 1)"
+            cp "$SRC_APK" "PhysioRecord-Android-TEST-v${APP_VER}-${SHA7}.apk"
+          else
+            SRC_APK="$(find android/app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' | head -n 1)"
+            cp "$SRC_APK" "PhysioRecord-Android-TEST-v${APP_VER}-${SHA7}-debug.apk"
+          fi
+          ls -lh PhysioRecord-Android-TEST-*.apk
+
+      - name: Upload Test Android APK Artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: test-android-apk
+          path: PhysioRecord-Android-TEST-*.apk
+          retention-days: 14
+
+  build-test-windows:
+    name: Build Test Windows EXE (Setup & Portable, No Release)
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'windows' }}
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install project dependencies & Electron packaging tools
+        shell: bash
+        run: |
+          rm -f package-lock.json
+          npm install --no-audit --no-fund
+          npm install --no-save --save-exact electron@34.3.0 electron-builder@25.1.8
+
+      - name: Build Desktop web assets & package Windows EXE
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          VITE_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          VITE_GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+        shell: bash
+        run: |
+          node scripts/sync-version.mjs
+          npm run build:desktop:web
+          npx electron-builder --config electron/electron-builder.yml --win nsis portable --publish never
+
+      - name: Upload Test Windows EXE Artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: test-windows-exe
+          path: release/*.exe
+          retention-days: 14
