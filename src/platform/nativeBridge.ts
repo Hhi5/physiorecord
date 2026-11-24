@@ -72,6 +72,24 @@ export interface AndroidPhysioRecordPlugin {
     displayName?: string;
     photoURL?: string;
   }>;
+  getGoogleDriveSession?: () => Promise<{
+    signedIn: boolean;
+    email?: string;
+    displayName?: string;
+    photoURL?: string;
+  }>;
+  refreshGoogleDriveToken?: (options: {
+    clientId: string;
+    clientSecret?: string;
+  }) => Promise<{
+    accessToken: string;
+    email?: string;
+    displayName?: string;
+    photoURL?: string;
+  }>;
+  clearGoogleDriveSession?: () => Promise<{
+    cleared: boolean;
+  }>;
   isBiometricAvailable?: () => Promise<{
     available: boolean;
     status: string;
@@ -213,6 +231,24 @@ export interface ElectronDesktopBridge {
     email?: string;
     displayName?: string;
     photoURL?: string;
+  }>;
+  getGoogleDriveSession?: () => Promise<{
+    signedIn: boolean;
+    email?: string;
+    displayName?: string;
+    photoURL?: string;
+  }>;
+  refreshGoogleDriveToken?: (options: {
+    clientId: string;
+    clientSecret?: string;
+  }) => Promise<{
+    accessToken: string;
+    email?: string;
+    displayName?: string;
+    photoURL?: string;
+  }>;
+  clearGoogleDriveSession?: () => Promise<{
+    cleared: boolean;
   }>;
   googleDriveApiRequest?: (options: {
     url: string;

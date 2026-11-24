@@ -26,6 +26,12 @@ contextBridge.exposeInMainWorld('electronAPI', Object.freeze({
   lanSyncExchange: (options) => ipcRenderer.invoke('physiorecord:lan-sync-exchange', options),
   startGoogleDriveOAuth: (options) =>
     ipcRenderer.invoke('physiorecord:google-drive-oauth', options),
+  getGoogleDriveSession: () =>
+    ipcRenderer.invoke('physiorecord:google-drive-session'),
+  refreshGoogleDriveToken: (options) =>
+    ipcRenderer.invoke('physiorecord:google-drive-refresh', options),
+  clearGoogleDriveSession: () =>
+    ipcRenderer.invoke('physiorecord:google-drive-clear-session'),
   googleDriveApiRequest: (options) =>
     ipcRenderer.invoke('physiorecord:google-drive-api', options),
   pickSyncDirectory: () => ipcRenderer.invoke('physiorecord:pick-sync-dir'),

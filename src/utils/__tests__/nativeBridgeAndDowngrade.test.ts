@@ -18,6 +18,7 @@ import {
 import {
   ensurePhysioRecordDriveFolder,
   getGoogleDriveAuthState,
+  restoreGoogleDriveSession,
   saveNativeGoogleOAuthConfig,
   signInWithGoogleDrive,
   signOutGoogleDrive,
@@ -305,6 +306,73 @@ describe('Multi-Platform Native Bridge, Version Sync & Schema Downgrade Guard', 
     );
 
     await signOutGoogleDrive();
+  });
+
+  it('restores saved native Google Drive session offline and silently refreshes token without re-launching browser', async () => {
+    const store = new Map<string, string>();
+    const startOAuthMock = vi.fn();
+    const getSessionMock = vi.fn().mockResolvedValue({
+      signedIn: true,
+      email: 'clinic@example.com',
+      displayName: 'Clinic User',
+      photoURL: '',
+    });
+    const refreshTokenMock = vi.fn().mockResolvedValue({
+      accessToken: 'refreshed-access-token',
+      email: 'clinic@example.com',
+      displayName: 'Clinic User',
+      photoURL: '',
+    });
+    const clearSessionMock = vi.fn().mockResolvedValue({ cleared: true });
+    const driveApiMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: JSON.stringify({ files: [{ id: 'folder_persisted_99', name: 'PhysioRecord-Clinic-Sync' }] }),
+      contentLength: 75,
+    });
+
+    const win = (globalThis as Record<string, unknown>).window as Record<string, unknown>;
+    win.localStorage = {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, val: string) => store.set(key, val),
+      removeItem: (key: string) => store.delete(key),
+    };
+    win.electronAPI = {
+      isElectron: true,
+      startGoogleDriveOAuth: startOAuthMock,
+      getGoogleDriveSession: getSessionMock,
+      refreshGoogleDriveToken: refreshTokenMock,
+      clearGoogleDriveSession: clearSessionMock,
+      googleDriveApiRequest: driveApiMock,
+    };
+
+    await signOutGoogleDrive();
+    clearSessionMock.mockClear();
+
+    saveNativeGoogleOAuthConfig({
+      clientId: '987654321-pc.apps.googleusercontent.com',
+    });
+
+    // App restarts: restore session locally with ZERO network calls
+    const restored = await restoreGoogleDriveSession();
+    expect(getSessionMock).toHaveBeenCalledTimes(1);
+    expect(restored.isSignedIn).toBe(true);
+    expect(restored.email).toBe('clinic@example.com');
+    expect(startOAuthMock).not.toHaveBeenCalled();
+
+    // User clicks Sync Now: silently exchanges refresh_token without browser OAuth
+    const folderId = await ensurePhysioRecordDriveFolder();
+    expect(folderId).toBe('folder_persisted_99');
+    expect(refreshTokenMock).toHaveBeenCalledTimes(1);
+    expect(startOAuthMock).not.toHaveBeenCalled();
+    expect(driveApiMock.mock.calls[0][0].headers.Authorization).toBe(
+      'Bearer refreshed-access-token'
+    );
+
+    // Explicit sign-out clears encrypted native session
+    await signOutGoogleDrive();
+    expect(clearSessionMock).toHaveBeenCalledTimes(1);
+    expect(getGoogleDriveAuthState().isSignedIn).toBe(false);
   });
 
   it('strictly allowlists external URLs in openSafeExternalUrl (WhatsApp & Google Maps only)', async () => {

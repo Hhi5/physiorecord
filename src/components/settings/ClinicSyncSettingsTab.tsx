@@ -58,6 +58,7 @@ import {
 import {
   getGoogleDriveAuthState,
   hasBuiltInNativeGoogleOAuth,
+  restoreGoogleDriveSession,
   signInWithGoogleDrive,
   signOutGoogleDrive,
   type GoogleDriveAuthState,
@@ -131,16 +132,31 @@ export const ClinicSyncSettingsTab: React.FC = () => {
   const passphraseInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
+    let active = true;
     if (electronBridge?.getLanSyncHubStatus) {
-      void electronBridge.getLanSyncHubStatus().then((st) => {
-        setHubStatus(st);
+      electronBridge.getLanSyncHubStatus().then((status) => {
+        if (active) setHubStatus(status);
+      }).catch(() => {
+        // Ignore IPC status read errors
       });
     }
     if (electronBridge?.getConfiguredSyncDirectory) {
-      void electronBridge.getConfiguredSyncDirectory().then((dir) => {
-        if (dir) setSyncFolderInfo(dir);
+      electronBridge.getConfiguredSyncDirectory().then((dir) => {
+        if (active && dir) setSyncFolderInfo(dir);
+      }).catch(() => {
+        // Ignore IPC dir read errors
       });
     }
+    restoreGoogleDriveSession()
+      .then((restoredAuth) => {
+        if (active) setDriveAuth(restoredAuth);
+      })
+      .catch(() => {
+        // Ignore local session restore errors
+      });
+    return () => {
+      active = false;
+    };
   }, [electronBridge]);
 
   const requireSyncPassphrase = (actionLabelAr?: string, actionLabelEn?: string): boolean => {
@@ -393,6 +409,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
         text: err instanceof Error ? err.message : bi('تعذّرت المزامنة مع Google Drive.', 'Google Drive sync failed.'),
       });
     } finally {
+      setDriveAuth(getGoogleDriveAuthState());
       setBusyAction(null);
     }
   };

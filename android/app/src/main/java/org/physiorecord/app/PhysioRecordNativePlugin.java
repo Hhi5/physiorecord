@@ -591,7 +591,8 @@ public class PhysioRecordNativePlugin extends Plugin {
                         + "&state=" + URLEncoder.encode(state, "UTF-8")
                         + "&code_challenge=" + URLEncoder.encode(codeChallenge, "UTF-8")
                         + "&code_challenge_method=S256"
-                        + "&prompt=select_account";
+                        + "&access_type=offline"
+                        + "&prompt=select_account%20consent";
 
                 Activity activity = getActivity();
                 if (activity == null) {
@@ -614,6 +615,7 @@ public class PhysioRecordNativePlugin extends Plugin {
                 });
 
                 String accessToken = null;
+                String refreshToken = "";
                 String oauthError = null;
                 long deadline = System.currentTimeMillis() + 180_000L;
 
@@ -704,6 +706,7 @@ public class PhysioRecordNativePlugin extends Plugin {
                                     oauthError = "Google sign-in could not be completed.";
                                 } else {
                                     accessToken = parsedToken;
+                                    refreshToken = tokenJson.optString("refresh_token", "");
                                     exchangeOk = true;
                                 }
                             }
@@ -753,6 +756,20 @@ public class PhysioRecordNativePlugin extends Plugin {
                 } catch (Exception ignored) {
                 }
 
+                Context ctx = getContext();
+                if (ctx != null) {
+                    String tokenToPersist = refreshToken;
+                    if (tokenToPersist.isEmpty()) {
+                        JSONObject existing = loadEncryptedGoogleDriveSession(ctx);
+                        if (existing != null && email.equalsIgnoreCase(existing.optString("email", ""))) {
+                            tokenToPersist = existing.optString("refreshToken", "");
+                        }
+                    }
+                    if (!tokenToPersist.isEmpty()) {
+                        saveEncryptedGoogleDriveSession(ctx, tokenToPersist, email, displayName, photoURL);
+                    }
+                }
+
                 JSObject ret = new JSObject();
                 ret.put("accessToken", accessToken);
                 ret.put("email", email);
@@ -773,6 +790,231 @@ public class PhysioRecordNativePlugin extends Plugin {
                 if (activeOAuthServer == server) {
                     activeOAuthServer = null;
                 }
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // 5b. Encrypted Google Drive Persistent Session (Android Keystore AES-GCM)
+    //     Keeps the user signed in across app restarts without storing tokens
+    //     in plaintext SharedPreferences or WebView localStorage.
+    // -----------------------------------------------------------------------
+    private static final String GDRIVE_SESSION_KEY_ALIAS = "org.physiorecord.gdrive.session.v1";
+    private static final String GDRIVE_SESSION_PREFS_NAME = "physiorecord_gdrive_session";
+    private static final String GDRIVE_SESSION_PREF_CIPHERTEXT = "session_ct_b64";
+    private static final String GDRIVE_SESSION_PREF_IV = "session_iv_b64";
+
+    private SharedPreferences getGoogleDriveSessionPrefs(Context ctx) {
+        return ctx.getSharedPreferences(GDRIVE_SESSION_PREFS_NAME, Context.MODE_PRIVATE);
+    }
+
+    private SecretKey getOrCreateGoogleDriveSessionKey() throws Exception {
+        KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
+        ks.load(null);
+        if (ks.containsAlias(GDRIVE_SESSION_KEY_ALIAS)) {
+            SecretKey existing = (SecretKey) ks.getKey(GDRIVE_SESSION_KEY_ALIAS, null);
+            if (existing != null) {
+                return existing;
+            }
+        }
+        KeyGenerator keyGenerator = KeyGenerator.getInstance(
+                KeyProperties.KEY_ALGORITHM_AES,
+                "AndroidKeyStore"
+        );
+        KeyGenParameterSpec spec = new KeyGenParameterSpec.Builder(
+                GDRIVE_SESSION_KEY_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT
+        )
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setKeySize(256)
+                .build();
+        keyGenerator.init(spec);
+        return keyGenerator.generateKey();
+    }
+
+    private void saveEncryptedGoogleDriveSession(
+            Context ctx,
+            String refreshToken,
+            String email,
+            String displayName,
+            String photoURL
+    ) {
+        try {
+            JSONObject payload = new JSONObject();
+            payload.put("refreshToken", refreshToken);
+            payload.put("email", email != null ? email : "");
+            payload.put("displayName", displayName != null ? displayName : "");
+            payload.put("photoURL", photoURL != null ? photoURL : "");
+
+            SecretKey secretKey = getOrCreateGoogleDriveSessionKey();
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+            byte[] ciphertext = cipher.doFinal(payload.toString().getBytes(StandardCharsets.UTF_8));
+            byte[] iv = cipher.getIV();
+
+            getGoogleDriveSessionPrefs(ctx)
+                    .edit()
+                    .putString(GDRIVE_SESSION_PREF_CIPHERTEXT, Base64.encodeToString(ciphertext, Base64.NO_WRAP))
+                    .putString(GDRIVE_SESSION_PREF_IV, Base64.encodeToString(iv, Base64.NO_WRAP))
+                    .apply();
+        } catch (Exception ignored) {
+            // Non-fatal: sign-in still succeeds in memory for the current session
+        }
+    }
+
+    private JSONObject loadEncryptedGoogleDriveSession(Context ctx) {
+        try {
+            SharedPreferences prefs = getGoogleDriveSessionPrefs(ctx);
+            String ctB64 = prefs.getString(GDRIVE_SESSION_PREF_CIPHERTEXT, null);
+            String ivB64 = prefs.getString(GDRIVE_SESSION_PREF_IV, null);
+            if (ctB64 == null || ctB64.isEmpty() || ivB64 == null || ivB64.isEmpty()) {
+                return null;
+            }
+            KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
+            ks.load(null);
+            if (!ks.containsAlias(GDRIVE_SESSION_KEY_ALIAS)) {
+                return null;
+            }
+            SecretKey secretKey = (SecretKey) ks.getKey(GDRIVE_SESSION_KEY_ALIAS, null);
+            if (secretKey == null) {
+                return null;
+            }
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(128, Base64.decode(ivB64, Base64.DEFAULT)));
+            byte[] plainBytes = cipher.doFinal(Base64.decode(ctB64, Base64.DEFAULT));
+            return new JSONObject(new String(plainBytes, StandardCharsets.UTF_8));
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private void deleteGoogleDriveSessionArtifacts(Context ctx) {
+        try {
+            getGoogleDriveSessionPrefs(ctx).edit().clear().apply();
+        } catch (Exception ignored) {
+        }
+        try {
+            KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
+            ks.load(null);
+            if (ks.containsAlias(GDRIVE_SESSION_KEY_ALIAS)) {
+                ks.deleteEntry(GDRIVE_SESSION_KEY_ALIAS);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    @PluginMethod
+    public void getGoogleDriveSession(PluginCall call) {
+        Context ctx = getContext();
+        JSObject ret = new JSObject();
+        JSONObject session = ctx != null ? loadEncryptedGoogleDriveSession(ctx) : null;
+        String storedRefresh = session != null ? session.optString("refreshToken", "") : "";
+        if (session == null || storedRefresh.isEmpty()) {
+            ret.put("signedIn", false);
+            call.resolve(ret);
+            return;
+        }
+        ret.put("signedIn", true);
+        ret.put("email", session.optString("email", ""));
+        ret.put("displayName", session.optString("displayName", ""));
+        ret.put("photoURL", session.optString("photoURL", ""));
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void clearGoogleDriveSession(PluginCall call) {
+        Context ctx = getContext();
+        if (ctx != null) {
+            deleteGoogleDriveSessionArtifacts(ctx);
+        }
+        JSObject ret = new JSObject();
+        ret.put("cleared", true);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void refreshGoogleDriveToken(PluginCall call) {
+        final String clientId = call.getString("clientId", "").trim();
+        final String clientSecret = call.getString("clientSecret", "").trim();
+        final Context ctx = getContext();
+
+        if (ctx == null) {
+            call.reject("Google session unavailable.");
+            return;
+        }
+        if (clientId.isEmpty() || !clientId.endsWith(".apps.googleusercontent.com")) {
+            call.reject("Invalid Google OAuth Client ID.");
+            return;
+        }
+
+        oauthExecutor.execute(() -> {
+            try {
+                JSONObject session = loadEncryptedGoogleDriveSession(ctx);
+                String storedRefresh = session != null ? session.optString("refreshToken", "") : "";
+                if (session == null || storedRefresh.isEmpty()) {
+                    call.reject("No saved Google session.");
+                    return;
+                }
+
+                StringBuilder formBody = new StringBuilder();
+                formBody.append("grant_type=refresh_token")
+                        .append("&refresh_token=").append(URLEncoder.encode(storedRefresh, "UTF-8"))
+                        .append("&client_id=").append(URLEncoder.encode(clientId, "UTF-8"));
+                if (!clientSecret.isEmpty()) {
+                    // skipcq: SCT-A000 - Form-encoded parameter name; secret value is supplied at runtime
+                    formBody.append("&client_secret=").append(URLEncoder.encode(clientSecret, "UTF-8"));
+                }
+
+                HttpURLConnection tokenConn = (HttpURLConnection) new URL("https://oauth2.googleapis.com/token").openConnection();
+                tokenConn.setRequestMethod("POST");
+                tokenConn.setConnectTimeout(10_000);
+                tokenConn.setReadTimeout(10_000);
+                tokenConn.setDoOutput(true);
+                tokenConn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                try (OutputStream os = tokenConn.getOutputStream()) {
+                    os.write(formBody.toString().getBytes(StandardCharsets.UTF_8));
+                }
+
+                int tokenStatus = tokenConn.getResponseCode();
+                String tokenRespStr = readAllStream(
+                        tokenStatus >= 200 && tokenStatus < 300
+                                ? tokenConn.getInputStream()
+                                : tokenConn.getErrorStream()
+                );
+                tokenConn.disconnect();
+
+                if (tokenStatus < 200 || tokenStatus >= 300) {
+                    if (tokenRespStr != null && tokenRespStr.toLowerCase(java.util.Locale.ROOT).contains("invalid_grant")) {
+                        deleteGoogleDriveSessionArtifacts(ctx);
+                    }
+                    call.reject("Google session expired.");
+                    return;
+                }
+
+                JSONObject tokenJson = new JSONObject(tokenRespStr);
+                String newAccessToken = tokenJson.optString("access_token", "");
+                if (newAccessToken.isEmpty()) {
+                    call.reject("Google session expired.");
+                    return;
+                }
+
+                String rotatedRefresh = tokenJson.optString("refresh_token", "");
+                String email = session.optString("email", "");
+                String displayName = session.optString("displayName", "");
+                String photoURL = session.optString("photoURL", "");
+                if (!rotatedRefresh.isEmpty()) {
+                    saveEncryptedGoogleDriveSession(ctx, rotatedRefresh, email, displayName, photoURL);
+                }
+
+                JSObject ret = new JSObject();
+                ret.put("accessToken", newAccessToken);
+                ret.put("email", email);
+                ret.put("displayName", displayName);
+                ret.put("photoURL", photoURL);
+                call.resolve(ret);
+            } catch (Exception ignored) {
+                call.reject("Google session refresh failed.");
             }
         });
     }

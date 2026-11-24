@@ -136,6 +136,8 @@ export interface GoogleDriveSyncDeviceInfo {
   deviceId: string;
 }
 
+const GOOGLE_DRIVE_PROFILE_STORAGE_KEY = 'physiorecord_gdrive_profile_v1';
+
 // Strictly in-memory OAuth access token cache (NEVER written to localStorage/sessionStorage)
 let cachedAccessToken: string | null = null;
 let cachedTokenAcquiredAt = 0;
@@ -149,6 +151,65 @@ let cachedAuthUser: {
 
 let firebaseAuthInstance: import('firebase/auth').Auth | null = null;
 let authListenerBound = false;
+
+function saveWebDriveProfile(profile: {
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+}): void {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    if (!profile.email) return;
+    // Non-secret display metadata only — NEVER stores tokens or secrets
+    window.localStorage.setItem(
+      GOOGLE_DRIVE_PROFILE_STORAGE_KEY,
+      JSON.stringify({
+        email: profile.email,
+        displayName: profile.displayName || profile.email,
+        photoURL: profile.photoURL || null,
+      })
+    );
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+function loadWebDriveProfile(): {
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+} | null {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return null;
+    const raw = window.localStorage.getItem(GOOGLE_DRIVE_PROFILE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = safeJsonParse<{
+      email?: unknown;
+      displayName?: unknown;
+      photoURL?: unknown;
+    }>(raw);
+    if (!parsed || typeof parsed.email !== 'string' || !parsed.email.trim()) {
+      return null;
+    }
+    return {
+      email: parsed.email.trim(),
+      displayName: typeof parsed.displayName === 'string' ? parsed.displayName : parsed.email.trim(),
+      photoURL: typeof parsed.photoURL === 'string' ? parsed.photoURL : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function clearWebDriveProfile(): void {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.removeItem(GOOGLE_DRIVE_PROFILE_STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
 
 async function ensureFirebaseAuth(): Promise<{
   auth: import('firebase/auth').Auth;
@@ -174,12 +235,14 @@ async function ensureFirebaseAuth(): Promise<{
         cachedAccessToken = null;
         cachedTokenAcquiredAt = 0;
         cachedAuthUser = null;
+        clearWebDriveProfile();
       } else {
         cachedAuthUser = {
           email: user.email,
           displayName: user.displayName,
           photoURL: user.photoURL,
         };
+        saveWebDriveProfile(cachedAuthUser);
       }
     });
   }
@@ -202,6 +265,83 @@ export function getGoogleDriveAuthState(): GoogleDriveAuthState {
     displayName: cachedAuthUser?.displayName ?? null,
     photoURL: cachedAuthUser?.photoURL ?? null,
   };
+}
+
+/**
+ * Restores a previously signed-in Google Drive session strictly from local storage
+ * (Android Keystore / Electron safeStorage / non-secret Web profile).
+ * Performs ZERO network requests so offline startup invariants remain intact.
+ */
+export async function restoreGoogleDriveSession(): Promise<GoogleDriveAuthState> {
+  if (cachedAuthUser) {
+    return getGoogleDriveAuthState();
+  }
+
+  if (isNativeAndroid() || isElectronDesktop()) {
+    const getSessionFn = isElectronDesktop()
+      ? getElectronDesktopBridge()?.getGoogleDriveSession
+      : getAndroidNativePlugin()?.getGoogleDriveSession;
+    if (getSessionFn) {
+      try {
+        const saved = await getSessionFn();
+        if (saved?.signedIn) {
+          cachedAuthUser = {
+            email: saved.email || 'Google Drive',
+            displayName: saved.displayName || saved.email || 'Google Drive',
+            photoURL: saved.photoURL || null,
+          };
+        }
+      } catch {
+        // Ignore restore errors; user can still sign in manually
+      }
+    }
+    return getGoogleDriveAuthState();
+  }
+
+  const savedWebProfile = loadWebDriveProfile();
+  if (savedWebProfile) {
+    cachedAuthUser = savedWebProfile;
+  }
+  return getGoogleDriveAuthState();
+}
+
+async function refreshNativeGoogleDriveTokenSilently(): Promise<string | null> {
+  if (!isNativeAndroid() && !isElectronDesktop()) {
+    return null;
+  }
+  const nativeCfg = getNativeGoogleOAuthConfig();
+  if (!nativeCfg.clientId || !nativeCfg.clientId.endsWith('.apps.googleusercontent.com')) {
+    return null;
+  }
+  const refreshFn = isElectronDesktop()
+    ? getElectronDesktopBridge()?.refreshGoogleDriveToken
+    : getAndroidNativePlugin()?.refreshGoogleDriveToken;
+  if (!refreshFn) {
+    return null;
+  }
+  try {
+    const refreshed = await refreshFn({
+      clientId: nativeCfg.clientId,
+      clientSecret: nativeCfg.clientSecret || undefined,
+    });
+    if (!refreshed?.accessToken) {
+      return null;
+    }
+    cachedAccessToken = refreshed.accessToken;
+    cachedTokenAcquiredAt = Date.now();
+    cachedAuthUser = {
+      email: refreshed.email || cachedAuthUser?.email || 'Google Drive',
+      displayName:
+        refreshed.displayName ||
+        cachedAuthUser?.displayName ||
+        refreshed.email ||
+        'Google Drive',
+      photoURL: refreshed.photoURL || cachedAuthUser?.photoURL || null,
+    };
+    return refreshed.accessToken;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -277,7 +417,10 @@ export async function signInWithGoogleDrive(): Promise<GoogleDriveAuthState> {
   const { auth, GoogleAuthProvider, signInWithPopup } = await ensureFirebaseAuth();
   const provider = new GoogleAuthProvider();
   provider.addScope(GOOGLE_DRIVE_FILE_SCOPE);
-  provider.setCustomParameters({ prompt: 'select_account' });
+  const existingEmail = cachedAuthUser?.email;
+  provider.setCustomParameters(
+    existingEmail ? { login_hint: existingEmail } : { prompt: 'select_account' }
+  );
 
   let result;
   try {
@@ -313,6 +456,7 @@ export async function signInWithGoogleDrive(): Promise<GoogleDriveAuthState> {
     displayName: result.user.displayName,
     photoURL: result.user.photoURL,
   };
+  saveWebDriveProfile(cachedAuthUser);
 
   return getGoogleDriveAuthState();
 }
@@ -323,6 +467,19 @@ export async function signOutGoogleDrive(): Promise<void> {
   cachedAuthUser = null;
   inMemoryNativeOAuthClientSecret = '';
   purgeLegacyLocalStorageSecret();
+  clearWebDriveProfile();
+  if (isNativeAndroid() || isElectronDesktop()) {
+    const clearSessionFn = isElectronDesktop()
+      ? getElectronDesktopBridge()?.clearGoogleDriveSession
+      : getAndroidNativePlugin()?.clearGoogleDriveSession;
+    if (clearSessionFn) {
+      try {
+        await clearSessionFn();
+      } catch {
+        // Ignore clear errors
+      }
+    }
+  }
   if (firebaseAuthInstance) {
     const { signOut } = await import('firebase/auth');
     await signOut(firebaseAuthInstance);
@@ -332,6 +489,10 @@ export async function signOutGoogleDrive(): Promise<void> {
 async function getValidDriveAccessToken(): Promise<string> {
   if (cachedAccessToken && Date.now() - cachedTokenAcquiredAt < TOKEN_SOFT_TTL_MS) {
     return cachedAccessToken;
+  }
+  const refreshedToken = await refreshNativeGoogleDriveTokenSilently();
+  if (refreshedToken) {
+    return refreshedToken;
   }
   await signInWithGoogleDrive();
   if (!cachedAccessToken) {
@@ -361,7 +522,8 @@ async function driveHttpRequest(
     method?: string;
     headers?: Record<string, string>;
     body?: string;
-  } = {}
+  } = {},
+  allowSilentRefreshRetry = true
 ): Promise<{ ok: boolean; status: number; text: string; contentLength: number }> {
   if (!isAllowedGoogleDriveEndpoint(url)) {
     throw new Error('Blocked non-allowlisted Google Drive API URL.');
@@ -371,6 +533,8 @@ async function driveHttpRequest(
     ...(options.headers || {}),
     Authorization: `Bearer ${token}`,
   };
+
+  let result: { ok: boolean; status: number; text: string; contentLength: number };
 
   if (isElectronDesktop()) {
     const electronBridge = getElectronDesktopBridge();
@@ -383,29 +547,40 @@ async function driveHttpRequest(
       headers: mergedHeaders,
       body: options.body,
     });
-    return {
+    result = {
       ok: Boolean(resp.ok),
       status: resp.status,
       text: resp.text || '',
       contentLength: Number(resp.contentLength || 0),
     };
+  } else {
+    const parsedTarget = new URL(url);
+    const response = await fetch(parsedTarget.toString(), {
+      method: options.method || 'GET',
+      headers: mergedHeaders,
+      body: options.body,
+      redirect: 'error',
+    });
+    const text = await response.text().catch(() => '');
+    const contentLength = Number(response.headers.get('content-length') || 0) || text.length;
+    result = {
+      ok: response.ok,
+      status: response.status,
+      text,
+      contentLength,
+    };
   }
 
-  const parsedTarget = new URL(url);
-  const response = await fetch(parsedTarget.toString(), {
-    method: options.method || 'GET',
-    headers: mergedHeaders,
-    body: options.body,
-    redirect: 'error',
-  });
-  const text = await response.text().catch(() => '');
-  const contentLength = Number(response.headers.get('content-length') || 0) || text.length;
-  return {
-    ok: response.ok,
-    status: response.status,
-    text,
-    contentLength,
-  };
+  if (result.status === 401 && allowSilentRefreshRetry && (isNativeAndroid() || isElectronDesktop())) {
+    cachedAccessToken = null;
+    cachedTokenAcquiredAt = 0;
+    const silentToken = await refreshNativeGoogleDriveTokenSilently();
+    if (silentToken) {
+      return driveHttpRequest(url, options, false);
+    }
+  }
+
+  return result;
 }
 
 async function driveFetchJson<T>(

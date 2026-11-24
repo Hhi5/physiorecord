@@ -3,7 +3,7 @@
 // and Local Cloud-Folder Sync Exchange
 // =======================================================================
 
-import { dialog, shell } from 'electron';
+import { app, dialog, safeStorage, shell } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import http from 'node:http';
@@ -123,6 +123,64 @@ function httpsTextRequest(
     }
     req.end();
   });
+}
+
+const getGoogleDriveSessionFilePath = () =>
+  path.resolve(app.getPath('userData'), 'gdrive-session.json');
+
+async function saveEncryptedDesktopSession({ refreshToken, email, displayName, photoURL }) {
+  try {
+    if (!refreshToken || !safeStorage.isEncryptionAvailable()) {
+      return;
+    }
+    const serialized = JSON.stringify({
+      refreshToken,
+      email: String(email || ''),
+      displayName: String(displayName || ''),
+      photoURL: String(photoURL || ''),
+    });
+    const encryptedBuf = safeStorage.encryptString(serialized);
+    await writeTextFileAtomically(
+      getGoogleDriveSessionFilePath(),
+      JSON.stringify({ cipherBase64: encryptedBuf.toString('base64') })
+    );
+  } catch {
+    // Non-fatal: sign-in still succeeds in memory for the current session
+  }
+}
+
+async function loadEncryptedDesktopSession() {
+  try {
+    if (!safeStorage.isEncryptionAvailable()) {
+      return null;
+    }
+    const raw = await fs.readFile(getGoogleDriveSessionFilePath(), 'utf8');
+    const wrapper = safeJsonParse(raw);
+    if (!wrapper || typeof wrapper.cipherBase64 !== 'string' || !wrapper.cipherBase64) {
+      return null;
+    }
+    const decrypted = safeStorage.decryptString(Buffer.from(wrapper.cipherBase64, 'base64'));
+    const parsed = safeJsonParse(decrypted);
+    if (!parsed || typeof parsed.refreshToken !== 'string' || !parsed.refreshToken) {
+      return null;
+    }
+    return {
+      refreshToken: parsed.refreshToken,
+      email: String(parsed.email || ''),
+      displayName: String(parsed.displayName || ''),
+      photoURL: String(parsed.photoURL || ''),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function deleteEncryptedDesktopSession() {
+  try {
+    await fs.unlink(getGoogleDriveSessionFilePath());
+  } catch {
+    // Ignore when file does not exist
+  }
 }
 
 export function registerGoogleDriveHandlers({ ipcMain, assertTrustedIpcSender, getMainWindow }) {
@@ -267,6 +325,7 @@ export function registerGoogleDriveHandlers({ ipcMain, assertTrustedIpcSender, g
 
           const tokenJson = JSON.parse(tokenResp.text);
           const accessToken = String(tokenJson.access_token || '');
+          const refreshToken = String(tokenJson.refresh_token || '');
           if (!accessToken) {
             sendCallbackHtml(
               res,
@@ -303,6 +362,26 @@ export function registerGoogleDriveHandlers({ ipcMain, assertTrustedIpcSender, g
             }
           } catch {
             // Optional user profile fetch
+          }
+
+          let tokenToPersist = refreshToken;
+          if (!tokenToPersist) {
+            const existingSession = await loadEncryptedDesktopSession();
+            if (
+              existingSession &&
+              email &&
+              existingSession.email.toLowerCase() === email.toLowerCase()
+            ) {
+              tokenToPersist = existingSession.refreshToken;
+            }
+          }
+          if (tokenToPersist) {
+            await saveEncryptedDesktopSession({
+              refreshToken: tokenToPersist,
+              email,
+              displayName,
+              photoURL,
+            });
           }
 
           sendCallbackHtml(res, true, '', '');
@@ -358,7 +437,8 @@ export function registerGoogleDriveHandlers({ ipcMain, assertTrustedIpcSender, g
           `&state=${encodeURIComponent(state)}` +
           `&code_challenge=${encodeURIComponent(codeChallenge)}` +
           '&code_challenge_method=S256' +
-          '&prompt=select_account';
+          '&access_type=offline' +
+          '&prompt=select_account%20consent';
 
         timer = setTimeout(() => {
           if (!settled) {
@@ -378,6 +458,89 @@ export function registerGoogleDriveHandlers({ ipcMain, assertTrustedIpcSender, g
         });
       });
     });
+  });
+
+  // Restore saved Google Drive account profile locally (ZERO network calls)
+  ipcMain.handle('physiorecord:google-drive-session', async (event) => {
+    assertTrustedIpcSender(event);
+    const savedSession = await loadEncryptedDesktopSession();
+    if (!savedSession) {
+      return { signedIn: false };
+    }
+    return {
+      signedIn: true,
+      email: savedSession.email,
+      displayName: savedSession.displayName,
+      photoURL: savedSession.photoURL,
+    };
+  });
+
+  // Silently exchange encrypted refresh_token for a fresh access_token (no browser popup)
+  ipcMain.handle('physiorecord:google-drive-refresh', async (event, options) => {
+    assertTrustedIpcSender(event);
+    const clientId = String(options?.clientId || '').trim();
+    const clientSecret = String(options?.clientSecret || '').trim();
+    if (!clientId || !clientId.endsWith('.apps.googleusercontent.com')) {
+      throw new Error('Invalid Google OAuth Client ID.');
+    }
+    const savedSession = await loadEncryptedDesktopSession();
+    if (!savedSession?.refreshToken) {
+      throw new Error('No saved Google session.');
+    }
+
+    const formParams = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: savedSession.refreshToken,
+      client_id: clientId,
+    });
+    if (clientSecret) {
+      formParams.set('client_secret', clientSecret);
+    }
+
+    const tokenResp = await httpsTextRequest('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formParams.toString(),
+      timeoutMs: 12000,
+      maxBytes: 1024 * 1024,
+    });
+
+    if (!tokenResp.ok) {
+      if (/invalid_grant/iu.test(tokenResp.text)) {
+        await deleteEncryptedDesktopSession();
+      }
+      throw new Error('Google session expired.');
+    }
+
+    const tokenJson = JSON.parse(tokenResp.text);
+    const accessToken = String(tokenJson.access_token || '');
+    if (!accessToken) {
+      throw new Error('Google session expired.');
+    }
+
+    const rotatedRefresh = String(tokenJson.refresh_token || '');
+    if (rotatedRefresh) {
+      await saveEncryptedDesktopSession({
+        refreshToken: rotatedRefresh,
+        email: savedSession.email,
+        displayName: savedSession.displayName,
+        photoURL: savedSession.photoURL,
+      });
+    }
+
+    return {
+      accessToken,
+      email: savedSession.email,
+      displayName: savedSession.displayName,
+      photoURL: savedSession.photoURL,
+    };
+  });
+
+  // Clear saved Google Drive session on explicit sign-out
+  ipcMain.handle('physiorecord:google-drive-clear-session', async (event) => {
+    assertTrustedIpcSender(event);
+    await deleteEncryptedDesktopSession();
+    return { cleared: true };
   });
 
   // Strictly allowlisted Main-Process Google Drive v3 API proxy (keeps renderer CSP `connect-src 'none'` intact)
