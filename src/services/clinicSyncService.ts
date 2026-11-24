@@ -1029,9 +1029,9 @@ export async function syncWithLocalLanHub(params: {
         queuedOffline: true,
         peerEnvelopesCount: 0,
         messageAr:
-          'انتهت مهلة الاتصال بحاسبة العيادة بدون رد — غالباً حماية الشبكة في ويندوز أو عزل الأجهزة في الراوتر يمنع الاتصال بين الموبايل والحاسبة. اضغط «تحديث إذن الشبكة» على الحاسبة، أو جرّب الربط عبر نقطة اتصال الموبايل للتأكد. تم حفظ التغييرات محلياً بأمان.',
+          'انتهت مهلة الاتصال بحاسبة العيادة بدون رد — قد يكون راوتر العيادة يمنع الاتصال المباشر بين الأجهزة. الحل الأسرع: افتح نقطة اتصال (Hotspot) من موبايلك (بدون إنترنت) واربط الحاسبة عليها، أو استخدم Google Drive. تم حفظ التغييرات محلياً بأمان.',
         messageEn:
-          'Connection to the Clinic PC timed out with no reply — Windows network protection or router client isolation is likely blocking phone-to-PC traffic. Click "Refresh Wi-Fi Access" on the PC or test with a mobile hotspot. Changes were safely queued locally.',
+          'Connection to the Clinic PC timed out — your router may block direct device-to-device connections. Fastest alternative: turn on your phone Hotspot (works offline) and connect the PC to it, or use Google Drive. Changes were safely queued locally.',
       };
     }
 
@@ -1041,9 +1041,9 @@ export async function syncWithLocalLanHub(params: {
         queuedOffline: true,
         peerEnvelopesCount: 0,
         messageAr:
-          'لا يوجد اتصال مباشر بين الموبايل وحاسبة العيادة — تأكد أن الموبايل متصل بنفس شبكة الواي فاي التي تتصل بها الحاسبة وأوقف أي VPN مؤقتاً. تم حفظ التغييرات محلياً بأمان.',
+          'راوتر الواي فاي يمنع الاتصال المباشر بين الموبايل والحاسبة (أو الجهازان على شبكتين مختلفتين). الحل السريع بدون تعديل الراوتر: افتح نقطة اتصال (Hotspot) من موبايلك (تعمل حتى وبيانات الشريحة مطفية) واربط الحاسبة عليها، أو استخدم Google Drive. تم حفظ التغييرات محلياً بأمان.',
         messageEn:
-          'No direct network route between your phone and the Clinic PC — make sure both devices are on the same Wi-Fi network and turn off any VPN temporarily. Changes were safely queued locally.',
+          'Your Wi-Fi router is blocking direct phone-to-PC traffic (or devices are on different subnets). Quick fix without changing router settings: turn on your phone Hotspot (works even with mobile data off) and connect the PC to it, or use Google Drive. Changes were safely queued locally.',
       };
     }
 

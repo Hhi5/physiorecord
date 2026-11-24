@@ -134,6 +134,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
   const [driveAuth, setDriveAuth] = useState<GoogleDriveAuthState>(() => getGoogleDriveAuthState());
   const [showDriveConfirmModal, setShowDriveConfirmModal] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [showHotspotGuide, setShowHotspotGuide] = useState(false);
 
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ kind: 'success' | 'info' | 'error'; text: string } | null>(
@@ -146,13 +147,18 @@ export const ClinicSyncSettingsTab: React.FC = () => {
 
   useEffect(() => {
     let active = true;
-    if (electronBridge?.getLanSyncHubStatus) {
-      electronBridge.getLanSyncHubStatus().then((status) => {
-        if (active) setHubStatus(status);
-      }).catch(() => {
-        // Ignore IPC status read errors
-      });
-    }
+    const refreshLanHubStatus = () => {
+      if (!electronBridge?.getLanSyncHubStatus) return;
+      electronBridge
+        .getLanSyncHubStatus()
+        .then((status) => {
+          if (active) setHubStatus(status);
+        })
+        .catch(() => {
+          // Ignore IPC status read errors
+        });
+    };
+    refreshLanHubStatus();
     if (electronBridge?.getConfiguredSyncDirectory) {
       electronBridge.getConfiguredSyncDirectory().then((dir) => {
         if (active && dir) setSyncFolderInfo(dir);
@@ -184,9 +190,13 @@ export const ClinicSyncSettingsTab: React.FC = () => {
       setOutbox(getOfflineSyncOutbox());
     };
     window.addEventListener('physiorecord:sync-updated', handleSyncUpdated);
+    window.addEventListener('focus', refreshLanHubStatus);
+    window.addEventListener('online', refreshLanHubStatus);
     return () => {
       active = false;
       window.removeEventListener('physiorecord:sync-updated', handleSyncUpdated);
+      window.removeEventListener('focus', refreshLanHubStatus);
+      window.removeEventListener('online', refreshLanHubStatus);
     };
   }, [electronBridge, dek]);
 
@@ -382,6 +392,36 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             'Permission was not confirmed in Windows — click the button again and choose "Yes".'
           ),
         });
+      }
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleRefreshLanHubIp = async () => {
+    if (!electronBridge?.getLanSyncHubStatus) return;
+    setBusyAction('lan-refresh-ip');
+    try {
+      const updatedStatus = await electronBridge.getLanSyncHubStatus();
+      if (updatedStatus) {
+        setHubStatus(updatedStatus);
+        if (updatedStatus.running && updatedStatus.urls[0]) {
+          const updated = saveClinicSyncConfig({
+            mode: 'lan',
+            lanServerUrl: updatedStatus.urls[0],
+            lanPairingToken: updatedStatus.pairingToken,
+          });
+          setConfig(updated);
+          setLanUrlInput(updatedStatus.urls[0]);
+          setLanTokenInput(updatedStatus.pairingToken);
+          setFeedback({
+            kind: 'success',
+            text: bi(
+              `تم تحديث رابط الشبكة الحالية: ${updatedStatus.urls[0]}`,
+              `Updated current network link: ${updatedStatus.urls[0]}`
+            ),
+          });
+        }
       }
     } finally {
       setBusyAction(null);
@@ -1143,20 +1183,99 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             )}
           </div>
 
-          {/* Clear No-Hotspot Banner */}
-          <div className="p-3 rounded-xl bg-emerald-500/[0.07] border border-emerald-500/20 text-xs text-foreground leading-relaxed">
-            <div className="font-extrabold text-emerald-800 dark:text-emerald-300 mb-1">
-              {bi(
-                'لا تحتاج فتح نقطة اتصال (Hotspot) من الحاسبة!',
-                'No PC Hotspot needed!'
-              )}
+          {/* Clear Dual-Option Wi-Fi & Hotspot Quick Guide */}
+          <div className="p-3.5 rounded-xl bg-emerald-500/[0.07] border border-emerald-500/20 text-xs text-foreground leading-relaxed space-y-2.5">
+            <div>
+              <div className="font-extrabold text-emerald-800 dark:text-emerald-300 mb-1">
+                {bi(
+                  'يعمل عبر راوتر العيادة أو نقطة الاتصال (Hotspot) — بدون إنترنت!',
+                  'Works over Clinic Wi-Fi Router or Mobile Hotspot — completely offline!'
+                )}
+              </div>
+              <p className="text-muted-foreground-1">
+                {bi(
+                  'اربط الحاسبة والموبايل على نفس راوتر العيادة العادي، أو إذا كان الراوتر يمنع الاتصال بين الأجهزة يمكنك فتح نقطة اتصال (Hotspot) من الموبايل والربط مباشرة بثوانٍ بدون تعديل إعدادات الراوتر.',
+                  'Connect your PC and phone to the same clinic Wi-Fi router, or if your router blocks device-to-device connections, simply turn on your phone Hotspot (works offline) without changing any router settings.'
+                )}
+              </p>
             </div>
-            <p className="text-muted-foreground-1">
-              {bi(
-                'فقط اربط حاسبة العيادة وموبايلات المعالجين على نفس راوتر الواي فاي العادي في العيادة (يعمل حتى لو انقطع الإنترنت عن الراوتر).',
-                'Simply connect the clinic PC and therapists’ phones to the same regular clinic Wi-Fi router (works even without internet).'
-              )}
-            </p>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                data-testid="toggle-hotspot-guide-btn"
+                aria-expanded={showHotspotGuide}
+                onClick={() => setShowHotspotGuide((prev) => !prev)}
+                className="compact-btn h-8 px-3 rounded-lg bg-card hover:bg-surface border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <Wifi className="size-3.5 shrink-0" />
+                <span>
+                  {bi(
+                    'طريقة الربط بنقطة الاتصال (Hotspot) بدون إنترنت',
+                    'How to connect via Mobile Hotspot (Offline)'
+                  )}
+                </span>
+                {showHotspotGuide ? (
+                  <ChevronUp className="size-3.5 shrink-0" />
+                ) : (
+                  <ChevronDown className="size-3.5 shrink-0" />
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleModeChange('google_drive')}
+                className="compact-btn h-8 px-3 rounded-lg bg-card hover:bg-surface border border-card-line text-muted-foreground-1 hover:text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <Cloud className="size-3.5 text-primary shrink-0" />
+                <span>
+                  {bi(
+                    'أو استخدم Google Drive (مع الإنترنت)',
+                    'Or use Google Drive (with internet)'
+                  )}
+                </span>
+              </button>
+            </div>
+
+            {showHotspotGuide && (
+              <div
+                data-testid="hotspot-guide-panel"
+                className="p-3 rounded-xl bg-card border border-emerald-500/25 space-y-2 text-xs text-muted-foreground-1 leading-relaxed"
+              >
+                <div className="font-extrabold text-foreground">
+                  {bi(
+                    'خطوات الربط السريع عبر نقطة الاتصال (تعمل حتى وبيانات الشريحة مطفية تماماً):',
+                    'Quick Mobile Hotspot Steps (works even with mobile data completely OFF):'
+                  )}
+                </div>
+                <ol className="list-decimal list-inside space-y-1.5">
+                  <li>
+                    {bi(
+                      'من موبايلك افتح «نقطة الاتصال الشخصية (Hotspot)» — لا تحتاج إنترنت ولا تصرف من رصيد البيانات.',
+                      'Turn on "Personal Hotspot" on your phone — no internet or cellular data is used.'
+                    )}
+                  </li>
+                  <li>
+                    {bi(
+                      'من حاسبة العيادة اتصل بشبكة الواي فاي الخاصة بموبايلك (نقطة الاتصال).',
+                      'Connect the clinic PC to your phone’s Hotspot Wi-Fi network.'
+                    )}
+                  </li>
+                  <li>
+                    {bi(
+                      'اضغط زر تحديث الرابط (↻) على الحاسبة ليظهر رابط نقطة الاتصال الجديد، ثم اكتبه بالموبايل واضغط «مزامنة الآن».',
+                      'Click the Refresh Link button (↻) on the PC to show the new Hotspot link, enter it on your phone, and tap Sync Now.'
+                    )}
+                  </li>
+                </ol>
+                <p className="text-xs text-muted-foreground-2 pt-1.5 border-t border-card-divider">
+                  {bi(
+                    'لماذا نستخدم هذه الطريقة؟ بعض راوترات العيادات تفصل الأجهزة عن بعضها تلقائياً للحماية؛ نقطة الاتصال تتجاوز الراوتر مباشرة بدون الحاجة لتعديل أي إعدادات، أو يمكنك تفعيل مزامنة Google Drive التلقائية إذا كان الإنترنت متوفراً.',
+                    'Why use Hotspot? Some clinic routers isolate connected devices automatically for security. Mobile Hotspot connects your phone and PC directly with zero router setup—or use automatic Google Drive sync whenever internet is available.'
+                  )}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Windows Electron Built-In Hub Controls */}
@@ -1170,8 +1289,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                   </div>
                   <p className="text-xs text-muted-foreground-1 mt-0.5 leading-relaxed">
                     {bi(
-                      'اضغط «تشغيل» لتستقبل الحاسبة مزامنة موبايلات المعالجين على نفس الراوتر. وإذا أُطفئت الحاسبة، يكمل كل معالج عمله أوفلاين بدون حذف أي سجل.',
-                      'Click Start so this PC receives encrypted sync packages over your clinic router. When the PC is off, therapists keep working offline.'
+                      'اضغط «تشغيل» لتستقبل الحاسبة مزامنة موبايلات المعالجين على نفس الراوتر أو نقطة الاتصال. وإذا أُطفئت الحاسبة، يكمل كل معالج عمله أوفلاين بدون حذف أي سجل.',
+                      'Click Start so this PC receives encrypted sync packages over your clinic router or mobile hotspot. When the PC is off, therapists keep working offline.'
                     )}
                   </p>
                 </div>
@@ -1201,18 +1320,32 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                           {hubStatus.urls[0]}
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleCopy('url', hubStatus.urls[0] || '')}
-                        className="size-8 rounded-lg bg-surface hover:bg-surface/80 flex items-center justify-center cursor-pointer shrink-0"
-                        aria-label={bi('نسخ الرابط', 'Copy URL')}
-                      >
-                        {copiedField === 'url' ? (
-                          <Check className="size-3.5 text-emerald-600" />
-                        ) : (
-                          <Copy className="size-3.5 text-muted-foreground-1" />
-                        )}
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          disabled={busyAction === 'lan-refresh-ip'}
+                          onClick={handleRefreshLanHubIp}
+                          className="size-8 rounded-lg bg-surface hover:bg-surface/80 flex items-center justify-center cursor-pointer shrink-0 disabled:opacity-50"
+                          title={bi('تحديث رابط الشبكة (عند التبديل لنقطة الاتصال أو راوتر آخر)', 'Refresh network link (when switching to Hotspot or another router)')}
+                          aria-label={bi('تحديث رابط الشبكة', 'Refresh network link')}
+                        >
+                          <RefreshCw
+                            className={`size-3.5 text-muted-foreground-1 ${busyAction === 'lan-refresh-ip' ? 'animate-spin' : ''}`}
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy('url', hubStatus.urls[0] || '')}
+                          className="size-8 rounded-lg bg-surface hover:bg-surface/80 flex items-center justify-center cursor-pointer shrink-0"
+                          aria-label={bi('نسخ الرابط', 'Copy URL')}
+                        >
+                          {copiedField === 'url' ? (
+                            <Check className="size-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="size-3.5 text-muted-foreground-1" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                     <div className="p-2.5 rounded-xl bg-card border border-card-line flex items-center justify-between gap-2">
                       <div className="min-w-0">
@@ -1339,8 +1472,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
               <ol className="list-decimal list-inside space-y-1.5">
                 <li>
                   {bi(
-                    'اتصل من موبايلك وحاسبة العيادة بنفس راوتر الواي فاي العادي في العيادة (بدون نقطة اتصال).',
-                    'Connect both your phone and the clinic PC to the same regular Wi-Fi router (no hotspot needed).'
+                    'اربط موبايلك وحاسبة العيادة على نفس راوتر الواي فاي في العيادة — أو افتح نقطة اتصال (Hotspot) من موبايلك (حتى بدون إنترنت) واربط الحاسبة عليها.',
+                    'Connect both your phone and clinic PC to the same Wi-Fi router — or turn on your phone Hotspot (works offline) and connect the PC to it.'
                   )}
                 </li>
                 <li>
