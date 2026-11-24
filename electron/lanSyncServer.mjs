@@ -220,19 +220,28 @@ export function registerLanSyncHandlers({ ipcMain, assertTrustedIpcSender }) {
     if (process.platform !== 'win32') {
       return { allowed: true, alreadyConfigured: true };
     }
-    const alreadyOk = await isWindowsLanFirewallConfigured();
-    if (alreadyOk) {
-      return { allowed: true, alreadyConfigured: true };
-    }
     const safePort = Number.isInteger(lanSyncPort) && lanSyncPort >= 1024 && lanSyncPort <= 65535
       ? lanSyncPort
       : DEFAULT_LAN_SYNC_PORT;
-    const netshArgs = `advfirewall firewall add rule name="${WINDOWS_FIREWALL_RULE_NAME}" dir=in action=allow protocol=TCP localport=${safePort}`;
-    const psScript = `Start-Process -FilePath 'netsh.exe' -ArgumentList '${netshArgs}' -Verb RunAs -WindowStyle Hidden -Wait`;
+    const exePathEscaped = String(process.execPath || '').replace(/'/gu, "''");
+    const ruleNameEscaped = WINDOWS_FIREWALL_RULE_NAME.replace(/'/gu, "''");
+    // Remove any auto-created Windows Firewall Block rules for PhysioRecord.exe (which override Allow rules!)
+    // and add clean inbound Allow rules for both the executable and TCP port 47821 across all profiles.
+    const innerScript = [
+      `$exe = '${exePathEscaped}'`,
+      'Get-NetFirewallApplicationFilter -ErrorAction SilentlyContinue | Where-Object { $_.Program -and (($exe -and ([System.Environment]::ExpandEnvironmentVariables($_.Program) -eq $exe)) -or ($_.Program -like "*PhysioRecord.exe")) } | Get-NetFirewallRule -ErrorAction SilentlyContinue | Where-Object { $_.Direction -eq "Inbound" -and $_.Action -eq "Block" } | Remove-NetFirewallRule -ErrorAction SilentlyContinue',
+      `netsh.exe advfirewall firewall delete rule name="${ruleNameEscaped}" | Out-Null`,
+      `netsh.exe advfirewall firewall add rule name="${ruleNameEscaped}" dir=in action=allow protocol=TCP localport=${safePort} profile=any | Out-Null`,
+      'if ($exe) {',
+      `  netsh.exe advfirewall firewall add rule name="${ruleNameEscaped}" dir=in action=allow program="$exe" profile=any | Out-Null`,
+      '}',
+    ].join('; ');
+    const encodedInner = Buffer.from(innerScript, 'utf16le').toString('base64');
+    const launcherScript = `Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoProfile','-NonInteractive','-WindowStyle','Hidden','-EncodedCommand','${encodedInner}' -Verb RunAs -WindowStyle Hidden -Wait`;
     try {
       await execFileAsync(
         'powershell.exe',
-        ['-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-Command', psScript],
+        ['-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-Command', launcherScript],
         { windowsHide: true, timeout: 60_000 }
       );
       const verified = await isWindowsLanFirewallConfigured();
@@ -294,8 +303,16 @@ export function registerLanSyncHandlers({ ipcMain, assertTrustedIpcSender }) {
 
         if (req.method === 'GET' && req.url === '/api/sync/ping') {
           const stored = await readStoredLanEnvelopes('');
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ ok: true, hub: 'PhysioRecord-LAN-Hub', storedDevicesCount: stored.length }));
+          const pingPayload = JSON.stringify({
+            ok: true,
+            hub: 'PhysioRecord-LAN-Hub',
+            storedDevicesCount: stored.length,
+          });
+          res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(pingPayload),
+          });
+          res.end(pingPayload);
           return;
         }
 
@@ -316,16 +333,22 @@ export function registerLanSyncHandlers({ ipcMain, assertTrustedIpcSender }) {
             const envelope = parsed?.envelope;
             await saveLanEnvelopeAtomic(envelope);
             const peerEnvelopes = await readStoredLanEnvelopes(envelope.deviceId);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ ok: true, peerEnvelopes }));
+            const respPayload = JSON.stringify({ ok: true, peerEnvelopes });
+            res.writeHead(200, {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(respPayload),
+            });
+            res.end(respPayload);
           } catch (err) {
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(
-              JSON.stringify({
-                ok: false,
-                error: err instanceof Error ? err.message : 'Invalid sync request',
-              })
-            );
+            const errPayload = JSON.stringify({
+              ok: false,
+              error: err instanceof Error ? err.message : 'Invalid sync request',
+            });
+            res.writeHead(400, {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(errPayload),
+            });
+            res.end(errPayload);
           }
           return;
         }

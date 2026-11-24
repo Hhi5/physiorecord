@@ -836,6 +836,15 @@ class ClinicSyncFatalError extends Error {
   }
 }
 
+class ClinicSyncNetworkError extends Error {
+  readonly errorKind?: string;
+  constructor(message: string, errorKind?: string) {
+    super(message);
+    this.name = 'ClinicSyncNetworkError';
+    this.errorKind = errorKind;
+  }
+}
+
 /**
  * Option 1: Safe Local Wi-Fi (LAN Hub) Sync with Offline Outbox fallback.
  * Routes through native Electron Main Process or native Android TCP socket
@@ -902,10 +911,12 @@ export async function syncWithLocalLanHub(params: {
             'تم تجاوز عدد المحاولات المسموح بها — انتظر قليلاً وتأكد من رمز الاقتران.'
           );
         }
-        if (!res.networkError && res.error) {
-          throw new ClinicSyncFatalError(res.error);
+        if (!res.networkError) {
+          throw new ClinicSyncFatalError(
+            res.error || 'رفضت حاسبة العيادة طلب المزامنة — تأكد من رمز الاقتران والمحاولة مرة أخرى.'
+          );
         }
-        throw new Error(res.error || 'LAN Hub unreachable');
+        throw new ClinicSyncNetworkError(res.error || 'LAN Hub unreachable', res.errorKind);
       }
       const parsed = res.responseJson
         ? safeJsonParse<{ peerEnvelopes?: EncryptedSyncEnvelope[] }>(res.responseJson)
@@ -997,15 +1008,53 @@ export async function syncWithLocalLanHub(params: {
     }
     // PC/LAN Hub is offline or turned off -> Queue encrypted envelope locally so zero work is lost!
     const reason = err instanceof Error ? err.message : 'LAN Hub offline';
+    const errorKind = err instanceof ClinicSyncNetworkError ? err.errorKind : undefined;
     queueOfflineSyncEnvelope('lan', localEnvelope, reason);
+
+    if (errorKind === 'refused') {
+      return {
+        ok: false,
+        queuedOffline: true,
+        peerEnvelopesCount: 0,
+        messageAr:
+          'تم الوصول للحاسبة لكن خدمة مزامنة الواي فاي متوقفة عليها — افتح إعدادات المزامنة على الحاسبة وشغّل المزامنة عبر الواي فاي ثم أعد المحاولة. تم حفظ التغييرات محلياً بأمان.',
+        messageEn:
+          'Reached the PC, but Wi-Fi Sync is not running on it — start Wi-Fi Sync on the Clinic PC and retry. Changes were safely queued locally.',
+      };
+    }
+
+    if (errorKind === 'timeout') {
+      return {
+        ok: false,
+        queuedOffline: true,
+        peerEnvelopesCount: 0,
+        messageAr:
+          'انتهت مهلة الاتصال بحاسبة العيادة بدون رد — غالباً حماية الشبكة في ويندوز أو عزل الأجهزة في الراوتر يمنع الاتصال بين الموبايل والحاسبة. اضغط «تحديث إذن الشبكة» على الحاسبة، أو جرّب الربط عبر نقطة اتصال الموبايل للتأكد. تم حفظ التغييرات محلياً بأمان.',
+        messageEn:
+          'Connection to the Clinic PC timed out with no reply — Windows network protection or router client isolation is likely blocking phone-to-PC traffic. Click "Refresh Wi-Fi Access" on the PC or test with a mobile hotspot. Changes were safely queued locally.',
+      };
+    }
+
+    if (errorKind === 'unreachable') {
+      return {
+        ok: false,
+        queuedOffline: true,
+        peerEnvelopesCount: 0,
+        messageAr:
+          'لا يوجد اتصال مباشر بين الموبايل وحاسبة العيادة — تأكد أن الموبايل متصل بنفس شبكة الواي فاي التي تتصل بها الحاسبة وأوقف أي VPN مؤقتاً. تم حفظ التغييرات محلياً بأمان.',
+        messageEn:
+          'No direct network route between your phone and the Clinic PC — make sure both devices are on the same Wi-Fi network and turn off any VPN temporarily. Changes were safely queued locally.',
+      };
+    }
+
     return {
       ok: false,
       queuedOffline: true,
       peerEnvelopesCount: 0,
       messageAr:
-        'تعذّر الوصول لحاسبة العيادة عبر الواي فاي حالياً — تأكد إن المزامنة شغّالة على الحاسبة وإن الجهازين على نفس الراوتر (وإذا كان جدار الحماية في ويندوز يمنع المنفذ فاسمح للتطبيق). تم حفظ التغييرات محلياً بأمان.',
+        'تعذّر الوصول لحاسبة العيادة عبر الواي فاي حالياً — تأكد إن المزامنة شغّالة على الحاسبة وإن الجهازين على نفس الراوتر واضغط «تحديث إذن الشبكة» على الحاسبة. تم حفظ التغييرات محلياً بأمان.',
       messageEn:
-        'Could not reach the Clinic PC over Wi-Fi right now — check that Wi-Fi Sync is started on the PC and both devices are on the same router. Changes were safely queued locally.',
+        'Could not reach the Clinic PC over Wi-Fi right now — check that Wi-Fi Sync is started on the PC, both devices are on the same router, and click "Refresh Wi-Fi Access" on the PC. Changes were safely queued locally.',
     };
   }
 }

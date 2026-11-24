@@ -7,6 +7,9 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
@@ -56,9 +59,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NoRouteToHostException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -1085,6 +1090,59 @@ public class PhysioRecordNativePlugin extends Plugin {
         return decoded.toByteArray();
     }
 
+    @SuppressWarnings("deprecation")
+    private Network findActiveWifiNetwork(Context ctx) {
+        if (ctx == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return null;
+        }
+        try {
+            ConnectivityManager cm = (ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null) {
+                return null;
+            }
+            Network active = cm.getActiveNetwork();
+            if (active != null) {
+                NetworkCapabilities caps = cm.getNetworkCapabilities(active);
+                if (caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                    return active;
+                }
+            }
+            Network[] allNetworks = cm.getAllNetworks();
+            if (allNetworks != null) {
+                for (Network net : allNetworks) {
+                    if (net == null) {
+                        continue;
+                    }
+                    NetworkCapabilities caps = cm.getNetworkCapabilities(net);
+                    if (caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                        return net;
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // Fall back to default socket routing if network inspection is unavailable
+        }
+        return null;
+    }
+
+    private String classifyLanSocketError(Exception ex) {
+        String msg = ex.getMessage() != null ? ex.getMessage().toLowerCase(java.util.Locale.ROOT) : "";
+        if (ex instanceof SocketTimeoutException || msg.contains("timed out") || msg.contains("timeout")) {
+            return "timeout";
+        }
+        if (ex instanceof NoRouteToHostException
+                || msg.contains("enetunreach")
+                || msg.contains("ehostunreach")
+                || msg.contains("unreachable")
+                || msg.contains("no route")) {
+            return "unreachable";
+        }
+        if (ex instanceof ConnectException || msg.contains("econnrefused") || msg.contains("refused")) {
+            return "refused";
+        }
+        return "unknown";
+    }
+
     @PluginMethod
     public void lanSyncExchange(PluginCall call) {
         final String rawServerUrl = call.getString("serverUrl", "").trim();
@@ -1137,12 +1195,21 @@ public class PhysioRecordNativePlugin extends Plugin {
             return;
         }
 
+        final Context appContext = getContext();
         oauthExecutor.execute(() -> {
             // Strictly validated RFC1918 private LAN socket carrying AES-256-GCM encrypted envelopes
             // nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
             // skipcq: JAVA-S1011
             try (Socket socket = new Socket()) {
-                socket.connect(new InetSocketAddress(host, port), 6_000);
+                Network wifiNetwork = findActiveWifiNetwork(appContext);
+                if (wifiNetwork != null) {
+                    try {
+                        wifiNetwork.bindSocket(socket);
+                    } catch (Exception ignored) {
+                        // Fall back to default interface routing if binding is declined by OS
+                    }
+                }
+                socket.connect(new InetSocketAddress(host, port), 8_000);
                 socket.setSoTimeout(15_000);
 
                 String headers = "POST /api/sync/exchange HTTP/1.1\r\n"
@@ -1216,6 +1283,7 @@ public class PhysioRecordNativePlugin extends Plugin {
                 errRet.put("ok", false);
                 errRet.put("status", 0);
                 errRet.put("networkError", true);
+                errRet.put("errorKind", classifyLanSocketError(ex));
                 errRet.put("error", ex.getMessage() != null ? ex.getMessage() : "LAN connection failed");
                 call.resolve(errRet);
             }

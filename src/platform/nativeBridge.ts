@@ -99,6 +99,7 @@ export interface AndroidPhysioRecordPlugin {
     status: number;
     responseJson?: string;
     networkError?: boolean;
+    errorKind?: string;
     error?: string;
   }>;
   isBiometricAvailable?: () => Promise<{

@@ -1256,10 +1256,27 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                     </button>
 
                     {hubStatus.firewallAllowed === true && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
-                        <CheckCircle2 className="size-3.5" />
-                        {bi('اتصال الشبكة مفعّل وجاهز', 'Local Wi-Fi Access Ready')}
-                      </span>
+                      <div className="inline-flex flex-wrap items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
+                          <CheckCircle2 className="size-3.5" />
+                          {bi('اتصال الشبكة مفعّل وجاهز', 'Local Wi-Fi Access Ready')}
+                        </span>
+                        {electronBridge?.allowLanSyncFirewall && (
+                          <button
+                            type="button"
+                            disabled={busyAction !== null}
+                            onClick={handleAllowLanFirewall}
+                            className="compact-btn h-7 px-2.5 rounded-lg bg-card hover:bg-surface border border-card-line text-xs font-bold text-muted-foreground-1 hover:text-foreground inline-flex items-center gap-1 cursor-pointer disabled:opacity-60"
+                          >
+                            <ShieldCheck className="size-3.5" />
+                            <span>
+                              {busyAction === 'lan-firewall'
+                                ? bi('جاري التحديث...', 'Updating...')
+                                : bi('تحديث إذن الشبكة', 'Refresh Wi-Fi Access')}
+                            </span>
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
 

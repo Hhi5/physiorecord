@@ -3,7 +3,8 @@
 
 !macro customInstall
   nsExec::ExecToLog 'netsh advfirewall firewall delete rule name="PhysioRecord Clinic Wi-Fi Sync"'
-  nsExec::ExecToLog 'netsh advfirewall firewall add rule name="PhysioRecord Clinic Wi-Fi Sync" dir=in action=allow protocol=TCP localport=47821'
+  nsExec::ExecToLog 'netsh advfirewall firewall add rule name="PhysioRecord Clinic Wi-Fi Sync" dir=in action=allow protocol=TCP localport=47821 profile=any'
+  nsExec::ExecToLog 'netsh advfirewall firewall add rule name="PhysioRecord Clinic Wi-Fi Sync" dir=in action=allow program="$INSTDIR\PhysioRecord.exe" profile=any'
 !macroend
 
 !macro customUnInstall
