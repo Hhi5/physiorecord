@@ -119,6 +119,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
     urls: string[];
     pairingToken: string;
     storedDevicesCount: number;
+    firewallAllowed?: boolean;
   } | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -351,6 +352,36 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             ),
           });
         }
+      }
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleAllowLanFirewall = async () => {
+    if (!electronBridge?.allowLanSyncFirewall) return;
+    setBusyAction('lan-firewall');
+    setFeedback(null);
+    try {
+      const res = await electronBridge.allowLanSyncFirewall();
+      const updatedStatus = await electronBridge.getLanSyncHubStatus?.();
+      if (updatedStatus) setHubStatus(updatedStatus);
+      if (res?.allowed) {
+        setFeedback({
+          kind: 'success',
+          text: bi(
+            'تم السماح لمزامنة الواي فاي بنجاح! يمكنك الآن الاتصال من الموبايل على نفس الشبكة.',
+            'Wi-Fi Sync connection allowed! Your phone can now connect on the same router.'
+          ),
+        });
+      } else {
+        setFeedback({
+          kind: 'error',
+          text: bi(
+            'لم يتم تأكيد الإذن في نافذة ويندوز — اضغط الزر مرة أخرى واختر «نعم» للسماح باتصال الموبايل.',
+            'Permission was not confirmed in Windows — click the button again and choose "Yes".'
+          ),
+        });
       }
     } finally {
       setBusyAction(null);
@@ -1204,24 +1235,82 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                       </button>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleCopy('pair', `${hubStatus.urls[0] || ''}|${hubStatus.pairingToken}`)
-                    }
-                    className="compact-btn h-8 px-3 rounded-lg bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
-                  >
-                    {copiedField === 'pair' ? (
-                      <Check className="size-3.5 text-emerald-600" />
-                    ) : (
-                      <Copy className="size-3.5" />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleCopy('pair', `${hubStatus.urls[0] || ''}|${hubStatus.pairingToken}`)
+                      }
+                      className="compact-btn h-8 px-3 rounded-lg bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                    >
+                      {copiedField === 'pair' ? (
+                        <Check className="size-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="size-3.5" />
+                      )}
+                      <span>
+                        {copiedField === 'pair'
+                          ? bi('تم نسخ كود الربط السريع!', 'Quick-pair code copied!')
+                          : bi('نسخ كود الربط السريع (الرابط + الرمز معاً)', 'Copy Quick-Pair Code (Link + Token)')}
+                      </span>
+                    </button>
+
+                    {hubStatus.firewallAllowed === true && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
+                        <CheckCircle2 className="size-3.5" />
+                        {bi('اتصال الشبكة مفعّل وجاهز', 'Local Wi-Fi Access Ready')}
+                      </span>
                     )}
-                    <span>
-                      {copiedField === 'pair'
-                        ? bi('تم نسخ كود الربط السريع!', 'Quick-pair code copied!')
-                        : bi('نسخ كود الربط السريع (الرابط + الرمز معاً)', 'Copy Quick-Pair Code (Link + Token)')}
-                    </span>
-                  </button>
+                  </div>
+
+                  {hubStatus.firewallAllowed === false && electronBridge?.allowLanSyncFirewall && (
+                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-2.5">
+                      <p className="text-xs text-amber-900 dark:text-amber-200 font-bold leading-relaxed flex-1 min-w-[200px]">
+                        {bi(
+                          'للسماح للموبايل بالاتصال بهذه الحاسبة عبر الواي فاي بضغطة واحدة (بدون إعدادات يدوية)، اضغط الزر التالي واختر «نعم»:',
+                          'To allow your phone to reach this PC over Wi-Fi in 1 click (no manual setup), click below and choose "Yes":'
+                        )}
+                      </p>
+                      <button
+                        type="button"
+                        disabled={busyAction !== null}
+                        onClick={handleAllowLanFirewall}
+                        className="h-9 px-3.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-60"
+                      >
+                        <ShieldCheck className="size-4" />
+                        <span>
+                          {busyAction === 'lan-firewall'
+                            ? bi('جاري التفعيل...', 'Enabling...')
+                            : bi('السماح بالاتصال عبر الواي فاي (ضغطة واحدة)', 'Allow Wi-Fi Connection (1 Click)')}
+                        </span>
+                      </button>
+                    </div>
+                  )}
+
+                  {hubStatus.urls.length > 1 && (
+                    <div className="text-xs text-muted-foreground-1 space-y-1">
+                      <div className="font-bold">
+                        {bi('روابط شبكات أخرى على هذه الحاسبة (إذا كان لديك أكثر من اتصال):', 'Other network links on this PC:')}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5" dir="ltr">
+                        {hubStatus.urls.slice(1).map((altUrl) => (
+                          <button
+                            key={altUrl}
+                            type="button"
+                            onClick={() => handleCopy(`alt-${altUrl}`, altUrl)}
+                            className="px-2.5 py-1 rounded-lg bg-card hover:bg-surface border border-card-line text-xs font-mono text-foreground inline-flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <span>{altUrl}</span>
+                            {copiedField === `alt-${altUrl}` ? (
+                              <Check className="size-3 text-emerald-600" />
+                            ) : (
+                              <Copy className="size-3 text-muted-foreground-1" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

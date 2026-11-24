@@ -217,6 +217,7 @@ export interface ElectronDesktopBridge {
     urls: string[];
     pairingToken: string;
     storedDevicesCount: number;
+    firewallAllowed?: boolean;
     error?: string;
   }>;
   stopLanSyncHub?: () => Promise<{ running: boolean }>;
@@ -226,6 +227,11 @@ export interface ElectronDesktopBridge {
     urls: string[];
     pairingToken: string;
     storedDevicesCount: number;
+    firewallAllowed?: boolean;
+  }>;
+  allowLanSyncFirewall?: () => Promise<{
+    allowed: boolean;
+    alreadyConfigured?: boolean;
   }>;
   lanSyncExchange?: (options: {
     serverUrl: string;

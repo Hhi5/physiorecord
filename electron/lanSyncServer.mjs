@@ -11,6 +11,8 @@ import http from 'node:http';
 import https from 'node:https';
 import os from 'node:os';
 import crypto from 'node:crypto';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import {
   DEFAULT_LAN_SYNC_PORT,
   MAX_SYNC_ENVELOPE_BYTES,
@@ -19,10 +21,29 @@ import {
   safeJsonParse,
 } from './security.mjs';
 
+const execFileAsync = promisify(execFile);
+const WINDOWS_FIREWALL_RULE_NAME = 'PhysioRecord Clinic Wi-Fi Sync';
+const VIRTUAL_IFACE_RE =
+  /(?:vethernet|wsl|hyper-v|virtualbox|vmware|docker|tailscale|zerotier|radmin|hamachi|vpn|bluetooth|loopback|teredo|isatap)/iu;
+const PREFERRED_IFACE_RE = /(?:wi-fi|wifi|wlan|wireless|ethernet|en0|wlan0)/iu;
 const MAX_STORED_LAN_DEVICES = 30;
 const AUTH_FAILURE_WINDOW_MS = 5 * 60 * 1000;
 const MAX_AUTH_FAILURES_PER_IP = 10;
 const MAX_EXCHANGE_RESPONSE_BYTES = 40 * 1024 * 1024;
+
+async function isWindowsLanFirewallConfigured() {
+  if (process.platform !== 'win32') return true;
+  try {
+    await execFileAsync(
+      'netsh.exe',
+      ['advfirewall', 'firewall', 'show', 'rule', `name=${WINDOWS_FIREWALL_RULE_NAME}`],
+      { windowsHide: true, timeout: 6_000 }
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export function registerLanSyncHandlers({ ipcMain, assertTrustedIpcSender }) {
   let lanSyncServer = null;
@@ -83,15 +104,26 @@ export function registerLanSyncHandlers({ ipcMain, assertTrustedIpcSender }) {
 
   function getLanIpv4Urls(port) {
     const nets = os.networkInterfaces();
-    const urls = [];
-    for (const ifaces of Object.values(nets)) {
+    const ranked = [];
+    for (const [ifaceName, ifaces] of Object.entries(nets)) {
       if (!ifaces) continue;
       for (const info of ifaces) {
-        if (info.family === 'IPv4' && !info.internal) {
-          urls.push(`http://${info.address}:${port}`);
+        if (info.family !== 'IPv4' || info.internal) continue;
+        // Skip link-local APIPA addresses (169.254.x.x)
+        if (info.address.startsWith('169.254.')) continue;
+        let priority = 2;
+        if (VIRTUAL_IFACE_RE.test(ifaceName)) {
+          priority = 4;
+        } else if (PREFERRED_IFACE_RE.test(ifaceName)) {
+          priority = info.address.startsWith('192.168.') ? 0 : 1;
+        } else if (info.address.startsWith('192.168.')) {
+          priority = 1;
         }
+        ranked.push({ url: `http://${info.address}:${port}`, priority });
       }
     }
+    ranked.sort((first, second) => first.priority - second.priority);
+    const urls = Array.from(new Set(ranked.map((entry) => entry.url)));
     if (urls.length === 0) {
       urls.push(`http://127.0.0.1:${port}`);
     }
@@ -167,18 +199,47 @@ export function registerLanSyncHandlers({ ipcMain, assertTrustedIpcSender }) {
   async function getLanHubStatusPayload() {
     const token = await ensureLanPairingToken();
     const stored = await readStoredLanEnvelopes('');
+    const firewallAllowed = await isWindowsLanFirewallConfigured();
     return {
       running: Boolean(lanSyncServer && lanSyncServer.listening),
       port: lanSyncPort,
       urls: getLanIpv4Urls(lanSyncPort),
       pairingToken: token,
       storedDevicesCount: stored.length,
+      firewallAllowed,
     };
   }
 
   ipcMain.handle('physiorecord:lan-sync-status', async (event) => {
     assertTrustedIpcSender(event);
     return getLanHubStatusPayload();
+  });
+
+  ipcMain.handle('physiorecord:lan-sync-allow-firewall', async (event) => {
+    assertTrustedIpcSender(event);
+    if (process.platform !== 'win32') {
+      return { allowed: true, alreadyConfigured: true };
+    }
+    const alreadyOk = await isWindowsLanFirewallConfigured();
+    if (alreadyOk) {
+      return { allowed: true, alreadyConfigured: true };
+    }
+    const safePort = Number.isInteger(lanSyncPort) && lanSyncPort >= 1024 && lanSyncPort <= 65535
+      ? lanSyncPort
+      : DEFAULT_LAN_SYNC_PORT;
+    const netshArgs = `advfirewall firewall add rule name="${WINDOWS_FIREWALL_RULE_NAME}" dir=in action=allow protocol=TCP localport=${safePort}`;
+    const psScript = `Start-Process -FilePath 'netsh.exe' -ArgumentList '${netshArgs}' -Verb RunAs -WindowStyle Hidden -Wait`;
+    try {
+      await execFileAsync(
+        'powershell.exe',
+        ['-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-Command', psScript],
+        { windowsHide: true, timeout: 60_000 }
+      );
+      const verified = await isWindowsLanFirewallConfigured();
+      return { allowed: verified, alreadyConfigured: false };
+    } catch {
+      return { allowed: false, alreadyConfigured: false };
+    }
   });
 
   ipcMain.handle('physiorecord:lan-sync-start', async (event, options) => {

@@ -15,6 +15,7 @@ files:
   - docs/legal/CONTENT_LICENSES.md
   - package.json
   - "!electron/electron-builder.yml"
+  - "!electron/installer.nsh"
   - "!node_modules/**/*"
 
 asar: true
@@ -35,6 +36,7 @@ nsis:
   installerIcon: electron/icon.ico
   uninstallerIcon: electron/icon.ico
   installerHeaderIcon: electron/icon.ico
+  include: electron/installer.nsh
   oneClick: false
   perMachine: false
   allowElevation: true
