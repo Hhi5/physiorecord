@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       platform:
-        description: 'Which test app(s) to build (downloaded from Artifacts — never publishes a Release)'
+        description: 'Which test app(s) to build (saves to a Private Draft for direct .apk/.exe download — never public!)'
         required: true
         type: choice
         default: all
@@ -17,7 +17,7 @@ permissions: {}
 
 jobs:
   build-test-android:
-    name: Build Test Android APK (Signed, No Release)
+    name: Build Test Android APK (Signed, Private)
     if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
     runs-on: ubuntu-latest
     permissions:
@@ -114,10 +114,11 @@ jobs:
         with:
           name: test-android-apk
           path: PhysioRecord-Android-TEST-*.apk
+          compression-level: 0
           retention-days: 14
 
   build-test-windows:
-    name: Build Test Windows EXE (Setup & Portable, No Release)
+    name: Build Test Windows EXE (Setup & Portable, Private)
     if: ${{ inputs.platform == 'all' || inputs.platform == 'windows' }}
     runs-on: windows-latest
     permissions:
@@ -157,4 +158,54 @@ jobs:
         with:
           name: test-windows-exe
           path: release/*.exe
+          compression-level: 0
           retention-days: 14
+
+  publish-private-draft:
+    name: Save Direct .apk / .exe to Private Draft (Owner-Only, Not Public)
+    if: ${{ !failure() && !cancelled() }}
+    needs:
+      - build-test-android
+      - build-test-windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Test Android APK (if built)
+        if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: test-android-apk
+          path: test-assets
+
+      - name: Download Test Windows EXE (if built)
+        if: ${{ inputs.platform == 'all' || inputs.platform == 'windows' }}
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: test-windows-exe
+          path: test-assets
+
+      - name: Create/Replace Private Draft Release (No Tag, Hidden from Public & Updater)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHORT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          SHA7="${SHORT_SHA:0:7}"
+          DRAFT_TITLE="Test Preview (Private Draft — Not Public)"
+
+          # Remove previous private test drafts so Releases stays clean
+          OLD_IDS="$(gh api "repos/${REPO}/releases" --jq ".[] | select(.draft == true and .name == \"${DRAFT_TITLE}\") | .id")"
+          for DRAFT_ID in $OLD_IDS; do
+            gh api -X DELETE "repos/${REPO}/releases/${DRAFT_ID}" || true
+          done
+
+          ls -lh test-assets/
+          gh release create "test-preview-${SHA7}" \
+            --repo "${REPO}" \
+            --draft \
+            --prerelease \
+            --title "${DRAFT_TITLE}" \
+            --notes "Private test build from commit \`${SHA7}\`. Visible ONLY to repository maintainers (hidden from public users and in-app updater). Download the direct \`.apk\` or \`.exe\` below — no ZIP extraction needed." \
+            test-assets/*
