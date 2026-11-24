@@ -100,6 +100,11 @@ export const ClinicSyncSettingsTab: React.FC = () => {
   const isElectronDesktop = Boolean(electronBridge?.startLanSyncHub);
   const isAndroidApk = isNativeAndroid();
   const isNativeAppPlatform = isAndroidApk || Boolean(electronBridge);
+  const isIosWeb =
+    !isNativeAppPlatform &&
+    typeof navigator !== 'undefined' &&
+    (/iPhone|iPad|iPod/iu.test(navigator.userAgent || '') ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
   const builtInGoogleOAuth = hasBuiltInNativeGoogleOAuth();
 
   const [config, setConfig] = useState<ClinicSyncConfig>(() => getClinicSyncConfig());
@@ -1043,8 +1048,13 @@ export const ClinicSyncSettingsTab: React.FC = () => {
               icon: Wifi,
               titleAr: 'واي فاي العيادة (بدون إنترنت)',
               titleEn: 'Clinic Wi-Fi (Offline)',
-              descAr: 'نقل مباشر بين الحاسبة والموبايل على نفس راوتر العيادة.',
-              descEn: 'Direct sync between PC and phone on the same Wi-Fi router.',
+              descAr: isIosWeb
+                ? 'غير متوفر حالياً على الآيفون — استخدم Google Drive أو ملف المزامنة المشفّر.'
+                : 'نقل مباشر بين الحاسبة والموبايل على نفس راوتر العيادة.',
+              descEn: isIosWeb
+                ? 'Currently unavailable on iPhone — please use Google Drive or Encrypted Sync File.'
+                : 'Direct sync between PC and phone on the same Wi-Fi router.',
+              unavailableOnIos: isIosWeb,
             },
             {
               id: 'google_drive' as ClinicSyncMode,
@@ -1053,11 +1063,13 @@ export const ClinicSyncSettingsTab: React.FC = () => {
               titleEn: 'Google Drive Sync',
               descAr: 'احفظ وادمج بيانات عيادتك عبر حسابك في Google Drive من أي مكان.',
               descEn: 'Save and merge clinic records via your free Google Drive from anywhere.',
+              unavailableOnIos: false,
             },
           ] as const
         ).map((opt) => {
           const Icon = opt.icon;
           const selected = config.mode === opt.id;
+          const isUnavailable = 'unavailableOnIos' in opt && opt.unavailableOnIos;
           return (
             <button
               key={opt.id}
@@ -1067,12 +1079,21 @@ export const ClinicSyncSettingsTab: React.FC = () => {
               className={`p-3.5 rounded-2xl border text-start transition-all cursor-pointer space-y-1.5 ${
                 selected
                   ? 'border-primary bg-primary/[0.06] ring-2 ring-primary/20'
-                  : 'border-card-line bg-card hover:bg-surface/60'
+                  : isUnavailable
+                    ? 'border-amber-500/35 bg-amber-500/[0.04] hover:bg-amber-500/[0.08]'
+                    : 'border-card-line bg-card hover:bg-surface/60'
               }`}
             >
               <div className="flex items-center justify-between gap-2">
                 <Icon className={`size-4.5 ${selected ? 'text-primary' : 'text-muted-foreground-1'}`} />
-                {selected && <CheckCircle2 className="size-4 text-primary" />}
+                <div className="flex items-center gap-1.5">
+                  {isUnavailable && (
+                    <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-800 dark:text-amber-300 text-xs font-extrabold">
+                      {bi('غير متوفر حالياً للآيفون', 'Unavailable on iPhone')}
+                    </span>
+                  )}
+                  {selected && <CheckCircle2 className="size-4 text-primary" />}
+                </div>
               </div>
               <div className="text-xs font-extrabold text-foreground">
                 {bi(opt.titleAr, opt.titleEn)}
@@ -1182,6 +1203,37 @@ export const ClinicSyncSettingsTab: React.FC = () => {
               </span>
             )}
           </div>
+
+          {isIosWeb && (
+            <div
+              role="alert"
+              className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/35 text-xs text-amber-950 dark:text-amber-200 space-y-2.5 leading-relaxed"
+            >
+              <div className="font-extrabold flex items-center gap-1.5">
+                <AlertTriangle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <span>
+                  {bi(
+                    'مزامنة الواي فاي المباشرة غير متوفرة حالياً على أجهزة الآيفون',
+                    'Direct Wi-Fi Sync is currently unavailable on iPhone'
+                  )}
+                </span>
+              </div>
+              <p>
+                {bi(
+                  'متصفح الآيفون لا يسمح بالاتصال المباشر بالشبكة المحلية من تطبيق الويب. لمزامنة سجلاتك بسهولة وأمان على الآيفون، استخدم مزامنة Google Drive (مع الإنترنت) أو ملف المزامنة المشفّر أدناه (بدون إنترنت).',
+                  'iPhone’s browser blocks direct local Wi-Fi connections from web apps. To sync safely on iPhone, please use Google Drive Sync (online) or the Encrypted Sync File below (offline).'
+                )}
+              </p>
+              <button
+                type="button"
+                onClick={() => handleModeChange('google_drive')}
+                className="h-8 px-3.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <Cloud className="size-3.5" />
+                <span>{bi('الانتقال إلى مزامنة Google Drive', 'Switch to Google Drive Sync')}</span>
+              </button>
+            </div>
+          )}
 
           {/* Clear Dual-Option Wi-Fi & Hotspot Quick Guide */}
           <div className="p-3.5 rounded-xl bg-emerald-500/[0.07] border border-emerald-500/20 text-xs text-foreground leading-relaxed space-y-2.5">
