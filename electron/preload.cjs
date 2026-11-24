@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('electronAPI', Object.freeze({
   printCurrentPage: (options) => ipcRenderer.invoke('physiorecord:print-page', options),
   exportCurrentPageToPdf: (options) => ipcRenderer.invoke('physiorecord:export-pdf', options),
   openExternalUrl: (options) => ipcRenderer.invoke('physiorecord:open-external', options),
+  copyText: (text) => ipcRenderer.invoke('physiorecord:copy-text', { text }),
   checkForUpdates: () => ipcRenderer.invoke('physiorecord:check-for-updates'),
   fetchGithubReleases: () => ipcRenderer.invoke('physiorecord:fetch-github-releases'),
   startLanSyncHub: (options) => ipcRenderer.invoke('physiorecord:lan-sync-start', options),

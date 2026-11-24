@@ -10,6 +10,7 @@
 import {
   app,
   BrowserWindow,
+  clipboard,
   dialog,
   ipcMain,
   protocol,
@@ -299,6 +300,16 @@ function registerCoreDesktopHandlers() {
     }
     await shell.openExternal(url);
     return { opened: true };
+  });
+
+  ipcMain.handle('physiorecord:copy-text', (event, payload) => {
+    assertTrustedIpcSender(event);
+    const text = typeof payload?.text === 'string' ? payload.text : '';
+    if (!text || Buffer.byteLength(text, 'utf8') > 1024 * 1024) {
+      return { copied: false };
+    }
+    clipboard.writeText(text);
+    return { copied: true };
   });
 
   ipcMain.handle('physiorecord:set-titlebar-theme', (event, opts) => {

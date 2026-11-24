@@ -709,6 +709,103 @@ export const AppLayout: React.FC = () => {
     setIsMobileAccountMenuOpen(false);
   }, [selectedPatientId]);
 
+  // Periodic background Auto-Sync (Google Drive or Clinic Wi-Fi) — strictly opt-in (zero network when OFF)
+  useEffect(() => {
+    if (!dek) return;
+    let intervalHandle: ReturnType<typeof setInterval> | null = null;
+    let cancelled = false;
+
+    const schedulePeriodicSync = () => {
+      if (intervalHandle) {
+        clearInterval(intervalHandle);
+        intervalHandle = null;
+      }
+      let enabled = false;
+      let intervalMinutes = 15;
+      try {
+        const rawCfg = window.localStorage.getItem('physiorecord_clinic_sync_config_v1');
+        if (rawCfg) {
+          const parsedCfg = JSON.parse(rawCfg) as {
+            mode?: string;
+            autoSyncEnabled?: boolean;
+            autoSyncIntervalMinutes?: number;
+          };
+          enabled = Boolean(
+            parsedCfg?.autoSyncEnabled &&
+              (parsedCfg.mode === 'google_drive' || parsedCfg.mode === 'lan')
+          );
+          const mins = Number(parsedCfg?.autoSyncIntervalMinutes);
+          if (Number.isFinite(mins) && mins >= 1 && mins <= 1440) {
+            intervalMinutes = Math.round(mins);
+          }
+        }
+      } catch {
+        enabled = false;
+      }
+
+      if (!enabled) return;
+
+      const triggerSync = () => {
+        if (cancelled) return;
+        import('../../services/clinicSyncService')
+          .then((syncMod) =>
+            syncMod.runPeriodicAutoSyncOnce({
+              dek,
+              onPatientsUpdated: refreshPatients,
+            })
+          )
+          .catch(() => {
+            // Silent background retry on next interval
+          });
+      };
+
+      intervalHandle = setInterval(triggerSync, intervalMinutes * 60_000);
+    };
+
+    const handleOnlineReconnect = () => {
+      let shouldRun = false;
+      try {
+        const rawCfg = window.localStorage.getItem('physiorecord_clinic_sync_config_v1');
+        if (rawCfg) {
+          const parsedCfg = JSON.parse(rawCfg) as {
+            mode?: string;
+            autoSyncEnabled?: boolean;
+            autoSyncOnReconnect?: boolean;
+          };
+          shouldRun = Boolean(
+            parsedCfg?.autoSyncEnabled &&
+              parsedCfg?.autoSyncOnReconnect !== false &&
+              (parsedCfg.mode === 'google_drive' || parsedCfg.mode === 'lan')
+          );
+        }
+      } catch {
+        shouldRun = false;
+      }
+      if (!shouldRun || cancelled) return;
+      import('../../services/clinicSyncService')
+        .then((syncMod) =>
+          syncMod.runPeriodicAutoSyncOnce({
+            dek,
+            onPatientsUpdated: refreshPatients,
+          })
+        )
+        .catch(() => {
+          // Ignore background reconnect failure
+        });
+    };
+
+    schedulePeriodicSync();
+    window.addEventListener('physiorecord:sync-config-changed', schedulePeriodicSync);
+    window.addEventListener('online', handleOnlineReconnect);
+
+    return () => {
+      cancelled = true;
+      if (intervalHandle) clearInterval(intervalHandle);
+      window.removeEventListener('physiorecord:sync-config-changed', schedulePeriodicSync);
+      window.removeEventListener('online', handleOnlineReconnect);
+    };
+  }, [dek, refreshPatients]);
+
   useEffect(() => {
     if (isSessionFocusMode || isPrivacyCoverOpen) {
       setIsMobileAccountMenuOpen(false);

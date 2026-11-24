@@ -90,6 +90,17 @@ export interface AndroidPhysioRecordPlugin {
   clearGoogleDriveSession?: () => Promise<{
     cleared: boolean;
   }>;
+  lanSyncExchange?: (options: {
+    serverUrl: string;
+    pairingToken: string;
+    bodyJson: string;
+  }) => Promise<{
+    ok: boolean;
+    status: number;
+    responseJson?: string;
+    networkError?: boolean;
+    error?: string;
+  }>;
   isBiometricAvailable?: () => Promise<{
     available: boolean;
     status: string;
@@ -189,6 +200,9 @@ export interface ElectronDesktopBridge {
     url: string;
   }) => Promise<{
     opened: boolean;
+  }>;
+  copyText?: (text: string) => Promise<{
+    copied: boolean;
   }>;
   setTitleBarTheme?: (options: { isDark: boolean }) => Promise<boolean>;
   checkForUpdates?: () => Promise<ElectronDesktopUpdateStatus>;

@@ -863,4 +863,40 @@ describe('updateSafety & Android Release Packaging Guards', () => {
     expect(netSecXml).toContain('<base-config cleartextTrafficPermitted="false">');
     expect(netSecXml).toContain('<certificates src="system" />');
   });
+
+  it('normalizes bare LAN IPs and preserves lanServerUrl/autoSync settings even when localStorage throws quota errors', async () => {
+    const { normalizeLanServerUrl, saveClinicSyncConfig, getClinicSyncConfig } = await import(
+      '../../services/clinicSyncService'
+    );
+
+    expect(normalizeLanServerUrl('192.168.1.15:47821')).toBe('http://192.168.1.15:47821');
+    expect(normalizeLanServerUrl('192.168.1.15')).toBe('http://192.168.1.15:47821');
+    expect(normalizeLanServerUrl('  http://192.168.1.15:47821/  ')).toBe('http://192.168.1.15:47821');
+
+    // Simulate a full localStorage where setItem throws QuotaExceededError
+    const throwingStorage = {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error('QuotaExceededError');
+      },
+      removeItem: () => undefined,
+    };
+    (globalThis as Record<string, unknown>).localStorage = throwingStorage;
+
+    saveClinicSyncConfig({
+      mode: 'lan',
+      lanServerUrl: 'http://192.168.1.15:47821',
+    });
+    const afterToken = saveClinicSyncConfig({
+      lanPairingToken: 'F7225B4A71E85AAF',
+      autoSyncEnabled: true,
+      autoSyncIntervalMinutes: 30,
+    });
+
+    expect(afterToken.lanServerUrl).toBe('http://192.168.1.15:47821');
+    expect(afterToken.lanPairingToken).toBe('F7225B4A71E85AAF');
+    expect(afterToken.autoSyncEnabled).toBe(true);
+    expect(afterToken.autoSyncIntervalMinutes).toBe(30);
+    expect(getClinicSyncConfig().lanServerUrl).toBe('http://192.168.1.15:47821');
+  });
 });

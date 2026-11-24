@@ -240,6 +240,11 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setRecoveredDrafts([]);
     dekRef.current = null;
     ClinicOperationsService.clearInMemoryCache();
+    import('../services/clinicSyncService')
+      .then((syncMod) => syncMod.clearSessionSyncPassphrase())
+      .catch(() => {
+        // Ignore cleanup errors
+      });
     hiddenAtRef.current = null;
     if (autoLockTimerRef.current) {
       clearTimeout(autoLockTimerRef.current);

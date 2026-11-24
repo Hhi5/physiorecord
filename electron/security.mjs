@@ -149,6 +149,7 @@ const STATIC_ALLOWED_LAN_CORS_ORIGINS = new Set([
   'app://bundle',
   'capacitor://localhost',
   'https://physiorecord.pages.dev',
+  'https://physiorecord-app.resercher.workers.dev',
 ]);
 
 export function getValidatedLanCorsOrigin(origin) {

@@ -19,8 +19,13 @@ import {
   getAllDeletionTombstones,
   recordDeletionTombstones,
 } from './deletionTombstoneService';
-import { getElectronDesktopBridge } from '../platform/nativeBridge';
-import { SYNC_ENVELOPE_MAGIC } from '../config/appConstants';
+import {
+  getAndroidNativePlugin,
+  getElectronDesktopBridge,
+  isElectronDesktop,
+  isNativeAndroid,
+} from '../platform/nativeBridge';
+import { DEFAULT_LAN_SYNC_PORT, SYNC_ENVELOPE_MAGIC } from '../config/appConstants';
 import {
   PRODUCTION_MIN_SYNC_PBKDF2_ITERATIONS,
   decryptSyncEnvelope,
@@ -36,7 +41,10 @@ import {
   randomHexCsprng,
   safeJsonParse,
 } from '../utils/securityHardening';
-import { exchangeEnvelopesWithGoogleDrive } from './googleDriveSync';
+import {
+  exchangeEnvelopesWithGoogleDrive,
+  restoreGoogleDriveSession,
+} from './googleDriveSync';
 import type {
   ClinicalAddendumData,
   ClinicalAddendumRecord,
@@ -66,6 +74,8 @@ export interface ClinicSyncConfig {
   lastSyncMode?: ClinicSyncMode;
   lastSyncSummary?: string;
   autoSyncOnReconnect: boolean;
+  autoSyncEnabled: boolean;
+  autoSyncIntervalMinutes: number;
 }
 
 export interface OfflineSyncOutboxRecord {
@@ -87,6 +97,140 @@ export interface ClinicSyncExecutionResult {
 
 const SYNC_CONFIG_STORAGE_KEY = 'physiorecord_clinic_sync_config_v1';
 const SYNC_OUTBOX_STORAGE_KEY = 'physiorecord_clinic_sync_outbox_v1';
+// skipcq: SCT-A000 - localStorage key identifier holding AES-GCM ciphertext encrypted with Vault DEK
+const SYNC_PASSPHRASE_ENC_STORAGE_KEY = 'physiorecord_clinic_sync_passphrase_enc_v1';
+const MAX_LOCALSTORAGE_OUTBOX_CHARS = 2 * 1024 * 1024;
+
+// Authoritative in-memory mirror so localStorage quota errors can never wipe typed LAN URL / token
+let cachedSyncConfig: ClinicSyncConfig | null = null;
+// Strictly in-memory session sync passphrase (cleared automatically on vault lock)
+let sessionSyncPassphrase = '';
+
+export function getSessionSyncPassphrase(): string {
+  return sessionSyncPassphrase;
+}
+
+export function setSessionSyncPassphrase(passphrase: string): void {
+  sessionSyncPassphrase = passphrase;
+}
+
+export function clearSessionSyncPassphrase(): void {
+  sessionSyncPassphrase = '';
+}
+
+function bytesToBase64Local(bytes: Uint8Array): string {
+  let binary = '';
+  for (let idx = 0; idx < bytes.length; idx++) {
+    binary += String.fromCharCode(bytes[idx]);
+  }
+  return btoa(binary);
+}
+
+function base64ToBytesLocal(b64: string): Uint8Array {
+  const binary = atob(b64);
+  const out = new Uint8Array(binary.length);
+  for (let idx = 0; idx < binary.length; idx++) {
+    out[idx] = binary.charCodeAt(idx);
+  }
+  return out;
+}
+
+export async function saveEncryptedSyncPassphrase(
+  dek: CryptoKey,
+  passphrase: string
+): Promise<void> {
+  const clean = passphrase.trim();
+  sessionSyncPassphrase = passphrase;
+  if (clean.length < 6) return;
+  try {
+    const { iv, ciphertext, recordSalt } = await encryptRecordWithMandatoryReservation(
+      db,
+      dek,
+      'clinicSyncPassphrase',
+      'default',
+      [],
+      { passphrase },
+      CURRENT_RECORD_CRYPTO_VERSION,
+      CURRENT_DEK_VERSION
+    );
+    localStorage.setItem(
+      SYNC_PASSPHRASE_ENC_STORAGE_KEY,
+      JSON.stringify({
+        ivB64: bytesToBase64Local(iv),
+        ciphertextB64: bytesToBase64Local(ciphertext),
+        recordSaltB64: recordSalt ? bytesToBase64Local(recordSalt) : undefined,
+        recordCryptoVersion: CURRENT_RECORD_CRYPTO_VERSION,
+        dekVersion: CURRENT_DEK_VERSION,
+      })
+    );
+  } catch {
+    // Non-fatal: passphrase still lives in RAM for the unlocked session
+  }
+}
+
+export async function loadEncryptedSyncPassphrase(dek: CryptoKey): Promise<string> {
+  if (sessionSyncPassphrase.trim().length >= 6) {
+    return sessionSyncPassphrase;
+  }
+  try {
+    const raw = localStorage.getItem(SYNC_PASSPHRASE_ENC_STORAGE_KEY);
+    if (!raw) return '';
+    const parsed = safeJsonParse<{
+      ciphertextB64?: string;
+      ivB64?: string;
+      recordSaltB64?: string;
+      recordCryptoVersion?: number;
+      dekVersion?: number;
+    }>(raw);
+    if (!parsed?.ciphertextB64 || !parsed?.ivB64) return '';
+    const decrypted = await decryptRecordPayload<{ passphrase?: string }>(
+      dek,
+      'clinicSyncPassphrase',
+      'default',
+      [],
+      base64ToBytesLocal(parsed.ivB64),
+      base64ToBytesLocal(parsed.ciphertextB64),
+      parsed.recordCryptoVersion || CURRENT_RECORD_CRYPTO_VERSION,
+      parsed.dekVersion || CURRENT_DEK_VERSION,
+      parsed.recordSaltB64 ? base64ToBytesLocal(parsed.recordSaltB64) : undefined
+    );
+    const restored = typeof decrypted?.passphrase === 'string' ? decrypted.passphrase : '';
+    if (restored.trim().length >= 6) {
+      sessionSyncPassphrase = restored;
+      return restored;
+    }
+  } catch {
+    // Ignore if vault DEK rotated or record invalid
+  }
+  return '';
+}
+
+/**
+ * Normalizes user-typed Clinic Wi-Fi (LAN) addresses so typing `192.168.1.15:47821`
+ * or `192.168.1.15` without `http://` works seamlessly.
+ */
+export function normalizeLanServerUrl(rawUrl: string): string {
+  const cleaned = String(rawUrl || '')
+    .trim()
+    .replace(/\s+/gu, '')
+    .replace(/\/+$/u, '');
+  if (!cleaned) return '';
+  if (/^https?:\/\//iu.test(cleaned)) {
+    return cleaned;
+  }
+  // Bare private IPv4 or .local hostname without scheme
+  if (/^[a-z0-9.-]+(?::\d{1,5})?$/iu.test(cleaned)) {
+    const hasPort = /:\d{1,5}$/u.test(cleaned);
+    return hasPort ? `http://${cleaned}` : `http://${cleaned}:${DEFAULT_LAN_SYNC_PORT}`;
+  }
+  return cleaned;
+}
+
+function clampAutoSyncIntervalMinutes(value: unknown): number {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 15;
+  return Math.max(1, Math.min(1440, Math.round(num)));
+}
 
 function generateDeviceId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -109,7 +253,7 @@ export function getClinicSyncConfig(): ClinicSyncConfig {
     const raw = localStorage.getItem(SYNC_CONFIG_STORAGE_KEY);
     if (raw) {
       const parsed = safeJsonParse<Partial<ClinicSyncConfig>>(raw);
-      return {
+      const resolved: ClinicSyncConfig = {
         mode: parsed.mode === 'lan' || parsed.mode === 'google_drive' ? parsed.mode : 'off',
         deviceId: isSafeSyncDeviceId(parsed.deviceId) ? parsed.deviceId : generateDeviceId(),
         deviceLabel: parsed.deviceLabel || getDefaultDeviceLabel(),
@@ -120,10 +264,18 @@ export function getClinicSyncConfig(): ClinicSyncConfig {
         lastSyncMode: parsed.lastSyncMode,
         lastSyncSummary: parsed.lastSyncSummary,
         autoSyncOnReconnect: parsed.autoSyncOnReconnect !== false,
+        autoSyncEnabled: parsed.autoSyncEnabled === true,
+        autoSyncIntervalMinutes: clampAutoSyncIntervalMinutes(parsed.autoSyncIntervalMinutes ?? 15),
       };
+      cachedSyncConfig = resolved;
+      return resolved;
     }
   } catch {
-    // fallback to default
+    // fallback to in-memory cache or fresh default
+  }
+
+  if (cachedSyncConfig) {
+    return { ...cachedSyncConfig };
   }
 
   const fresh: ClinicSyncConfig = {
@@ -133,13 +285,15 @@ export function getClinicSyncConfig(): ClinicSyncConfig {
     lanServerUrl: '',
     lanPairingToken: '',
     autoSyncOnReconnect: true,
+    autoSyncEnabled: false,
+    autoSyncIntervalMinutes: 15,
   };
   saveClinicSyncConfig(fresh);
   return fresh;
 }
 
 export function saveClinicSyncConfig(patch: Partial<ClinicSyncConfig>): ClinicSyncConfig {
-  const current = (() => {
+  const fromStorage = (() => {
     try {
       const raw = localStorage.getItem(SYNC_CONFIG_STORAGE_KEY);
       return raw ? safeJsonParse<Partial<ClinicSyncConfig>>(raw) : {};
@@ -148,23 +302,40 @@ export function saveClinicSyncConfig(patch: Partial<ClinicSyncConfig>): ClinicSy
     }
   })();
 
-  const next: ClinicSyncConfig = {
-    mode: patch.mode ?? current.mode ?? 'off',
-    deviceId: patch.deviceId ?? current.deviceId ?? generateDeviceId(),
-    deviceLabel: patch.deviceLabel ?? current.deviceLabel ?? getDefaultDeviceLabel(),
-    lanServerUrl: patch.lanServerUrl ?? current.lanServerUrl ?? '',
-    lanPairingToken: patch.lanPairingToken ?? current.lanPairingToken ?? '',
-    driveFolderId: patch.driveFolderId ?? current.driveFolderId,
-    lastSyncAt: patch.lastSyncAt ?? current.lastSyncAt,
-    lastSyncMode: patch.lastSyncMode ?? current.lastSyncMode,
-    lastSyncSummary: patch.lastSyncSummary ?? current.lastSyncSummary,
-    autoSyncOnReconnect: patch.autoSyncOnReconnect ?? current.autoSyncOnReconnect ?? true,
+  const base: Partial<ClinicSyncConfig> = {
+    ...fromStorage,
+    ...(cachedSyncConfig || {}),
   };
 
+  const next: ClinicSyncConfig = {
+    mode: patch.mode ?? base.mode ?? 'off',
+    deviceId: patch.deviceId ?? base.deviceId ?? generateDeviceId(),
+    deviceLabel: patch.deviceLabel ?? base.deviceLabel ?? getDefaultDeviceLabel(),
+    lanServerUrl: patch.lanServerUrl ?? base.lanServerUrl ?? '',
+    lanPairingToken: patch.lanPairingToken ?? base.lanPairingToken ?? '',
+    driveFolderId: patch.driveFolderId ?? base.driveFolderId,
+    lastSyncAt: patch.lastSyncAt ?? base.lastSyncAt,
+    lastSyncMode: patch.lastSyncMode ?? base.lastSyncMode,
+    lastSyncSummary: patch.lastSyncSummary ?? base.lastSyncSummary,
+    autoSyncOnReconnect: patch.autoSyncOnReconnect ?? base.autoSyncOnReconnect ?? true,
+    autoSyncEnabled: patch.autoSyncEnabled ?? base.autoSyncEnabled ?? false,
+    autoSyncIntervalMinutes: clampAutoSyncIntervalMinutes(
+      patch.autoSyncIntervalMinutes ?? base.autoSyncIntervalMinutes ?? 15
+    ),
+  };
+
+  cachedSyncConfig = next;
+  const serialized = JSON.stringify(next);
   try {
-    localStorage.setItem(SYNC_CONFIG_STORAGE_KEY, JSON.stringify(next));
+    localStorage.setItem(SYNC_CONFIG_STORAGE_KEY, serialized);
   } catch {
-    // ignore quota errors
+    // If localStorage is full (e.g. large offline outbox), evict outbox and retry saving config
+    try {
+      localStorage.removeItem(SYNC_OUTBOX_STORAGE_KEY);
+      localStorage.setItem(SYNC_CONFIG_STORAGE_KEY, serialized);
+    } catch {
+      // Keep authoritative in-memory cachedSyncConfig intact
+    }
   }
   return next;
 }
@@ -196,7 +367,11 @@ export function queueOfflineSyncEnvelope(
     reason,
   };
   try {
-    localStorage.setItem(SYNC_OUTBOX_STORAGE_KEY, JSON.stringify(record));
+    const serialized = JSON.stringify(record);
+    // Keep outbox bounded so localStorage quota is never exhausted (preserving sync config)
+    if (serialized.length <= MAX_LOCALSTORAGE_OUTBOX_CHARS) {
+      localStorage.setItem(SYNC_OUTBOX_STORAGE_KEY, serialized);
+    }
   } catch {
     // ignore storage quota errors on extreme payloads
   }
@@ -649,8 +824,17 @@ function summarizeStatsEn(stats: SyncMergeStats, peers: number): string {
   return `Merged ${totalIncoming} incoming record(s) from ${peers} device(s) (${stats.patientsAdded} new patients, ${stats.sessionsAdded} new sessions, ${stats.invoicesMerged} invoices).`;
 }
 
+class ClinicSyncFatalError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ClinicSyncFatalError';
+  }
+}
+
 /**
- * Option 1: Non-Destructive Local Wi-Fi (LAN Hub) Sync with Offline Outbox fallback.
+ * Option 1: Safe Local Wi-Fi (LAN Hub) Sync with Offline Outbox fallback.
+ * Routes through native Electron Main Process or native Android TCP socket
+ * strictly to private RFC1918 LAN addresses.
  */
 export async function syncWithLocalLanHub(params: {
   dek: CryptoKey;
@@ -659,7 +843,7 @@ export async function syncWithLocalLanHub(params: {
   pairingToken?: string;
 }): Promise<ClinicSyncExecutionResult> {
   const config = getClinicSyncConfig();
-  const targetUrl = (params.serverUrl ?? config.lanServerUrl).trim().replace(/\/+$/, '');
+  const targetUrl = normalizeLanServerUrl(params.serverUrl ?? config.lanServerUrl);
   const token = (params.pairingToken ?? config.lanPairingToken).trim();
 
   if (!targetUrl || !token) {
@@ -667,15 +851,17 @@ export async function syncWithLocalLanHub(params: {
   }
   if (!isPrivateLanSyncUrl(targetUrl)) {
     throw new Error(
-      'عنوان خادم الواي فاي غير مسموح به أمنياً — يُسمح فقط بعناوين الشبكة المحلية (مثل 192.168.x.x أو 10.x.x.x أو localhost).'
+      'عنوان خادم الواي فاي غير صالح — أدخل عنوان الشبكة المحلية الظاهر على الحاسبة (مثل 192.168.1.15:47821).'
     );
   }
 
+  await saveEncryptedSyncPassphrase(params.dek, params.passphrase);
   const localPayload = await collectLocalClinicSyncPayload(params.dek);
   const localEnvelope = await encryptSyncEnvelope(localPayload, params.passphrase);
 
   try {
     const electronBridge = getElectronDesktopBridge();
+    const androidPlugin = getAndroidNativePlugin();
     let peerEnvelopes: EncryptedSyncEnvelope[] = [];
 
     if (electronBridge?.lanSyncExchange) {
@@ -685,16 +871,48 @@ export async function syncWithLocalLanHub(params: {
         envelope: localEnvelope,
       });
       if (!res.ok) {
-        throw new Error(res.error || 'تعذّر الاتصال بخادم العيادة المحلي.');
+        const errText = res.error || '';
+        if (/401|Unauthorized|pairing token/iu.test(errText)) {
+          throw new ClinicSyncFatalError(
+            'رمز الاقتران غير صحيح — تأكد من مطابقة الرمز الظاهر على حاسبة العيادة.'
+          );
+        }
+        throw new Error(errText || 'تعذّر الاتصال بخادم العيادة المحلي.');
       }
       peerEnvelopes = (res.peerEnvelopes || []) as EncryptedSyncEnvelope[];
+    } else if (androidPlugin?.lanSyncExchange) {
+      const res = await androidPlugin.lanSyncExchange({
+        serverUrl: targetUrl,
+        pairingToken: token,
+        bodyJson: JSON.stringify({ envelope: localEnvelope }),
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new ClinicSyncFatalError(
+            'رمز الاقتران غير صحيح — تأكد من مطابقة الرمز الظاهر على حاسبة العيادة.'
+          );
+        }
+        if (res.status === 429) {
+          throw new ClinicSyncFatalError(
+            'تم تجاوز عدد المحاولات المسموح بها — انتظر قليلاً وتأكد من رمز الاقتران.'
+          );
+        }
+        if (!res.networkError && res.error) {
+          throw new ClinicSyncFatalError(res.error);
+        }
+        throw new Error(res.error || 'LAN Hub unreachable');
+      }
+      const parsed = res.responseJson
+        ? safeJsonParse<{ peerEnvelopes?: EncryptedSyncEnvelope[] }>(res.responseJson)
+        : null;
+      peerEnvelopes = Array.isArray(parsed?.peerEnvelopes) ? parsed.peerEnvelopes : [];
     } else {
       const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
       const timeoutId = controller ? setTimeout(() => controller.abort(), 12000) : null;
       try {
         const lanExchangeEndpoint = new URL('/api/sync/exchange', `${targetUrl}/`);
         if (!isPrivateLanSyncUrl(lanExchangeEndpoint.origin)) {
-          throw new Error('Blocked non-LAN exchange origin.');
+          throw new ClinicSyncFatalError('Blocked non-LAN exchange origin.');
         }
         const response = await fetch(lanExchangeEndpoint.toString(), {
           method: 'POST',
@@ -706,12 +924,22 @@ export async function syncWithLocalLanHub(params: {
           redirect: 'error',
           signal: controller?.signal,
         });
+        if (response.status === 401) {
+          throw new ClinicSyncFatalError(
+            'رمز الاقتران غير صحيح — تأكد من مطابقة الرمز الظاهر على حاسبة العيادة.'
+          );
+        }
+        if (response.status === 429) {
+          throw new ClinicSyncFatalError(
+            'تم تجاوز عدد المحاولات المسموح بها — انتظر قليلاً وتأكد من رمز الاقتران.'
+          );
+        }
         if (!response.ok) {
-          throw new Error(`خادم العيادة رفض الطلب (${response.status}). تحقق من رمز الاقتران.`);
+          throw new ClinicSyncFatalError('رفض خادم العيادة الطلب — تحقق من رمز الاقتران والمحاولة مرة أخرى.');
         }
         const rawText = await response.text();
         if (rawText.length > 40 * 1024 * 1024) {
-          throw new Error('استجابة خادم الواي فاي تتجاوز الحد الآمن للحجم.');
+          throw new ClinicSyncFatalError('استجابة خادم الواي فاي تتجاوز الحد الآمن للحجم.');
         }
         const data = safeJsonParse<{ peerEnvelopes?: EncryptedSyncEnvelope[] }>(rawText);
         peerEnvelopes = Array.isArray(data?.peerEnvelopes) ? data.peerEnvelopes : [];
@@ -720,12 +948,24 @@ export async function syncWithLocalLanHub(params: {
       }
     }
 
-    const { stats, peerPayloadsCount } = await decryptAndApplyPeerEnvelopes(
-      localPayload,
-      peerEnvelopes,
-      params.passphrase,
-      params.dek
-    );
+    let stats: SyncMergeStats;
+    let peerPayloadsCount: number;
+    try {
+      const merged = await decryptAndApplyPeerEnvelopes(
+        localPayload,
+        peerEnvelopes,
+        params.passphrase,
+        params.dek
+      );
+      stats = merged.stats;
+      peerPayloadsCount = merged.peerPayloadsCount;
+    } catch (decryptErr) {
+      throw new ClinicSyncFatalError(
+        decryptErr instanceof Error
+          ? decryptErr.message
+          : 'كلمة سر المزامنة المشتركة غير مطابقة لملفات الجهاز الآخر.'
+      );
+    }
 
     clearOfflineSyncOutbox();
     const messageAr = summarizeStatsAr(stats, peerPayloadsCount);
@@ -747,6 +987,9 @@ export async function syncWithLocalLanHub(params: {
       messageEn,
     };
   } catch (err) {
+    if (err instanceof ClinicSyncFatalError) {
+      throw err;
+    }
     // PC/LAN Hub is offline or turned off -> Queue encrypted envelope locally so zero work is lost!
     const reason = err instanceof Error ? err.message : 'LAN Hub offline';
     queueOfflineSyncEnvelope('lan', localEnvelope, reason);
@@ -755,22 +998,22 @@ export async function syncWithLocalLanHub(params: {
       queuedOffline: true,
       peerEnvelopesCount: 0,
       messageAr:
-        'حاسبة العيادة (خادم الواي فاي) غير متصلة حالياً — تم حفظ حزمة التغييرات المشفّرة في صندوق المزامنة المحلي وسيتم إرسالها تلقائياً عند تشغيل الحاسبة دون فقدان أي سجل.',
+        'تعذّر الوصول لحاسبة العيادة عبر الواي فاي حالياً — تأكد إن المزامنة شغّالة على الحاسبة وإن الجهازين على نفس الراوتر (وإذا كان جدار الحماية في ويندوز يمنع المنفذ فاسمح للتطبيق). تم حفظ التغييرات محلياً بأمان.',
       messageEn:
-        'Clinic LAN Hub is currently offline — your encrypted changes were safely queued in the local outbox and will sync once the clinic PC is back on.',
+        'Could not reach the Clinic PC over Wi-Fi right now — check that Wi-Fi Sync is started on the PC and both devices are on the same router. Changes were safely queued locally.',
     };
   }
 }
 
 /**
  * Option 2: Encrypted Google Drive Clinic Sync ($0 ongoing cost, BYOC).
- * MUST only be called after explicit user confirmation dialog in UI.
  */
 export async function syncWithEncryptedGoogleDrive(params: {
   dek: CryptoKey;
   passphrase: string;
 }): Promise<ClinicSyncExecutionResult> {
   const config = getClinicSyncConfig();
+  await saveEncryptedSyncPassphrase(params.dek, params.passphrase);
   const localPayload = await collectLocalClinicSyncPayload(params.dek);
   const localEnvelope = await encryptSyncEnvelope(localPayload, params.passphrase);
 
@@ -949,4 +1192,93 @@ export async function syncWithDesktopSyncFolder(params: {
     messageAr,
     messageEn,
   };
+}
+
+let autoSyncInFlight = false;
+
+/**
+ * Runs one silent periodic auto-sync cycle (for either Google Drive or Clinic Wi-Fi)
+ * ONLY when the user explicitly opted into `autoSyncEnabled` and unlocked the vault.
+ * Performs ZERO network calls when disabled.
+ */
+export async function runPeriodicAutoSyncOnce(params: {
+  dek: CryptoKey;
+  onPatientsUpdated?: () => Promise<void> | void;
+}): Promise<boolean> {
+  if (autoSyncInFlight) return false;
+  const config = getClinicSyncConfig();
+  if (!config.autoSyncEnabled || config.mode === 'off') {
+    return false;
+  }
+
+  const passphrase = await loadEncryptedSyncPassphrase(params.dek);
+  if (passphrase.trim().length < 6) {
+    return false;
+  }
+
+  autoSyncInFlight = true;
+  try {
+    if (config.mode === 'google_drive') {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        return false;
+      }
+      const auth = await restoreGoogleDriveSession();
+      if (!auth.isSignedIn) {
+        return false;
+      }
+      // On Web/iPhone PWA without a fresh token, avoid unexpected background popups
+      if (!isNativeAndroid() && !isElectronDesktop() && !auth.hasDriveToken) {
+        return false;
+      }
+      const res = await syncWithEncryptedGoogleDrive({
+        dek: params.dek,
+        passphrase,
+      });
+      if (res.ok) {
+        await params.onPatientsUpdated?.();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('physiorecord:sync-updated'));
+        }
+        return true;
+      }
+      return false;
+    }
+
+    if (config.mode === 'lan') {
+      let targetUrl = config.lanServerUrl;
+      let targetToken = config.lanPairingToken;
+
+      const electronBridge = getElectronDesktopBridge();
+      if (electronBridge?.getLanSyncHubStatus) {
+        const hubStatus = await electronBridge.getLanSyncHubStatus().catch(() => null);
+        if (hubStatus?.running && hubStatus.urls[0] && hubStatus.pairingToken) {
+          targetUrl = hubStatus.urls[0];
+          targetToken = hubStatus.pairingToken;
+        }
+      }
+
+      if (!targetUrl.trim() || !targetToken.trim()) {
+        return false;
+      }
+
+      const res = await syncWithLocalLanHub({
+        dek: params.dek,
+        passphrase,
+        serverUrl: targetUrl,
+        pairingToken: targetToken,
+      });
+      if (res.ok) {
+        await params.onPatientsUpdated?.();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('physiorecord:sync-updated'));
+        }
+        return true;
+      }
+    }
+    return false;
+  } catch {
+    return false;
+  } finally {
+    autoSyncInFlight = false;
+  }
 }

@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Clock,
   Cloud,
   Copy,
   Download,
@@ -29,6 +30,7 @@ import {
   Wifi,
   WifiOff,
   AlertTriangle,
+  X,
 } from 'lucide-react';
 import { DEFAULT_LAN_SYNC_PORT } from '../../config/appConstants';
 import { useLanguage } from '../../context/LanguageContext';
@@ -47,7 +49,11 @@ import {
   getClinicSyncConfig,
   getOfflineSyncOutbox,
   importAndMergeEncryptedSyncFile,
+  loadEncryptedSyncPassphrase,
+  normalizeLanServerUrl,
   saveClinicSyncConfig,
+  saveEncryptedSyncPassphrase,
+  setSessionSyncPassphrase,
   syncWithDesktopSyncFolder,
   syncWithEncryptedGoogleDrive,
   syncWithLocalLanHub,
@@ -97,6 +103,10 @@ export const ClinicSyncSettingsTab: React.FC = () => {
   const builtInGoogleOAuth = hasBuiltInNativeGoogleOAuth();
 
   const [config, setConfig] = useState<ClinicSyncConfig>(() => getClinicSyncConfig());
+  const [lanUrlInput, setLanUrlInput] = useState<string>(() => getClinicSyncConfig().lanServerUrl);
+  const [lanTokenInput, setLanTokenInput] = useState<string>(
+    () => getClinicSyncConfig().lanPairingToken
+  );
   const [outbox, setOutbox] = useState<OfflineSyncOutboxRecord | null>(() => getOfflineSyncOutbox());
   const [syncPassphrase, setSyncPassphrase] = useState('');
   const [showPassphrase, setShowPassphrase] = useState(false);
@@ -119,7 +129,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
     folderName?: string;
   }>({ configured: false });
 
-  // Google Drive Auth state (in-memory only)
+  // Google Drive Auth state (in-memory + native Keystore/DPAPI restore)
   const [driveAuth, setDriveAuth] = useState<GoogleDriveAuthState>(() => getGoogleDriveAuthState());
   const [showDriveConfirmModal, setShowDriveConfirmModal] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
@@ -154,10 +164,28 @@ export const ClinicSyncSettingsTab: React.FC = () => {
       .catch(() => {
         // Ignore local session restore errors
       });
+    if (dek) {
+      loadEncryptedSyncPassphrase(dek)
+        .then((savedPassphrase) => {
+          if (active && savedPassphrase) {
+            setSyncPassphrase((prev) => (prev.trim().length >= 6 ? prev : savedPassphrase));
+          }
+        })
+        .catch(() => {
+          // Ignore passphrase restore errors
+        });
+    }
+    const handleSyncUpdated = () => {
+      if (!active) return;
+      setConfig(getClinicSyncConfig());
+      setOutbox(getOfflineSyncOutbox());
+    };
+    window.addEventListener('physiorecord:sync-updated', handleSyncUpdated);
     return () => {
       active = false;
+      window.removeEventListener('physiorecord:sync-updated', handleSyncUpdated);
     };
-  }, [electronBridge]);
+  }, [electronBridge, dek]);
 
   const requireSyncPassphrase = (actionLabelAr?: string, actionLabelEn?: string): boolean => {
     if (syncPassphrase.trim().length >= 6) {
@@ -184,13 +212,98 @@ export const ClinicSyncSettingsTab: React.FC = () => {
     setConfig(next);
     setFeedback(null);
     setPassphraseError(false);
+    window.dispatchEvent(new CustomEvent('physiorecord:sync-config-changed'));
   };
 
-  const handleCopy = (key: string, text: string) => {
-    if (navigator?.clipboard?.writeText) {
-      void navigator.clipboard.writeText(text);
+  const handleToggleAutoSync = async (enabled: boolean) => {
+    if (enabled) {
+      if (
+        !requireSyncPassphrase(
+          'لتفعيل المزامنة التلقائية الدورية',
+          'to enable periodic automatic sync'
+        )
+      ) {
+        return;
+      }
+      if (dek) {
+        await saveEncryptedSyncPassphrase(dek, syncPassphrase);
+      }
+    }
+    const next = saveClinicSyncConfig({ autoSyncEnabled: enabled });
+    setConfig(next);
+    window.dispatchEvent(new CustomEvent('physiorecord:sync-config-changed'));
+    setFeedback({
+      kind: enabled ? 'success' : 'info',
+      text: enabled
+        ? bi(
+            `تم تفعيل المزامنة التلقائية كل ${next.autoSyncIntervalMinutes} دقيقة بنجاح.`,
+            `Periodic auto-sync enabled every ${next.autoSyncIntervalMinutes} minute(s).`
+          )
+        : bi('تم إيقاف المزامنة التلقائية الدورية.', 'Periodic auto-sync turned off.'),
+    });
+  };
+
+  const handleAutoSyncIntervalChange = (minutes: number) => {
+    const next = saveClinicSyncConfig({ autoSyncIntervalMinutes: minutes });
+    setConfig(next);
+    window.dispatchEvent(new CustomEvent('physiorecord:sync-config-changed'));
+  };
+
+  const handleCopy = async (key: string, text: string) => {
+    const cleanText = String(text || '');
+    if (!cleanText) return;
+    let copied = false;
+
+    // 1. Native Electron Main-Process clipboard (bypasses app://bundle permission denial)
+    if (electronBridge?.copyText) {
+      try {
+        const res = await electronBridge.copyText(cleanText);
+        copied = Boolean(res?.copied);
+      } catch {
+        copied = false;
+      }
+    }
+
+    // 2. Standard Async Clipboard API
+    if (!copied && navigator?.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(cleanText);
+        copied = true;
+      } catch {
+        copied = false;
+      }
+    }
+
+    // 3. Legacy textarea fallback for WebViews / restricted contexts
+    if (!copied && typeof document !== 'undefined') {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = cleanText;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        textarea.style.pointerEvents = 'none';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        copied = document.execCommand('copy');
+        document.body.removeChild(textarea);
+      } catch {
+        copied = false;
+      }
+    }
+
+    if (copied) {
       setCopiedField(key);
       setTimeout(() => setCopiedField(null), 1800);
+    } else {
+      setFeedback({
+        kind: 'error',
+        text: bi(
+          'تعذّر النسخ تلقائياً — يمكنك تحديد النص ونسخه يدوياً.',
+          'Could not copy automatically — please select and copy the text manually.'
+        ),
+      });
     }
   };
 
@@ -215,6 +328,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             lanPairingToken: st.pairingToken,
           });
           setConfig(updated);
+          setLanUrlInput(st.urls[0]);
+          setLanTokenInput(st.pairingToken);
           setFeedback({
             kind: 'success',
             text: bi(
@@ -235,20 +350,37 @@ export const ClinicSyncSettingsTab: React.FC = () => {
       return;
     }
 
+    const normalizedUrl = normalizeLanServerUrl(lanUrlInput);
+    const trimmedToken = lanTokenInput.trim();
+    if (!normalizedUrl || !trimmedToken) {
+      setFeedback({
+        kind: 'error',
+        text: bi(
+          'يرجى كتابة رابط العيادة على الواي فاي (مثل 192.168.1.15:47821) ورمز الاقتران أولاً.',
+          'Please enter the Clinic Wi-Fi Link (e.g. 192.168.1.15:47821) and Pairing Code first.'
+        ),
+      });
+      return;
+    }
+
     setBusyAction('lan-sync');
     setFeedback(null);
     try {
-      saveClinicSyncConfig({
+      setLanUrlInput(normalizedUrl);
+      setLanTokenInput(trimmedToken);
+      const saved = saveClinicSyncConfig({
         mode: 'lan',
-        lanServerUrl: config.lanServerUrl,
-        lanPairingToken: config.lanPairingToken,
+        lanServerUrl: normalizedUrl,
+        lanPairingToken: trimmedToken,
         deviceLabel: config.deviceLabel,
       });
+      setConfig(saved);
+
       const res = await syncWithLocalLanHub({
         dek,
         passphrase: syncPassphrase,
-        serverUrl: config.lanServerUrl,
-        pairingToken: config.lanPairingToken,
+        serverUrl: normalizedUrl,
+        pairingToken: trimmedToken,
       });
       setConfig(getClinicSyncConfig());
       setOutbox(getOfflineSyncOutbox());
@@ -607,8 +739,127 @@ export const ClinicSyncSettingsTab: React.FC = () => {
     await handleImportRawSyncText(text);
   };
 
+  const AUTO_SYNC_INTERVAL_OPTIONS = [
+    { minutes: 5, labelAr: 'كل 5 دقائق', labelEn: 'Every 5 min' },
+    { minutes: 15, labelAr: 'كل 15 دقيقة', labelEn: 'Every 15 min' },
+    { minutes: 30, labelAr: 'كل 30 دقيقة', labelEn: 'Every 30 min' },
+    { minutes: 60, labelAr: 'كل ساعة', labelEn: 'Every 1 hr' },
+    { minutes: 120, labelAr: 'كل ساعتين', labelEn: 'Every 2 hrs' },
+  ];
+
+  const renderPeriodicAutoSyncBox = (targetAr: string, targetEn: string) => (
+    <div
+      data-testid="periodic-auto-sync-card"
+      className="p-3.5 rounded-xl bg-surface/80 border border-line-2 space-y-3"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+            <Clock className="size-4" />
+          </div>
+          <div className="space-y-0.5 min-w-0">
+            <div className="text-xs font-extrabold text-foreground">
+              {bi(`المزامنة التلقائية الدورية (${targetAr})`, `Periodic Auto-Sync (${targetEn})`)}
+            </div>
+            <p className="text-xs text-muted-foreground-1 leading-relaxed">
+              {bi(
+                'يزامن التطبيق سجلاتك تلقائياً بالخلفية حسب المدة التي تختارها دون الحاجة للضغط يدوياً.',
+                'Automatically syncs your records in the background on your chosen interval.'
+              )}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={config.autoSyncEnabled}
+          data-testid="toggle-periodic-auto-sync-btn"
+          onClick={() => handleToggleAutoSync(!config.autoSyncEnabled)}
+          className={`h-8 px-3.5 rounded-xl text-xs font-extrabold transition-colors cursor-pointer shrink-0 ${
+            config.autoSyncEnabled
+              ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              : 'bg-card hover:bg-surface border border-line-2 text-foreground'
+          }`}
+        >
+          {config.autoSyncEnabled
+            ? bi('مفعّلة ✓', 'Enabled ✓')
+            : bi('تفعيل المزامنة التلقائية', 'Enable Auto-Sync')}
+        </button>
+      </div>
+
+      {config.autoSyncEnabled && (
+        <div className="pt-2 border-t border-card-divider space-y-2">
+          <div className="text-xs font-bold text-foreground">
+            {bi('مدة تكرار المزامنة:', 'Sync interval:')}
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {AUTO_SYNC_INTERVAL_OPTIONS.map((opt) => {
+              const selected = config.autoSyncIntervalMinutes === opt.minutes;
+              return (
+                <button
+                  key={opt.minutes}
+                  type="button"
+                  onClick={() => handleAutoSyncIntervalChange(opt.minutes)}
+                  className={`h-8 px-3 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                    selected
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card hover:bg-surface border border-line-2 text-foreground'
+                  }`}
+                >
+                  {bi(opt.labelAr, opt.labelEn)}
+                </button>
+              );
+            })}
+            <label className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground-1 ms-1">
+              <span>{bi('أو مخصص (دقيقة):', 'Or custom (min):')}</span>
+              <input
+                type="number"
+                min={1}
+                max={1440}
+                dir="ltr"
+                value={config.autoSyncIntervalMinutes}
+                onChange={(e) => {
+                  const parsed = Number.parseInt(e.target.value, 10);
+                  if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 1440) {
+                    handleAutoSyncIntervalChange(parsed);
+                  }
+                }}
+                className="w-16 h-8 px-2 rounded-lg bg-card border border-line-2 text-xs font-mono text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary/25"
+              />
+            </label>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-4" data-testid="clinic-sync-settings-tab">
+      {/* Sticky Always-Visible Feedback Banner (stays visible even when scrolled down on phone/PC) */}
+      {feedback && (
+        <div
+          role={feedback.kind === 'error' ? 'alert' : 'status'}
+          data-testid="clinic-sync-feedback"
+          className={`sticky top-1 z-30 p-3.5 rounded-2xl border shadow-md flex items-start justify-between gap-2.5 text-xs font-bold leading-relaxed ${
+            feedback.kind === 'error'
+              ? 'bg-rose-50 dark:bg-rose-950/95 border-rose-300 dark:border-rose-700 text-rose-800 dark:text-rose-200'
+              : feedback.kind === 'info'
+                ? 'bg-amber-50 dark:bg-amber-950/95 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200'
+                : 'bg-emerald-50 dark:bg-emerald-950/95 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200'
+          }`}
+        >
+          <span className="min-w-0 flex-1">{feedback.text}</span>
+          <button
+            type="button"
+            onClick={() => setFeedback(null)}
+            aria-label={bi('إغلاق الإشعار', 'Dismiss notice')}
+            className="size-6 rounded-lg inline-flex items-center justify-center shrink-0 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Header Guarantee Banner */}
       <div className="p-4 rounded-2xl bg-card border border-card-line space-y-2">
         <div className="flex items-start gap-3">
@@ -629,8 +880,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
                 <CheckCircle2 className="size-3.5" />
                 {bi(
-                  'دمج آمن — لا يحذف السجلات تلقائياً ويزامن الحذف المؤكّد بشواهد مشفّرة',
-                  'Safe merge — ordinary absence never deletes; explicit deletions sync via encrypted tombstones'
+                  'دمج آمن — يحفظ التعديلات ويزامن الحذف المؤكّد بين أجهزتك فقط',
+                  'Safe merge — preserves edits and syncs confirmed deletions across your devices'
                 )}
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary">
@@ -675,23 +926,6 @@ export const ClinicSyncSettingsTab: React.FC = () => {
           >
             {bi('إخفاء', 'Dismiss')}
           </button>
-        </div>
-      )}
-
-      {/* Feedback Banner */}
-      {feedback && (
-        <div
-          role="status"
-          data-testid="clinic-sync-feedback"
-          className={`p-3.5 rounded-2xl border text-xs font-bold leading-relaxed ${
-            feedback.kind === 'error'
-              ? 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400'
-              : feedback.kind === 'info'
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300'
-                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
-          }`}
-        >
-          {feedback.text}
         </div>
       )}
 
@@ -777,8 +1011,17 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                   type={showPassphrase ? 'text' : 'password'}
                   value={syncPassphrase}
                   onChange={(e) => {
-                    setSyncPassphrase(e.target.value);
-                    if (e.target.value.trim().length >= 6) setPassphraseError(false);
+                    const nextVal = e.target.value;
+                    setSyncPassphrase(nextVal);
+                    setSessionSyncPassphrase(nextVal);
+                    if (nextVal.trim().length >= 6) setPassphraseError(false);
+                  }}
+                  onBlur={() => {
+                    if (dek && syncPassphrase.trim().length >= 6) {
+                      saveEncryptedSyncPassphrase(dek, syncPassphrase).catch(() => {
+                        // Ignore storage errors
+                      });
+                    }
                   }}
                   placeholder={bi('مثلاً: Clinic2026 (اكتب نفس الكلمة في الموبايل والحاسبة)', 'e.g. Clinic2026 (use the same password on all devices)')}
                   className={`w-full h-10 ps-3 pe-10 rounded-xl bg-surface border text-xs text-foreground focus:outline-none focus:ring-2 ${
@@ -983,8 +1226,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
               </ol>
               <p className="text-xs text-muted-foreground-2 pt-1 border-t border-card-divider">
                 {bi(
-                  'ملاحظة: إذا كانت حاسبة العيادة مطفأة، أكمل تسجيل مرضاك عادي أوفلاين؛ بياناتك محفوظة ولا يُحذف منها شيء، وتتم المزامنة عندما تُفتح الحاسبة لاحقاً. (وإذا أردت المزامنة بأي وقت حتى والحاسبة مطفأة، اختر Google Drive المشفّر).',
-                  'Note: If the clinic PC is off, keep working offline safely—nothing is deleted and changes sync once the PC is back on. (For 24/7 sync even when the PC is off, choose Encrypted Google Drive.)'
+                  'ملاحظة: إذا كانت حاسبة العيادة مطفأة، أكمل تسجيل مرضاك عادي أوفلاين؛ بياناتك محفوظة بأمان وتتم المزامنة عندما تُفتح الحاسبة لاحقاً. (وإذا أردت المزامنة بأي وقت حتى والحاسبة مطفأة، اختر Google Drive المشفّر).',
+                  'Note: If the clinic PC is off, keep working offline safely—your changes sync once the PC is back on. (For 24/7 sync even when the PC is off, choose Encrypted Google Drive.)'
                 )}
               </p>
             </div>
@@ -1000,19 +1243,29 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                 id="lan-url-input"
                 type="text"
                 dir="ltr"
-                value={config.lanServerUrl}
+                value={lanUrlInput}
                 onChange={(e) => {
                   const raw = e.target.value;
                   if (raw.includes('|')) {
                     const [urlPart, tokenPart] = raw.split('|');
+                    const nextUrl = (urlPart || '').trim() || lanUrlInput;
+                    const nextToken = (tokenPart || '').trim() || lanTokenInput;
+                    setLanUrlInput(nextUrl);
+                    setLanTokenInput(nextToken);
                     setConfig(
                       saveClinicSyncConfig({
-                        lanServerUrl: (urlPart || '').trim(),
-                        lanPairingToken: (tokenPart || '').trim(),
+                        lanServerUrl: nextUrl,
+                        lanPairingToken: nextToken,
                       })
                     );
                   } else {
-                    setConfig(saveClinicSyncConfig({ lanServerUrl: raw }));
+                    setLanUrlInput(raw);
+                    setConfig(
+                      saveClinicSyncConfig({
+                        lanServerUrl: raw,
+                        lanPairingToken: lanTokenInput,
+                      })
+                    );
                   }
                 }}
                 placeholder="http://192.168.1.15:47821"
@@ -1027,8 +1280,17 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                 id="lan-token-input"
                 type="text"
                 dir="ltr"
-                value={config.lanPairingToken}
-                onChange={(e) => setConfig(saveClinicSyncConfig({ lanPairingToken: e.target.value }))}
+                value={lanTokenInput}
+                onChange={(e) => {
+                  const nextToken = e.target.value;
+                  setLanTokenInput(nextToken);
+                  setConfig(
+                    saveClinicSyncConfig({
+                      lanServerUrl: lanUrlInput,
+                      lanPairingToken: nextToken,
+                    })
+                  );
+                }}
                 placeholder="A1B2C3D4E5F6"
                 className="w-full h-10 px-3 rounded-xl bg-surface border border-line-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
               />
@@ -1046,11 +1308,13 @@ export const ClinicSyncSettingsTab: React.FC = () => {
               <RefreshCw className={`size-4 ${busyAction === 'lan-sync' ? 'animate-spin' : ''}`} />
               <span>
                 {busyAction === 'lan-sync'
-                  ? bi('جاري الدمج المشفّر...', 'Syncing...')
-                  : bi('مزامنة الآن عبر الواي فاي (دمج بدون حذف)', 'Sync Now via Wi-Fi (Non-Destructive)')}
+                  ? bi('جاري المزامنة والدمج...', 'Syncing...')
+                  : bi('مزامنة الآن عبر الواي فاي', 'Sync Now via Wi-Fi')}
               </span>
             </button>
           </div>
+
+          {renderPeriodicAutoSyncBox('واي فاي العيادة', 'Clinic Wi-Fi')}
         </div>
       )}
 
@@ -1301,14 +1565,6 @@ export const ClinicSyncSettingsTab: React.FC = () => {
           )}
 
           {/* METHOD 2: Direct Google Account Sign-In (Web | Built-In Native OAuth) */}
-          {!driveAuth.isSignedIn && feedback?.kind === 'error' && (
-            <div
-              role="alert"
-              className="p-3 rounded-xl border bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs font-bold leading-relaxed"
-            >
-              {feedback.text}
-            </div>
-          )}
           {!driveAuth.isSignedIn ? (
             !isNativeAppPlatform || builtInGoogleOAuth ? (
               <div className="p-4 rounded-xl bg-surface/80 border border-line-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1380,6 +1636,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
               </div>
             </div>
           )}
+
+          {driveAuth.isSignedIn && renderPeriodicAutoSyncBox('Google Drive', 'Google Drive')}
 
           {/* Simple Non-Technical Guide for Clinic Owners */}
           <div className="rounded-2xl border border-card-line bg-surface/50 overflow-hidden">
@@ -1472,8 +1730,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
             </h4>
             <p className="text-xs text-muted-foreground-1 mt-0.5">
               {bi(
-                'خيار احتياطي يعمل دائماً — احفظ ملفاً مقفلاً بكلمة سرك وأرسله لجهازك الآخر لدمج المرضى بدون حذف أي سجل.',
-                'Always-available backup option — save a password-locked file and import it on your other device without deleting anything.'
+                'خيار احتياطي يعمل دائماً — احفظ ملفاً مقفلاً بكلمة سرك وأرسله لجهازك الآخر لدمج السجلات ومزامنة الحذف المؤكّد بأمان.',
+                'Always-available backup option — save a password-locked file and import it on your other device for safe record merge and confirmed deletion sync.'
               )}
             </p>
           </div>

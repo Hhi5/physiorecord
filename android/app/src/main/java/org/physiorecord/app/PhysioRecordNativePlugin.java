@@ -58,6 +58,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -1015,6 +1016,208 @@ public class PhysioRecordNativePlugin extends Plugin {
                 call.resolve(ret);
             } catch (Exception ignored) {
                 call.reject("Google session refresh failed.");
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // 5c. Native Local Wi-Fi (LAN) Clinic Sync Exchange
+    //     Sends strictly AES-256-GCM encrypted sync envelopes over the clinic's
+    //     private RFC1918 Wi-Fi router without loosening WebView mixed-content
+    //     or internet cleartext restrictions.
+    // -----------------------------------------------------------------------
+    private static boolean isPrivateLanHost(String rawHost) {
+        if (rawHost == null) return false;
+        String host = rawHost.trim().toLowerCase(java.util.Locale.ROOT);
+        if (host.isEmpty() || host.length() > 253) return false;
+        if ("localhost".equals(host) || "127.0.0.1".equals(host)) return true;
+        if (host.matches("^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.local$")) return true;
+        String[] parts = host.split("\\.");
+        if (parts.length != 4) return false;
+        int[] octets = new int[4];
+        for (int idx = 0; idx < 4; idx++) {
+            String part = parts[idx];
+            if (part.isEmpty() || (part.length() > 1 && part.startsWith("0"))) return false;
+            try {
+                int val = Integer.parseInt(part);
+                if (val < 0 || val > 255) return false;
+                octets[idx] = val;
+            } catch (NumberFormatException ignored) {
+                return false;
+            }
+        }
+        int first = octets[0];
+        int second = octets[1];
+        if (first == 10) return true;
+        if (first == 172 && second >= 16 && second <= 31) return true;
+        if (first == 192 && second == 168) return true;
+        return first == 127;
+    }
+
+    private static byte[] decodeChunkedHttpBody(byte[] raw) {
+        ByteArrayOutputStream decoded = new ByteArrayOutputStream();
+        int pos = 0;
+        while (pos < raw.length) {
+            int lineEnd = -1;
+            for (int idx = pos; idx < raw.length - 1; idx++) {
+                if (raw[idx] == '\r' && raw[idx + 1] == '\n') {
+                    lineEnd = idx;
+                    break;
+                }
+            }
+            if (lineEnd < 0) break;
+            String sizeLine = new String(raw, pos, lineEnd - pos, StandardCharsets.US_ASCII).trim();
+            int semiIdx = sizeLine.indexOf(';');
+            if (semiIdx >= 0) {
+                sizeLine = sizeLine.substring(0, semiIdx).trim();
+            }
+            int chunkLen;
+            try {
+                chunkLen = Integer.parseInt(sizeLine, 16);
+            } catch (NumberFormatException ignored) {
+                break;
+            }
+            pos = lineEnd + 2;
+            if (chunkLen <= 0 || pos + chunkLen > raw.length) break;
+            decoded.write(raw, pos, chunkLen);
+            pos += chunkLen + 2;
+        }
+        return decoded.toByteArray();
+    }
+
+    @PluginMethod
+    public void lanSyncExchange(PluginCall call) {
+        final String rawServerUrl = call.getString("serverUrl", "").trim();
+        final String pairingToken = call.getString("pairingToken", "").trim();
+        final String bodyJson = call.getString("bodyJson", "");
+
+        if (rawServerUrl.isEmpty() || pairingToken.isEmpty() || bodyJson.isEmpty()) {
+            JSObject errRet = new JSObject();
+            errRet.put("ok", false);
+            errRet.put("status", 0);
+            errRet.put("error", "يرجى إدخال عنوان خادم الواي فاي ورمز الاقتران أولاً.");
+            call.resolve(errRet);
+            return;
+        }
+
+        final String host;
+        final int port;
+        try {
+            URL parsed = new URL(rawServerUrl);
+            String protocol = parsed.getProtocol();
+            if (!"http".equalsIgnoreCase(protocol)) {
+                throw new IllegalArgumentException("Only local HTTP LAN sync is supported.");
+            }
+            if (parsed.getUserInfo() != null && !parsed.getUserInfo().isEmpty()) {
+                throw new IllegalArgumentException("Credentials not allowed in LAN URL.");
+            }
+            host = parsed.getHost();
+            if (!isPrivateLanHost(host)) {
+                throw new IllegalArgumentException("Blocked non-LAN sync host.");
+            }
+            int parsedPort = parsed.getPort();
+            port = (parsedPort >= 1 && parsedPort <= 65535) ? parsedPort : 47821;
+        } catch (Exception ignored) {
+            JSObject errRet = new JSObject();
+            errRet.put("ok", false);
+            errRet.put("status", 0);
+            errRet.put("error", "عنوان خادم الواي فاي غير صالح — يجب أن يكون عنوان شبكة محلية مثل http://192.168.1.15:47821");
+            call.resolve(errRet);
+            return;
+        }
+
+        final String safeToken = pairingToken.replaceAll("[\\r\\n\\u0000-\\u001F]", "");
+        final byte[] bodyBytes = bodyJson.getBytes(StandardCharsets.UTF_8);
+        if (bodyBytes.length > 35 * 1024 * 1024) {
+            JSObject errRet = new JSObject();
+            errRet.put("ok", false);
+            errRet.put("status", 413);
+            errRet.put("error", "حجم حزمة المزامنة يتجاوز الحد الآمن.");
+            call.resolve(errRet);
+            return;
+        }
+
+        oauthExecutor.execute(() -> {
+            // Strictly validated RFC1918 private LAN socket carrying AES-256-GCM encrypted envelopes
+            // nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
+            // skipcq: JAVA-S1011
+            try (Socket socket = new Socket()) {
+                socket.connect(new InetSocketAddress(host, port), 6_000);
+                socket.setSoTimeout(15_000);
+
+                String headers = "POST /api/sync/exchange HTTP/1.1\r\n"
+                        + "Host: " + host + ":" + port + "\r\n"
+                        + "Content-Type: application/json; charset=utf-8\r\n"
+                        + "X-Clinic-Token: " + safeToken + "\r\n"
+                        + "Content-Length: " + bodyBytes.length + "\r\n"
+                        + "Connection: close\r\n\r\n";
+
+                OutputStream out = socket.getOutputStream();
+                out.write(headers.getBytes(StandardCharsets.US_ASCII));
+                out.write(bodyBytes);
+                out.flush();
+
+                InputStream in = socket.getInputStream();
+                ByteArrayOutputStream rawResp = new ByteArrayOutputStream();
+                byte[] buffer = new byte[16_384];
+                int totalRead = 0;
+                int maxRespBytes = 40 * 1024 * 1024;
+                int readCount;
+                while ((readCount = in.read(buffer)) != -1) {
+                    totalRead += readCount;
+                    if (totalRead > maxRespBytes) {
+                        throw new IOException("Response exceeded 40MB safety limit");
+                    }
+                    rawResp.write(buffer, 0, readCount);
+                }
+
+                byte[] allBytes = rawResp.toByteArray();
+                int headerEnd = -1;
+                for (int idx = 0; idx < allBytes.length - 3; idx++) {
+                    if (allBytes[idx] == '\r' && allBytes[idx + 1] == '\n'
+                            && allBytes[idx + 2] == '\r' && allBytes[idx + 3] == '\n') {
+                        headerEnd = idx;
+                        break;
+                    }
+                }
+                if (headerEnd < 0) {
+                    throw new IOException("Invalid HTTP response from Clinic LAN Hub");
+                }
+
+                String headerBlock = new String(allBytes, 0, headerEnd, StandardCharsets.US_ASCII);
+                String[] headerLines = headerBlock.split("\r\n");
+                int statusCode = 0;
+                if (headerLines.length > 0) {
+                    String[] statusParts = headerLines[0].split(" ");
+                    if (statusParts.length >= 2) {
+                        statusCode = Integer.parseInt(statusParts[1].trim());
+                    }
+                }
+                boolean isChunked = false;
+                for (int idx = 1; idx < headerLines.length; idx++) {
+                    String lower = headerLines[idx].toLowerCase(java.util.Locale.ROOT);
+                    if (lower.startsWith("transfer-encoding:") && lower.contains("chunked")) {
+                        isChunked = true;
+                    }
+                }
+
+                int bodyStart = headerEnd + 4;
+                byte[] rawBody = Arrays.copyOfRange(allBytes, bodyStart, allBytes.length);
+                byte[] finalBody = isChunked ? decodeChunkedHttpBody(rawBody) : rawBody;
+                String respText = new String(finalBody, StandardCharsets.UTF_8);
+
+                JSObject ret = new JSObject();
+                ret.put("ok", statusCode >= 200 && statusCode < 300);
+                ret.put("status", statusCode);
+                ret.put("responseJson", respText);
+                call.resolve(ret);
+            } catch (Exception ex) {
+                JSObject errRet = new JSObject();
+                errRet.put("ok", false);
+                errRet.put("status", 0);
+                errRet.put("networkError", true);
+                errRet.put("error", ex.getMessage() != null ? ex.getMessage() : "LAN connection failed");
+                call.resolve(errRet);
             }
         });
     }
