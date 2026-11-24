@@ -140,6 +140,8 @@ export const ClinicSyncSettingsTab: React.FC = () => {
   );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const passphraseInputRef = useRef<HTMLInputElement | null>(null);
+  const lanUrlInputRef = useRef<HTMLInputElement | null>(null);
+  const lanTokenInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -187,8 +189,19 @@ export const ClinicSyncSettingsTab: React.FC = () => {
     };
   }, [electronBridge, dek]);
 
+  const getEffectivePassphrase = (): string => {
+    const domVal = passphraseInputRef.current?.value;
+    if (typeof domVal === 'string' && domVal.length > 0 && domVal !== syncPassphrase) {
+      setSyncPassphrase(domVal);
+      setSessionSyncPassphrase(domVal);
+      return domVal;
+    }
+    return syncPassphrase;
+  };
+
   const requireSyncPassphrase = (actionLabelAr?: string, actionLabelEn?: string): boolean => {
-    if (syncPassphrase.trim().length >= 6) {
+    const currentPassphrase = getEffectivePassphrase();
+    if (currentPassphrase.trim().length >= 6) {
       setPassphraseError(false);
       return true;
     }
@@ -226,7 +239,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
         return;
       }
       if (dek) {
-        await saveEncryptedSyncPassphrase(dek, syncPassphrase);
+        await saveEncryptedSyncPassphrase(dek, getEffectivePassphrase());
       }
     }
     const next = saveClinicSyncConfig({ autoSyncEnabled: enabled });
@@ -350,8 +363,21 @@ export const ClinicSyncSettingsTab: React.FC = () => {
       return;
     }
 
-    const normalizedUrl = normalizeLanServerUrl(lanUrlInput);
-    const trimmedToken = lanTokenInput.trim();
+    const activePassphrase = getEffectivePassphrase();
+    let rawUrl = lanUrlInputRef.current?.value || lanUrlInput;
+    let rawToken = lanTokenInputRef.current?.value || lanTokenInput;
+
+    // Support quick-pair paste `http://192.168.1.15:47821|TOKEN` even if IME skipped onChange
+    if (rawUrl.includes('|')) {
+      const [urlPart, tokenPart] = rawUrl.split('|');
+      rawUrl = (urlPart || '').trim();
+      if ((tokenPart || '').trim()) {
+        rawToken = (tokenPart || '').trim();
+      }
+    }
+
+    const normalizedUrl = normalizeLanServerUrl(rawUrl);
+    const trimmedToken = rawToken.trim();
     if (!normalizedUrl || !trimmedToken) {
       setFeedback({
         kind: 'error',
@@ -378,7 +404,7 @@ export const ClinicSyncSettingsTab: React.FC = () => {
 
       const res = await syncWithLocalLanHub({
         dek,
-        passphrase: syncPassphrase,
+        passphrase: activePassphrase,
         serverUrl: normalizedUrl,
         pairingToken: trimmedToken,
       });
@@ -1240,9 +1266,14 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                 {bi('رابط العيادة على الواي فاي', 'Clinic Wi-Fi Link')}
               </label>
               <input
+                ref={lanUrlInputRef}
                 id="lan-url-input"
                 type="text"
                 dir="ltr"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
                 value={lanUrlInput}
                 onChange={(e) => {
                   const raw = e.target.value;
@@ -1268,6 +1299,18 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                     );
                   }
                 }}
+                onBlur={(e) => {
+                  const raw = e.target.value;
+                  if (raw && raw !== lanUrlInput) {
+                    setLanUrlInput(raw);
+                    setConfig(
+                      saveClinicSyncConfig({
+                        lanServerUrl: raw,
+                        lanPairingToken: lanTokenInputRef.current?.value || lanTokenInput,
+                      })
+                    );
+                  }
+                }}
                 placeholder="http://192.168.1.15:47821"
                 className="w-full h-10 px-3 rounded-xl bg-surface border border-line-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
               />
@@ -1277,19 +1320,36 @@ export const ClinicSyncSettingsTab: React.FC = () => {
                 {bi('رمز الاقتران', 'Pairing Code')}
               </label>
               <input
+                ref={lanTokenInputRef}
                 id="lan-token-input"
                 type="text"
                 dir="ltr"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
                 value={lanTokenInput}
                 onChange={(e) => {
                   const nextToken = e.target.value;
                   setLanTokenInput(nextToken);
                   setConfig(
                     saveClinicSyncConfig({
-                      lanServerUrl: lanUrlInput,
+                      lanServerUrl: lanUrlInputRef.current?.value || lanUrlInput,
                       lanPairingToken: nextToken,
                     })
                   );
+                }}
+                onBlur={(e) => {
+                  const nextToken = e.target.value;
+                  if (nextToken && nextToken !== lanTokenInput) {
+                    setLanTokenInput(nextToken);
+                    setConfig(
+                      saveClinicSyncConfig({
+                        lanServerUrl: lanUrlInputRef.current?.value || lanUrlInput,
+                        lanPairingToken: nextToken,
+                      })
+                    );
+                  }
                 }}
                 placeholder="A1B2C3D4E5F6"
                 className="w-full h-10 px-3 rounded-xl bg-surface border border-line-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"

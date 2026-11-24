@@ -872,6 +872,7 @@ describe('updateSafety & Android Release Packaging Guards', () => {
     expect(normalizeLanServerUrl('192.168.1.15:47821')).toBe('http://192.168.1.15:47821');
     expect(normalizeLanServerUrl('192.168.1.15')).toBe('http://192.168.1.15:47821');
     expect(normalizeLanServerUrl('  http://192.168.1.15:47821/  ')).toBe('http://192.168.1.15:47821');
+    expect(normalizeLanServerUrl('١٩٢.١٦٨.١.١٥:٤٧٨٢١')).toBe('http://192.168.1.15:47821');
 
     // Simulate a full localStorage where setItem throws QuotaExceededError
     const throwingStorage = {

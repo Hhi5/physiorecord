@@ -206,11 +206,16 @@ export async function loadEncryptedSyncPassphrase(dek: CryptoKey): Promise<strin
 }
 
 /**
- * Normalizes user-typed Clinic Wi-Fi (LAN) addresses so typing `192.168.1.15:47821`
- * or `192.168.1.15` without `http://` works seamlessly.
+ * Normalizes user-typed Clinic Wi-Fi (LAN) addresses so typing `192.168.1.15:47821`,
+ * `192.168.1.15`, or Arabic-Indic digits (`١٩٢.١٦٨.١.١٥:٤٧٨٢١`) works seamlessly.
  */
 export function normalizeLanServerUrl(rawUrl: string): string {
-  const cleaned = String(rawUrl || '')
+  const asciiDigits = String(rawUrl || '')
+    .replace(/[٠-٩]/gu, (ch) => String(ch.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/gu, (ch) => String(ch.charCodeAt(0) - 0x06f0))
+    .replace(/[٫،]/gu, '.')
+    .replace(/：/gu, ':');
+  const cleaned = asciiDigits
     .trim()
     .replace(/\s+/gu, '')
     .replace(/\/+$/u, '');
